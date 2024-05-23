@@ -1,0 +1,1489 @@
+openapi: "3.0.2"
+info:
+  title: Comfy API
+  version: "1.0"
+servers:
+  - url: https://api.comfy.org
+paths:
+  /users:
+    get:
+      summary: Get information about the calling user.
+      operationId: getUser
+      security:
+        - BearerAuth: [ ]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+        "404":
+          description: Not Found
+        "401":
+          description: Unauthorized
+  /upload-artifact:
+    post:
+      summary: Receive artifacts (output files) from the ComfyUI GitHub Action
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                repo:
+                  type: string
+                  description: Repository name
+                job_id:
+                  type: string
+                  description: Unique identifier for the job
+                run_id:
+                  type: string
+                  description: Unique identifier for the run
+                os:
+                  type: string
+                  description: Operating system used in the run
+                cuda_version:
+                  type: string
+                  description: Cuda version.
+                bucket_name:
+                  type: string
+                  description: The name of the bucket where the output files are stored
+                output_files_gcs_paths:
+                  type: string
+                  description: A comma separated string that contains GCS path(s) to output files. eg. gs://bucket-name/output, gs://bucket-name/output2
+                comfy_logs_gcs_path:
+                  type: string
+                  description: The path to ComfyUI logs. eg. gs://bucket-name/logs
+                commit_hash:
+                  type: string
+                commit_time:
+                  type: string
+                  description: The time of the commit in the format of "YYYY-MM-DDTHH:MM:SSZ" (2016-10-10T00:00:00Z)
+                commit_message:
+                  type: string
+                  description: The commit message
+                workflow_name:
+                  type: string
+                  description: The name of the workflow
+                branch_name:
+                  type: string
+                start_time:
+                  type: integer
+                  format: int64
+                  description: The start time of the job as a Unix timestamp.
+                end_time:
+                  type: integer
+                  format: int64
+                  description: The end time of the job as a Unix timestamp.
+              required:
+                - repo
+                - job_id
+                - run_id
+                - os
+                - gpu_type
+                - commit_hash
+                - commit_time
+                - commit_message
+                - branch_name
+                - workflow_name
+                - start_time
+                - end_time
+
+      responses:
+        '200':
+          description: Successfully received the artifact details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Invalid request
+        '500':
+          description: Internal server error
+  /gitcommit:
+    get:
+      summary: Retrieve CI data for a given commit
+      description: Returns all runs, jobs, job results, and storage files associated with a given commit.
+      parameters:
+        - in: query
+          name: commitId
+          required: false
+          schema:
+            type: string
+          description: The ID of the commit to fetch data for.
+        - in: query
+          name: operatingSystem
+          required: false
+          schema:
+            type: string
+          description: The operating system to filter the CI data by.
+        - in: query
+          name: workflowName
+          required: false
+          schema:
+            type: string
+          description: The name of the workflow to filter the CI data by.
+        - in: query
+          name: branch
+          required: false
+          schema:
+            type: string
+          description: The branch of the gitcommit to filter the CI data by.
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+          description: The page number to retrieve.
+        - in: query
+          name: pageSize
+          required: false
+          schema:
+            type: integer
+            default: 10
+          description: The number of items to include per page.
+        - in: query
+          name: repoName
+          required: false
+          schema:
+            type: string
+            default: comfyanonymous/ComfyUI
+          description: The repo to filter by.
+      responses:
+        '200':
+          description: An object containing runs, jobs, job results, and storage files
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobResults:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActionJobResult'
+                  totalNumberOfPages:
+                    type: integer
+        '404':
+          description: Commit not found
+        '500':
+          description: Internal server error
+  /branch:
+    get:
+      summary: Retrieve all distinct branches for a given repo
+      description: Returns all branches for a given repo.
+      parameters:
+        - in: query
+          name: repo_name
+          required: true
+          schema:
+            type: string
+            default: comfyanonymous/ComfyUI
+          description: The repo to filter by.
+      responses:
+        '200':
+          description: An array of branches
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  branches:
+                    type: array
+                    items:
+                      type: string
+        '404':
+          description: Repo not found
+        '500':
+          description: Internal server error
+
+  /users/publishers/:
+    get:
+      summary: Retrieve all publishers for a given user
+      operationId: listPublishersForUser
+      tags:
+        - Publishers
+      responses:
+        '200':
+          description: A list of publishers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Publisher'
+        '400':
+          description: Bad request, invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /publishers/{publisherId}/permissions:
+    get:
+      summary: Retrieve permissions the user has for a given publisher
+      operationId: getPermissionOnPublisher
+      tags:
+        - Publishers
+      parameters:
+        - in: path
+          name: publisherId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of permissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  canEdit:
+                    type: boolean
+        '400':
+          description: Bad request, invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /publishers/validate:
+    get:
+      summary: Validate if a publisher username is available
+      description: Checks if the publisher username is already taken.
+      operationId: validatePublisher
+      tags:
+        - Publishers
+      parameters:
+        - in: query
+          name: username
+          schema:
+            type: string
+          description: The publisher username to validate.
+          required: true
+      responses:
+        '200':
+          description: Username validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isAvailable:
+                    type: boolean
+                    description: True if the username is available, false otherwise.
+        '400':
+          description: Invalid input, such as missing username in the query.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /publishers:
+    post:
+      summary: Create a new publisher
+      operationId: createPublisher
+      security:
+        - BearerAuth: [ ]
+      tags:
+        - Publishers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Publisher'
+      responses:
+        '201':
+          description: Publisher created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Publisher'
+        '400':
+          description: Bad request, invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: Retrieve all publishers
+      operationId: listPublishers
+      tags:
+        - Publishers
+      responses:
+        '200':
+          description: A list of publishers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Publisher'
+        '400':
+          description: Bad request, invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /publishers/{publisherId}:
+    get:
+      summary: Retrieve a publisher by ID
+      operationId: getPublisher
+      tags:
+        - Publishers
+      parameters:
+        - in: path
+          name: publisherId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Publisher retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Publisher'
+        '404':
+          description: Publisher not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Update a publisher
+      operationId: updatePublisher
+      security:
+        - BearerAuth: [ ]
+      tags:
+        - Publishers
+      parameters:
+        - in: path
+          name: publisherId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Publisher'
+      responses:
+        '200':
+          description: Publisher updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Publisher'
+        '400':
+          description: Bad request, invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Publisher not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete a publisher
+      operationId: deletePublisher
+      security:
+        - BearerAuth: [ ]
+      tags:
+        - Publishers
+      parameters:
+        - in: path
+          name: publisherId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Publisher deleted successfully
+        '404':
+          description: Publisher not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /publishers/{publisherId}/nodes:
+    post:
+      summary: Create a new custom node
+      operationId: createNode
+      tags:
+        - Nodes
+      security:
+        - BearerAuth: [ ]
+      parameters:
+        - in: path
+          name: publisherId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Node'
+      responses:
+        '201':
+          description: Node created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+        '400':
+          description: Bad request, invalid input data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: Retrieve all nodes
+      operationId: listNodesForPublisher
+      security:
+        - BearerAuth: [ ]
+      tags:
+        - Nodes
+      parameters:
+        - in: path
+          name: publisherId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of all nodes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Node'
+        '400':
+          description: Bad request, invalid input data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /publishers/{publisherId}/nodes/{nodeId}:
+    put:
+      summary: Update a specific node
+      operationId: updateNode
+      tags:
+        - Nodes
+      security:
+        - BearerAuth: [ ]
+      parameters:
+        - in: path
+          name: publisherId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: nodeId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Node'
+      responses:
+        '200':
+          description: Node updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+        '400':
+          description: Bad request, invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Node not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a specific node
+      operationId: deleteNode
+      tags:
+        - Nodes
+      security:
+        - BearerAuth: [ ]
+      parameters:
+        - in: path
+          name: publisherId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: nodeId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Node deleted successfully
+        '404':
+          description: Node not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  
+  /publishers/{publisherId}/nodes/{nodeId}/permissions:
+    get:
+      summary: Retrieve permissions the user has for a given publisher
+      operationId: getPermissionOnPublisherNodes
+      tags:
+        - Publishers
+      parameters:
+        - in: path
+          name: publisherId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: nodeId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of permissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  canEdit:
+                    type: boolean
+        '400':
+          description: Bad request, invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /publishers/{publisherId}/nodes/{nodeId}/versions:
+    post:
+      summary: Publish a new version of a node
+      operationId: publishNodeVersion
+      tags:
+        - Versions
+      security:
+        - BearerAuth: [ ]
+      parameters:
+        - in: path
+          name: publisherId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: nodeId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                personal_access_token:
+                  type: string
+                node_version:
+                  $ref: '#/components/schemas/NodeVersion'
+                node:
+                  $ref: '#/components/schemas/Node'
+              required:
+                - node
+                - node_version
+                - personal_access_token
+      responses:
+        '201':
+          description: New version published successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  signedUrl:
+                    type: string
+                    description: The signed URL to upload the node version token.
+                  node_version:
+                    $ref: '#/components/schemas/NodeVersion'
+        '400':
+          description: Bad request, invalid input data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /publishers/{publisherId}/nodes/{nodeId}/versions/{versionId}:
+    delete:
+      summary: Unpublish (delete) a specific version of a node
+      operationId: deleteNodeVersion
+      tags:
+        - Versions
+      security:
+        - BearerAuth: [ ]
+      parameters:
+        - in: path
+          name: publisherId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: nodeId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: versionId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Version unpublished (deleted) successfully
+        '404':
+          description: Version not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update changelog and deprecation status of a node version
+      operationId: updateNodeVersion
+      description: Update only the changelog and deprecated status of a specific version of a node.
+      tags:
+        - Versions
+      security:
+        - BearerAuth: [ ]
+      parameters:
+        - in: path
+          name: publisherId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: nodeId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: versionId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeVersionUpdateRequest'
+      responses:
+        '200':
+          description: Version updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeVersion'
+        '400':
+          description: Bad request, invalid input data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Version not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /publishers/{publisherId}/tokens:
+    post:
+      summary: Create a new personal access token
+      operationId: createPersonalAccessToken
+      security:
+        - BearerAuth: [ ]
+      tags:
+        - Token Management
+      parameters:
+        - in: path
+          name: publisherId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonalAccessToken'
+      responses:
+        '201':
+          description: Token created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: The newly created personal access token.
+        '400':
+          description: Bad request, invalid input data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+    get:
+      summary: Retrieve all personal access tokens for a publisher
+      operationId: listPersonalAccessTokens
+      security:
+        - BearerAuth: [ ]
+      tags:
+        - Token Management
+      parameters:
+        - in: path
+          name: publisherId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of all personal access tokens
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PersonalAccessToken'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No tokens found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /publishers/{publisherId}/tokens/{tokenId}:
+    delete:
+      summary: Delete a specific personal access token
+      operationId: deletePersonalAccessToken
+      security:
+        - BearerAuth: [ ]
+      tags:
+        - Token Management
+      parameters:
+        - in: path
+          name: publisherId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: tokenId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Token deleted successfully
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Token not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /nodes:
+    get:
+      summary: Retrieves a list of nodes
+      description: Returns a paginated list of nodes across all publishers.
+      operationId: listAllNodes
+      tags:
+        - Nodes
+      parameters:
+        - in: query
+          name: page
+          description: Page number of the nodes list
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          description: Number of nodes to return per page
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: A paginated list of nodes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: Total number of nodes available
+                  nodes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Node'
+                  page:
+                    type: integer
+                    description: Current page number
+                  limit:
+                    type: integer
+                    description: Maximum number of nodes per page
+                  totalPages:
+                    type: integer
+                    description: Total number of pages available
+        '400':
+          description: Invalid input, object invalid
+        '404':
+          description: Not found
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /nodes/{nodeId}:
+    get:
+      summary: Retrieve a specific node by ID
+      description: Returns the details of a specific node.
+      operationId: getNode
+      tags:
+        - Nodes
+      parameters:
+        - in: path
+          name: nodeId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Node details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Node not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /nodes/{nodeId}/install:
+    get:
+      summary: Returns a node version to be installed.
+      description: Retrieves the node data for installation, either the latest or a specific version.
+      operationId: installNode
+      tags:
+        - Nodes
+      parameters:
+        - in: path
+          name: nodeId
+          required: true
+          description: The unique identifier of the node.
+          schema:
+            type: string
+        - in: query
+          name: version
+          required: false
+          description: Specific version of the node to retrieve. If omitted, the latest version is returned.
+          schema:
+            type: string
+            pattern: '^\d+\.\d+\.\d+$'
+      responses:
+        '200':
+          description: Node data returned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeVersion'
+        '400':
+          description: Invalid input, such as a bad version format.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Node not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /nodes/{nodeId}/versions:
+    get:
+      summary: List all versions of a node
+      operationId: listNodeVersions
+      tags:
+        - Versions
+      parameters:
+        - in: path
+          name: nodeId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of all node versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NodeVersion'
+        '404':
+          description: Node not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /nodes/{nodeId}/versions/{versionId}:
+    get:
+      summary: Retrieve a specific version of a node
+      operationId: getNodeVersion
+      tags:
+        - Versions
+      parameters:
+        - in: path
+          name: nodeId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: versionId
+          description: The version of the node. (Not a UUID).
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detailed information about a specific node version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeVersion'
+        '404':
+          description: Node version not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    PersonalAccessToken:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the GitCommit
+        name:
+          type: string
+          description: Required. The name of the token. Can be a simple description.
+        description:
+          type: string
+          description: Optional. A more detailed description of the token's intended use.
+        createdAt:
+          type: string
+          format: date-time
+          description: "[Output Only]The date and time the token was created."
+        token:
+          type: string
+          description: "[Output Only]. The personal access token. Only returned during creation."
+    GitCommit:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the GitCommit
+        commit_hash:
+          type: string
+          description: The hash of the commit
+        commit_name:
+          type: string
+          description: The name of the commit
+        branch_name:
+          type: string
+          description: The branch where the commit was made
+        author:
+          type: string
+          description: The author of the commit
+        timestamp:
+          type: string
+          format: date-time
+          description: The timestamp when the commit was made
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique id for this user.
+        email:
+          type: string
+          description: The email address for this user.
+        name:
+          type: string
+          description: The name for this user.
+        isApproved:
+          type: boolean
+          description: Indicates if the user is approved.
+        isAdmin:
+          type: boolean
+          description: Indicates if the user has admin privileges.
+    PublisherUser:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique id for this user.
+        email:
+          type: string
+          description: The email address for this user.
+        name:
+          type: string
+          description: The name for this user.
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message
+    ActionJobResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the job result
+        workflow_name:
+          type: string
+          description: Name of the workflow
+        operating_system:
+          type: string
+          description: Operating system used
+        gpu_type:
+          type: string
+          description: GPU type used
+        pytorch_version:
+          type: string
+          description: PyTorch version used
+        action_run_id:
+          type: string
+          description: Identifier of the run this result belongs to
+        commit_hash:
+          type: string
+          description: The hash of the commit
+        commit_id:
+          type: string
+          description: The ID of the commit
+        commit_time:
+          type: integer
+          format: int64
+          description: The Unix timestamp when the commit was made
+        commit_message:
+          type: string
+          description: The message of the commit
+        git_repo:
+          type: string
+          description: The repository name
+        start_time:
+          type: integer
+          format: int64
+          description: The start time of the job as a Unix timestamp.
+        end_time:
+          type: integer
+          format: int64
+          description: The end time of the job as a Unix timestamp.
+        storage_file:
+          $ref: "#/components/schemas/StorageFile"
+    StorageFile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the storage file
+        file_path:
+          type: string
+          description: Path to the file in storage
+        public_url:
+          type: string
+          description: Public URL
+    Publisher:
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: string
+          description: The unique identifier for the publisher. It's akin to a username. Should be lowercase.
+        description:
+          type: string
+        website:
+          type: string
+        support:
+          type: string
+        source_code_repo:
+          type: string
+        logo:
+          type: string
+          description: URL to the publisher's logo.
+        createdAt:
+          type: string
+          format: date-time
+          description: The date and time the publisher was created.
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublisherMember"
+          description: A list of members in the publisher.
+    PublisherMember:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the publisher member.
+        user:
+          $ref: "#/components/schemas/PublisherUser"
+          description: The user associated with this publisher member.
+        role:
+          type: string
+          description: The role of the user in the publisher.
+    Node:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "The unique identifier of the node."
+        name:
+          type: string
+          description: The display name of the node.
+        description:
+          type: string
+        author:
+          type: string
+        license:
+          type: string
+          description: The path to the LICENSE file in the node's repository.
+        icon:
+          type: string
+          description: URL to the node's icon.
+        repository:
+          type: string
+          description: URL to the node's repository.
+        tags:
+          type: array
+          items:
+            type: string
+        latest_version:
+          $ref: "#/components/schemas/NodeVersion"
+          description: The latest version of the node.
+        rating:
+          type: number
+          description: The average rating of the node.
+        downloads:
+          type: integer
+          description: The number of downloads of the node.
+        publisher:
+          $ref: "#/components/schemas/Publisher"
+          description: The publisher of the node.
+    NodeVersion:
+      type: object
+      properties:
+        id:
+          type: string
+        version:
+          type: string
+          description: The version identifier, following semantic versioning. Must be unique for the node.
+        createdAt:
+          type: string
+          format: date-time
+          description: The date and time the version was created.
+        changelog:
+          type: string
+          description: Summary of changes made in this version
+        dependencies:
+          type: array
+          items:
+            type: string
+          description: A list of pip dependencies required by the node.
+        downloadUrl:
+          type: string
+          description: "[Output Only] URL to download this version of the node"
+        deprecated:
+          type: boolean
+          description: Indicates if this version is deprecated.
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: A clear and concise description of the error.
+        details:
+          type: array
+          items:
+            type: string
+          description: Optional detailed information about the error or hints for resolving it.
+    # ======= Request body Definitions =======================
+    NodeVersionUpdateRequest:
+      type: object
+      properties:
+        changelog:
+          type: string
+          description: The changelog describing the version changes.
+        deprecated:
+          type: boolean
+          description: Whether the version is deprecated.
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

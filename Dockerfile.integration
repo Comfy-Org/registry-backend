@@ -1,0 +1,19 @@
+# Used for integration tests. See docker-compose-integration.yml.
+# Start from the official Go image.
+FROM golang:1.21.5
+
+# Set the working directory inside the container.
+WORKDIR /go/src/app
+
+# Copy the Go Modules manifests and the whole source code.
+COPY go.mod go.sum ./
+COPY . .
+
+# Download Go modules.
+RUN go mod download
+
+# Compile the application to ensure it builds.
+RUN CGO_ENABLED=0 GOOS=linux go build -v -o /app/bin
+
+# The default command runs the app, but can be overridden in docker-compose.
+CMD ["/app/bin"]

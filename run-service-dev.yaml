@@ -1,0 +1,47 @@
+# Dev Cloud Run
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: dev-comfy-backend
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/min-scale: "1"
+    spec:
+      containers:
+      - image: registry-backend-image-substitute
+        env: 
+        - name: DRIP_ENV
+          value: staging
+        - name: DB_USER
+          value: postgres.zplpzudqewiaavtbnyus
+        - name: DB_PASSWORD
+          valueFrom:
+              secretKeyRef:
+                key: 1
+                name: STAGING-SUPABASE-DB-PASSWORD
+        - name: DB_PORT
+          value: 5432
+        # Unix socket https://cloud.google.com/sql/docs/postgres/connect-run
+        - name: DB_HOST
+          value: aws-0-us-west-1.pooler.supabase.com
+        - name: DB_NAME
+          value: postgres
+        - name: CLOUD_TASK_PROJECT
+          value: dreamboothy
+        - name: CLOUD_TASK_REGION
+          value: us-central1
+        - name: CLOUD_CONFIG_PATH
+          value: /app/gateways/compute/gcp/cloudconfig.yaml
+        - name: PROJECT_ID
+          value: dreamboothy
+        - name: APPROVED_ZONE
+          value: us-central1-a,us-central1-b,us-central1-c,us-central1-f
+        - name: CORS_ORIGIN
+          value: https://drip.art
+        - name: MACHINE_IMAGE
+          value: comfy-cloud-template-3
+        - name: SELF_ORIGIN
+          value: https://staging.api.drip.art
