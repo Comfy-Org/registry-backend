@@ -9,6 +9,10 @@ spec:
     metadata:
       annotations:
         autoscaling.knative.dev/min-scale: "1"
+        autoscaling.knative.dev/minScale: '1'
+        autoscaling.knative.dev/maxScale: '2'
+        run.googleapis.com/cpu-throttling: 'false'
+        run.googleapis.com/startup-cpu-boost: 'false'
     spec:
       containers:
       - image: registry-backend-image-substitute

@@ -9,6 +9,8 @@ spec:
     metadata:
       annotations:
         autoscaling.knative.dev/min-scale: "1"
+        autoscaling.knative.dev/minScale: '1'
+        autoscaling.knative.dev/maxScale: '20'
     spec:
       containers:
       - image: registry-backend-image-substitute
