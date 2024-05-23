@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+
 	"registry-backend/ent"
 	"registry-backend/ent/migrate"
 	auth "registry-backend/server/middleware"
@@ -15,6 +16,8 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
+
+	_ "github.com/lib/pq"
 )
 
 func createTestUser(ctx context.Context, client *ent.Client) *ent.User {
@@ -49,6 +52,7 @@ func setupDB(t *testing.T, ctx context.Context) (*ent.Client, *postgres.Postgres
 	if err != nil {
 		t.Fatalf("Failed to start container: %s", err)
 	}
+	println("Postgres container started")
 
 	host, err := postgresContainer.Host(ctx)
 	if err != nil {
@@ -73,7 +77,10 @@ func setupDB(t *testing.T, ctx context.Context) (*ent.Client, *postgres.Postgres
 	if err := client.Schema.Create(context.Background(), migrate.WithDropIndex(true),
 		migrate.WithDropColumn(true), migrate.WithDropIndex(true)); err != nil {
 		log.Ctx(ctx).Fatal().Err(err).Msg("failed creating schema resources.")
+		println("Failed to create schema")
+
 	}
+	println("Schema created")
 	return client, postgresContainer
 }
 

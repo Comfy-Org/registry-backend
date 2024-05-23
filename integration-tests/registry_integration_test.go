@@ -5,7 +5,7 @@ import (
 	"registry-backend/config"
 	"registry-backend/drip"
 	"registry-backend/ent"
-	gateway_mock "registry-backend/mock/gateways"
+	"registry-backend/mock/gateways"
 	"registry-backend/server/implementation"
 	"strings"
 	"testing"
@@ -28,7 +28,6 @@ func setUpTest(client *ent.Client) (context.Context, *ent.User) {
 func TestRegistry(t *testing.T) {
 	clientCtx := context.Background()
 	client, postgresContainer := setupDB(t, clientCtx)
-
 	// Cleanup
 	defer func() {
 		if err := postgresContainer.Terminate(clientCtx); err != nil {
@@ -37,8 +36,8 @@ func TestRegistry(t *testing.T) {
 	}()
 
 	// Initialize the Service
-	mockStorageService := new(gateway_mock.MockStorageService)
-	mockSlackService := new(gateway_mock.MockSlackService)
+	mockStorageService := new(gateways.MockStorageService)
+	mockSlackService := new(gateways.MockSlackService)
 	mockSlackService.
 		On("SendRegistryMessageToSlack", mock.Anything).
 		Return(nil) // Do nothing for all slack messsage calls.
