@@ -3,11 +3,11 @@
 package ent
 
 import (
-	"registry-backend/ent/predicate"
-	"registry-backend/ent/storagefile"
 	"context"
 	"fmt"
 	"math"
+	"registry-backend/ent/predicate"
+	"registry-backend/ent/storagefile"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"

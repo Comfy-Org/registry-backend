@@ -3,8 +3,8 @@
 package publisherpermission
 
 import (
-	"registry-backend/ent/schema"
 	"fmt"
+	"registry-backend/ent/schema"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"

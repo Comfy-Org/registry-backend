@@ -3,12 +3,12 @@
 package ent
 
 import (
-	"registry-backend/ent/node"
-	"registry-backend/ent/nodeversion"
-	"registry-backend/ent/publisher"
 	"context"
 	"errors"
 	"fmt"
+	"registry-backend/ent/node"
+	"registry-backend/ent/nodeversion"
+	"registry-backend/ent/publisher"
 	"time"
 
 	"entgo.io/ent/dialect"

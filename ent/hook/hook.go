@@ -3,9 +3,9 @@
 package hook
 
 import (
-	"registry-backend/ent"
 	"context"
 	"fmt"
+	"registry-backend/ent"
 )
 
 // The CIWorkflowResultFunc type is an adapter to allow the use of ordinary

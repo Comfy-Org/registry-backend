@@ -3,10 +3,10 @@
 package ent
 
 import (
-	"registry-backend/ent/node"
-	"registry-backend/ent/publisher"
 	"encoding/json"
 	"fmt"
+	"registry-backend/ent/node"
+	"registry-backend/ent/publisher"
 	"strings"
 	"time"
 

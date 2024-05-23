@@ -3,11 +3,11 @@
 package ent
 
 import (
+	"fmt"
 	"registry-backend/ent/publisher"
 	"registry-backend/ent/publisherpermission"
 	"registry-backend/ent/schema"
 	"registry-backend/ent/user"
-	"fmt"
 	"strings"
 
 	"entgo.io/ent"

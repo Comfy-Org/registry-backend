@@ -3,6 +3,10 @@
 package ent
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"reflect"
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/node"
@@ -12,10 +16,6 @@ import (
 	"registry-backend/ent/publisherpermission"
 	"registry-backend/ent/storagefile"
 	"registry-backend/ent/user"
-	"context"
-	"errors"
-	"fmt"
-	"reflect"
 	"sync"
 
 	"entgo.io/ent"

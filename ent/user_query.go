@@ -3,13 +3,13 @@
 package ent
 
 import (
-	"registry-backend/ent/predicate"
-	"registry-backend/ent/publisherpermission"
-	"registry-backend/ent/user"
 	"context"
 	"database/sql/driver"
 	"fmt"
 	"math"
+	"registry-backend/ent/predicate"
+	"registry-backend/ent/publisherpermission"
+	"registry-backend/ent/user"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"

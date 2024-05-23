@@ -3,8 +3,8 @@
 package ent
 
 import (
-	"registry-backend/ent/user"
 	"fmt"
+	"registry-backend/ent/user"
 	"strings"
 	"time"
 

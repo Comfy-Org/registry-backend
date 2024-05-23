@@ -3,9 +3,9 @@
 package ent
 
 import (
+	"fmt"
 	"registry-backend/ent/personalaccesstoken"
 	"registry-backend/ent/publisher"
-	"fmt"
 	"strings"
 	"time"
 

@@ -3,9 +3,9 @@
 package ent
 
 import (
+	"context"
 	"registry-backend/ent/node"
 	"registry-backend/ent/predicate"
-	"context"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"

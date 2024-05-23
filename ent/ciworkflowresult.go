@@ -3,10 +3,10 @@
 package ent
 
 import (
+	"fmt"
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/storagefile"
-	"fmt"
 	"strings"
 	"time"
 

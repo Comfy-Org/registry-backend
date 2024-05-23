@@ -3,8 +3,8 @@
 package ent
 
 import (
-	"registry-backend/ent/publisher"
 	"fmt"
+	"registry-backend/ent/publisher"
 	"strings"
 	"time"
 

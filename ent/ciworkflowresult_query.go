@@ -3,13 +3,13 @@
 package ent
 
 import (
+	"context"
+	"fmt"
+	"math"
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/predicate"
 	"registry-backend/ent/storagefile"
-	"context"
-	"fmt"
-	"math"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"

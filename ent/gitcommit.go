@@ -3,8 +3,8 @@
 package ent
 
 import (
-	"registry-backend/ent/gitcommit"
 	"fmt"
+	"registry-backend/ent/gitcommit"
 	"strings"
 	"time"
 

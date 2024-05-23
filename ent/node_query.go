@@ -3,14 +3,14 @@
 package ent
 
 import (
-	"registry-backend/ent/node"
-	"registry-backend/ent/nodeversion"
-	"registry-backend/ent/predicate"
-	"registry-backend/ent/publisher"
 	"context"
 	"database/sql/driver"
 	"fmt"
 	"math"
+	"registry-backend/ent/node"
+	"registry-backend/ent/nodeversion"
+	"registry-backend/ent/predicate"
+	"registry-backend/ent/publisher"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
