@@ -1,0 +1,14 @@
+runtime: go121
+env: standard
+
+instance_class: F1  # Default instance class. Consider changing it based on your needs
+
+handlers:
+  - url: /.*
+    script: auto
+    secure: always  # Optional: Redirects HTTP to HTTPS.
+
+automatic_scaling:
+  min_idle_instances: automatic  # Default is automatic (spins down completely)
+  max_idle_instances: automatic  # Default is automatic
+  min_instances: 0  # Default is 0

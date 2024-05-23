@@ -1,0 +1,29 @@
+# Prod Cloud Run
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: prod-comfy-backend
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/min-scale: "1"
+        autoscaling.knative.dev/minScale: '1'
+        autoscaling.knative.dev/maxScale: '20'
+    spec:
+      containers:
+      - image: registry-backend-image-substitute
+        env: 
+        - name: DRIP_ENV
+          value: prod
+        - name: DB_CONNECTION_STRING
+          valueFrom:
+              secretKeyRef:
+                key: 1
+                name: PROD_SUPABASE_CONNECTION_STRING
+        - name: PROJECT_ID
+          value: dreamboothy
+        # TODO(robinhuang): Switch to a list of strings
+        - name: CORS_ORIGIN
+          value: https://comfyregistry.org

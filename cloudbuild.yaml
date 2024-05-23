@@ -1,0 +1,20 @@
+steps:
+  # build the container image
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["build", "-t", "us-central1-docker.pkg.dev/dreamboothy/registry-backend/registry-backend-image:$SHORT_SHA", "."]
+    # push container image
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "us-central1-docker.pkg.dev/dreamboothy/registry-backend/registry-backend-image:$SHORT_SHA"]
+  # Publish the release
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:458.0.1'
+    entrypoint: 'bash'
+    args:
+    - '-c'
+    - > 
+      gcloud deploy releases create release-registry-backend-$SHORT_SHA
+      --project=dreamboothy
+      --region=us-central1
+      --delivery-pipeline=comfy-backend-api-pipeline
+      --images=registry-backend-image-substitute=us-central1-docker.pkg.dev/dreamboothy/registry-backend/registry-backend-image:$SHORT_SHA
+options:
+  machineType: 'E2_HIGHCPU_8'

@@ -1,0 +1,15 @@
+apiVersion: skaffold/v4beta2
+kind: Config
+metadata: 
+  name: deploy-comfy-backend
+profiles:
+- name: staging
+  manifests:
+    rawYaml:
+    - run-service-staging.yaml
+- name: prod
+  manifests:
+    rawYaml:
+    - run-service-prod.yaml
+deploy:
+  cloudrun: {}

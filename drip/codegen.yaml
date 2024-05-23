@@ -1,0 +1,7 @@
+output: api.gen.go
+package: drip
+generate:
+  models: true
+  echo-server: true
+  strict-server: true
+  embedded-spec: true

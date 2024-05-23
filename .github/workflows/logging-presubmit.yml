@@ -1,0 +1,13 @@
+name: semgrep
+on:
+  push:
+    branches:
+      - "*"
+jobs:
+  semgrep-ci:
+    runs-on: ubuntu-20.04
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v3
+      - run: semgrep ci --config .semgrep.yml --exclude='main.go' --exclude='server/server.go' --exclude='logging/*' --

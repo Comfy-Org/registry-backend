@@ -1,0 +1,31 @@
+# Dev Cloud Run
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: staging-comfy-backend
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/min-scale: "1"
+        autoscaling.knative.dev/minScale: '1'
+        autoscaling.knative.dev/maxScale: '2'
+        run.googleapis.com/cpu-throttling: 'false'
+        run.googleapis.com/startup-cpu-boost: 'false'
+    spec:
+      containers:
+      - image: registry-backend-image-substitute
+        env: 
+        - name: DRIP_ENV
+          value: staging
+        - name: DB_CONNECTION_STRING
+          valueFrom:
+              secretKeyRef:
+                key: 1
+                name: STAGING_SUPABASE_CONNECTION_STRING
+        - name: PROJECT_ID
+          value: dreamboothy
+          # TODO(robinhuang): Switch to a list of strings
+        - name: CORS_ORIGIN
+          value: https://staging.comfyregistry.org
