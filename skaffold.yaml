@@ -1,12 +1,12 @@
 apiVersion: skaffold/v4beta2
 kind: Config
 metadata: 
-  name: deploy-run-quickstart
+  name: deploy-comfy-backend
 profiles:
-- name: dev
+- name: staging
   manifests:
     rawYaml:
-    - run-service-dev.yaml
+    - run-service-staging.yaml
 - name: prod
   manifests:
     rawYaml:

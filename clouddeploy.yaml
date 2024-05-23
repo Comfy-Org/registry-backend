@@ -5,8 +5,8 @@ metadata:
 description: main application pipeline
 serialPipeline:
   stages:
-  - targetId: dev-comfy-backend
-    profiles: [dev]
+  - targetId: staging-comfy-backend
+    profiles: [staging]
   - targetId: prod-comfy-backend
     profiles: [prod]
 ---
@@ -14,7 +14,7 @@ serialPipeline:
 apiVersion: deploy.cloud.google.com/v1
 kind: Target
 metadata:
-  name: dev-comfy-backend
+  name: staging-comfy-backend
 description: Cloud Run development service
 run:
   location: projects/dreamboothy/locations/us-central1

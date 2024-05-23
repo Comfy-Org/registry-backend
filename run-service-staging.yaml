@@ -1,9 +1,9 @@
-# Prod Cloud Run
+# Dev Cloud Run
 
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: prod-comfy-backend
+  name: staging-comfy-backend
 spec:
   template:
     metadata:
@@ -14,14 +14,14 @@ spec:
       - image: registry-backend-image-substitute
         env: 
         - name: DRIP_ENV
-          value: prod
+          value: staging
         - name: DB_CONNECTION_STRING
           valueFrom:
               secretKeyRef:
                 key: 1
-                name: PROD_SUPABASE_CONNECTION_STRING
+                name: STAGING_SUPABASE_CONNECTION_STRING
         - name: PROJECT_ID
           value: dreamboothy
-        # TODO(robinhuang): Switch to a list of strings
+          # TODO(robinhuang): Switch to a list of strings
         - name: CORS_ORIGIN
-          value: https://comfyregistry.org
+          value: https://staging.comfyregistry.org

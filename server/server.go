@@ -44,11 +44,8 @@ func (s *Server) Start() error {
 		AllowCredentials: true,
 		AllowOriginFunc: func(origin string) (bool, error) {
 			allowedOrigins := []string{
-				".drip.art",              // Any subdomain of drip.art
 				".comfyci.org",           // Any subdomain of comfyci.org
 				os.Getenv("CORS_ORIGIN"), // Environment-specific allowed origin
-				s.Config.SelfOrigin,      // Self-origin as configured
-				"http://127.0.0.1:8188",  // Localhost for development
 				".comfyregistry.org",
 			}
 

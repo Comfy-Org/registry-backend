@@ -18,23 +18,18 @@ import (
 func main() {
 	drip_logging.SetGlobalLogLevel(os.Getenv("LOG_LEVEL"))
 
-	host := os.Getenv("DB_HOST")
-	port := os.Getenv("DB_PORT")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-	dbname := os.Getenv("DB_NAME")
+	connection_string := os.Getenv("DB_CONNECTION_STRING")
 
 	config := config.Config{
-		ProjectID:  os.Getenv("PROJECT_ID"),
-		DripEnv:    os.Getenv("DRIP_ENV"),
-		SelfOrigin: os.Getenv("SELF_ORIGIN"),
+		ProjectID: os.Getenv("PROJECT_ID"),
+		DripEnv:   os.Getenv("DRIP_ENV"),
 	}
 
 	var dsn string
 	if os.Getenv("DRIP_ENV") == "localdev" {
-		dsn = fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=disable", host, port, user, dbname, password)
+		dsn = fmt.Sprintf("%s sslmode=disable", connection_string)
 	} else {
-		dsn = fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s", host, port, user, dbname, password)
+		dsn = connection_string
 	}
 
 	client, err := ent.Open("postgres", dsn)

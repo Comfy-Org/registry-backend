@@ -10,15 +10,10 @@ services:
       - ./:/app # Ensure this matches the working_dir
       - $HOME/.config/gcloud/application_default_credentials.json:/tmp/keys/application_default_credentials.json
     environment:
-      DB_HOST: host.docker.internal # Since we are running Supabase outside, we need to use the host.docker.internal to connect to the database.
-      DB_PORT: 54322
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: postgres
       DRIP_ENV: localdev
-      GOOGLE_APPLICATION_CREDENTIALS: /tmp/keys/application_default_credentials.json
+      DB_CONNECTION_STRING: "user=postgres password=postgres host=host.docker.internal port=54322 dbname=postgres"
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/keys/application_default_credentials.json # This will be set in prod by GCP.
       GOOGLE_CLOUD_PROJECT: "dreamboothy-dev" # This will be set in prod by GCP.
       PROJECT_ID: "dreamboothy-dev"
       CORS_ORIGIN: "http://localhost:3000"
-      SELF_ORIGIN: "http://localhost:8080"
       LOG_LEVEL: info # Set the log level here
