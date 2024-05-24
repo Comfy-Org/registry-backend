@@ -2,11 +2,17 @@
 
 The first service to receive API requests
 
-## Local Dev
+## Local Development
 
 ### Golang
 
+Install Golang:
+
 https://go.dev/doc/install
+
+Install go packages
+
+`go get`
 
 ### Supabase
 
@@ -30,9 +36,6 @@ These are needed for authenticating Firebase JWT token auth + calling other GCP 
 
 When testing login with registry, use this:
 `gcloud config set project dreamboothy-dev`
-
-When testing workspace / VM creation, use this:
-`gcloud config set project dreamboothy`
 
 `gcloud auth application-default login`
 
