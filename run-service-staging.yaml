@@ -4,6 +4,8 @@ apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
   name: staging-comfy-backend
+  annotations:
+    run.googleapis.com/minScale: '1'
 spec:
   template:
     metadata:
