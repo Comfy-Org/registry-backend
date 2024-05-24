@@ -1,6 +1,9 @@
 # registry-backend
 
-The first service to receive API requests
+The backend API server for [Comfy Registry](https://comfyregistry.org) and [Comfy CI/CD](https://comfyci.org).
+
+Registry React Frontend [Github](https://github.com/Comfy-Org/registry-web)
+Registry CLI [Github](https://github.com/yoland68/comfy-cli)
 
 ## Local Development
 
