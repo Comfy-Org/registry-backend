@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-const registrySlackChannelWebhook = "https://hooks.slack.com/services/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"
+const registrySlackChannelWebhook = "https://hooks.slack.com/services/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"
 
 type SlackService interface {
 	SendRegistryMessageToSlack(msg string) error
