@@ -18,9 +18,19 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-const MetricTypePrefix = "custom.googleapis.com/comfy_api_frontend"
+const (
+	MetricTypePrefix = "custom.googleapis.com/comfy_api_frontend"
+	batchInterval    = 30 * time.Second // Batch interval for sending metrics
+)
 
-var environment = os.Getenv("DRIP_ENV")
+var (
+	environment = os.Getenv("DRIP_ENV")
+	metricsCh   = make(chan *monitoringpb.TimeSeries, 1000)
+)
+
+func init() {
+	go processMetricsBatch()
+}
 
 // MetricsMiddleware creates a middleware to capture and send metrics for HTTP requests.
 func MetricsMiddleware(client *monitoring.MetricClient, config *config.Config) echo.MiddlewareFunc {
@@ -32,7 +42,7 @@ func MetricsMiddleware(client *monitoring.MetricClient, config *config.Config) e
 
 			// Generate metrics for the request duration, count, and errors.
 			if config.DripEnv != "localdev" {
-				sendMetrics(c.Request().Context(), client, config,
+				enqueueMetrics(
 					createDurationMetric(c, startTime, endTime),
 					createRequestMetric(c),
 					createErrorMetric(c, err),
@@ -79,26 +89,60 @@ func (e EndpointMetricKey) toLabels() map[string]string {
 	}
 }
 
-// sendMetrics sends a batch of time series data to Cloud Monitoring.
-func sendMetrics(
-	ctx context.Context,
-	client *monitoring.MetricClient,
-	config *config.Config,
-	series ...*monitoringpb.TimeSeries,
-) {
-	req := &monitoringpb.CreateTimeSeriesRequest{
-		Name:       "projects/" + config.ProjectID,
-		TimeSeries: make([]*monitoringpb.TimeSeries, 0, len(series)),
-	}
-
+func enqueueMetrics(series ...*monitoringpb.TimeSeries) {
 	for _, s := range series {
 		if s != nil {
-			req.TimeSeries = append(req.TimeSeries, s)
+			metricsCh <- s
 		}
+	}
+}
+
+func processMetricsBatch() {
+	ticker := time.NewTicker(batchInterval)
+	for range ticker.C {
+		sendBatchedMetrics()
+	}
+}
+
+func sendBatchedMetrics() {
+	var series []*monitoringpb.TimeSeries
+	for {
+		select {
+		case s := <-metricsCh:
+			series = append(series, s)
+			if len(series) >= 1000 {
+				sendMetrics(series)
+				series = nil
+			}
+		default:
+			if len(series) > 0 {
+				sendMetrics(series)
+			}
+			return
+		}
+	}
+}
+
+func sendMetrics(series []*monitoringpb.TimeSeries) {
+	if len(series) == 0 {
+		return
+	}
+
+	ctx := context.Background()
+	client, err := monitoring.NewMetricClient(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create metric client")
+		return
+	}
+	defer client.Close()
+
+	req := &monitoringpb.CreateTimeSeriesRequest{
+		Name:       "projects/" + os.Getenv("PROJECT_ID"),
+		TimeSeries: series,
 	}
 
 	if err := client.CreateTimeSeries(ctx, req); err != nil {
-		log.Ctx(ctx).Error().Err(err).Msg("Failed to create time series")
+		log.Error().Err(err).Msg("Failed to create time series")
 	}
 }
 
