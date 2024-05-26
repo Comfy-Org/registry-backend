@@ -11,9 +11,9 @@ steps:
     entrypoint: "bash"
     args:
       - "-c"
-      - |
+      - | 
         curl -sSL https://atlasgo.sh | sh
-        atlas migrate apply --dir "file://ent/migrate/migrations" --url "$STAGING_DB_CONNECTION_STRING"
+        atlas migrate apply --dir "file://ent/migrate/migrations" --url $STAGING_DB_CONNECTION_STRING
 
   # Publish the release
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:458.0.1'
@@ -26,9 +26,11 @@ steps:
       --region=us-central1
       --delivery-pipeline=comfy-backend-api-pipeline
       --images=registry-backend-image-substitute=us-central1-docker.pkg.dev/dreamboothy/registry-backend/registry-backend-image:$SHORT_SHA
-options:
-  machineType: 'E2_HIGHCPU_8'
+
 availableSecrets:
   secretManager:
-    - versionName: projects/dreamboothy/secrets/STAGING_DB_CONNECTION_STRING/versions/latest
+    - versionName: projects/357148958219/secrets/STAGING_SUPABASE_CONNECTION_STRING/versions/latest
       env: 'STAGING_DB_CONNECTION_STRING'
+
+options:
+  machineType: 'E2_HIGHCPU_8'
