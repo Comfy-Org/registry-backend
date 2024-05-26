@@ -12,7 +12,7 @@ steps:
     args:
       - "-c"
       - |
-        STAGING_SUPABASE_CONNECTION_STRING=$(gcloud secrets versions access latest --secret=STAGING_SUPABASE_CONNECTION_STRING)
+        STAGING_SUPABASE_CONNECTION_STRING=$(gcloud secrets versions access latest --secret="STAGING_SUPABASE_CONNECTION_STRING")
         export STAGING_SUPABASE_CONNECTION_STRING=$STAGING_SUPABASE_CONNECTION_STRING
 
   # Install Atlas
