@@ -1,12 +1,10 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"registry-backend/config"
 	"registry-backend/ent"
-	"registry-backend/ent/migrate"
 	drip_logging "registry-backend/logging"
 	"registry-backend/server"
 
@@ -39,13 +37,13 @@ func main() {
 	}
 	defer client.Close()
 	// Run the auto migration tool for localdev.
-	if os.Getenv("DRIP_ENV") == "localdev" || os.Getenv("DRIP_ENV") == "staging" {
-		log.Info().Msg("Running migrations")
-		if err := client.Schema.Create(context.Background(), migrate.WithDropIndex(true),
-			migrate.WithDropColumn(true)); err != nil {
-			log.Fatal().Err(err).Msg("failed creating schema resources.")
-		}
-	}
+	//if os.Getenv("DRIP_ENV") == "localdev" || os.Getenv("DRIP_ENV") == "staging" {
+	//	log.Info().Msg("Running migrations")
+	//	if err := client.Schema.Create(context.Background(), migrate.WithDropIndex(true),
+	//		migrate.WithDropColumn(true)); err != nil {
+	//		log.Fatal().Err(err).Msg("failed creating schema resources.")
+	//	}
+	//}
 
 	server := server.NewServer(client, &config)
 	server.Start()

@@ -5,6 +5,32 @@ steps:
     # push container image
   - name: "gcr.io/cloud-builders/docker"
     args: ["push", "us-central1-docker.pkg.dev/dreamboothy/registry-backend/registry-backend-image:$SHORT_SHA"]
+
+  # Fetch the database connection string secret for staging
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        STAGING_SUPABASE_CONNECTION_STRING=$(gcloud secrets versions access latest --secret=STAGING_SUPABASE_CONNECTION_STRING)
+        export STAGING_SUPABASE_CONNECTION_STRING=$STAGING_SUPABASE_CONNECTION_STRING
+
+  # Install Atlas
+  - name: 'gcr.io/cloud-builders/curl'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        curl -sSL https://atlasgo.sh | sh
+
+  # Run database migrations on staging environment
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:latest'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        atlas migrate apply --dir "ent/migrate/migrations" --url "$STAGING_SUPABASE_CONNECTION_STRING"
+
   # Publish the release
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:458.0.1'
     entrypoint: 'bash'
