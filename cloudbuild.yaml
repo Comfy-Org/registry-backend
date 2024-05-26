@@ -6,13 +6,12 @@ steps:
   - name: "gcr.io/cloud-builders/docker"
     args: ["push", "us-central1-docker.pkg.dev/dreamboothy/registry-backend/registry-backend-image:$SHORT_SHA"]
 
-  # Step 3: Fetch the secret and run database migrations for staging
+  # Step 3: Run database migrations for staging
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: "bash"
     args:
       - "-c"
       - |
-        STAGING_DB_CONNECTION_STRING=$(gcloud secrets versions access latest --secret=STAGING_DB_CONNECTION_STRING)
         curl -sSL https://atlasgo.sh | sh
         atlas migrate apply --dir "file://ent/migrate/migrations" --url "$STAGING_DB_CONNECTION_STRING"
 
@@ -29,3 +28,7 @@ steps:
       --images=registry-backend-image-substitute=us-central1-docker.pkg.dev/dreamboothy/registry-backend/registry-backend-image:$SHORT_SHA
 options:
   machineType: 'E2_HIGHCPU_8'
+availableSecrets:
+  secretManager:
+    - versionName: projects/dreamboothy/secrets/STAGING_DB_CONNECTION_STRING/versions/latest
+      env: 'STAGING_DB_CONNECTION_STRING'
