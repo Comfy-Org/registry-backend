@@ -1,38 +1,42 @@
 steps:
-  # build the container image
-  - name: "gcr.io/cloud-builders/docker"
-    args: ["build", "-t", "us-central1-docker.pkg.dev/dreamboothy/registry-backend/registry-backend-image:$SHORT_SHA", "."]
-    # push container image
-  - name: "gcr.io/cloud-builders/docker"
-    args: ["push", "us-central1-docker.pkg.dev/dreamboothy/registry-backend/registry-backend-image:$SHORT_SHA"]
-
-  # Clone the GitHub repository
+  # Step 1: Clone the GitHub repository
   - name: "gcr.io/cloud-builders/git"
-    args: [ "clone", "git@github.com:Comfy-Org/registry-backend.git", "." ]
+    args: ["clone", "https://github.com/your-github-username/your-repo-name.git", "."]
     dir: "/workspace"
 
-  # Run database migrations for staging
+  # Step 2: Build the container image
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["build", "-t", "us-central1-docker.pkg.dev/dreamboothy/registry-backend/registry-backend-image:$SHORT_SHA", "."]
+    dir: "/workspace"
+
+  # Step 3: Push the container image
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "us-central1-docker.pkg.dev/dreamboothy/registry-backend/registry-backend-image:$SHORT_SHA"]
+    dir: "/workspace"
+
+  # Step 4: Run database migrations for staging
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: "bash"
     args:
       - "-c"
-      - | 
+      - |
         curl -sSL https://atlasgo.sh | sh
-        atlas migrate apply --dir "file://ent/migrate/migrations" --url $$STAGING_DB_CONNECTION_STRING
+        atlas migrate apply --dir "file:///workspace/ent/migrate/migrations" --url $STAGING_DB_CONNECTION_STRING
     secretEnv: ['STAGING_DB_CONNECTION_STRING']
-    dir: "/workspace/registry-backend"
+    dir: "/workspace"
 
-  # Publish the release
+  # Step 5: Publish the release
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:458.0.1'
     entrypoint: 'bash'
     args:
-    - '-c'
-    - > 
-      gcloud deploy releases create release-registry-backend-$SHORT_SHA
-      --project=dreamboothy
-      --region=us-central1
-      --delivery-pipeline=comfy-backend-api-pipeline
-      --images=registry-backend-image-substitute=us-central1-docker.pkg.dev/dreamboothy/registry-backend/registry-backend-image:$SHORT_SHA
+      - '-c'
+      - >
+        gcloud deploy releases create release-registry-backend-$SHORT_SHA
+        --project=dreamboothy
+        --region=us-central1
+        --delivery-pipeline=comfy-backend-api-pipeline
+        --images=registry-backend-image-substitute=us-central1-docker.pkg.dev/dreamboothy/registry-backend/registry-backend-image:$SHORT_SHA
+    dir: "/workspace"
 
 availableSecrets:
   secretManager:
