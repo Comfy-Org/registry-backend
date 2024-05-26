@@ -21,7 +21,7 @@ steps:
       - "-c"
       - |
         curl -sSL https://atlasgo.sh | sh
-        atlas migrate apply --dir "file:///workspace/ent/migrate/migrations" --url $STAGING_DB_CONNECTION_STRING
+        atlas migrate apply --dir "file:///workspace/ent/migrate/migrations" --url $$STAGING_DB_CONNECTION_STRING
     secretEnv: ['STAGING_DB_CONNECTION_STRING']
     dir: "/workspace"
 
