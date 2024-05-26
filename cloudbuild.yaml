@@ -13,7 +13,8 @@ steps:
       - "-c"
       - | 
         curl -sSL https://atlasgo.sh | sh
-        atlas migrate apply --dir "file://ent/migrate/migrations" --url $STAGING_DB_CONNECTION_STRING
+        atlas migrate apply --dir "file://ent/migrate/migrations" --url $$STAGING_DB_CONNECTION_STRING
+    secretEnv: ['STAGING_DB_CONNECTION_STRING']
 
   # Publish the release
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:458.0.1'
