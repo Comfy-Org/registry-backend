@@ -19,8 +19,9 @@ func main() {
 	connection_string := os.Getenv("DB_CONNECTION_STRING")
 
 	config := config.Config{
-		ProjectID: os.Getenv("PROJECT_ID"),
-		DripEnv:   os.Getenv("DRIP_ENV"),
+		ProjectID:                   os.Getenv("PROJECT_ID"),
+		DripEnv:                     os.Getenv("DRIP_ENV"),
+		SlackRegistryChannelWebhook: os.Getenv("SLACK_REGISTRY_CHANNEL_WEBHOOK"),
 	}
 
 	var dsn string

@@ -22,6 +22,11 @@ spec:
               secretKeyRef:
                 key: 1
                 name: PROD_SUPABASE_CONNECTION_STRING
+        - name: SLACK_REGISTRY_CHANNEL_WEBHOOK
+          valueFrom:
+              secretKeyRef:
+                key: 1
+                name: PROD_SLACK_REGISTRY_CHANNEL_WEBHOOK
         - name: PROJECT_ID
           value: dreamboothy
         # TODO(robinhuang): Switch to a list of strings
