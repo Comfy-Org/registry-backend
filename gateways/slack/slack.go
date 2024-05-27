@@ -5,19 +5,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"registry-backend/config"
 )
-
-const registrySlackChannelWebhook = "https://hooks.slack.com/services/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"
 
 type SlackService interface {
 	SendRegistryMessageToSlack(msg string) error
 }
 
 type DripSlackService struct {
+	registrySlackChannelWebhook string
+	config                      *config.Config
 }
 
-func NewSlackService() *DripSlackService {
-	return &DripSlackService{}
+func NewSlackService(config *config.Config) *DripSlackService {
+	return &DripSlackService{
+		config:                      config,
+		registrySlackChannelWebhook: config.SlackRegistryChannelWebhook,
+	}
 
 }
 
@@ -26,10 +30,18 @@ type slackRequestBody struct {
 }
 
 func (s *DripSlackService) SendRegistryMessageToSlack(msg string) error {
-	return sendSlackNotification(msg, registrySlackChannelWebhook)
+	if s.config.DripEnv == "prod" {
+		return sendSlackNotification(msg, s.registrySlackChannelWebhook)
+	}
+	return nil
 }
 
 func sendSlackNotification(msg string, slackWebhookURL string) error {
+	if slackWebhookURL == "" {
+		println("No Slack webhook URL provided, skipping sending message to Slack")
+		return nil
+	}
+
 	body, err := json.Marshal(slackRequestBody{Text: msg})
 	if err != nil {
 		return err

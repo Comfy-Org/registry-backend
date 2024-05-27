@@ -82,7 +82,7 @@ func (s *Server) Start() error {
 		return err
 	}
 
-	slackService := gateway.NewSlackService()
+	slackService := gateway.NewSlackService(s.Config)
 
 	mon, err := monitoring.NewMetricClient(context.Background())
 	if err != nil {
