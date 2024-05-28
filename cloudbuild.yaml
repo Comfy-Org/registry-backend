@@ -23,6 +23,17 @@ steps:
     secretEnv: ['STAGING_DB_CONNECTION_STRING']
     dir: "/workspace/registry-backend"
 
+  # Run database migrations for prod
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        curl -sSL https://atlasgo.sh | sh
+        atlas migrate apply --dir "file://ent/migrate/migrations" --url PROD_SUPABASE_CONNECTION_STRING
+    secretEnv: [ 'PROD_SUPABASE_CONNECTION_STRING' ]
+    dir: "/workspace/registry-backend"
+
   # Publish the release
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:458.0.1'
     entrypoint: 'bash'
@@ -39,6 +50,8 @@ availableSecrets:
   secretManager:
     - versionName: projects/357148958219/secrets/STAGING_SUPABASE_CONNECTION_STRING/versions/latest
       env: 'STAGING_DB_CONNECTION_STRING'
+    - versionName: projects/357148958219/secrets/PROD_SUPABASE_CONNECTION_STRING/versions/latest
+      env: 'PROD_SUPABASE_CONNECTION_STRING'
 
 options:
   machineType: 'E2_HIGHCPU_8'
