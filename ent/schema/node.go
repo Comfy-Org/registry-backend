@@ -45,7 +45,7 @@ func (Node) Fields() []ent.Field {
 		}).Default([]string{}),
 		field.Strings("test_field").SchemaType(map[string]string{
 			dialect.Postgres: "text",
-		}).Default([]string{}),
+		}).Default([]string{}).Optional(),
 	}
 }
 

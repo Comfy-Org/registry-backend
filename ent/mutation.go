@@ -2686,10 +2686,24 @@ func (m *NodeMutation) AppendedTestField() ([]string, bool) {
 	return m.appendtest_field, true
 }
 
+// ClearTestField clears the value of the "test_field" field.
+func (m *NodeMutation) ClearTestField() {
+	m.test_field = nil
+	m.appendtest_field = nil
+	m.clearedFields[node.FieldTestField] = struct{}{}
+}
+
+// TestFieldCleared returns if the "test_field" field was cleared in this mutation.
+func (m *NodeMutation) TestFieldCleared() bool {
+	_, ok := m.clearedFields[node.FieldTestField]
+	return ok
+}
+
 // ResetTestField resets all changes to the "test_field" field.
 func (m *NodeMutation) ResetTestField() {
 	m.test_field = nil
 	m.appendtest_field = nil
+	delete(m.clearedFields, node.FieldTestField)
 }
 
 // ClearPublisher clears the "publisher" edge to the Publisher entity.
@@ -3027,6 +3041,9 @@ func (m *NodeMutation) ClearedFields() []string {
 	if m.FieldCleared(node.FieldIconURL) {
 		fields = append(fields, node.FieldIconURL)
 	}
+	if m.FieldCleared(node.FieldTestField) {
+		fields = append(fields, node.FieldTestField)
+	}
 	return fields
 }
 
@@ -3049,6 +3066,9 @@ func (m *NodeMutation) ClearField(name string) error {
 		return nil
 	case node.FieldIconURL:
 		m.ClearIconURL()
+		return nil
+	case node.FieldTestField:
+		m.ClearTestField()
 		return nil
 	}
 	return fmt.Errorf("unknown Node nullable field %s", name)

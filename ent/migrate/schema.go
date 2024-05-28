@@ -82,7 +82,7 @@ var (
 		{Name: "repository_url", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "icon_url", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "tags", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "text"}},
-		{Name: "test_field", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "test_field", Type: field.TypeJSON, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "publisher_id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 	}
 	// NodesTable holds the schema information for the "nodes" table.
