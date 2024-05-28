@@ -1,2 +1,2 @@
 -- Modify "nodes" table
-ALTER TABLE "nodes" ADD COLUMN "test_field" text NOT NULL;
+ALTER TABLE "nodes" ADD COLUMN "test_field" text;

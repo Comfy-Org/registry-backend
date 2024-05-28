@@ -234,9 +234,6 @@ func (nc *NodeCreate) check() error {
 	if _, ok := nc.mutation.Tags(); !ok {
 		return &ValidationError{Name: "tags", err: errors.New(`ent: missing required field "Node.tags"`)}
 	}
-	if _, ok := nc.mutation.TestField(); !ok {
-		return &ValidationError{Name: "test_field", err: errors.New(`ent: missing required field "Node.test_field"`)}
-	}
 	if _, ok := nc.mutation.PublisherID(); !ok {
 		return &ValidationError{Name: "publisher", err: errors.New(`ent: missing required edge "Node.publisher"`)}
 	}
@@ -539,6 +536,12 @@ func (u *NodeUpsert) UpdateTestField() *NodeUpsert {
 	return u
 }
 
+// ClearTestField clears the value of the "test_field" field.
+func (u *NodeUpsert) ClearTestField() *NodeUpsert {
+	u.SetNull(node.FieldTestField)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -748,6 +751,13 @@ func (u *NodeUpsertOne) SetTestField(v []string) *NodeUpsertOne {
 func (u *NodeUpsertOne) UpdateTestField() *NodeUpsertOne {
 	return u.Update(func(s *NodeUpsert) {
 		s.UpdateTestField()
+	})
+}
+
+// ClearTestField clears the value of the "test_field" field.
+func (u *NodeUpsertOne) ClearTestField() *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.ClearTestField()
 	})
 }
 
@@ -1127,6 +1137,13 @@ func (u *NodeUpsertBulk) SetTestField(v []string) *NodeUpsertBulk {
 func (u *NodeUpsertBulk) UpdateTestField() *NodeUpsertBulk {
 	return u.Update(func(s *NodeUpsert) {
 		s.UpdateTestField()
+	})
+}
+
+// ClearTestField clears the value of the "test_field" field.
+func (u *NodeUpsertBulk) ClearTestField() *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.ClearTestField()
 	})
 }
 
