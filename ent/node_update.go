@@ -166,24 +166,6 @@ func (nu *NodeUpdate) AppendTags(s []string) *NodeUpdate {
 	return nu
 }
 
-// SetTestField sets the "test_field" field.
-func (nu *NodeUpdate) SetTestField(s []string) *NodeUpdate {
-	nu.mutation.SetTestField(s)
-	return nu
-}
-
-// AppendTestField appends s to the "test_field" field.
-func (nu *NodeUpdate) AppendTestField(s []string) *NodeUpdate {
-	nu.mutation.AppendTestField(s)
-	return nu
-}
-
-// ClearTestField clears the value of the "test_field" field.
-func (nu *NodeUpdate) ClearTestField() *NodeUpdate {
-	nu.mutation.ClearTestField()
-	return nu
-}
-
 // SetPublisher sets the "publisher" edge to the Publisher entity.
 func (nu *NodeUpdate) SetPublisher(p *Publisher) *NodeUpdate {
 	return nu.SetPublisherID(p.ID)
@@ -329,17 +311,6 @@ func (nu *NodeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, node.FieldTags, value)
 		})
-	}
-	if value, ok := nu.mutation.TestField(); ok {
-		_spec.SetField(node.FieldTestField, field.TypeJSON, value)
-	}
-	if value, ok := nu.mutation.AppendedTestField(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, node.FieldTestField, value)
-		})
-	}
-	if nu.mutation.TestFieldCleared() {
-		_spec.ClearField(node.FieldTestField, field.TypeJSON)
 	}
 	if nu.mutation.PublisherCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -569,24 +540,6 @@ func (nuo *NodeUpdateOne) AppendTags(s []string) *NodeUpdateOne {
 	return nuo
 }
 
-// SetTestField sets the "test_field" field.
-func (nuo *NodeUpdateOne) SetTestField(s []string) *NodeUpdateOne {
-	nuo.mutation.SetTestField(s)
-	return nuo
-}
-
-// AppendTestField appends s to the "test_field" field.
-func (nuo *NodeUpdateOne) AppendTestField(s []string) *NodeUpdateOne {
-	nuo.mutation.AppendTestField(s)
-	return nuo
-}
-
-// ClearTestField clears the value of the "test_field" field.
-func (nuo *NodeUpdateOne) ClearTestField() *NodeUpdateOne {
-	nuo.mutation.ClearTestField()
-	return nuo
-}
-
 // SetPublisher sets the "publisher" edge to the Publisher entity.
 func (nuo *NodeUpdateOne) SetPublisher(p *Publisher) *NodeUpdateOne {
 	return nuo.SetPublisherID(p.ID)
@@ -762,17 +715,6 @@ func (nuo *NodeUpdateOne) sqlSave(ctx context.Context) (_node *Node, err error) 
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, node.FieldTags, value)
 		})
-	}
-	if value, ok := nuo.mutation.TestField(); ok {
-		_spec.SetField(node.FieldTestField, field.TypeJSON, value)
-	}
-	if value, ok := nuo.mutation.AppendedTestField(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, node.FieldTestField, value)
-		})
-	}
-	if nuo.mutation.TestFieldCleared() {
-		_spec.ClearField(node.FieldTestField, field.TypeJSON)
 	}
 	if nuo.mutation.PublisherCleared() {
 		edge := &sqlgraph.EdgeSpec{

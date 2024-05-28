@@ -82,7 +82,6 @@ var (
 		{Name: "repository_url", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "icon_url", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "tags", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "text"}},
-		{Name: "test_field", Type: field.TypeJSON, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "publisher_id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 	}
 	// NodesTable holds the schema information for the "nodes" table.
@@ -93,7 +92,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "nodes_publishers_nodes",
-				Columns:    []*schema.Column{NodesColumns[11]},
+				Columns:    []*schema.Column{NodesColumns[10]},
 				RefColumns: []*schema.Column{PublishersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

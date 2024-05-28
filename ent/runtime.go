@@ -78,10 +78,6 @@ func init() {
 	nodeDescTags := nodeFields[8].Descriptor()
 	// node.DefaultTags holds the default value on creation for the tags field.
 	node.DefaultTags = nodeDescTags.Default.([]string)
-	// nodeDescTestField is the schema descriptor for test_field field.
-	nodeDescTestField := nodeFields[9].Descriptor()
-	// node.DefaultTestField holds the default value on creation for the test_field field.
-	node.DefaultTestField = nodeDescTestField.Default.([]string)
 	nodeversionMixin := schema.NodeVersion{}.Mixin()
 	nodeversionMixinFields0 := nodeversionMixin[0].Fields()
 	_ = nodeversionMixinFields0
