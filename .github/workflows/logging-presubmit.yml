@@ -1,4 +1,4 @@
-name: semgrep
+name: Logging check
 on:
   push:
     branches:

@@ -39,6 +39,8 @@ type Node struct {
 	IconURL string `json:"icon_url,omitempty"`
 	// Tags holds the value of the "tags" field.
 	Tags []string `json:"tags,omitempty"`
+	// TestField holds the value of the "test_field" field.
+	TestField []string `json:"test_field,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the NodeQuery when eager-loading is set.
 	Edges        NodeEdges `json:"edges"`
@@ -81,7 +83,7 @@ func (*Node) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case node.FieldTags:
+		case node.FieldTags, node.FieldTestField:
 			values[i] = new([]byte)
 		case node.FieldID, node.FieldPublisherID, node.FieldName, node.FieldDescription, node.FieldAuthor, node.FieldLicense, node.FieldRepositoryURL, node.FieldIconURL:
 			values[i] = new(sql.NullString)
@@ -170,6 +172,14 @@ func (n *Node) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field tags: %w", err)
 				}
 			}
+		case node.FieldTestField:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field test_field", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &n.TestField); err != nil {
+					return fmt.Errorf("unmarshal field test_field: %w", err)
+				}
+			}
 		default:
 			n.selectValues.Set(columns[i], values[i])
 		}
@@ -245,6 +255,9 @@ func (n *Node) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("tags=")
 	builder.WriteString(fmt.Sprintf("%v", n.Tags))
+	builder.WriteString(", ")
+	builder.WriteString("test_field=")
+	builder.WriteString(fmt.Sprintf("%v", n.TestField))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -43,6 +43,9 @@ func (Node) Fields() []ent.Field {
 		field.Strings("tags").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}).Default([]string{}),
+		field.Strings("test_field").SchemaType(map[string]string{
+			dialect.Postgres: "text",
+		}).Default([]string{}),
 	}
 }
 

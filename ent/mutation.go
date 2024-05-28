@@ -2110,6 +2110,8 @@ type NodeMutation struct {
 	icon_url         *string
 	tags             *[]string
 	appendtags       []string
+	test_field       *[]string
+	appendtest_field []string
 	clearedFields    map[string]struct{}
 	publisher        *string
 	clearedpublisher bool
@@ -2639,6 +2641,57 @@ func (m *NodeMutation) ResetTags() {
 	m.appendtags = nil
 }
 
+// SetTestField sets the "test_field" field.
+func (m *NodeMutation) SetTestField(s []string) {
+	m.test_field = &s
+	m.appendtest_field = nil
+}
+
+// TestField returns the value of the "test_field" field in the mutation.
+func (m *NodeMutation) TestField() (r []string, exists bool) {
+	v := m.test_field
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTestField returns the old "test_field" field's value of the Node entity.
+// If the Node object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NodeMutation) OldTestField(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTestField is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTestField requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTestField: %w", err)
+	}
+	return oldValue.TestField, nil
+}
+
+// AppendTestField adds s to the "test_field" field.
+func (m *NodeMutation) AppendTestField(s []string) {
+	m.appendtest_field = append(m.appendtest_field, s...)
+}
+
+// AppendedTestField returns the list of values that were appended to the "test_field" field in this mutation.
+func (m *NodeMutation) AppendedTestField() ([]string, bool) {
+	if len(m.appendtest_field) == 0 {
+		return nil, false
+	}
+	return m.appendtest_field, true
+}
+
+// ResetTestField resets all changes to the "test_field" field.
+func (m *NodeMutation) ResetTestField() {
+	m.test_field = nil
+	m.appendtest_field = nil
+}
+
 // ClearPublisher clears the "publisher" edge to the Publisher entity.
 func (m *NodeMutation) ClearPublisher() {
 	m.clearedpublisher = true
@@ -2754,7 +2807,7 @@ func (m *NodeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NodeMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.create_time != nil {
 		fields = append(fields, node.FieldCreateTime)
 	}
@@ -2785,6 +2838,9 @@ func (m *NodeMutation) Fields() []string {
 	if m.tags != nil {
 		fields = append(fields, node.FieldTags)
 	}
+	if m.test_field != nil {
+		fields = append(fields, node.FieldTestField)
+	}
 	return fields
 }
 
@@ -2813,6 +2869,8 @@ func (m *NodeMutation) Field(name string) (ent.Value, bool) {
 		return m.IconURL()
 	case node.FieldTags:
 		return m.Tags()
+	case node.FieldTestField:
+		return m.TestField()
 	}
 	return nil, false
 }
@@ -2842,6 +2900,8 @@ func (m *NodeMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldIconURL(ctx)
 	case node.FieldTags:
 		return m.OldTags(ctx)
+	case node.FieldTestField:
+		return m.OldTestField(ctx)
 	}
 	return nil, fmt.Errorf("unknown Node field %s", name)
 }
@@ -2920,6 +2980,13 @@ func (m *NodeMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTags(v)
+		return nil
+	case node.FieldTestField:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTestField(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Node field %s", name)
@@ -3020,6 +3087,9 @@ func (m *NodeMutation) ResetField(name string) error {
 		return nil
 	case node.FieldTags:
 		m.ResetTags()
+		return nil
+	case node.FieldTestField:
+		m.ResetTestField()
 		return nil
 	}
 	return fmt.Errorf("unknown Node field %s", name)
