@@ -30,7 +30,7 @@ steps:
       - "-c"
       - |
         curl -sSL https://atlasgo.sh | sh
-        atlas migrate apply --dir "file://ent/migrate/migrations" --url PROD_SUPABASE_CONNECTION_STRING
+        atlas migrate apply --dir "file://ent/migrate/migrations" --url $$PROD_SUPABASE_CONNECTION_STRING
     secretEnv: [ 'PROD_SUPABASE_CONNECTION_STRING' ]
     dir: "/workspace/registry-backend"
 
