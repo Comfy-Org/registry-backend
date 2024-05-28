@@ -34,8 +34,6 @@ const (
 	FieldIconURL = "icon_url"
 	// FieldTags holds the string denoting the tags field in the database.
 	FieldTags = "tags"
-	// FieldTestField holds the string denoting the test_field field in the database.
-	FieldTestField = "test_field"
 	// EdgePublisher holds the string denoting the publisher edge name in mutations.
 	EdgePublisher = "publisher"
 	// EdgeVersions holds the string denoting the versions edge name in mutations.
@@ -71,7 +69,6 @@ var Columns = []string{
 	FieldRepositoryURL,
 	FieldIconURL,
 	FieldTags,
-	FieldTestField,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -93,8 +90,6 @@ var (
 	UpdateDefaultUpdateTime func() time.Time
 	// DefaultTags holds the default value on creation for the "tags" field.
 	DefaultTags []string
-	// DefaultTestField holds the default value on creation for the "test_field" field.
-	DefaultTestField []string
 )
 
 // OrderOption defines the ordering options for the Node queries.

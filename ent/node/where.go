@@ -675,16 +675,6 @@ func IconURLContainsFold(v string) predicate.Node {
 	return predicate.Node(sql.FieldContainsFold(FieldIconURL, v))
 }
 
-// TestFieldIsNil applies the IsNil predicate on the "test_field" field.
-func TestFieldIsNil() predicate.Node {
-	return predicate.Node(sql.FieldIsNull(FieldTestField))
-}
-
-// TestFieldNotNil applies the NotNil predicate on the "test_field" field.
-func TestFieldNotNil() predicate.Node {
-	return predicate.Node(sql.FieldNotNull(FieldTestField))
-}
-
 // HasPublisher applies the HasEdge predicate on the "publisher" edge.
 func HasPublisher() predicate.Node {
 	return predicate.Node(func(s *sql.Selector) {
