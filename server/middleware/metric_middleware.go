@@ -20,7 +20,7 @@ import (
 
 const (
 	MetricTypePrefix = "custom.googleapis.com/comfy_api_frontend"
-	batchInterval    = 30 * time.Second // Batch interval for sending metrics
+	batchInterval    = 5 * time.Minute // Batch interval for sending metrics
 )
 
 var (
@@ -131,7 +131,7 @@ func sendMetrics(series []*monitoringpb.TimeSeries) {
 	ctx := context.Background()
 	client, err := monitoring.NewMetricClient(ctx)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to create metric client")
+		log.Ctx(ctx).Error().Err(err).Msg("Failed to create metric client")
 		return
 	}
 	defer client.Close()
@@ -142,7 +142,7 @@ func sendMetrics(series []*monitoringpb.TimeSeries) {
 	}
 
 	if err := client.CreateTimeSeries(ctx, req); err != nil {
-		log.Error().Err(err).Msg("Failed to create time series")
+		log.Ctx(ctx).Error().Err(err).Msg("Failed to create time series")
 	}
 }
 
