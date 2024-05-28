@@ -166,6 +166,18 @@ func (nu *NodeUpdate) AppendTags(s []string) *NodeUpdate {
 	return nu
 }
 
+// SetTestField sets the "test_field" field.
+func (nu *NodeUpdate) SetTestField(s []string) *NodeUpdate {
+	nu.mutation.SetTestField(s)
+	return nu
+}
+
+// AppendTestField appends s to the "test_field" field.
+func (nu *NodeUpdate) AppendTestField(s []string) *NodeUpdate {
+	nu.mutation.AppendTestField(s)
+	return nu
+}
+
 // SetPublisher sets the "publisher" edge to the Publisher entity.
 func (nu *NodeUpdate) SetPublisher(p *Publisher) *NodeUpdate {
 	return nu.SetPublisherID(p.ID)
@@ -310,6 +322,14 @@ func (nu *NodeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := nu.mutation.AppendedTags(); ok {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, node.FieldTags, value)
+		})
+	}
+	if value, ok := nu.mutation.TestField(); ok {
+		_spec.SetField(node.FieldTestField, field.TypeJSON, value)
+	}
+	if value, ok := nu.mutation.AppendedTestField(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, node.FieldTestField, value)
 		})
 	}
 	if nu.mutation.PublisherCleared() {
@@ -540,6 +560,18 @@ func (nuo *NodeUpdateOne) AppendTags(s []string) *NodeUpdateOne {
 	return nuo
 }
 
+// SetTestField sets the "test_field" field.
+func (nuo *NodeUpdateOne) SetTestField(s []string) *NodeUpdateOne {
+	nuo.mutation.SetTestField(s)
+	return nuo
+}
+
+// AppendTestField appends s to the "test_field" field.
+func (nuo *NodeUpdateOne) AppendTestField(s []string) *NodeUpdateOne {
+	nuo.mutation.AppendTestField(s)
+	return nuo
+}
+
 // SetPublisher sets the "publisher" edge to the Publisher entity.
 func (nuo *NodeUpdateOne) SetPublisher(p *Publisher) *NodeUpdateOne {
 	return nuo.SetPublisherID(p.ID)
@@ -714,6 +746,14 @@ func (nuo *NodeUpdateOne) sqlSave(ctx context.Context) (_node *Node, err error) 
 	if value, ok := nuo.mutation.AppendedTags(); ok {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, node.FieldTags, value)
+		})
+	}
+	if value, ok := nuo.mutation.TestField(); ok {
+		_spec.SetField(node.FieldTestField, field.TypeJSON, value)
+	}
+	if value, ok := nuo.mutation.AppendedTestField(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, node.FieldTestField, value)
 		})
 	}
 	if nuo.mutation.PublisherCleared() {

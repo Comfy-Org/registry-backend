@@ -126,6 +126,12 @@ func (nc *NodeCreate) SetTags(s []string) *NodeCreate {
 	return nc
 }
 
+// SetTestField sets the "test_field" field.
+func (nc *NodeCreate) SetTestField(s []string) *NodeCreate {
+	nc.mutation.SetTestField(s)
+	return nc
+}
+
 // SetID sets the "id" field.
 func (nc *NodeCreate) SetID(s string) *NodeCreate {
 	nc.mutation.SetID(s)
@@ -199,6 +205,10 @@ func (nc *NodeCreate) defaults() {
 		v := node.DefaultTags
 		nc.mutation.SetTags(v)
 	}
+	if _, ok := nc.mutation.TestField(); !ok {
+		v := node.DefaultTestField
+		nc.mutation.SetTestField(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -223,6 +233,9 @@ func (nc *NodeCreate) check() error {
 	}
 	if _, ok := nc.mutation.Tags(); !ok {
 		return &ValidationError{Name: "tags", err: errors.New(`ent: missing required field "Node.tags"`)}
+	}
+	if _, ok := nc.mutation.TestField(); !ok {
+		return &ValidationError{Name: "test_field", err: errors.New(`ent: missing required field "Node.test_field"`)}
 	}
 	if _, ok := nc.mutation.PublisherID(); !ok {
 		return &ValidationError{Name: "publisher", err: errors.New(`ent: missing required edge "Node.publisher"`)}
@@ -298,6 +311,10 @@ func (nc *NodeCreate) createSpec() (*Node, *sqlgraph.CreateSpec) {
 	if value, ok := nc.mutation.Tags(); ok {
 		_spec.SetField(node.FieldTags, field.TypeJSON, value)
 		_node.Tags = value
+	}
+	if value, ok := nc.mutation.TestField(); ok {
+		_spec.SetField(node.FieldTestField, field.TypeJSON, value)
+		_node.TestField = value
 	}
 	if nodes := nc.mutation.PublisherIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -510,6 +527,18 @@ func (u *NodeUpsert) UpdateTags() *NodeUpsert {
 	return u
 }
 
+// SetTestField sets the "test_field" field.
+func (u *NodeUpsert) SetTestField(v []string) *NodeUpsert {
+	u.Set(node.FieldTestField, v)
+	return u
+}
+
+// UpdateTestField sets the "test_field" field to the value that was provided on create.
+func (u *NodeUpsert) UpdateTestField() *NodeUpsert {
+	u.SetExcluded(node.FieldTestField)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -705,6 +734,20 @@ func (u *NodeUpsertOne) SetTags(v []string) *NodeUpsertOne {
 func (u *NodeUpsertOne) UpdateTags() *NodeUpsertOne {
 	return u.Update(func(s *NodeUpsert) {
 		s.UpdateTags()
+	})
+}
+
+// SetTestField sets the "test_field" field.
+func (u *NodeUpsertOne) SetTestField(v []string) *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetTestField(v)
+	})
+}
+
+// UpdateTestField sets the "test_field" field to the value that was provided on create.
+func (u *NodeUpsertOne) UpdateTestField() *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateTestField()
 	})
 }
 
@@ -1070,6 +1113,20 @@ func (u *NodeUpsertBulk) SetTags(v []string) *NodeUpsertBulk {
 func (u *NodeUpsertBulk) UpdateTags() *NodeUpsertBulk {
 	return u.Update(func(s *NodeUpsert) {
 		s.UpdateTags()
+	})
+}
+
+// SetTestField sets the "test_field" field.
+func (u *NodeUpsertBulk) SetTestField(v []string) *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetTestField(v)
+	})
+}
+
+// UpdateTestField sets the "test_field" field to the value that was provided on create.
+func (u *NodeUpsertBulk) UpdateTestField() *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateTestField()
 	})
 }
 

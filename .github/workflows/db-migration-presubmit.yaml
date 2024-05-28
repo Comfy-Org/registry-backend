@@ -1,0 +1,62 @@
+name: Database schema migration check
+on:
+  # Run whenever code is changed in the main branch,
+  push:
+    branches:
+      - main
+  # Run on PRs where something changed under the `ent/migrate/migrations/` directory.
+  pull_request:
+    paths:
+      - 'ent/**'
+jobs:
+  migration-check:
+    services:
+      # Spin up a postgres:10 container to be used as the dev-database for analysis.
+      postgres:
+        image: postgres:10
+        env:
+          POSTGRES_DB: test
+          POSTGRES_PASSWORD: pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3.0.1
+        with:
+          fetch-depth: 0 # Mandatory unless "latest" is set below.
+
+      # doesn't seem to work - does not recognize migrations files.
+      #      - uses: ariga/atlas-action@v1.0.11
+      #        with:
+      #          dir: ent/migrate/migrations
+      #          dir-format: golang-migrate # Or: atlas, goose, dbmate
+      #          dev-url: postgres://postgres:pass@localhost:5432/test?sslmode=disable
+
+      - name: Check for migration changes
+        id: check_migrations
+        run: |
+          # List files changed in the PR
+          echo "Checking for changes between ${{ github.event.pull_request.base.sha }} and ${{ github.sha }}"
+          changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }})
+          echo "Changed files: $changed_files"
+
+          # Check for changes in 'ent/schema'
+          schema_changes=$(echo "$changed_files" | grep '^ent/schema' || true)
+          echo "Schema changes: $schema_changes"
+
+          # Check for changes in 'ent/migrate/migrations'
+          migration_changes=$(echo "$changed_files" | grep '^ent/migrate/migrations' || true)
+          echo "Migration changes: $migration_changes"
+
+          # If there are schema changes but no migration changes, fail the check
+          if [ -n "$schema_changes" ] && [ -z "$migration_changes" ]; then
+            echo "::error::Changes in 'ent/schema' require corresponding changes in 'ent/migrate/migrations'"
+            exit 1
+          else
+            echo "Check passed: Schema changes are accompanied by migration changes."
+          fi

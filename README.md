@@ -70,6 +70,17 @@ Or manually run:
 
 `go run -mod=mod entgo.io/ent/cmd/ent generate --feature sql/upsert --feature sql/lock ./ent/schema`
 
+### Generate Migration Files
+
+Run this command to generate migration files needed for staging/prod database schema changes: 
+
+```shell
+atlas migrate diff migration \
+  --dir "file://ent/migrate/migrations" \
+  --to "ent://ent/schema" \
+  --dev-url "docker://postgres/15/test?search_path=public"
+```
+
 ## API Spec Change (openapi.yml)
 
 ### Regenerate code
