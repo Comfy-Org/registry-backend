@@ -250,6 +250,11 @@ func (s *DripStrictServerImplementation) CreateNode(
 	}
 
 	node, err := s.RegistryService.CreateNode(ctx, s.Client, request.PublisherId, request.Body)
+	if ent.IsConstraintError(err) {
+		log.Ctx(ctx).Error().Msgf(
+			"Failed to create node for publisher ID %s w/ err: %v", request.PublisherId, err)
+		return drip.CreateNode400JSONResponse{Message: "The node already exists", Error: err.Error()}, err
+	}
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to create node for publisher ID %s w/ err: %v", request.PublisherId, err)
 		return drip.CreateNode500JSONResponse{Message: "Failed to create node", Error: err.Error()}, err
