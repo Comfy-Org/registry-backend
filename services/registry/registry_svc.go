@@ -10,6 +10,7 @@ import (
 	"registry-backend/ent/node"
 	"registry-backend/ent/nodeversion"
 	"registry-backend/ent/personalaccesstoken"
+	"registry-backend/ent/predicate"
 	"registry-backend/ent/publisher"
 	"registry-backend/ent/publisherpermission"
 	"registry-backend/ent/schema"
@@ -43,6 +44,8 @@ type PublisherFilter struct {
 // NodeFilter holds optional parameters for filtering node results
 type NodeFilter struct {
 	PublisherID string
+	Search      string
+
 	// Add more filter fields here
 }
 
@@ -77,8 +80,24 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 		},
 	)
 	if filter != nil {
+		var p []predicate.Node
 		if filter.PublisherID != "" {
-			query.Where(node.PublisherID(filter.PublisherID))
+			p = append(p, node.PublisherID(filter.PublisherID))
+		}
+
+		if filter.Search != "" {
+			p = append(p, node.Or(
+				node.IDContainsFold(filter.Search),
+				node.NameContainsFold(filter.Search),
+				node.DescriptionContainsFold(filter.Search),
+				node.AuthorContainsFold(filter.Search),
+			))
+		}
+
+		if len(p) > 1 {
+			query.Where(node.And(p...))
+		} else {
+			query.Where(p...)
 		}
 	}
 	offset := (page - 1) * limit

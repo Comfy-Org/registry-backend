@@ -993,6 +993,69 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /nodes/search:
+    get:
+      summary: Retrieves a list of nodes
+      description: Returns a paginated list of nodes across all publishers.
+      operationId: searchNodes
+      tags:
+        - Nodes
+      parameters:
+        - in: query
+          name: page
+          description: Page number of the nodes list
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          description: Number of nodes to return per page
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: search
+          description: Keyword to search the nodes
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A paginated list of nodes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: Total number of nodes available
+                  nodes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Node'
+                  page:
+                    type: integer
+                    description: Current page number
+                  limit:
+                    type: integer
+                    description: Maximum number of nodes per page
+                  totalPages:
+                    type: integer
+                    description: Total number of pages available
+        '400':
+          description: Invalid input, object invalid
+        '404':
+          description: Not found
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /nodes:
     get:
       summary: Retrieves a list of nodes
