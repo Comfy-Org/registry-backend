@@ -325,6 +325,24 @@ func TestRegistry(t *testing.T) {
 
 		})
 
+		t.Run("Create Node with Duplicate ID", func(t *testing.T) {
+			createNodeResponse, err := impl.CreateNode(ctx, drip.CreateNodeRequestObject{
+				PublisherId: publisherId,
+				Body: &drip.Node{
+					Id:          &nodeId,
+					Name:        &nodeName,
+					Description: &nodeDescription,
+					Author:      &nodeAuthor,
+					License:     &nodeLicense,
+					Tags:        &nodeTags,
+					Icon:        &icon,
+					Repository:  &githubUrl,
+				},
+			})
+			require.Error(t, err, "should return error when creating node with duplicate ID")
+			assert.IsType(t, drip.CreateNode400JSONResponse{}, createNodeResponse)
+		})
+
 		t.Run("Get Node", func(t *testing.T) {
 			res, err := impl.GetNode(ctx, drip.GetNodeRequestObject{NodeId: nodeId})
 			require.NoError(t, err, "should not return error")
