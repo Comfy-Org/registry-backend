@@ -84,6 +84,7 @@ func (impl *DripStrictServerImplementation) GetGitcommit(ctx context.Context, re
 	count, err := query.Count(ctx)
 	log.Ctx(ctx).Info().Msgf("Got %d runs", count)
 	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Error retrieving count of git commits w/ err: %v", err)
 		return drip.GetGitcommit500Response{}, err
 	}
 
@@ -103,10 +104,12 @@ func (impl *DripStrictServerImplementation) GetGitcommit(ctx context.Context, re
 	// Execute the query
 	runs, err := query.All(ctx)
 	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Error retrieving git commits w/ err: %v", err)
 		return drip.GetGitcommit500Response{}, err
 	}
 
 	results := mapRunsToResponse(runs)
+	log.Ctx(ctx).Info().Msgf("Git commits retrieved successfully")
 	return drip.GetGitcommit200JSONResponse{
 		JobResults:         &results,
 		TotalNumberOfPages: &numberOfPages,
@@ -151,17 +154,21 @@ func (impl *DripStrictServerImplementation) GetBranch(ctx context.Context, reque
 		GroupBy(gitcommit.FieldBranchName).
 		Strings(ctx)
 	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Error retrieving git's branchs w/ err: %v", err)
 		return drip.GetBranch500Response{}, err
 	}
 
+	log.Ctx(ctx).Info().Msgf("Git branches from '%s' repo retrieved successfully", request.Params.RepoName)
 	return drip.GetBranch200JSONResponse{Branches: &branches}, nil
 }
 
 func (impl *DripStrictServerImplementation) PostUploadArtifact(ctx context.Context, request drip.PostUploadArtifactRequestObject) (drip.PostUploadArtifactResponseObject, error) {
 	err := impl.ComfyCIService.ProcessCIRequest(ctx, impl.Client, &request)
 	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msg("failed to process CI request")
+		log.Ctx(ctx).Error().Msgf("Error processiong CI request w/ err: %v", err)
 		return drip.PostUploadArtifact500Response{}, err
 	}
+
+	log.Ctx(ctx).Info().Msgf("CI request with job id '%s' processed successfully", request.Body.JobId)
 	return drip.PostUploadArtifact200JSONResponse{}, nil
 }
