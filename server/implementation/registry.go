@@ -346,6 +346,63 @@ func (s *DripStrictServerImplementation) ListAllNodes(
 	}, nil
 }
 
+// SearchNodes implements drip.StrictServerInterface.
+func (s *DripStrictServerImplementation) SearchNodes(ctx context.Context, request drip.SearchNodesRequestObject) (drip.SearchNodesResponseObject, error) {
+	log.Ctx(ctx).Info().Msg("SearchNodes request received")
+
+	// Set default values for pagination parameters
+	page := 1
+	if request.Params.Page != nil {
+		page = *request.Params.Page
+	}
+	limit := 10
+	if request.Params.Limit != nil {
+		limit = *request.Params.Limit
+	}
+
+	f := &drip_services.NodeFilter{}
+	if request.Params.Search != nil {
+		f.Search = *request.Params.Search
+	}
+	// List nodes from the registry service
+	nodeResults, err := s.RegistryService.ListNodes(ctx, s.Client, page, limit, f)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to search nodes w/ err: %v", err)
+		return drip.SearchNodes500JSONResponse{Message: "Failed to search nodes", Error: err.Error()}, err
+	}
+
+	if len(nodeResults.Nodes) == 0 {
+		log.Ctx(ctx).Info().Msg("No nodes found")
+		return drip.SearchNodes200JSONResponse{
+			Nodes:      &[]drip.Node{},
+			Total:      &nodeResults.Total,
+			Page:       &nodeResults.Page,
+			Limit:      &nodeResults.Limit,
+			TotalPages: &nodeResults.TotalPages,
+		}, nil
+	}
+
+	apiNodes := make([]drip.Node, 0, len(nodeResults.Nodes))
+	for _, dbNode := range nodeResults.Nodes {
+		apiNode := mapper.DbNodeToApiNode(dbNode)
+		if dbNode.Edges.Versions != nil && len(dbNode.Edges.Versions) > 0 {
+			latestVersion := dbNode.Edges.Versions[0]
+			apiNode.LatestVersion = mapper.DbNodeVersionToApiNodeVersion(latestVersion)
+		}
+		apiNode.Publisher = mapper.DbPublisherToApiPublisher(dbNode.Edges.Publisher, false)
+		apiNodes = append(apiNodes, *apiNode)
+	}
+
+	log.Ctx(ctx).Info().Msgf("Found %d nodes", len(apiNodes))
+	return drip.SearchNodes200JSONResponse{
+		Nodes:      &apiNodes,
+		Total:      &nodeResults.Total,
+		Page:       &nodeResults.Page,
+		Limit:      &nodeResults.Limit,
+		TotalPages: &nodeResults.TotalPages,
+	}, nil
+}
+
 func (s *DripStrictServerImplementation) DeleteNode(
 	ctx context.Context, request drip.DeleteNodeRequestObject) (drip.DeleteNodeResponseObject, error) {
 
