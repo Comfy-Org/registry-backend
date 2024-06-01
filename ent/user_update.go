@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"registry-backend/ent/nodereview"
 	"registry-backend/ent/predicate"
 	"registry-backend/ent/publisherpermission"
 	"registry-backend/ent/user"
@@ -14,6 +15,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // UserUpdate is the builder for updating User entities.
@@ -118,6 +120,21 @@ func (uu *UserUpdate) AddPublisherPermissions(p ...*PublisherPermission) *UserUp
 	return uu.AddPublisherPermissionIDs(ids...)
 }
 
+// AddReviewIDs adds the "reviews" edge to the NodeReview entity by IDs.
+func (uu *UserUpdate) AddReviewIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.AddReviewIDs(ids...)
+	return uu
+}
+
+// AddReviews adds the "reviews" edges to the NodeReview entity.
+func (uu *UserUpdate) AddReviews(n ...*NodeReview) *UserUpdate {
+	ids := make([]uuid.UUID, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return uu.AddReviewIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
@@ -142,6 +159,27 @@ func (uu *UserUpdate) RemovePublisherPermissions(p ...*PublisherPermission) *Use
 		ids[i] = p[i].ID
 	}
 	return uu.RemovePublisherPermissionIDs(ids...)
+}
+
+// ClearReviews clears all "reviews" edges to the NodeReview entity.
+func (uu *UserUpdate) ClearReviews() *UserUpdate {
+	uu.mutation.ClearReviews()
+	return uu
+}
+
+// RemoveReviewIDs removes the "reviews" edge to NodeReview entities by IDs.
+func (uu *UserUpdate) RemoveReviewIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.RemoveReviewIDs(ids...)
+	return uu
+}
+
+// RemoveReviews removes "reviews" edges to NodeReview entities.
+func (uu *UserUpdate) RemoveReviews(n ...*NodeReview) *UserUpdate {
+	ids := make([]uuid.UUID, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return uu.RemoveReviewIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -248,6 +286,51 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(publisherpermission.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.ReviewsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ReviewsTable,
+			Columns: []string{user.ReviewsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nodereview.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedReviewsIDs(); len(nodes) > 0 && !uu.mutation.ReviewsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ReviewsTable,
+			Columns: []string{user.ReviewsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nodereview.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.ReviewsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ReviewsTable,
+			Columns: []string{user.ReviewsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nodereview.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -364,6 +447,21 @@ func (uuo *UserUpdateOne) AddPublisherPermissions(p ...*PublisherPermission) *Us
 	return uuo.AddPublisherPermissionIDs(ids...)
 }
 
+// AddReviewIDs adds the "reviews" edge to the NodeReview entity by IDs.
+func (uuo *UserUpdateOne) AddReviewIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.AddReviewIDs(ids...)
+	return uuo
+}
+
+// AddReviews adds the "reviews" edges to the NodeReview entity.
+func (uuo *UserUpdateOne) AddReviews(n ...*NodeReview) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return uuo.AddReviewIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
@@ -388,6 +486,27 @@ func (uuo *UserUpdateOne) RemovePublisherPermissions(p ...*PublisherPermission) 
 		ids[i] = p[i].ID
 	}
 	return uuo.RemovePublisherPermissionIDs(ids...)
+}
+
+// ClearReviews clears all "reviews" edges to the NodeReview entity.
+func (uuo *UserUpdateOne) ClearReviews() *UserUpdateOne {
+	uuo.mutation.ClearReviews()
+	return uuo
+}
+
+// RemoveReviewIDs removes the "reviews" edge to NodeReview entities by IDs.
+func (uuo *UserUpdateOne) RemoveReviewIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.RemoveReviewIDs(ids...)
+	return uuo
+}
+
+// RemoveReviews removes "reviews" edges to NodeReview entities.
+func (uuo *UserUpdateOne) RemoveReviews(n ...*NodeReview) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return uuo.RemoveReviewIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -524,6 +643,51 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(publisherpermission.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.ReviewsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ReviewsTable,
+			Columns: []string{user.ReviewsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nodereview.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedReviewsIDs(); len(nodes) > 0 && !uuo.mutation.ReviewsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ReviewsTable,
+			Columns: []string{user.ReviewsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nodereview.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.ReviewsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ReviewsTable,
+			Columns: []string{user.ReviewsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nodereview.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

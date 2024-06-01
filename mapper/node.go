@@ -96,6 +96,12 @@ func DbNodeToApiNode(node *ent.Node) *drip.Node {
 		return nil
 	}
 
+	downloads := int(node.TotalInstall)
+	rate := float32(0)
+	if node.TotalReview > 0 {
+		rate = float32(node.TotalStar) / float32(node.TotalReview)
+	}
+
 	return &drip.Node{
 		Author:      &node.Author,
 		Description: &node.Description,
@@ -105,5 +111,7 @@ func DbNodeToApiNode(node *ent.Node) *drip.Node {
 		Tags:        &node.Tags,
 		Repository:  &node.RepositoryURL,
 		Icon:        &node.IconURL,
+		Downloads:   &downloads,
+		Rating:      &rate,
 	}
 }

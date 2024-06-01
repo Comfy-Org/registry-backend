@@ -9,6 +9,7 @@ import (
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/node"
+	"registry-backend/ent/nodereview"
 	"registry-backend/ent/nodeversion"
 	"registry-backend/ent/personalaccesstoken"
 	"registry-backend/ent/predicate"
@@ -37,6 +38,7 @@ const (
 	TypeCIWorkflowResult    = "CIWorkflowResult"
 	TypeGitCommit           = "GitCommit"
 	TypeNode                = "Node"
+	TypeNodeReview          = "NodeReview"
 	TypeNodeVersion         = "NodeVersion"
 	TypePersonalAccessToken = "PersonalAccessToken"
 	TypePublisher           = "Publisher"
@@ -2110,12 +2112,21 @@ type NodeMutation struct {
 	icon_url         *string
 	tags             *[]string
 	appendtags       []string
+	total_install    *int64
+	addtotal_install *int64
+	total_star       *int64
+	addtotal_star    *int64
+	total_review     *int64
+	addtotal_review  *int64
 	clearedFields    map[string]struct{}
 	publisher        *string
 	clearedpublisher bool
 	versions         map[uuid.UUID]struct{}
 	removedversions  map[uuid.UUID]struct{}
 	clearedversions  bool
+	reviews          map[uuid.UUID]struct{}
+	removedreviews   map[uuid.UUID]struct{}
+	clearedreviews   bool
 	done             bool
 	oldValue         func(context.Context) (*Node, error)
 	predicates       []predicate.Node
@@ -2639,6 +2650,174 @@ func (m *NodeMutation) ResetTags() {
 	m.appendtags = nil
 }
 
+// SetTotalInstall sets the "total_install" field.
+func (m *NodeMutation) SetTotalInstall(i int64) {
+	m.total_install = &i
+	m.addtotal_install = nil
+}
+
+// TotalInstall returns the value of the "total_install" field in the mutation.
+func (m *NodeMutation) TotalInstall() (r int64, exists bool) {
+	v := m.total_install
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalInstall returns the old "total_install" field's value of the Node entity.
+// If the Node object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NodeMutation) OldTotalInstall(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalInstall is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalInstall requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalInstall: %w", err)
+	}
+	return oldValue.TotalInstall, nil
+}
+
+// AddTotalInstall adds i to the "total_install" field.
+func (m *NodeMutation) AddTotalInstall(i int64) {
+	if m.addtotal_install != nil {
+		*m.addtotal_install += i
+	} else {
+		m.addtotal_install = &i
+	}
+}
+
+// AddedTotalInstall returns the value that was added to the "total_install" field in this mutation.
+func (m *NodeMutation) AddedTotalInstall() (r int64, exists bool) {
+	v := m.addtotal_install
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTotalInstall resets all changes to the "total_install" field.
+func (m *NodeMutation) ResetTotalInstall() {
+	m.total_install = nil
+	m.addtotal_install = nil
+}
+
+// SetTotalStar sets the "total_star" field.
+func (m *NodeMutation) SetTotalStar(i int64) {
+	m.total_star = &i
+	m.addtotal_star = nil
+}
+
+// TotalStar returns the value of the "total_star" field in the mutation.
+func (m *NodeMutation) TotalStar() (r int64, exists bool) {
+	v := m.total_star
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalStar returns the old "total_star" field's value of the Node entity.
+// If the Node object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NodeMutation) OldTotalStar(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalStar is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalStar requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalStar: %w", err)
+	}
+	return oldValue.TotalStar, nil
+}
+
+// AddTotalStar adds i to the "total_star" field.
+func (m *NodeMutation) AddTotalStar(i int64) {
+	if m.addtotal_star != nil {
+		*m.addtotal_star += i
+	} else {
+		m.addtotal_star = &i
+	}
+}
+
+// AddedTotalStar returns the value that was added to the "total_star" field in this mutation.
+func (m *NodeMutation) AddedTotalStar() (r int64, exists bool) {
+	v := m.addtotal_star
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTotalStar resets all changes to the "total_star" field.
+func (m *NodeMutation) ResetTotalStar() {
+	m.total_star = nil
+	m.addtotal_star = nil
+}
+
+// SetTotalReview sets the "total_review" field.
+func (m *NodeMutation) SetTotalReview(i int64) {
+	m.total_review = &i
+	m.addtotal_review = nil
+}
+
+// TotalReview returns the value of the "total_review" field in the mutation.
+func (m *NodeMutation) TotalReview() (r int64, exists bool) {
+	v := m.total_review
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalReview returns the old "total_review" field's value of the Node entity.
+// If the Node object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NodeMutation) OldTotalReview(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalReview is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalReview requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalReview: %w", err)
+	}
+	return oldValue.TotalReview, nil
+}
+
+// AddTotalReview adds i to the "total_review" field.
+func (m *NodeMutation) AddTotalReview(i int64) {
+	if m.addtotal_review != nil {
+		*m.addtotal_review += i
+	} else {
+		m.addtotal_review = &i
+	}
+}
+
+// AddedTotalReview returns the value that was added to the "total_review" field in this mutation.
+func (m *NodeMutation) AddedTotalReview() (r int64, exists bool) {
+	v := m.addtotal_review
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTotalReview resets all changes to the "total_review" field.
+func (m *NodeMutation) ResetTotalReview() {
+	m.total_review = nil
+	m.addtotal_review = nil
+}
+
 // ClearPublisher clears the "publisher" edge to the Publisher entity.
 func (m *NodeMutation) ClearPublisher() {
 	m.clearedpublisher = true
@@ -2720,6 +2899,60 @@ func (m *NodeMutation) ResetVersions() {
 	m.removedversions = nil
 }
 
+// AddReviewIDs adds the "reviews" edge to the NodeReview entity by ids.
+func (m *NodeMutation) AddReviewIDs(ids ...uuid.UUID) {
+	if m.reviews == nil {
+		m.reviews = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.reviews[ids[i]] = struct{}{}
+	}
+}
+
+// ClearReviews clears the "reviews" edge to the NodeReview entity.
+func (m *NodeMutation) ClearReviews() {
+	m.clearedreviews = true
+}
+
+// ReviewsCleared reports if the "reviews" edge to the NodeReview entity was cleared.
+func (m *NodeMutation) ReviewsCleared() bool {
+	return m.clearedreviews
+}
+
+// RemoveReviewIDs removes the "reviews" edge to the NodeReview entity by IDs.
+func (m *NodeMutation) RemoveReviewIDs(ids ...uuid.UUID) {
+	if m.removedreviews == nil {
+		m.removedreviews = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.reviews, ids[i])
+		m.removedreviews[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedReviews returns the removed IDs of the "reviews" edge to the NodeReview entity.
+func (m *NodeMutation) RemovedReviewsIDs() (ids []uuid.UUID) {
+	for id := range m.removedreviews {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ReviewsIDs returns the "reviews" edge IDs in the mutation.
+func (m *NodeMutation) ReviewsIDs() (ids []uuid.UUID) {
+	for id := range m.reviews {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetReviews resets all changes to the "reviews" edge.
+func (m *NodeMutation) ResetReviews() {
+	m.reviews = nil
+	m.clearedreviews = false
+	m.removedreviews = nil
+}
+
 // Where appends a list predicates to the NodeMutation builder.
 func (m *NodeMutation) Where(ps ...predicate.Node) {
 	m.predicates = append(m.predicates, ps...)
@@ -2754,7 +2987,7 @@ func (m *NodeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NodeMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 13)
 	if m.create_time != nil {
 		fields = append(fields, node.FieldCreateTime)
 	}
@@ -2785,6 +3018,15 @@ func (m *NodeMutation) Fields() []string {
 	if m.tags != nil {
 		fields = append(fields, node.FieldTags)
 	}
+	if m.total_install != nil {
+		fields = append(fields, node.FieldTotalInstall)
+	}
+	if m.total_star != nil {
+		fields = append(fields, node.FieldTotalStar)
+	}
+	if m.total_review != nil {
+		fields = append(fields, node.FieldTotalReview)
+	}
 	return fields
 }
 
@@ -2813,6 +3055,12 @@ func (m *NodeMutation) Field(name string) (ent.Value, bool) {
 		return m.IconURL()
 	case node.FieldTags:
 		return m.Tags()
+	case node.FieldTotalInstall:
+		return m.TotalInstall()
+	case node.FieldTotalStar:
+		return m.TotalStar()
+	case node.FieldTotalReview:
+		return m.TotalReview()
 	}
 	return nil, false
 }
@@ -2842,6 +3090,12 @@ func (m *NodeMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldIconURL(ctx)
 	case node.FieldTags:
 		return m.OldTags(ctx)
+	case node.FieldTotalInstall:
+		return m.OldTotalInstall(ctx)
+	case node.FieldTotalStar:
+		return m.OldTotalStar(ctx)
+	case node.FieldTotalReview:
+		return m.OldTotalReview(ctx)
 	}
 	return nil, fmt.Errorf("unknown Node field %s", name)
 }
@@ -2921,6 +3175,27 @@ func (m *NodeMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTags(v)
 		return nil
+	case node.FieldTotalInstall:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalInstall(v)
+		return nil
+	case node.FieldTotalStar:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalStar(v)
+		return nil
+	case node.FieldTotalReview:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalReview(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Node field %s", name)
 }
@@ -2928,13 +3203,31 @@ func (m *NodeMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *NodeMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addtotal_install != nil {
+		fields = append(fields, node.FieldTotalInstall)
+	}
+	if m.addtotal_star != nil {
+		fields = append(fields, node.FieldTotalStar)
+	}
+	if m.addtotal_review != nil {
+		fields = append(fields, node.FieldTotalReview)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *NodeMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case node.FieldTotalInstall:
+		return m.AddedTotalInstall()
+	case node.FieldTotalStar:
+		return m.AddedTotalStar()
+	case node.FieldTotalReview:
+		return m.AddedTotalReview()
+	}
 	return nil, false
 }
 
@@ -2943,6 +3236,27 @@ func (m *NodeMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *NodeMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case node.FieldTotalInstall:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTotalInstall(v)
+		return nil
+	case node.FieldTotalStar:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTotalStar(v)
+		return nil
+	case node.FieldTotalReview:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTotalReview(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Node numeric field %s", name)
 }
@@ -3021,18 +3335,30 @@ func (m *NodeMutation) ResetField(name string) error {
 	case node.FieldTags:
 		m.ResetTags()
 		return nil
+	case node.FieldTotalInstall:
+		m.ResetTotalInstall()
+		return nil
+	case node.FieldTotalStar:
+		m.ResetTotalStar()
+		return nil
+	case node.FieldTotalReview:
+		m.ResetTotalReview()
+		return nil
 	}
 	return fmt.Errorf("unknown Node field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *NodeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.publisher != nil {
 		edges = append(edges, node.EdgePublisher)
 	}
 	if m.versions != nil {
 		edges = append(edges, node.EdgeVersions)
+	}
+	if m.reviews != nil {
+		edges = append(edges, node.EdgeReviews)
 	}
 	return edges
 }
@@ -3051,15 +3377,24 @@ func (m *NodeMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case node.EdgeReviews:
+		ids := make([]ent.Value, 0, len(m.reviews))
+		for id := range m.reviews {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *NodeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedversions != nil {
 		edges = append(edges, node.EdgeVersions)
+	}
+	if m.removedreviews != nil {
+		edges = append(edges, node.EdgeReviews)
 	}
 	return edges
 }
@@ -3074,18 +3409,27 @@ func (m *NodeMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case node.EdgeReviews:
+		ids := make([]ent.Value, 0, len(m.removedreviews))
+		for id := range m.removedreviews {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *NodeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedpublisher {
 		edges = append(edges, node.EdgePublisher)
 	}
 	if m.clearedversions {
 		edges = append(edges, node.EdgeVersions)
+	}
+	if m.clearedreviews {
+		edges = append(edges, node.EdgeReviews)
 	}
 	return edges
 }
@@ -3098,6 +3442,8 @@ func (m *NodeMutation) EdgeCleared(name string) bool {
 		return m.clearedpublisher
 	case node.EdgeVersions:
 		return m.clearedversions
+	case node.EdgeReviews:
+		return m.clearedreviews
 	}
 	return false
 }
@@ -3123,8 +3469,587 @@ func (m *NodeMutation) ResetEdge(name string) error {
 	case node.EdgeVersions:
 		m.ResetVersions()
 		return nil
+	case node.EdgeReviews:
+		m.ResetReviews()
+		return nil
 	}
 	return fmt.Errorf("unknown Node edge %s", name)
+}
+
+// NodeReviewMutation represents an operation that mutates the NodeReview nodes in the graph.
+type NodeReviewMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	star          *int
+	addstar       *int
+	clearedFields map[string]struct{}
+	user          *string
+	cleareduser   bool
+	node          *string
+	clearednode   bool
+	done          bool
+	oldValue      func(context.Context) (*NodeReview, error)
+	predicates    []predicate.NodeReview
+}
+
+var _ ent.Mutation = (*NodeReviewMutation)(nil)
+
+// nodereviewOption allows management of the mutation configuration using functional options.
+type nodereviewOption func(*NodeReviewMutation)
+
+// newNodeReviewMutation creates new mutation for the NodeReview entity.
+func newNodeReviewMutation(c config, op Op, opts ...nodereviewOption) *NodeReviewMutation {
+	m := &NodeReviewMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeNodeReview,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withNodeReviewID sets the ID field of the mutation.
+func withNodeReviewID(id uuid.UUID) nodereviewOption {
+	return func(m *NodeReviewMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *NodeReview
+		)
+		m.oldValue = func(ctx context.Context) (*NodeReview, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().NodeReview.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withNodeReview sets the old NodeReview of the mutation.
+func withNodeReview(node *NodeReview) nodereviewOption {
+	return func(m *NodeReviewMutation) {
+		m.oldValue = func(context.Context) (*NodeReview, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m NodeReviewMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m NodeReviewMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of NodeReview entities.
+func (m *NodeReviewMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *NodeReviewMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *NodeReviewMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().NodeReview.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetNodeID sets the "node_id" field.
+func (m *NodeReviewMutation) SetNodeID(s string) {
+	m.node = &s
+}
+
+// NodeID returns the value of the "node_id" field in the mutation.
+func (m *NodeReviewMutation) NodeID() (r string, exists bool) {
+	v := m.node
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNodeID returns the old "node_id" field's value of the NodeReview entity.
+// If the NodeReview object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NodeReviewMutation) OldNodeID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNodeID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNodeID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNodeID: %w", err)
+	}
+	return oldValue.NodeID, nil
+}
+
+// ResetNodeID resets all changes to the "node_id" field.
+func (m *NodeReviewMutation) ResetNodeID() {
+	m.node = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *NodeReviewMutation) SetUserID(s string) {
+	m.user = &s
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *NodeReviewMutation) UserID() (r string, exists bool) {
+	v := m.user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the NodeReview entity.
+// If the NodeReview object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NodeReviewMutation) OldUserID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *NodeReviewMutation) ResetUserID() {
+	m.user = nil
+}
+
+// SetStar sets the "star" field.
+func (m *NodeReviewMutation) SetStar(i int) {
+	m.star = &i
+	m.addstar = nil
+}
+
+// Star returns the value of the "star" field in the mutation.
+func (m *NodeReviewMutation) Star() (r int, exists bool) {
+	v := m.star
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStar returns the old "star" field's value of the NodeReview entity.
+// If the NodeReview object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NodeReviewMutation) OldStar(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStar is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStar requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStar: %w", err)
+	}
+	return oldValue.Star, nil
+}
+
+// AddStar adds i to the "star" field.
+func (m *NodeReviewMutation) AddStar(i int) {
+	if m.addstar != nil {
+		*m.addstar += i
+	} else {
+		m.addstar = &i
+	}
+}
+
+// AddedStar returns the value that was added to the "star" field in this mutation.
+func (m *NodeReviewMutation) AddedStar() (r int, exists bool) {
+	v := m.addstar
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetStar resets all changes to the "star" field.
+func (m *NodeReviewMutation) ResetStar() {
+	m.star = nil
+	m.addstar = nil
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *NodeReviewMutation) ClearUser() {
+	m.cleareduser = true
+	m.clearedFields[nodereview.FieldUserID] = struct{}{}
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *NodeReviewMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *NodeReviewMutation) UserIDs() (ids []string) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *NodeReviewMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// ClearNode clears the "node" edge to the Node entity.
+func (m *NodeReviewMutation) ClearNode() {
+	m.clearednode = true
+	m.clearedFields[nodereview.FieldNodeID] = struct{}{}
+}
+
+// NodeCleared reports if the "node" edge to the Node entity was cleared.
+func (m *NodeReviewMutation) NodeCleared() bool {
+	return m.clearednode
+}
+
+// NodeIDs returns the "node" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// NodeID instead. It exists only for internal usage by the builders.
+func (m *NodeReviewMutation) NodeIDs() (ids []string) {
+	if id := m.node; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetNode resets all changes to the "node" edge.
+func (m *NodeReviewMutation) ResetNode() {
+	m.node = nil
+	m.clearednode = false
+}
+
+// Where appends a list predicates to the NodeReviewMutation builder.
+func (m *NodeReviewMutation) Where(ps ...predicate.NodeReview) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the NodeReviewMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *NodeReviewMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.NodeReview, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *NodeReviewMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *NodeReviewMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (NodeReview).
+func (m *NodeReviewMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *NodeReviewMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.node != nil {
+		fields = append(fields, nodereview.FieldNodeID)
+	}
+	if m.user != nil {
+		fields = append(fields, nodereview.FieldUserID)
+	}
+	if m.star != nil {
+		fields = append(fields, nodereview.FieldStar)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *NodeReviewMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case nodereview.FieldNodeID:
+		return m.NodeID()
+	case nodereview.FieldUserID:
+		return m.UserID()
+	case nodereview.FieldStar:
+		return m.Star()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *NodeReviewMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case nodereview.FieldNodeID:
+		return m.OldNodeID(ctx)
+	case nodereview.FieldUserID:
+		return m.OldUserID(ctx)
+	case nodereview.FieldStar:
+		return m.OldStar(ctx)
+	}
+	return nil, fmt.Errorf("unknown NodeReview field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *NodeReviewMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case nodereview.FieldNodeID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNodeID(v)
+		return nil
+	case nodereview.FieldUserID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case nodereview.FieldStar:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStar(v)
+		return nil
+	}
+	return fmt.Errorf("unknown NodeReview field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *NodeReviewMutation) AddedFields() []string {
+	var fields []string
+	if m.addstar != nil {
+		fields = append(fields, nodereview.FieldStar)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *NodeReviewMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case nodereview.FieldStar:
+		return m.AddedStar()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *NodeReviewMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case nodereview.FieldStar:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddStar(v)
+		return nil
+	}
+	return fmt.Errorf("unknown NodeReview numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *NodeReviewMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *NodeReviewMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *NodeReviewMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown NodeReview nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *NodeReviewMutation) ResetField(name string) error {
+	switch name {
+	case nodereview.FieldNodeID:
+		m.ResetNodeID()
+		return nil
+	case nodereview.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case nodereview.FieldStar:
+		m.ResetStar()
+		return nil
+	}
+	return fmt.Errorf("unknown NodeReview field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *NodeReviewMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.user != nil {
+		edges = append(edges, nodereview.EdgeUser)
+	}
+	if m.node != nil {
+		edges = append(edges, nodereview.EdgeNode)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *NodeReviewMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case nodereview.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	case nodereview.EdgeNode:
+		if id := m.node; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *NodeReviewMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *NodeReviewMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *NodeReviewMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.cleareduser {
+		edges = append(edges, nodereview.EdgeUser)
+	}
+	if m.clearednode {
+		edges = append(edges, nodereview.EdgeNode)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *NodeReviewMutation) EdgeCleared(name string) bool {
+	switch name {
+	case nodereview.EdgeUser:
+		return m.cleareduser
+	case nodereview.EdgeNode:
+		return m.clearednode
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *NodeReviewMutation) ClearEdge(name string) error {
+	switch name {
+	case nodereview.EdgeUser:
+		m.ClearUser()
+		return nil
+	case nodereview.EdgeNode:
+		m.ClearNode()
+		return nil
+	}
+	return fmt.Errorf("unknown NodeReview unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *NodeReviewMutation) ResetEdge(name string) error {
+	switch name {
+	case nodereview.EdgeUser:
+		m.ResetUser()
+		return nil
+	case nodereview.EdgeNode:
+		m.ResetNode()
+		return nil
+	}
+	return fmt.Errorf("unknown NodeReview edge %s", name)
 }
 
 // NodeVersionMutation represents an operation that mutates the NodeVersion nodes in the graph.
@@ -6904,6 +7829,9 @@ type UserMutation struct {
 	publisher_permissions        map[int]struct{}
 	removedpublisher_permissions map[int]struct{}
 	clearedpublisher_permissions bool
+	reviews                      map[uuid.UUID]struct{}
+	removedreviews               map[uuid.UUID]struct{}
+	clearedreviews               bool
 	done                         bool
 	oldValue                     func(context.Context) (*User, error)
 	predicates                   []predicate.User
@@ -7309,6 +8237,60 @@ func (m *UserMutation) ResetPublisherPermissions() {
 	m.removedpublisher_permissions = nil
 }
 
+// AddReviewIDs adds the "reviews" edge to the NodeReview entity by ids.
+func (m *UserMutation) AddReviewIDs(ids ...uuid.UUID) {
+	if m.reviews == nil {
+		m.reviews = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.reviews[ids[i]] = struct{}{}
+	}
+}
+
+// ClearReviews clears the "reviews" edge to the NodeReview entity.
+func (m *UserMutation) ClearReviews() {
+	m.clearedreviews = true
+}
+
+// ReviewsCleared reports if the "reviews" edge to the NodeReview entity was cleared.
+func (m *UserMutation) ReviewsCleared() bool {
+	return m.clearedreviews
+}
+
+// RemoveReviewIDs removes the "reviews" edge to the NodeReview entity by IDs.
+func (m *UserMutation) RemoveReviewIDs(ids ...uuid.UUID) {
+	if m.removedreviews == nil {
+		m.removedreviews = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.reviews, ids[i])
+		m.removedreviews[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedReviews returns the removed IDs of the "reviews" edge to the NodeReview entity.
+func (m *UserMutation) RemovedReviewsIDs() (ids []uuid.UUID) {
+	for id := range m.removedreviews {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ReviewsIDs returns the "reviews" edge IDs in the mutation.
+func (m *UserMutation) ReviewsIDs() (ids []uuid.UUID) {
+	for id := range m.reviews {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetReviews resets all changes to the "reviews" edge.
+func (m *UserMutation) ResetReviews() {
+	m.reviews = nil
+	m.clearedreviews = false
+	m.removedreviews = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -7542,9 +8524,12 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.publisher_permissions != nil {
 		edges = append(edges, user.EdgePublisherPermissions)
+	}
+	if m.reviews != nil {
+		edges = append(edges, user.EdgeReviews)
 	}
 	return edges
 }
@@ -7559,15 +8544,24 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeReviews:
+		ids := make([]ent.Value, 0, len(m.reviews))
+		for id := range m.reviews {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedpublisher_permissions != nil {
 		edges = append(edges, user.EdgePublisherPermissions)
+	}
+	if m.removedreviews != nil {
+		edges = append(edges, user.EdgeReviews)
 	}
 	return edges
 }
@@ -7582,15 +8576,24 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeReviews:
+		ids := make([]ent.Value, 0, len(m.removedreviews))
+		for id := range m.removedreviews {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedpublisher_permissions {
 		edges = append(edges, user.EdgePublisherPermissions)
+	}
+	if m.clearedreviews {
+		edges = append(edges, user.EdgeReviews)
 	}
 	return edges
 }
@@ -7601,6 +8604,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 	switch name {
 	case user.EdgePublisherPermissions:
 		return m.clearedpublisher_permissions
+	case user.EdgeReviews:
+		return m.clearedreviews
 	}
 	return false
 }
@@ -7619,6 +8624,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 	switch name {
 	case user.EdgePublisherPermissions:
 		m.ResetPublisherPermissions()
+		return nil
+	case user.EdgeReviews:
+		m.ResetReviews()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

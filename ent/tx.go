@@ -18,6 +18,8 @@ type Tx struct {
 	GitCommit *GitCommitClient
 	// Node is the client for interacting with the Node builders.
 	Node *NodeClient
+	// NodeReview is the client for interacting with the NodeReview builders.
+	NodeReview *NodeReviewClient
 	// NodeVersion is the client for interacting with the NodeVersion builders.
 	NodeVersion *NodeVersionClient
 	// PersonalAccessToken is the client for interacting with the PersonalAccessToken builders.
@@ -164,6 +166,7 @@ func (tx *Tx) init() {
 	tx.CIWorkflowResult = NewCIWorkflowResultClient(tx.config)
 	tx.GitCommit = NewGitCommitClient(tx.config)
 	tx.Node = NewNodeClient(tx.config)
+	tx.NodeReview = NewNodeReviewClient(tx.config)
 	tx.NodeVersion = NewNodeVersionClient(tx.config)
 	tx.PersonalAccessToken = NewPersonalAccessTokenClient(tx.config)
 	tx.Publisher = NewPublisherClient(tx.config)

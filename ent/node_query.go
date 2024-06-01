@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"registry-backend/ent/node"
+	"registry-backend/ent/nodereview"
 	"registry-backend/ent/nodeversion"
 	"registry-backend/ent/predicate"
 	"registry-backend/ent/publisher"
@@ -27,6 +28,7 @@ type NodeQuery struct {
 	predicates    []predicate.Node
 	withPublisher *PublisherQuery
 	withVersions  *NodeVersionQuery
+	withReviews   *NodeReviewQuery
 	modifiers     []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -101,6 +103,28 @@ func (nq *NodeQuery) QueryVersions() *NodeVersionQuery {
 			sqlgraph.From(node.Table, node.FieldID, selector),
 			sqlgraph.To(nodeversion.Table, nodeversion.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, node.VersionsTable, node.VersionsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(nq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryReviews chains the current query on the "reviews" edge.
+func (nq *NodeQuery) QueryReviews() *NodeReviewQuery {
+	query := (&NodeReviewClient{config: nq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := nq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := nq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(node.Table, node.FieldID, selector),
+			sqlgraph.To(nodereview.Table, nodereview.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, node.ReviewsTable, node.ReviewsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(nq.driver.Dialect(), step)
 		return fromU, nil
@@ -302,6 +326,7 @@ func (nq *NodeQuery) Clone() *NodeQuery {
 		predicates:    append([]predicate.Node{}, nq.predicates...),
 		withPublisher: nq.withPublisher.Clone(),
 		withVersions:  nq.withVersions.Clone(),
+		withReviews:   nq.withReviews.Clone(),
 		// clone intermediate query.
 		sql:  nq.sql.Clone(),
 		path: nq.path,
@@ -327,6 +352,17 @@ func (nq *NodeQuery) WithVersions(opts ...func(*NodeVersionQuery)) *NodeQuery {
 		opt(query)
 	}
 	nq.withVersions = query
+	return nq
+}
+
+// WithReviews tells the query-builder to eager-load the nodes that are connected to
+// the "reviews" edge. The optional arguments are used to configure the query builder of the edge.
+func (nq *NodeQuery) WithReviews(opts ...func(*NodeReviewQuery)) *NodeQuery {
+	query := (&NodeReviewClient{config: nq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	nq.withReviews = query
 	return nq
 }
 
@@ -408,9 +444,10 @@ func (nq *NodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Node, e
 	var (
 		nodes       = []*Node{}
 		_spec       = nq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			nq.withPublisher != nil,
 			nq.withVersions != nil,
+			nq.withReviews != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -444,6 +481,13 @@ func (nq *NodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Node, e
 		if err := nq.loadVersions(ctx, query, nodes,
 			func(n *Node) { n.Edges.Versions = []*NodeVersion{} },
 			func(n *Node, e *NodeVersion) { n.Edges.Versions = append(n.Edges.Versions, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := nq.withReviews; query != nil {
+		if err := nq.loadReviews(ctx, query, nodes,
+			func(n *Node) { n.Edges.Reviews = []*NodeReview{} },
+			func(n *Node, e *NodeReview) { n.Edges.Reviews = append(n.Edges.Reviews, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -495,6 +539,36 @@ func (nq *NodeQuery) loadVersions(ctx context.Context, query *NodeVersionQuery, 
 	}
 	query.Where(predicate.NodeVersion(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(node.VersionsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.NodeID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "node_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (nq *NodeQuery) loadReviews(ctx context.Context, query *NodeReviewQuery, nodes []*Node, init func(*Node), assign func(*Node, *NodeReview)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[string]*Node)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(nodereview.FieldNodeID)
+	}
+	query.Where(predicate.NodeReview(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(node.ReviewsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

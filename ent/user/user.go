@@ -28,6 +28,8 @@ const (
 	FieldIsAdmin = "is_admin"
 	// EdgePublisherPermissions holds the string denoting the publisher_permissions edge name in mutations.
 	EdgePublisherPermissions = "publisher_permissions"
+	// EdgeReviews holds the string denoting the reviews edge name in mutations.
+	EdgeReviews = "reviews"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// PublisherPermissionsTable is the table that holds the publisher_permissions relation/edge.
@@ -37,6 +39,13 @@ const (
 	PublisherPermissionsInverseTable = "publisher_permissions"
 	// PublisherPermissionsColumn is the table column denoting the publisher_permissions relation/edge.
 	PublisherPermissionsColumn = "user_id"
+	// ReviewsTable is the table that holds the reviews relation/edge.
+	ReviewsTable = "node_reviews"
+	// ReviewsInverseTable is the table name for the NodeReview entity.
+	// It exists in this package in order to avoid circular dependency with the "nodereview" package.
+	ReviewsInverseTable = "node_reviews"
+	// ReviewsColumn is the table column denoting the reviews relation/edge.
+	ReviewsColumn = "user_id"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -124,10 +133,31 @@ func ByPublisherPermissions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOpt
 		sqlgraph.OrderByNeighborTerms(s, newPublisherPermissionsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByReviewsCount orders the results by reviews count.
+func ByReviewsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newReviewsStep(), opts...)
+	}
+}
+
+// ByReviews orders the results by reviews terms.
+func ByReviews(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newReviewsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newPublisherPermissionsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PublisherPermissionsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, PublisherPermissionsTable, PublisherPermissionsColumn),
+	)
+}
+func newReviewsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ReviewsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ReviewsTable, ReviewsColumn),
 	)
 }

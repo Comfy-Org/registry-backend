@@ -39,6 +39,12 @@ type Node struct {
 	IconURL string `json:"icon_url,omitempty"`
 	// Tags holds the value of the "tags" field.
 	Tags []string `json:"tags,omitempty"`
+	// TotalInstall holds the value of the "total_install" field.
+	TotalInstall int64 `json:"total_install,omitempty"`
+	// TotalStar holds the value of the "total_star" field.
+	TotalStar int64 `json:"total_star,omitempty"`
+	// TotalReview holds the value of the "total_review" field.
+	TotalReview int64 `json:"total_review,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the NodeQuery when eager-loading is set.
 	Edges        NodeEdges `json:"edges"`
@@ -51,9 +57,11 @@ type NodeEdges struct {
 	Publisher *Publisher `json:"publisher,omitempty"`
 	// Versions holds the value of the versions edge.
 	Versions []*NodeVersion `json:"versions,omitempty"`
+	// Reviews holds the value of the reviews edge.
+	Reviews []*NodeReview `json:"reviews,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // PublisherOrErr returns the Publisher value or an error if the edge
@@ -76,6 +84,15 @@ func (e NodeEdges) VersionsOrErr() ([]*NodeVersion, error) {
 	return nil, &NotLoadedError{edge: "versions"}
 }
 
+// ReviewsOrErr returns the Reviews value or an error if the edge
+// was not loaded in eager-loading.
+func (e NodeEdges) ReviewsOrErr() ([]*NodeReview, error) {
+	if e.loadedTypes[2] {
+		return e.Reviews, nil
+	}
+	return nil, &NotLoadedError{edge: "reviews"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Node) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -83,6 +100,8 @@ func (*Node) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case node.FieldTags:
 			values[i] = new([]byte)
+		case node.FieldTotalInstall, node.FieldTotalStar, node.FieldTotalReview:
+			values[i] = new(sql.NullInt64)
 		case node.FieldID, node.FieldPublisherID, node.FieldName, node.FieldDescription, node.FieldAuthor, node.FieldLicense, node.FieldRepositoryURL, node.FieldIconURL:
 			values[i] = new(sql.NullString)
 		case node.FieldCreateTime, node.FieldUpdateTime:
@@ -170,6 +189,24 @@ func (n *Node) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field tags: %w", err)
 				}
 			}
+		case node.FieldTotalInstall:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field total_install", values[i])
+			} else if value.Valid {
+				n.TotalInstall = value.Int64
+			}
+		case node.FieldTotalStar:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field total_star", values[i])
+			} else if value.Valid {
+				n.TotalStar = value.Int64
+			}
+		case node.FieldTotalReview:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field total_review", values[i])
+			} else if value.Valid {
+				n.TotalReview = value.Int64
+			}
 		default:
 			n.selectValues.Set(columns[i], values[i])
 		}
@@ -191,6 +228,11 @@ func (n *Node) QueryPublisher() *PublisherQuery {
 // QueryVersions queries the "versions" edge of the Node entity.
 func (n *Node) QueryVersions() *NodeVersionQuery {
 	return NewNodeClient(n.config).QueryVersions(n)
+}
+
+// QueryReviews queries the "reviews" edge of the Node entity.
+func (n *Node) QueryReviews() *NodeReviewQuery {
+	return NewNodeClient(n.config).QueryReviews(n)
 }
 
 // Update returns a builder for updating this Node.
@@ -245,6 +287,15 @@ func (n *Node) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("tags=")
 	builder.WriteString(fmt.Sprintf("%v", n.Tags))
+	builder.WriteString(", ")
+	builder.WriteString("total_install=")
+	builder.WriteString(fmt.Sprintf("%v", n.TotalInstall))
+	builder.WriteString(", ")
+	builder.WriteString("total_star=")
+	builder.WriteString(fmt.Sprintf("%v", n.TotalStar))
+	builder.WriteString(", ")
+	builder.WriteString("total_review=")
+	builder.WriteString(fmt.Sprintf("%v", n.TotalReview))
 	builder.WriteByte(')')
 	return builder.String()
 }

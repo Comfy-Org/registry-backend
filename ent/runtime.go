@@ -6,6 +6,7 @@ import (
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/node"
+	"registry-backend/ent/nodereview"
 	"registry-backend/ent/nodeversion"
 	"registry-backend/ent/personalaccesstoken"
 	"registry-backend/ent/publisher"
@@ -78,6 +79,28 @@ func init() {
 	nodeDescTags := nodeFields[8].Descriptor()
 	// node.DefaultTags holds the default value on creation for the tags field.
 	node.DefaultTags = nodeDescTags.Default.([]string)
+	// nodeDescTotalInstall is the schema descriptor for total_install field.
+	nodeDescTotalInstall := nodeFields[9].Descriptor()
+	// node.DefaultTotalInstall holds the default value on creation for the total_install field.
+	node.DefaultTotalInstall = nodeDescTotalInstall.Default.(int64)
+	// nodeDescTotalStar is the schema descriptor for total_star field.
+	nodeDescTotalStar := nodeFields[10].Descriptor()
+	// node.DefaultTotalStar holds the default value on creation for the total_star field.
+	node.DefaultTotalStar = nodeDescTotalStar.Default.(int64)
+	// nodeDescTotalReview is the schema descriptor for total_review field.
+	nodeDescTotalReview := nodeFields[11].Descriptor()
+	// node.DefaultTotalReview holds the default value on creation for the total_review field.
+	node.DefaultTotalReview = nodeDescTotalReview.Default.(int64)
+	nodereviewFields := schema.NodeReview{}.Fields()
+	_ = nodereviewFields
+	// nodereviewDescStar is the schema descriptor for star field.
+	nodereviewDescStar := nodereviewFields[3].Descriptor()
+	// nodereview.DefaultStar holds the default value on creation for the star field.
+	nodereview.DefaultStar = nodereviewDescStar.Default.(int)
+	// nodereviewDescID is the schema descriptor for id field.
+	nodereviewDescID := nodereviewFields[0].Descriptor()
+	// nodereview.DefaultID holds the default value on creation for the id field.
+	nodereview.DefaultID = nodereviewDescID.Default.(func() uuid.UUID)
 	nodeversionMixin := schema.NodeVersion{}.Mixin()
 	nodeversionMixinFields0 := nodeversionMixin[0].Fields()
 	_ = nodeversionMixinFields0

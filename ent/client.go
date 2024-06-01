@@ -14,6 +14,7 @@ import (
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/node"
+	"registry-backend/ent/nodereview"
 	"registry-backend/ent/nodeversion"
 	"registry-backend/ent/personalaccesstoken"
 	"registry-backend/ent/publisher"
@@ -39,6 +40,8 @@ type Client struct {
 	GitCommit *GitCommitClient
 	// Node is the client for interacting with the Node builders.
 	Node *NodeClient
+	// NodeReview is the client for interacting with the NodeReview builders.
+	NodeReview *NodeReviewClient
 	// NodeVersion is the client for interacting with the NodeVersion builders.
 	NodeVersion *NodeVersionClient
 	// PersonalAccessToken is the client for interacting with the PersonalAccessToken builders.
@@ -65,6 +68,7 @@ func (c *Client) init() {
 	c.CIWorkflowResult = NewCIWorkflowResultClient(c.config)
 	c.GitCommit = NewGitCommitClient(c.config)
 	c.Node = NewNodeClient(c.config)
+	c.NodeReview = NewNodeReviewClient(c.config)
 	c.NodeVersion = NewNodeVersionClient(c.config)
 	c.PersonalAccessToken = NewPersonalAccessTokenClient(c.config)
 	c.Publisher = NewPublisherClient(c.config)
@@ -166,6 +170,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		CIWorkflowResult:    NewCIWorkflowResultClient(cfg),
 		GitCommit:           NewGitCommitClient(cfg),
 		Node:                NewNodeClient(cfg),
+		NodeReview:          NewNodeReviewClient(cfg),
 		NodeVersion:         NewNodeVersionClient(cfg),
 		PersonalAccessToken: NewPersonalAccessTokenClient(cfg),
 		Publisher:           NewPublisherClient(cfg),
@@ -194,6 +199,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		CIWorkflowResult:    NewCIWorkflowResultClient(cfg),
 		GitCommit:           NewGitCommitClient(cfg),
 		Node:                NewNodeClient(cfg),
+		NodeReview:          NewNodeReviewClient(cfg),
 		NodeVersion:         NewNodeVersionClient(cfg),
 		PersonalAccessToken: NewPersonalAccessTokenClient(cfg),
 		Publisher:           NewPublisherClient(cfg),
@@ -229,8 +235,9 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.CIWorkflowResult, c.GitCommit, c.Node, c.NodeVersion, c.PersonalAccessToken,
-		c.Publisher, c.PublisherPermission, c.StorageFile, c.User,
+		c.CIWorkflowResult, c.GitCommit, c.Node, c.NodeReview, c.NodeVersion,
+		c.PersonalAccessToken, c.Publisher, c.PublisherPermission, c.StorageFile,
+		c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -240,8 +247,9 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.CIWorkflowResult, c.GitCommit, c.Node, c.NodeVersion, c.PersonalAccessToken,
-		c.Publisher, c.PublisherPermission, c.StorageFile, c.User,
+		c.CIWorkflowResult, c.GitCommit, c.Node, c.NodeReview, c.NodeVersion,
+		c.PersonalAccessToken, c.Publisher, c.PublisherPermission, c.StorageFile,
+		c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -256,6 +264,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.GitCommit.mutate(ctx, m)
 	case *NodeMutation:
 		return c.Node.mutate(ctx, m)
+	case *NodeReviewMutation:
+		return c.NodeReview.mutate(ctx, m)
 	case *NodeVersionMutation:
 		return c.NodeVersion.mutate(ctx, m)
 	case *PersonalAccessTokenMutation:
@@ -727,6 +737,22 @@ func (c *NodeClient) QueryVersions(n *Node) *NodeVersionQuery {
 	return query
 }
 
+// QueryReviews queries the reviews edge of a Node.
+func (c *NodeClient) QueryReviews(n *Node) *NodeReviewQuery {
+	query := (&NodeReviewClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := n.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(node.Table, node.FieldID, id),
+			sqlgraph.To(nodereview.Table, nodereview.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, node.ReviewsTable, node.ReviewsColumn),
+		)
+		fromV = sqlgraph.Neighbors(n.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *NodeClient) Hooks() []Hook {
 	return c.hooks.Node
@@ -749,6 +775,171 @@ func (c *NodeClient) mutate(ctx context.Context, m *NodeMutation) (Value, error)
 		return (&NodeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Node mutation op: %q", m.Op())
+	}
+}
+
+// NodeReviewClient is a client for the NodeReview schema.
+type NodeReviewClient struct {
+	config
+}
+
+// NewNodeReviewClient returns a client for the NodeReview from the given config.
+func NewNodeReviewClient(c config) *NodeReviewClient {
+	return &NodeReviewClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `nodereview.Hooks(f(g(h())))`.
+func (c *NodeReviewClient) Use(hooks ...Hook) {
+	c.hooks.NodeReview = append(c.hooks.NodeReview, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `nodereview.Intercept(f(g(h())))`.
+func (c *NodeReviewClient) Intercept(interceptors ...Interceptor) {
+	c.inters.NodeReview = append(c.inters.NodeReview, interceptors...)
+}
+
+// Create returns a builder for creating a NodeReview entity.
+func (c *NodeReviewClient) Create() *NodeReviewCreate {
+	mutation := newNodeReviewMutation(c.config, OpCreate)
+	return &NodeReviewCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of NodeReview entities.
+func (c *NodeReviewClient) CreateBulk(builders ...*NodeReviewCreate) *NodeReviewCreateBulk {
+	return &NodeReviewCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *NodeReviewClient) MapCreateBulk(slice any, setFunc func(*NodeReviewCreate, int)) *NodeReviewCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &NodeReviewCreateBulk{err: fmt.Errorf("calling to NodeReviewClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*NodeReviewCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &NodeReviewCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for NodeReview.
+func (c *NodeReviewClient) Update() *NodeReviewUpdate {
+	mutation := newNodeReviewMutation(c.config, OpUpdate)
+	return &NodeReviewUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *NodeReviewClient) UpdateOne(nr *NodeReview) *NodeReviewUpdateOne {
+	mutation := newNodeReviewMutation(c.config, OpUpdateOne, withNodeReview(nr))
+	return &NodeReviewUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *NodeReviewClient) UpdateOneID(id uuid.UUID) *NodeReviewUpdateOne {
+	mutation := newNodeReviewMutation(c.config, OpUpdateOne, withNodeReviewID(id))
+	return &NodeReviewUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for NodeReview.
+func (c *NodeReviewClient) Delete() *NodeReviewDelete {
+	mutation := newNodeReviewMutation(c.config, OpDelete)
+	return &NodeReviewDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *NodeReviewClient) DeleteOne(nr *NodeReview) *NodeReviewDeleteOne {
+	return c.DeleteOneID(nr.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *NodeReviewClient) DeleteOneID(id uuid.UUID) *NodeReviewDeleteOne {
+	builder := c.Delete().Where(nodereview.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &NodeReviewDeleteOne{builder}
+}
+
+// Query returns a query builder for NodeReview.
+func (c *NodeReviewClient) Query() *NodeReviewQuery {
+	return &NodeReviewQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeNodeReview},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a NodeReview entity by its id.
+func (c *NodeReviewClient) Get(ctx context.Context, id uuid.UUID) (*NodeReview, error) {
+	return c.Query().Where(nodereview.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *NodeReviewClient) GetX(ctx context.Context, id uuid.UUID) *NodeReview {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a NodeReview.
+func (c *NodeReviewClient) QueryUser(nr *NodeReview) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := nr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(nodereview.Table, nodereview.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, nodereview.UserTable, nodereview.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(nr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryNode queries the node edge of a NodeReview.
+func (c *NodeReviewClient) QueryNode(nr *NodeReview) *NodeQuery {
+	query := (&NodeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := nr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(nodereview.Table, nodereview.FieldID, id),
+			sqlgraph.To(node.Table, node.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, nodereview.NodeTable, nodereview.NodeColumn),
+		)
+		fromV = sqlgraph.Neighbors(nr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *NodeReviewClient) Hooks() []Hook {
+	return c.hooks.NodeReview
+}
+
+// Interceptors returns the client interceptors.
+func (c *NodeReviewClient) Interceptors() []Interceptor {
+	return c.inters.NodeReview
+}
+
+func (c *NodeReviewClient) mutate(ctx context.Context, m *NodeReviewMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&NodeReviewCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&NodeReviewUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&NodeReviewUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&NodeReviewDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown NodeReview mutation op: %q", m.Op())
 	}
 }
 
@@ -1669,6 +1860,22 @@ func (c *UserClient) QueryPublisherPermissions(u *User) *PublisherPermissionQuer
 	return query
 }
 
+// QueryReviews queries the reviews edge of a User.
+func (c *UserClient) QueryReviews(u *User) *NodeReviewQuery {
+	query := (&NodeReviewClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(nodereview.Table, nodereview.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ReviewsTable, user.ReviewsColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
@@ -1697,11 +1904,11 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		CIWorkflowResult, GitCommit, Node, NodeVersion, PersonalAccessToken, Publisher,
-		PublisherPermission, StorageFile, User []ent.Hook
+		CIWorkflowResult, GitCommit, Node, NodeReview, NodeVersion, PersonalAccessToken,
+		Publisher, PublisherPermission, StorageFile, User []ent.Hook
 	}
 	inters struct {
-		CIWorkflowResult, GitCommit, Node, NodeVersion, PersonalAccessToken, Publisher,
-		PublisherPermission, StorageFile, User []ent.Interceptor
+		CIWorkflowResult, GitCommit, Node, NodeReview, NodeVersion, PersonalAccessToken,
+		Publisher, PublisherPermission, StorageFile, User []ent.Interceptor
 	}
 )

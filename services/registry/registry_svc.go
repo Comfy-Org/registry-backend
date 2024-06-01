@@ -352,6 +352,39 @@ func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Clie
 	return versions, nil
 }
 
+func (s *RegistryService) AddNodeReview(ctx context.Context, client *ent.Client, nodeId, userID string, star int) (nv *ent.Node, err error) {
+	log.Ctx(ctx).Info().Msgf("add review to node: %v ", nodeId)
+
+	err = db.WithTx(ctx, client, func(tx *ent.Tx) error {
+		v, err := s.GetNode(ctx, tx.Client(), nodeId)
+		if err != nil {
+			return fmt.Errorf("fail to fetch node version")
+		}
+
+		err = tx.Client().NodeReview.Create().
+			SetNode(v).
+			SetUserID(userID).
+			SetStar(star).
+			Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("fail to add review to node ")
+		}
+
+		err = v.Update().AddTotalReview(1).AddTotalStar(int64(star)).Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("fail to add review: %w", err)
+		}
+
+		nv, err = s.GetNode(ctx, tx.Client(), nodeId)
+		if err != nil {
+			return fmt.Errorf("fail to fetch node s")
+		}
+		return nil
+	})
+
+	return
+}
+
 func (s *RegistryService) GetNodeVersion(ctx context.Context, client *ent.Client, nodeId, nodeVersion string) (*ent.NodeVersion, error) {
 	log.Ctx(ctx).Info().Msgf("getting node version: %v", nodeVersion)
 	return client.NodeVersion.

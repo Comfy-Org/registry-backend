@@ -40,9 +40,11 @@ type User struct {
 type UserEdges struct {
 	// PublisherPermissions holds the value of the publisher_permissions edge.
 	PublisherPermissions []*PublisherPermission `json:"publisher_permissions,omitempty"`
+	// Reviews holds the value of the reviews edge.
+	Reviews []*NodeReview `json:"reviews,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // PublisherPermissionsOrErr returns the PublisherPermissions value or an error if the edge
@@ -52,6 +54,15 @@ func (e UserEdges) PublisherPermissionsOrErr() ([]*PublisherPermission, error) {
 		return e.PublisherPermissions, nil
 	}
 	return nil, &NotLoadedError{edge: "publisher_permissions"}
+}
+
+// ReviewsOrErr returns the Reviews value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ReviewsOrErr() ([]*NodeReview, error) {
+	if e.loadedTypes[1] {
+		return e.Reviews, nil
+	}
+	return nil, &NotLoadedError{edge: "reviews"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -138,6 +149,11 @@ func (u *User) Value(name string) (ent.Value, error) {
 // QueryPublisherPermissions queries the "publisher_permissions" edge of the User entity.
 func (u *User) QueryPublisherPermissions() *PublisherPermissionQuery {
 	return NewUserClient(u.config).QueryPublisherPermissions(u)
+}
+
+// QueryReviews queries the "reviews" edge of the User entity.
+func (u *User) QueryReviews() *NodeReviewQuery {
+	return NewUserClient(u.config).QueryReviews(u)
 }
 
 // Update returns a builder for updating this User.
