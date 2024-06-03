@@ -8,6 +8,7 @@ import (
 
 // TestIsValidNodeID tests the isValidNodeID function with various inputs.
 func TestIsValidNodeID(t *testing.T) {
+	regexErrorMessage := "Node ID can only contain lowercase letters, numbers, hyphens, underscores, and dots. Dots cannot be consecutive or be at the start or end of the id."
 	testCases := []struct {
 		name          string
 		node          *drip.Node
@@ -26,7 +27,7 @@ func TestIsValidNodeID(t *testing.T) {
 		{
 			name:          "Invalid Node ID",
 			node:          &drip.Node{Id: stringPtr("123")},
-			expectedError: "invalid node id",
+			expectedError: regexErrorMessage,
 		},
 
 		{
@@ -42,37 +43,32 @@ func TestIsValidNodeID(t *testing.T) {
 		{
 			name:          "Invalid with uppercase",
 			node:          &drip.Node{Id: stringPtr("Node")},
-			expectedError: "invalid node id",
+			expectedError: "Node ID can only contain lowercase letters",
 		},
 		{
 			name:          "Invalid with special characters",
 			node:          &drip.Node{Id: stringPtr("node_@")},
-			expectedError: "invalid node id",
+			expectedError: regexErrorMessage,
 		},
 		{
 			name:          "Invalid start with number",
 			node:          &drip.Node{Id: stringPtr("1node")},
-			expectedError: "invalid node id",
+			expectedError: regexErrorMessage,
 		},
 		{
 			name:          "Invalid start with dash",
 			node:          &drip.Node{Id: stringPtr("-node")},
-			expectedError: "invalid node id",
+			expectedError: regexErrorMessage,
 		},
 		{
 			name:          "Empty input",
 			node:          &drip.Node{Id: stringPtr("")},
-			expectedError: "invalid node id",
+			expectedError: "node id must be between 1 and 50 characters",
 		},
 		{
 			name:          "Valid all lowercase letters",
 			node:          &drip.Node{Id: stringPtr("abcdefghijklmnopqrstuvwxyz")},
 			expectedError: "",
-		},
-		{
-			name:          "Valid all uppercase letters",
-			node:          &drip.Node{Id: stringPtr("ABCD")},
-			expectedError: "invalid node id",
 		},
 		{
 			name:          "Valid containing underscore",
@@ -97,17 +93,17 @@ func TestIsValidNodeID(t *testing.T) {
 		{
 			name:          "Invalid ID with number first",
 			node:          &drip.Node{Id: stringPtr("1invalidnodeid")},
-			expectedError: "invalid node id",
+			expectedError: regexErrorMessage,
 		},
 		{
 			name:          "Invalid ID with consecutive dots",
 			node:          &drip.Node{Id: stringPtr("invalid..nodeid")},
-			expectedError: "invalid node id",
+			expectedError: regexErrorMessage,
 		},
 		{
 			name:          "Invalid ID with special character first",
 			node:          &drip.Node{Id: stringPtr("-invalidnodeid")},
-			expectedError: "invalid node id",
+			expectedError: regexErrorMessage,
 		},
 		{
 			name:          "Valid complex ID",
@@ -117,17 +113,17 @@ func TestIsValidNodeID(t *testing.T) {
 		{
 			name:          "Invalid ID with special characters only",
 			node:          &drip.Node{Id: stringPtr("$$$$")},
-			expectedError: "invalid node id",
+			expectedError: regexErrorMessage,
 		},
 		{
 			name:          "Invalid ID with leading dot",
 			node:          &drip.Node{Id: stringPtr(".invalidnodeid")},
-			expectedError: "invalid node id",
+			expectedError: regexErrorMessage,
 		},
 		{
 			name:          "Invalid ID with ending dot",
 			node:          &drip.Node{Id: stringPtr("invalidnodeid.")},
-			expectedError: "invalid node id",
+			expectedError: regexErrorMessage,
 		},
 	}
 
