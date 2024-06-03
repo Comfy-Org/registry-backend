@@ -77,6 +77,11 @@ func ValidateNode(node *drip.Node) error {
 			return fmt.Errorf(err)
 		}
 	}
+	if node.Description != nil {
+		if len(*node.Description) > 1000 {
+			return fmt.Errorf("description is too long")
+		}
+	}
 	return nil
 }
 
