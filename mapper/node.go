@@ -72,23 +72,32 @@ func ValidateNode(node *drip.Node) error {
 		if len(*node.Id) > 100 {
 			return fmt.Errorf("node id is too long")
 		}
-		if !IsValidNodeID(*node.Id) {
-			return fmt.Errorf("invalid node id")
+		isValid, err := IsValidNodeID(*node.Id)
+		if !isValid {
+			return fmt.Errorf(err)
 		}
 	}
 	return nil
 }
 
-func IsValidNodeID(nodeID string) bool {
+func IsValidNodeID(nodeID string) (bool, string) {
 	if len(nodeID) == 0 || len(nodeID) > 50 {
-		return false
+		return false, "node id must be between 1 and 50 characters"
+	}
+	// Check if there are capital letters in the string
+	if strings.ToLower(nodeID) != nodeID {
+		return false, "Node ID can only contain lowercase letters"
 	}
 	// Regular expression pattern for Node ID validation (lowercase letters only)
 	pattern := `^[a-z][a-z0-9-_]+(\.[a-z0-9-_]+)*$`
 	// Compile the regular expression pattern
 	regex := regexp.MustCompile(pattern)
 	// Check if the string matches the pattern
-	return regex.MatchString(nodeID)
+	matches := regex.MatchString(nodeID)
+	if !matches {
+		return false, "Node ID can only contain lowercase letters, numbers, hyphens, underscores, and dots. Dots cannot be consecutive or be at the start or end of the id."
+	}
+	return true, ""
 }
 
 func DbNodeToApiNode(node *ent.Node) *drip.Node {
