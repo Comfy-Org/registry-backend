@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"registry-backend/ent/nodereview"
 	"registry-backend/ent/publisherpermission"
 	"registry-backend/ent/user"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // UserCreate is the builder for creating a User entity.
@@ -127,6 +129,21 @@ func (uc *UserCreate) AddPublisherPermissions(p ...*PublisherPermission) *UserCr
 		ids[i] = p[i].ID
 	}
 	return uc.AddPublisherPermissionIDs(ids...)
+}
+
+// AddReviewIDs adds the "reviews" edge to the NodeReview entity by IDs.
+func (uc *UserCreate) AddReviewIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddReviewIDs(ids...)
+	return uc
+}
+
+// AddReviews adds the "reviews" edges to the NodeReview entity.
+func (uc *UserCreate) AddReviews(n ...*NodeReview) *UserCreate {
+	ids := make([]uuid.UUID, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return uc.AddReviewIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -265,6 +282,22 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(publisherpermission.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.ReviewsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ReviewsTable,
+			Columns: []string{user.ReviewsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nodereview.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

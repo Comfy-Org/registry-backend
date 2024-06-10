@@ -82,6 +82,9 @@ var (
 		{Name: "repository_url", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "icon_url", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "tags", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "total_install", Type: field.TypeInt64, Default: 0},
+		{Name: "total_star", Type: field.TypeInt64, Default: 0},
+		{Name: "total_review", Type: field.TypeInt64, Default: 0},
 		{Name: "publisher_id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 	}
 	// NodesTable holds the schema information for the "nodes" table.
@@ -92,9 +95,43 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "nodes_publishers_nodes",
-				Columns:    []*schema.Column{NodesColumns[10]},
+				Columns:    []*schema.Column{NodesColumns[13]},
 				RefColumns: []*schema.Column{PublishersColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// NodeReviewsColumns holds the columns for the "node_reviews" table.
+	NodeReviewsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "star", Type: field.TypeInt, Default: 0},
+		{Name: "node_id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "user_id", Type: field.TypeString},
+	}
+	// NodeReviewsTable holds the schema information for the "node_reviews" table.
+	NodeReviewsTable = &schema.Table{
+		Name:       "node_reviews",
+		Columns:    NodeReviewsColumns,
+		PrimaryKey: []*schema.Column{NodeReviewsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "node_reviews_nodes_reviews",
+				Columns:    []*schema.Column{NodeReviewsColumns[2]},
+				RefColumns: []*schema.Column{NodesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "node_reviews_users_reviews",
+				Columns:    []*schema.Column{NodeReviewsColumns[3]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "nodereview_node_id_user_id",
+				Unique:  true,
+				Columns: []*schema.Column{NodeReviewsColumns[2], NodeReviewsColumns[3]},
 			},
 		},
 	}
@@ -251,6 +288,7 @@ var (
 		CiWorkflowResultsTable,
 		GitCommitsTable,
 		NodesTable,
+		NodeReviewsTable,
 		NodeVersionsTable,
 		PersonalAccessTokensTable,
 		PublishersTable,
@@ -264,6 +302,8 @@ func init() {
 	CiWorkflowResultsTable.ForeignKeys[0].RefTable = StorageFilesTable
 	CiWorkflowResultsTable.ForeignKeys[1].RefTable = GitCommitsTable
 	NodesTable.ForeignKeys[0].RefTable = PublishersTable
+	NodeReviewsTable.ForeignKeys[0].RefTable = NodesTable
+	NodeReviewsTable.ForeignKeys[1].RefTable = UsersTable
 	NodeVersionsTable.ForeignKeys[0].RefTable = NodesTable
 	NodeVersionsTable.ForeignKeys[1].RefTable = StorageFilesTable
 	PersonalAccessTokensTable.ForeignKeys[0].RefTable = PublishersTable

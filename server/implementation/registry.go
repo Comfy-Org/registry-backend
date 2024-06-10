@@ -682,6 +682,34 @@ func (s *DripStrictServerImplementation) UpdateNodeVersion(
 	}, nil
 }
 
+// PostNodeVersionReview implements drip.StrictServerInterface.
+func (s *DripStrictServerImplementation) PostNodeReview(ctx context.Context, request drip.PostNodeReviewRequestObject) (drip.PostNodeReviewResponseObject, error) {
+	log.Ctx(ctx).Info().Msgf("PostNodeReview request received for "+
+		"node ID: %s", request.NodeId)
+
+	if request.Params.Star < 1 || request.Params.Star > 5 {
+		log.Ctx(ctx).Error().Msgf("Invalid star received: %d", request.Params.Star)
+		return drip.PostNodeReview400Response{}, nil
+	}
+
+	userId, err := mapper.GetUserIDFromContext(ctx)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
+		return drip.PostNodeReview404JSONResponse{}, err
+	}
+
+	nv, err := s.RegistryService.AddNodeReview(ctx, s.Client, request.NodeId, userId, request.Params.Star)
+	if ent.IsNotFound(err) {
+		log.Ctx(ctx).Error().Msgf("Error retrieving node version w/ err: %v", err)
+		return drip.PostNodeReview404JSONResponse{}, nil
+	}
+
+	node := mapper.DbNodeToApiNode(nv)
+	log.Ctx(ctx).Info().Msgf("Node review for %s stored successfully", request.NodeId)
+	return drip.PostNodeReview200JSONResponse(*node), nil
+
+}
+
 func (s *DripStrictServerImplementation) DeleteNodeVersion(
 	ctx context.Context, request drip.DeleteNodeVersionRequestObject) (drip.DeleteNodeVersionResponseObject, error) {
 	log.Ctx(ctx).Info().Msgf("DeleteNodeVersion request received for node ID: "+
@@ -875,7 +903,7 @@ func (s *DripStrictServerImplementation) InstallNode(
 	log.Ctx(ctx).Info().Msgf("InstallNode request received for node ID: %s", request.NodeId)
 
 	// Get node
-	_, err := s.RegistryService.GetNode(ctx, s.Client, request.NodeId)
+	node, err := s.RegistryService.GetNode(ctx, s.Client, request.NodeId)
 	if ent.IsNotFound(err) {
 		log.Ctx(ctx).Error().Msgf("Error retrieving node w/ err: %v", err)
 		return drip.InstallNode404JSONResponse{Message: "Node not found"}, nil
@@ -897,6 +925,12 @@ func (s *DripStrictServerImplementation) InstallNode(
 			log.Ctx(ctx).Error().Msgf("Error retrieving latest node version w/ err: %v", err)
 			return drip.InstallNode500JSONResponse{Message: errMessage}, err
 		}
+		err = node.Update().AddTotalInstall(1).Exec(ctx)
+		if err != nil {
+			errMessage := "Failed to get increment number of node version install: " + err.Error()
+			log.Ctx(ctx).Error().Msgf("Error incrementing number of latest node version install w/ err: %v", err)
+			return drip.InstallNode500JSONResponse{Message: errMessage}, err
+		}
 		mp.Track(ctx, []*mixpanel.Event{
 			mp.NewEvent("Install Node Latest", "", map[string]any{
 				"Node ID": request.NodeId,
@@ -915,6 +949,12 @@ func (s *DripStrictServerImplementation) InstallNode(
 		if err != nil {
 			errMessage := "Failed to get specified node version: " + err.Error()
 			log.Ctx(ctx).Error().Msgf("Error retrieving node version w/ err: %v", err)
+			return drip.InstallNode500JSONResponse{Message: errMessage}, err
+		}
+		err = node.Update().AddTotalInstall(1).Exec(ctx)
+		if err != nil {
+			errMessage := "Failed to get increment number of node version install: " + err.Error()
+			log.Ctx(ctx).Error().Msgf("Error incrementing number of latest node version install w/ err: %v", err)
 			return drip.InstallNode500JSONResponse{Message: errMessage}, err
 		}
 		mp.Track(ctx, []*mixpanel.Event{

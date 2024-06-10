@@ -44,6 +44,18 @@ func (f NodeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.NodeMutation", m)
 }
 
+// The NodeReviewFunc type is an adapter to allow the use of ordinary
+// function as NodeReview mutator.
+type NodeReviewFunc func(context.Context, *ent.NodeReviewMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f NodeReviewFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.NodeReviewMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.NodeReviewMutation", m)
+}
+
 // The NodeVersionFunc type is an adapter to allow the use of ordinary
 // function as NodeVersion mutator.
 type NodeVersionFunc func(context.Context, *ent.NodeVersionMutation) (ent.Value, error)

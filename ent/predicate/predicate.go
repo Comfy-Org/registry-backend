@@ -15,6 +15,9 @@ type GitCommit func(*sql.Selector)
 // Node is the predicate function for node builders.
 type Node func(*sql.Selector)
 
+// NodeReview is the predicate function for nodereview builders.
+type NodeReview func(*sql.Selector)
+
 // NodeVersion is the predicate function for nodeversion builders.
 type NodeVersion func(*sql.Selector)
 

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"registry-backend/ent/node"
+	"registry-backend/ent/nodereview"
 	"registry-backend/ent/nodeversion"
 	"registry-backend/ent/publisher"
 	"time"
@@ -126,6 +127,48 @@ func (nc *NodeCreate) SetTags(s []string) *NodeCreate {
 	return nc
 }
 
+// SetTotalInstall sets the "total_install" field.
+func (nc *NodeCreate) SetTotalInstall(i int64) *NodeCreate {
+	nc.mutation.SetTotalInstall(i)
+	return nc
+}
+
+// SetNillableTotalInstall sets the "total_install" field if the given value is not nil.
+func (nc *NodeCreate) SetNillableTotalInstall(i *int64) *NodeCreate {
+	if i != nil {
+		nc.SetTotalInstall(*i)
+	}
+	return nc
+}
+
+// SetTotalStar sets the "total_star" field.
+func (nc *NodeCreate) SetTotalStar(i int64) *NodeCreate {
+	nc.mutation.SetTotalStar(i)
+	return nc
+}
+
+// SetNillableTotalStar sets the "total_star" field if the given value is not nil.
+func (nc *NodeCreate) SetNillableTotalStar(i *int64) *NodeCreate {
+	if i != nil {
+		nc.SetTotalStar(*i)
+	}
+	return nc
+}
+
+// SetTotalReview sets the "total_review" field.
+func (nc *NodeCreate) SetTotalReview(i int64) *NodeCreate {
+	nc.mutation.SetTotalReview(i)
+	return nc
+}
+
+// SetNillableTotalReview sets the "total_review" field if the given value is not nil.
+func (nc *NodeCreate) SetNillableTotalReview(i *int64) *NodeCreate {
+	if i != nil {
+		nc.SetTotalReview(*i)
+	}
+	return nc
+}
+
 // SetID sets the "id" field.
 func (nc *NodeCreate) SetID(s string) *NodeCreate {
 	nc.mutation.SetID(s)
@@ -150,6 +193,21 @@ func (nc *NodeCreate) AddVersions(n ...*NodeVersion) *NodeCreate {
 		ids[i] = n[i].ID
 	}
 	return nc.AddVersionIDs(ids...)
+}
+
+// AddReviewIDs adds the "reviews" edge to the NodeReview entity by IDs.
+func (nc *NodeCreate) AddReviewIDs(ids ...uuid.UUID) *NodeCreate {
+	nc.mutation.AddReviewIDs(ids...)
+	return nc
+}
+
+// AddReviews adds the "reviews" edges to the NodeReview entity.
+func (nc *NodeCreate) AddReviews(n ...*NodeReview) *NodeCreate {
+	ids := make([]uuid.UUID, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return nc.AddReviewIDs(ids...)
 }
 
 // Mutation returns the NodeMutation object of the builder.
@@ -199,6 +257,18 @@ func (nc *NodeCreate) defaults() {
 		v := node.DefaultTags
 		nc.mutation.SetTags(v)
 	}
+	if _, ok := nc.mutation.TotalInstall(); !ok {
+		v := node.DefaultTotalInstall
+		nc.mutation.SetTotalInstall(v)
+	}
+	if _, ok := nc.mutation.TotalStar(); !ok {
+		v := node.DefaultTotalStar
+		nc.mutation.SetTotalStar(v)
+	}
+	if _, ok := nc.mutation.TotalReview(); !ok {
+		v := node.DefaultTotalReview
+		nc.mutation.SetTotalReview(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -223,6 +293,15 @@ func (nc *NodeCreate) check() error {
 	}
 	if _, ok := nc.mutation.Tags(); !ok {
 		return &ValidationError{Name: "tags", err: errors.New(`ent: missing required field "Node.tags"`)}
+	}
+	if _, ok := nc.mutation.TotalInstall(); !ok {
+		return &ValidationError{Name: "total_install", err: errors.New(`ent: missing required field "Node.total_install"`)}
+	}
+	if _, ok := nc.mutation.TotalStar(); !ok {
+		return &ValidationError{Name: "total_star", err: errors.New(`ent: missing required field "Node.total_star"`)}
+	}
+	if _, ok := nc.mutation.TotalReview(); !ok {
+		return &ValidationError{Name: "total_review", err: errors.New(`ent: missing required field "Node.total_review"`)}
 	}
 	if _, ok := nc.mutation.PublisherID(); !ok {
 		return &ValidationError{Name: "publisher", err: errors.New(`ent: missing required edge "Node.publisher"`)}
@@ -299,6 +378,18 @@ func (nc *NodeCreate) createSpec() (*Node, *sqlgraph.CreateSpec) {
 		_spec.SetField(node.FieldTags, field.TypeJSON, value)
 		_node.Tags = value
 	}
+	if value, ok := nc.mutation.TotalInstall(); ok {
+		_spec.SetField(node.FieldTotalInstall, field.TypeInt64, value)
+		_node.TotalInstall = value
+	}
+	if value, ok := nc.mutation.TotalStar(); ok {
+		_spec.SetField(node.FieldTotalStar, field.TypeInt64, value)
+		_node.TotalStar = value
+	}
+	if value, ok := nc.mutation.TotalReview(); ok {
+		_spec.SetField(node.FieldTotalReview, field.TypeInt64, value)
+		_node.TotalReview = value
+	}
 	if nodes := nc.mutation.PublisherIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -325,6 +416,22 @@ func (nc *NodeCreate) createSpec() (*Node, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(nodeversion.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := nc.mutation.ReviewsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   node.ReviewsTable,
+			Columns: []string{node.ReviewsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(nodereview.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -507,6 +614,60 @@ func (u *NodeUpsert) SetTags(v []string) *NodeUpsert {
 // UpdateTags sets the "tags" field to the value that was provided on create.
 func (u *NodeUpsert) UpdateTags() *NodeUpsert {
 	u.SetExcluded(node.FieldTags)
+	return u
+}
+
+// SetTotalInstall sets the "total_install" field.
+func (u *NodeUpsert) SetTotalInstall(v int64) *NodeUpsert {
+	u.Set(node.FieldTotalInstall, v)
+	return u
+}
+
+// UpdateTotalInstall sets the "total_install" field to the value that was provided on create.
+func (u *NodeUpsert) UpdateTotalInstall() *NodeUpsert {
+	u.SetExcluded(node.FieldTotalInstall)
+	return u
+}
+
+// AddTotalInstall adds v to the "total_install" field.
+func (u *NodeUpsert) AddTotalInstall(v int64) *NodeUpsert {
+	u.Add(node.FieldTotalInstall, v)
+	return u
+}
+
+// SetTotalStar sets the "total_star" field.
+func (u *NodeUpsert) SetTotalStar(v int64) *NodeUpsert {
+	u.Set(node.FieldTotalStar, v)
+	return u
+}
+
+// UpdateTotalStar sets the "total_star" field to the value that was provided on create.
+func (u *NodeUpsert) UpdateTotalStar() *NodeUpsert {
+	u.SetExcluded(node.FieldTotalStar)
+	return u
+}
+
+// AddTotalStar adds v to the "total_star" field.
+func (u *NodeUpsert) AddTotalStar(v int64) *NodeUpsert {
+	u.Add(node.FieldTotalStar, v)
+	return u
+}
+
+// SetTotalReview sets the "total_review" field.
+func (u *NodeUpsert) SetTotalReview(v int64) *NodeUpsert {
+	u.Set(node.FieldTotalReview, v)
+	return u
+}
+
+// UpdateTotalReview sets the "total_review" field to the value that was provided on create.
+func (u *NodeUpsert) UpdateTotalReview() *NodeUpsert {
+	u.SetExcluded(node.FieldTotalReview)
+	return u
+}
+
+// AddTotalReview adds v to the "total_review" field.
+func (u *NodeUpsert) AddTotalReview(v int64) *NodeUpsert {
+	u.Add(node.FieldTotalReview, v)
 	return u
 }
 
@@ -705,6 +866,69 @@ func (u *NodeUpsertOne) SetTags(v []string) *NodeUpsertOne {
 func (u *NodeUpsertOne) UpdateTags() *NodeUpsertOne {
 	return u.Update(func(s *NodeUpsert) {
 		s.UpdateTags()
+	})
+}
+
+// SetTotalInstall sets the "total_install" field.
+func (u *NodeUpsertOne) SetTotalInstall(v int64) *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetTotalInstall(v)
+	})
+}
+
+// AddTotalInstall adds v to the "total_install" field.
+func (u *NodeUpsertOne) AddTotalInstall(v int64) *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.AddTotalInstall(v)
+	})
+}
+
+// UpdateTotalInstall sets the "total_install" field to the value that was provided on create.
+func (u *NodeUpsertOne) UpdateTotalInstall() *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateTotalInstall()
+	})
+}
+
+// SetTotalStar sets the "total_star" field.
+func (u *NodeUpsertOne) SetTotalStar(v int64) *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetTotalStar(v)
+	})
+}
+
+// AddTotalStar adds v to the "total_star" field.
+func (u *NodeUpsertOne) AddTotalStar(v int64) *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.AddTotalStar(v)
+	})
+}
+
+// UpdateTotalStar sets the "total_star" field to the value that was provided on create.
+func (u *NodeUpsertOne) UpdateTotalStar() *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateTotalStar()
+	})
+}
+
+// SetTotalReview sets the "total_review" field.
+func (u *NodeUpsertOne) SetTotalReview(v int64) *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetTotalReview(v)
+	})
+}
+
+// AddTotalReview adds v to the "total_review" field.
+func (u *NodeUpsertOne) AddTotalReview(v int64) *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.AddTotalReview(v)
+	})
+}
+
+// UpdateTotalReview sets the "total_review" field to the value that was provided on create.
+func (u *NodeUpsertOne) UpdateTotalReview() *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateTotalReview()
 	})
 }
 
@@ -1070,6 +1294,69 @@ func (u *NodeUpsertBulk) SetTags(v []string) *NodeUpsertBulk {
 func (u *NodeUpsertBulk) UpdateTags() *NodeUpsertBulk {
 	return u.Update(func(s *NodeUpsert) {
 		s.UpdateTags()
+	})
+}
+
+// SetTotalInstall sets the "total_install" field.
+func (u *NodeUpsertBulk) SetTotalInstall(v int64) *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetTotalInstall(v)
+	})
+}
+
+// AddTotalInstall adds v to the "total_install" field.
+func (u *NodeUpsertBulk) AddTotalInstall(v int64) *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.AddTotalInstall(v)
+	})
+}
+
+// UpdateTotalInstall sets the "total_install" field to the value that was provided on create.
+func (u *NodeUpsertBulk) UpdateTotalInstall() *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateTotalInstall()
+	})
+}
+
+// SetTotalStar sets the "total_star" field.
+func (u *NodeUpsertBulk) SetTotalStar(v int64) *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetTotalStar(v)
+	})
+}
+
+// AddTotalStar adds v to the "total_star" field.
+func (u *NodeUpsertBulk) AddTotalStar(v int64) *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.AddTotalStar(v)
+	})
+}
+
+// UpdateTotalStar sets the "total_star" field to the value that was provided on create.
+func (u *NodeUpsertBulk) UpdateTotalStar() *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateTotalStar()
+	})
+}
+
+// SetTotalReview sets the "total_review" field.
+func (u *NodeUpsertBulk) SetTotalReview(v int64) *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetTotalReview(v)
+	})
+}
+
+// AddTotalReview adds v to the "total_review" field.
+func (u *NodeUpsertBulk) AddTotalReview(v int64) *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.AddTotalReview(v)
+	})
+}
+
+// UpdateTotalReview sets the "total_review" field to the value that was provided on create.
+func (u *NodeUpsertBulk) UpdateTotalReview() *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateTotalReview()
 	})
 }
 

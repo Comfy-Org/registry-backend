@@ -43,6 +43,9 @@ func (Node) Fields() []ent.Field {
 		field.Strings("tags").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}).Default([]string{}),
+		field.Int64("total_install").Default(0),
+		field.Int64("total_star").Default(0),
+		field.Int64("total_review").Default(0),
 	}
 }
 
@@ -56,5 +59,6 @@ func (Node) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("publisher", Publisher.Type).Field("publisher_id").Ref("nodes").Required().Unique(),
 		edge.To("versions", NodeVersion.Type),
+		edge.To("reviews", NodeReview.Type),
 	}
 }

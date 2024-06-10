@@ -33,5 +33,6 @@ func (User) Mixin() []ent.Mixin {
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("publisher_permissions", PublisherPermission.Type),
+		edge.To("reviews", NodeReview.Type),
 	}
 }

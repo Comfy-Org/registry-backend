@@ -1151,6 +1151,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /nodes/{nodeId}/reviews:
+    post:
+      summary: Add review to a specific version of a node
+      operationId: postNodeReview
+      tags:
+        - Nodes
+      parameters:
+        - in: path
+          name: nodeId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: star
+          description: number of star given to the node version
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detailed information about a specific node
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+        '400':
+          description: Bad Request
+        '404':
+          description: Node version not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /nodes/{nodeId}/install:
     get:
       summary: Returns a node version to be installed.

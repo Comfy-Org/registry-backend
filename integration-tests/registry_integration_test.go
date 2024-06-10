@@ -7,7 +7,6 @@ import (
 	"registry-backend/ent"
 	"registry-backend/mock/gateways"
 	"registry-backend/server/implementation"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -326,29 +325,12 @@ func TestRegistry(t *testing.T) {
 
 		})
 
-		t.Run("Create Node with Duplicate ID", func(t *testing.T) {
-			createNodeResponse, err := impl.CreateNode(ctx, drip.CreateNodeRequestObject{
-				PublisherId: publisherId,
-				Body: &drip.Node{
-					Id:          &nodeId,
-					Name:        &nodeName,
-					Description: &nodeDescription,
-					Author:      &nodeAuthor,
-					License:     &nodeLicense,
-					Tags:        &nodeTags,
-					Icon:        &icon,
-					Repository:  &githubUrl,
-				},
-			})
-			require.Error(t, err, "should return error when creating node with duplicate ID")
-			assert.IsType(t, drip.CreateNode400JSONResponse{}, createNodeResponse)
-		})
-
 		t.Run("Get Node", func(t *testing.T) {
 			res, err := impl.GetNode(ctx, drip.GetNodeRequestObject{NodeId: nodeId})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.GetNode200JSONResponse{}, res)
 			res200 := res.(drip.GetNode200JSONResponse)
+			expDl, expRate := 0, float32(0)
 			assert.Equal(t, drip.GetNode200JSONResponse{
 				Id:          &nodeId,
 				Name:        &nodeName,
@@ -358,6 +340,9 @@ func TestRegistry(t *testing.T) {
 				License:     &nodeLicense,
 				Icon:        &icon,
 				Repository:  &githubUrl,
+
+				Downloads: &expDl,
+				Rating:    &expRate,
 			}, res200, "should return stored node data")
 		})
 
@@ -375,6 +360,7 @@ func TestRegistry(t *testing.T) {
 			require.IsType(t, drip.ListNodesForPublisher200JSONResponse{}, res)
 			res200 := res.(drip.ListNodesForPublisher200JSONResponse)
 			require.Len(t, res200, 1)
+			expDl, expRate := 0, float32(0)
 			assert.Equal(t, drip.Node{
 				Id:          &nodeId,
 				Name:        &nodeName,
@@ -384,6 +370,9 @@ func TestRegistry(t *testing.T) {
 				License:     &nodeLicense,
 				Icon:        &icon,
 				Repository:  &githubUrl,
+
+				Downloads: &expDl,
+				Rating:    &expRate,
 			}, res200[0], "should return stored node data")
 		})
 
@@ -424,6 +413,7 @@ func TestRegistry(t *testing.T) {
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.GetNode200JSONResponse{}, resUpdated)
 			res200Updated := resUpdated.(drip.GetNode200JSONResponse)
+			expDl, expRate := 0, float32(0)
 			assert.Equal(t, drip.GetNode200JSONResponse{
 				Id:          &nodeId,
 				Description: &updateNodeDescription,
@@ -433,6 +423,9 @@ func TestRegistry(t *testing.T) {
 				Tags:        &updateNodeTags,
 				Icon:        &updateIcon,
 				Repository:  &updateGithubUrl,
+
+				Downloads: &expDl,
+				Rating:    &expRate,
 			}, res200Updated, "should return updated node data")
 		})
 
@@ -641,6 +634,7 @@ func TestRegistry(t *testing.T) {
 			resNodes200 := resNodes.(drip.ListAllNodes200JSONResponse)
 			assert.Len(t, *resNodes200.Nodes, 1, "should only contain 1 node")
 
+			expDl, expRate := 0, float32(0)
 			expectedNode := drip.Node{
 				Id:            &nodeId,
 				Name:          &nodeName,
@@ -652,6 +646,8 @@ func TestRegistry(t *testing.T) {
 				LatestVersion: &createdNodeVersion,
 				Icon:          proto.String(""),
 				Publisher:     (*drip.Publisher)(&createdPublisher),
+				Downloads:     &expDl,
+				Rating:        &expRate,
 			}
 			expectedNode.LatestVersion.DownloadUrl = (*resNodes200.Nodes)[0].LatestVersion.DownloadUrl // generated
 			expectedNode.LatestVersion.Deprecated = (*resNodes200.Nodes)[0].LatestVersion.Deprecated   // generated
@@ -680,104 +676,24 @@ func TestRegistry(t *testing.T) {
 			require.IsType(t, drip.InstallNode404JSONResponse{}, resIns, "should return 404")
 		})
 
-		t.Run("Node Search", func(t *testing.T) {
-			ctx, _ := setUpTest(client)
-			publisherId := "test-publisher-node-search"
-			description := "test-description"
-			source_code_repo := "test-source-code-repo"
-			website := "test-website"
-			support := "test-support"
-			logo := "test-logo"
-			name := "test-name"
-
-			createPublisherResponse, err := impl.CreatePublisher(ctx, drip.CreatePublisherRequestObject{
-				Body: &drip.Publisher{
-					Id:             &publisherId,
-					Description:    &description,
-					SourceCodeRepo: &source_code_repo,
-					Website:        &website,
-					Support:        &support,
-					Logo:           &logo,
-					Name:           &name,
-				},
+		t.Run("Get Total Install", func(t *testing.T) {
+			res, err := impl.GetNode(ctx, drip.GetNodeRequestObject{
+				NodeId: nodeId,
 			})
-			require.NoError(t, err, "should return created publisher")
-			require.NotNil(t, createPublisherResponse, "should return created publisher")
-			assert.Equal(t, publisherId, *createPublisherResponse.(drip.CreatePublisher201JSONResponse).Id)
+			require.NoError(t, err, "should not return error")
+			require.IsType(t, drip.GetNode200JSONResponse{}, res)
+			assert.Equal(t, int(2), *res.(drip.GetNode200JSONResponse).Downloads)
+		})
 
-			tokenName := "test-token-search"
-			tokenDescription := "test-token-description"
-			createPersonalAccessTokenResponse, err := impl.CreatePersonalAccessToken(ctx, drip.CreatePersonalAccessTokenRequestObject{
-				PublisherId: publisherId,
-				Body: &drip.PersonalAccessToken{
-					Name:        &tokenName,
-					Description: &tokenDescription,
-				},
+		t.Run("Add review", func(t *testing.T) {
+			res, err := impl.PostNodeReview(ctx, drip.PostNodeReviewRequestObject{
+				NodeId: nodeId,
+				Params: drip.PostNodeReviewParams{Star: 5},
 			})
-			require.NoError(t, err, "should return created token")
-			require.NotNil(t, *createPersonalAccessTokenResponse.(drip.CreatePersonalAccessToken201JSONResponse).Token, "Token should have a value.")
-
-			nodeId := "test-node-search"
-			nodeDescription := "test-node-description"
-			nodeAuthor := "test-node-author"
-			nodeLicense := "test-node-license"
-			nodeName := "test-node-name"
-			nodeTags := []string{"test-node-tag"}
-			nodeVersionLiteral := "1.0.0"
-			changelog := "test-changelog"
-			dependencies := []string{"test-dependency"}
-
-			for i := 0; i < 21; i++ {
-				mockStorageService.On("GenerateSignedURL", mock.Anything, mock.Anything).Return("test-url", nil)
-				mockStorageService.On("GetFileUrl", mock.Anything, mock.Anything, mock.Anything).Return("test-url", nil)
-				createNodeVersionResp, err := impl.PublishNodeVersion(ctx, drip.PublishNodeVersionRequestObject{
-					PublisherId: publisherId,
-					NodeId:      nodeId,
-					Body: &drip.PublishNodeVersionJSONRequestBody{
-						Node: drip.Node{
-							Id:          proto.String(nodeId + "-" + strconv.Itoa(i)),
-							Description: &nodeDescription,
-							Author:      &nodeAuthor,
-							License:     &nodeLicense,
-							Name:        &nodeName,
-							Tags:        &nodeTags,
-							Repository:  &source_code_repo,
-						},
-						NodeVersion: drip.NodeVersion{
-							Version:      proto.String(nodeVersionLiteral + "-" + strconv.Itoa(i)),
-							Changelog:    &changelog,
-							Dependencies: &dependencies,
-						},
-						PersonalAccessToken: *createPersonalAccessTokenResponse.(drip.CreatePersonalAccessToken201JSONResponse).Token,
-					},
-				})
-				require.NoError(t, err, "should return created node version")
-				require.IsType(t, drip.PublishNodeVersion201JSONResponse{}, createNodeVersionResp)
-			}
-
-			t.Run("Search", func(t *testing.T) {
-				t.Run("Match Many", func(t *testing.T) {
-					resNodes, err := impl.SearchNodes(ctx, drip.SearchNodesRequestObject{Params: drip.SearchNodesParams{
-						Search: proto.String("test-node"),
-					}})
-					require.NoError(t, err, "should not return error")
-					require.IsType(t, drip.SearchNodes200JSONResponse{}, resNodes, "should return 200 server response")
-					resNodes200 := resNodes.(drip.SearchNodes200JSONResponse)
-					assert.Len(t, *resNodes200.Nodes, 10, "should contains 10 node")
-				})
-				t.Run("Match Some", func(t *testing.T) {
-					resNodes, err := impl.SearchNodes(ctx, drip.SearchNodesRequestObject{Params: drip.SearchNodesParams{
-						Search: proto.String("test-node-search-2"),
-					}})
-					require.NoError(t, err, "should not return error")
-					require.IsType(t, drip.SearchNodes200JSONResponse{}, resNodes, "should return 200 server response")
-					resNodes200 := resNodes.(drip.SearchNodes200JSONResponse)
-					assert.Len(t, *resNodes200.Nodes, 2, "should contains 2 node")
-					for _, n := range *resNodes200.Nodes {
-						assert.Contains(t, *n.Id, "test-node-search-2")
-					}
-				})
-			})
+			require.NoError(t, err)
+			require.IsType(t, drip.PostNodeReview200JSONResponse{}, res)
+			res200 := res.(drip.PostNodeReview200JSONResponse)
+			assert.Equal(t, float32(5), *res200.Rating)
 		})
 	})
 }

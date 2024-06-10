@@ -10,6 +10,7 @@ import (
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/node"
+	"registry-backend/ent/nodereview"
 	"registry-backend/ent/nodeversion"
 	"registry-backend/ent/personalaccesstoken"
 	"registry-backend/ent/publisher"
@@ -84,6 +85,7 @@ func checkColumn(table, column string) error {
 			ciworkflowresult.Table:    ciworkflowresult.ValidColumn,
 			gitcommit.Table:           gitcommit.ValidColumn,
 			node.Table:                node.ValidColumn,
+			nodereview.Table:          nodereview.ValidColumn,
 			nodeversion.Table:         nodeversion.ValidColumn,
 			personalaccesstoken.Table: personalaccesstoken.ValidColumn,
 			publisher.Table:           publisher.ValidColumn,

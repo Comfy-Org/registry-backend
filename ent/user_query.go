@@ -7,6 +7,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"math"
+	"registry-backend/ent/nodereview"
 	"registry-backend/ent/predicate"
 	"registry-backend/ent/publisherpermission"
 	"registry-backend/ent/user"
@@ -25,6 +26,7 @@ type UserQuery struct {
 	inters                   []Interceptor
 	predicates               []predicate.User
 	withPublisherPermissions *PublisherPermissionQuery
+	withReviews              *NodeReviewQuery
 	modifiers                []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -77,6 +79,28 @@ func (uq *UserQuery) QueryPublisherPermissions() *PublisherPermissionQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(publisherpermission.Table, publisherpermission.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.PublisherPermissionsTable, user.PublisherPermissionsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryReviews chains the current query on the "reviews" edge.
+func (uq *UserQuery) QueryReviews() *NodeReviewQuery {
+	query := (&NodeReviewClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(nodereview.Table, nodereview.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ReviewsTable, user.ReviewsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -277,6 +301,7 @@ func (uq *UserQuery) Clone() *UserQuery {
 		inters:                   append([]Interceptor{}, uq.inters...),
 		predicates:               append([]predicate.User{}, uq.predicates...),
 		withPublisherPermissions: uq.withPublisherPermissions.Clone(),
+		withReviews:              uq.withReviews.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
@@ -291,6 +316,17 @@ func (uq *UserQuery) WithPublisherPermissions(opts ...func(*PublisherPermissionQ
 		opt(query)
 	}
 	uq.withPublisherPermissions = query
+	return uq
+}
+
+// WithReviews tells the query-builder to eager-load the nodes that are connected to
+// the "reviews" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithReviews(opts ...func(*NodeReviewQuery)) *UserQuery {
+	query := (&NodeReviewClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withReviews = query
 	return uq
 }
 
@@ -372,8 +408,9 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = uq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			uq.withPublisherPermissions != nil,
+			uq.withReviews != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -406,6 +443,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			return nil, err
 		}
 	}
+	if query := uq.withReviews; query != nil {
+		if err := uq.loadReviews(ctx, query, nodes,
+			func(n *User) { n.Edges.Reviews = []*NodeReview{} },
+			func(n *User, e *NodeReview) { n.Edges.Reviews = append(n.Edges.Reviews, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
@@ -424,6 +468,36 @@ func (uq *UserQuery) loadPublisherPermissions(ctx context.Context, query *Publis
 	}
 	query.Where(predicate.PublisherPermission(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(user.PublisherPermissionsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.UserID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (uq *UserQuery) loadReviews(ctx context.Context, query *NodeReviewQuery, nodes []*User, init func(*User), assign func(*User, *NodeReview)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[string]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(nodereview.FieldUserID)
+	}
+	query.Where(predicate.NodeReview(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.ReviewsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
