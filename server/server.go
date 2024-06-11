@@ -47,6 +47,7 @@ func (s *Server) Start() error {
 				".comfyci.org",           // Any subdomain of comfyci.org
 				os.Getenv("CORS_ORIGIN"), // Environment-specific allowed origin
 				".comfyregistry.org",
+				".comfy.org",
 			}
 
 			for _, allowed := range allowedOrigins {
