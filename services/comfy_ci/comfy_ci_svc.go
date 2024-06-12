@@ -8,6 +8,7 @@ import (
 	"registry-backend/ent"
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/gitcommit"
+	"registry-backend/server/middleware/metric"
 	"strings"
 	"time"
 
@@ -37,6 +38,11 @@ func (s *ComfyCIService) ProcessCIRequest(ctx context.Context, client *ent.Clien
 	existingCommit, err := client.GitCommit.Query().Where(gitcommit.CommitHashEQ(req.Body.CommitHash)).Where(gitcommit.RepoNameEQ(req.Body.Repo)).Only(ctx)
 	if ent.IsNotSingular(err) {
 		log.Ctx(ctx).Error().Err(err).Msgf("Failed to query git commit %s", req.Body.CommitHash)
+		metric.IncrementCustomCounterMetric(ctx, metric.CustomCounterIncrement{
+			Type:   "ci-git-commit-query-error",
+			Val:    1,
+			Labels: map[string]string{},
+		})
 	}
 	if existingCommit != nil {
 		_, err := client.CIWorkflowResult.Delete().Where(ciworkflowresult.HasGitcommitWith(gitcommit.IDEQ(existingCommit.ID))).Exec(ctx)
@@ -64,6 +70,13 @@ func (s *ComfyCIService) ProcessCIRequest(ctx context.Context, client *ent.Clien
 
 				if err != nil {
 					log.Ctx(ctx).Error().Err(err).Msg("Failed to upsert storage file")
+					metric.IncrementCustomCounterMetric(ctx, metric.CustomCounterIncrement{
+						Type: "ci-upsert-storage-error",
+						Val:  1,
+						Labels: map[string]string{
+							"bucket-name": file.BucketName,
+						},
+					})
 					continue
 				}
 

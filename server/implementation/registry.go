@@ -937,6 +937,7 @@ func (s *DripStrictServerImplementation) InstallNode(
 				"Version": nodeVersion.Version,
 			}),
 		})
+
 		return drip.InstallNode200JSONResponse(
 			*mapper.DbNodeVersionToApiNodeVersion(nodeVersion),
 		), nil
@@ -963,6 +964,7 @@ func (s *DripStrictServerImplementation) InstallNode(
 				"Version": nodeVersion.Version,
 			}),
 		})
+
 		return drip.InstallNode200JSONResponse(
 			*mapper.DbNodeVersionToApiNodeVersion(nodeVersion),
 		), nil

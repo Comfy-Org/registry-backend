@@ -17,6 +17,7 @@ import (
 	gateway "registry-backend/gateways/slack"
 	"registry-backend/gateways/storage"
 	"registry-backend/mapper"
+	"registry-backend/server/middleware/metric"
 
 	"github.com/Masterminds/semver/v3"
 	"google.golang.org/protobuf/proto"
@@ -325,6 +326,11 @@ func (s *RegistryService) CreateNodeVersion(
 		slackErr := s.slackService.SendRegistryMessageToSlack(fmt.Sprintf("Version %s of node %s was published successfully. Publisher: %s. https://comfyregistry.org/nodes/%s", createdNodeVersion.Version, createdNodeVersion.NodeID, publisherID, nodeID))
 		if slackErr != nil {
 			log.Ctx(ctx).Error().Msgf("Failed to send message to Slack w/ err: %v", slackErr)
+			metric.IncrementCustomCounterMetric(ctx, metric.CustomCounterIncrement{
+				Type:   "slack-send-error",
+				Val:    1,
+				Labels: map[string]string{},
+			})
 		}
 
 		return &NodeVersionCreation{
