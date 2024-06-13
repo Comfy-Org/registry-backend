@@ -4,6 +4,7 @@ package node
 
 import (
 	"registry-backend/ent/predicate"
+	"registry-backend/ent/schema"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -808,6 +809,36 @@ func TotalReviewLT(v int64) predicate.Node {
 // TotalReviewLTE applies the LTE predicate on the "total_review" field.
 func TotalReviewLTE(v int64) predicate.Node {
 	return predicate.Node(sql.FieldLTE(FieldTotalReview, v))
+}
+
+// StatusEQ applies the EQ predicate on the "status" field.
+func StatusEQ(v schema.NodeStatus) predicate.Node {
+	vc := v
+	return predicate.Node(sql.FieldEQ(FieldStatus, vc))
+}
+
+// StatusNEQ applies the NEQ predicate on the "status" field.
+func StatusNEQ(v schema.NodeStatus) predicate.Node {
+	vc := v
+	return predicate.Node(sql.FieldNEQ(FieldStatus, vc))
+}
+
+// StatusIn applies the In predicate on the "status" field.
+func StatusIn(vs ...schema.NodeStatus) predicate.Node {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Node(sql.FieldIn(FieldStatus, v...))
+}
+
+// StatusNotIn applies the NotIn predicate on the "status" field.
+func StatusNotIn(vs ...schema.NodeStatus) predicate.Node {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Node(sql.FieldNotIn(FieldStatus, v...))
 }
 
 // HasPublisher applies the HasEdge predicate on the "publisher" edge.

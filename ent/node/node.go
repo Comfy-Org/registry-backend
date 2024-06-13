@@ -3,6 +3,8 @@
 package node
 
 import (
+	"fmt"
+	"registry-backend/ent/schema"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -40,6 +42,8 @@ const (
 	FieldTotalStar = "total_star"
 	// FieldTotalReview holds the string denoting the total_review field in the database.
 	FieldTotalReview = "total_review"
+	// FieldStatus holds the string denoting the status field in the database.
+	FieldStatus = "status"
 	// EdgePublisher holds the string denoting the publisher edge name in mutations.
 	EdgePublisher = "publisher"
 	// EdgeVersions holds the string denoting the versions edge name in mutations.
@@ -87,6 +91,7 @@ var Columns = []string{
 	FieldTotalInstall,
 	FieldTotalStar,
 	FieldTotalReview,
+	FieldStatus,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -115,6 +120,18 @@ var (
 	// DefaultTotalReview holds the default value on creation for the "total_review" field.
 	DefaultTotalReview int64
 )
+
+const DefaultStatus schema.NodeStatus = "pending"
+
+// StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
+func StatusValidator(s schema.NodeStatus) error {
+	switch s {
+	case "active", "banned", "deleted", "pending":
+		return nil
+	default:
+		return fmt.Errorf("node: invalid enum value for status field: %q", s)
+	}
+}
 
 // OrderOption defines the ordering options for the Node queries.
 type OrderOption func(*sql.Selector)
@@ -182,6 +199,11 @@ func ByTotalStar(opts ...sql.OrderTermOption) OrderOption {
 // ByTotalReview orders the results by the total_review field.
 func ByTotalReview(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTotalReview, opts...).ToFunc()
+}
+
+// ByStatus orders the results by the status field.
+func ByStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStatus, opts...).ToFunc()
 }
 
 // ByPublisherField orders the results by publisher field.

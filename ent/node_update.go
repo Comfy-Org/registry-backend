@@ -11,6 +11,7 @@ import (
 	"registry-backend/ent/nodeversion"
 	"registry-backend/ent/predicate"
 	"registry-backend/ent/publisher"
+	"registry-backend/ent/schema"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -230,6 +231,20 @@ func (nu *NodeUpdate) AddTotalReview(i int64) *NodeUpdate {
 	return nu
 }
 
+// SetStatus sets the "status" field.
+func (nu *NodeUpdate) SetStatus(ss schema.NodeStatus) *NodeUpdate {
+	nu.mutation.SetStatus(ss)
+	return nu
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (nu *NodeUpdate) SetNillableStatus(ss *schema.NodeStatus) *NodeUpdate {
+	if ss != nil {
+		nu.SetStatus(*ss)
+	}
+	return nu
+}
+
 // SetPublisher sets the "publisher" edge to the Publisher entity.
 func (nu *NodeUpdate) SetPublisher(p *Publisher) *NodeUpdate {
 	return nu.SetPublisherID(p.ID)
@@ -356,6 +371,11 @@ func (nu *NodeUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (nu *NodeUpdate) check() error {
+	if v, ok := nu.mutation.Status(); ok {
+		if err := node.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Node.status": %w`, err)}
+		}
+	}
 	if _, ok := nu.mutation.PublisherID(); nu.mutation.PublisherCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Node.publisher"`)
 	}
@@ -429,6 +449,9 @@ func (nu *NodeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := nu.mutation.AddedTotalReview(); ok {
 		_spec.AddField(node.FieldTotalReview, field.TypeInt64, value)
+	}
+	if value, ok := nu.mutation.Status(); ok {
+		_spec.SetField(node.FieldStatus, field.TypeEnum, value)
 	}
 	if nu.mutation.PublisherCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -766,6 +789,20 @@ func (nuo *NodeUpdateOne) AddTotalReview(i int64) *NodeUpdateOne {
 	return nuo
 }
 
+// SetStatus sets the "status" field.
+func (nuo *NodeUpdateOne) SetStatus(ss schema.NodeStatus) *NodeUpdateOne {
+	nuo.mutation.SetStatus(ss)
+	return nuo
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (nuo *NodeUpdateOne) SetNillableStatus(ss *schema.NodeStatus) *NodeUpdateOne {
+	if ss != nil {
+		nuo.SetStatus(*ss)
+	}
+	return nuo
+}
+
 // SetPublisher sets the "publisher" edge to the Publisher entity.
 func (nuo *NodeUpdateOne) SetPublisher(p *Publisher) *NodeUpdateOne {
 	return nuo.SetPublisherID(p.ID)
@@ -905,6 +942,11 @@ func (nuo *NodeUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (nuo *NodeUpdateOne) check() error {
+	if v, ok := nuo.mutation.Status(); ok {
+		if err := node.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Node.status": %w`, err)}
+		}
+	}
 	if _, ok := nuo.mutation.PublisherID(); nuo.mutation.PublisherCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Node.publisher"`)
 	}
@@ -995,6 +1037,9 @@ func (nuo *NodeUpdateOne) sqlSave(ctx context.Context) (_node *Node, err error) 
 	}
 	if value, ok := nuo.mutation.AddedTotalReview(); ok {
 		_spec.AddField(node.FieldTotalReview, field.TypeInt64, value)
+	}
+	if value, ok := nuo.mutation.Status(); ok {
+		_spec.SetField(node.FieldStatus, field.TypeEnum, value)
 	}
 	if nuo.mutation.PublisherCleared() {
 		edge := &sqlgraph.EdgeSpec{

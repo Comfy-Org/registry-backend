@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"registry-backend/drip"
 	"registry-backend/ent"
+	"registry-backend/ent/schema"
 	"strings"
 )
 
@@ -127,5 +128,25 @@ func DbNodeToApiNode(node *ent.Node) *drip.Node {
 		Icon:        &node.IconURL,
 		Downloads:   &downloads,
 		Rating:      &rate,
+		Status:      DbNodeStatusToApiNodeStatus(node.Status),
 	}
+}
+
+func DbNodeStatusToApiNodeStatus(status schema.NodeStatus) *drip.NodeStatus {
+	var nodeStatus drip.NodeStatus
+
+	switch status {
+	case schema.NodeStatusActive:
+		nodeStatus = drip.NodeStatusActive
+	case schema.NodeStatusBanned:
+		nodeStatus = drip.NodeStatusBanned
+	case schema.NodeStatusDeleted:
+		nodeStatus = drip.NodeStatusDeleted
+	case schema.NodeStatusPending:
+		nodeStatus = drip.NodeStatusPending
+	default:
+		nodeStatus = ""
+	}
+
+	return &nodeStatus
 }

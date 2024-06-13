@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"registry-backend/ent/node"
 	"registry-backend/ent/publisher"
+	"registry-backend/ent/schema"
 	"strings"
 	"time"
 
@@ -45,6 +46,8 @@ type Node struct {
 	TotalStar int64 `json:"total_star,omitempty"`
 	// TotalReview holds the value of the "total_review" field.
 	TotalReview int64 `json:"total_review,omitempty"`
+	// Status holds the value of the "status" field.
+	Status schema.NodeStatus `json:"status,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the NodeQuery when eager-loading is set.
 	Edges        NodeEdges `json:"edges"`
@@ -102,7 +105,7 @@ func (*Node) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case node.FieldTotalInstall, node.FieldTotalStar, node.FieldTotalReview:
 			values[i] = new(sql.NullInt64)
-		case node.FieldID, node.FieldPublisherID, node.FieldName, node.FieldDescription, node.FieldAuthor, node.FieldLicense, node.FieldRepositoryURL, node.FieldIconURL:
+		case node.FieldID, node.FieldPublisherID, node.FieldName, node.FieldDescription, node.FieldAuthor, node.FieldLicense, node.FieldRepositoryURL, node.FieldIconURL, node.FieldStatus:
 			values[i] = new(sql.NullString)
 		case node.FieldCreateTime, node.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
@@ -207,6 +210,12 @@ func (n *Node) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				n.TotalReview = value.Int64
 			}
+		case node.FieldStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field status", values[i])
+			} else if value.Valid {
+				n.Status = schema.NodeStatus(value.String)
+			}
 		default:
 			n.selectValues.Set(columns[i], values[i])
 		}
@@ -296,6 +305,9 @@ func (n *Node) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("total_review=")
 	builder.WriteString(fmt.Sprintf("%v", n.TotalReview))
+	builder.WriteString(", ")
+	builder.WriteString("status=")
+	builder.WriteString(fmt.Sprintf("%v", n.Status))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -10,6 +10,7 @@ import (
 	"registry-backend/ent/nodereview"
 	"registry-backend/ent/nodeversion"
 	"registry-backend/ent/publisher"
+	"registry-backend/ent/schema"
 	"time"
 
 	"entgo.io/ent/dialect"
@@ -169,6 +170,20 @@ func (nc *NodeCreate) SetNillableTotalReview(i *int64) *NodeCreate {
 	return nc
 }
 
+// SetStatus sets the "status" field.
+func (nc *NodeCreate) SetStatus(ss schema.NodeStatus) *NodeCreate {
+	nc.mutation.SetStatus(ss)
+	return nc
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (nc *NodeCreate) SetNillableStatus(ss *schema.NodeStatus) *NodeCreate {
+	if ss != nil {
+		nc.SetStatus(*ss)
+	}
+	return nc
+}
+
 // SetID sets the "id" field.
 func (nc *NodeCreate) SetID(s string) *NodeCreate {
 	nc.mutation.SetID(s)
@@ -269,6 +284,10 @@ func (nc *NodeCreate) defaults() {
 		v := node.DefaultTotalReview
 		nc.mutation.SetTotalReview(v)
 	}
+	if _, ok := nc.mutation.Status(); !ok {
+		v := node.DefaultStatus
+		nc.mutation.SetStatus(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -302,6 +321,14 @@ func (nc *NodeCreate) check() error {
 	}
 	if _, ok := nc.mutation.TotalReview(); !ok {
 		return &ValidationError{Name: "total_review", err: errors.New(`ent: missing required field "Node.total_review"`)}
+	}
+	if _, ok := nc.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Node.status"`)}
+	}
+	if v, ok := nc.mutation.Status(); ok {
+		if err := node.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Node.status": %w`, err)}
+		}
 	}
 	if _, ok := nc.mutation.PublisherID(); !ok {
 		return &ValidationError{Name: "publisher", err: errors.New(`ent: missing required edge "Node.publisher"`)}
@@ -389,6 +416,10 @@ func (nc *NodeCreate) createSpec() (*Node, *sqlgraph.CreateSpec) {
 	if value, ok := nc.mutation.TotalReview(); ok {
 		_spec.SetField(node.FieldTotalReview, field.TypeInt64, value)
 		_node.TotalReview = value
+	}
+	if value, ok := nc.mutation.Status(); ok {
+		_spec.SetField(node.FieldStatus, field.TypeEnum, value)
+		_node.Status = value
 	}
 	if nodes := nc.mutation.PublisherIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -671,6 +702,18 @@ func (u *NodeUpsert) AddTotalReview(v int64) *NodeUpsert {
 	return u
 }
 
+// SetStatus sets the "status" field.
+func (u *NodeUpsert) SetStatus(v schema.NodeStatus) *NodeUpsert {
+	u.Set(node.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *NodeUpsert) UpdateStatus() *NodeUpsert {
+	u.SetExcluded(node.FieldStatus)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -929,6 +972,20 @@ func (u *NodeUpsertOne) AddTotalReview(v int64) *NodeUpsertOne {
 func (u *NodeUpsertOne) UpdateTotalReview() *NodeUpsertOne {
 	return u.Update(func(s *NodeUpsert) {
 		s.UpdateTotalReview()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *NodeUpsertOne) SetStatus(v schema.NodeStatus) *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *NodeUpsertOne) UpdateStatus() *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateStatus()
 	})
 }
 
@@ -1357,6 +1414,20 @@ func (u *NodeUpsertBulk) AddTotalReview(v int64) *NodeUpsertBulk {
 func (u *NodeUpsertBulk) UpdateTotalReview() *NodeUpsertBulk {
 	return u.Update(func(s *NodeUpsert) {
 		s.UpdateTotalReview()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *NodeUpsertBulk) SetStatus(v schema.NodeStatus) *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *NodeUpsertBulk) UpdateStatus() *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateStatus()
 	})
 }
 
