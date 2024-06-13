@@ -3,6 +3,8 @@
 package user
 
 import (
+	"fmt"
+	"registry-backend/ent/schema"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -26,6 +28,8 @@ const (
 	FieldIsApproved = "is_approved"
 	// FieldIsAdmin holds the string denoting the is_admin field in the database.
 	FieldIsAdmin = "is_admin"
+	// FieldStatus holds the string denoting the status field in the database.
+	FieldStatus = "status"
 	// EdgePublisherPermissions holds the string denoting the publisher_permissions edge name in mutations.
 	EdgePublisherPermissions = "publisher_permissions"
 	// EdgeReviews holds the string denoting the reviews edge name in mutations.
@@ -57,6 +61,7 @@ var Columns = []string{
 	FieldName,
 	FieldIsApproved,
 	FieldIsAdmin,
+	FieldStatus,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -81,6 +86,18 @@ var (
 	// DefaultIsAdmin holds the default value on creation for the "is_admin" field.
 	DefaultIsAdmin bool
 )
+
+const DefaultStatus schema.UserStatusType = "ACTIVE"
+
+// StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
+func StatusValidator(s schema.UserStatusType) error {
+	switch s {
+	case "ACTIVE", "BANNED":
+		return nil
+	default:
+		return fmt.Errorf("user: invalid enum value for status field: %q", s)
+	}
+}
 
 // OrderOption defines the ordering options for the User queries.
 type OrderOption func(*sql.Selector)
@@ -118,6 +135,11 @@ func ByIsApproved(opts ...sql.OrderTermOption) OrderOption {
 // ByIsAdmin orders the results by the is_admin field.
 func ByIsAdmin(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsAdmin, opts...).ToFunc()
+}
+
+// ByStatus orders the results by the status field.
+func ByStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStatus, opts...).ToFunc()
 }
 
 // ByPublisherPermissionsCount orders the results by publisher_permissions count.

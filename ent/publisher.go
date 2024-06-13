@@ -5,6 +5,7 @@ package ent
 import (
 	"fmt"
 	"registry-backend/ent/publisher"
+	"registry-backend/ent/schema"
 	"strings"
 	"time"
 
@@ -34,6 +35,8 @@ type Publisher struct {
 	SourceCodeRepo string `json:"source_code_repo,omitempty"`
 	// LogoURL holds the value of the "logo_url" field.
 	LogoURL string `json:"logo_url,omitempty"`
+	// Status holds the value of the "status" field.
+	Status schema.PublisherStatusType `json:"status,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PublisherQuery when eager-loading is set.
 	Edges        PublisherEdges `json:"edges"`
@@ -85,7 +88,7 @@ func (*Publisher) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case publisher.FieldID, publisher.FieldName, publisher.FieldDescription, publisher.FieldWebsite, publisher.FieldSupportEmail, publisher.FieldSourceCodeRepo, publisher.FieldLogoURL:
+		case publisher.FieldID, publisher.FieldName, publisher.FieldDescription, publisher.FieldWebsite, publisher.FieldSupportEmail, publisher.FieldSourceCodeRepo, publisher.FieldLogoURL, publisher.FieldStatus:
 			values[i] = new(sql.NullString)
 		case publisher.FieldCreateTime, publisher.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
@@ -157,6 +160,12 @@ func (pu *Publisher) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field logo_url", values[i])
 			} else if value.Valid {
 				pu.LogoURL = value.String
+			}
+		case publisher.FieldStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field status", values[i])
+			} else if value.Valid {
+				pu.Status = schema.PublisherStatusType(value.String)
 			}
 		default:
 			pu.selectValues.Set(columns[i], values[i])
@@ -232,6 +241,9 @@ func (pu *Publisher) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("logo_url=")
 	builder.WriteString(pu.LogoURL)
+	builder.WriteString(", ")
+	builder.WriteString("status=")
+	builder.WriteString(fmt.Sprintf("%v", pu.Status))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -4,6 +4,7 @@ package user
 
 import (
 	"registry-backend/ent/predicate"
+	"registry-backend/ent/schema"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -343,6 +344,36 @@ func IsAdminEQ(v bool) predicate.User {
 // IsAdminNEQ applies the NEQ predicate on the "is_admin" field.
 func IsAdminNEQ(v bool) predicate.User {
 	return predicate.User(sql.FieldNEQ(FieldIsAdmin, v))
+}
+
+// StatusEQ applies the EQ predicate on the "status" field.
+func StatusEQ(v schema.UserStatusType) predicate.User {
+	vc := v
+	return predicate.User(sql.FieldEQ(FieldStatus, vc))
+}
+
+// StatusNEQ applies the NEQ predicate on the "status" field.
+func StatusNEQ(v schema.UserStatusType) predicate.User {
+	vc := v
+	return predicate.User(sql.FieldNEQ(FieldStatus, vc))
+}
+
+// StatusIn applies the In predicate on the "status" field.
+func StatusIn(vs ...schema.UserStatusType) predicate.User {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.User(sql.FieldIn(FieldStatus, v...))
+}
+
+// StatusNotIn applies the NotIn predicate on the "status" field.
+func StatusNotIn(vs ...schema.UserStatusType) predicate.User {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.User(sql.FieldNotIn(FieldStatus, v...))
 }
 
 // HasPublisherPermissions applies the HasEdge predicate on the "publisher_permissions" edge.

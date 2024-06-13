@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"registry-backend/ent/nodereview"
 	"registry-backend/ent/publisherpermission"
+	"registry-backend/ent/schema"
 	"registry-backend/ent/user"
 	"time"
 
@@ -110,6 +111,20 @@ func (uc *UserCreate) SetNillableIsAdmin(b *bool) *UserCreate {
 	return uc
 }
 
+// SetStatus sets the "status" field.
+func (uc *UserCreate) SetStatus(sst schema.UserStatusType) *UserCreate {
+	uc.mutation.SetStatus(sst)
+	return uc
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (uc *UserCreate) SetNillableStatus(sst *schema.UserStatusType) *UserCreate {
+	if sst != nil {
+		uc.SetStatus(*sst)
+	}
+	return uc
+}
+
 // SetID sets the "id" field.
 func (uc *UserCreate) SetID(s string) *UserCreate {
 	uc.mutation.SetID(s)
@@ -197,6 +212,10 @@ func (uc *UserCreate) defaults() {
 		v := user.DefaultIsAdmin
 		uc.mutation.SetIsAdmin(v)
 	}
+	if _, ok := uc.mutation.Status(); !ok {
+		v := user.DefaultStatus
+		uc.mutation.SetStatus(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -212,6 +231,14 @@ func (uc *UserCreate) check() error {
 	}
 	if _, ok := uc.mutation.IsAdmin(); !ok {
 		return &ValidationError{Name: "is_admin", err: errors.New(`ent: missing required field "User.is_admin"`)}
+	}
+	if _, ok := uc.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "User.status"`)}
+	}
+	if v, ok := uc.mutation.Status(); ok {
+		if err := user.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "User.status": %w`, err)}
+		}
 	}
 	return nil
 }
@@ -272,6 +299,10 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := uc.mutation.IsAdmin(); ok {
 		_spec.SetField(user.FieldIsAdmin, field.TypeBool, value)
 		_node.IsAdmin = value
+	}
+	if value, ok := uc.mutation.Status(); ok {
+		_spec.SetField(user.FieldStatus, field.TypeEnum, value)
+		_node.Status = value
 	}
 	if nodes := uc.mutation.PublisherPermissionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -429,6 +460,18 @@ func (u *UserUpsert) UpdateIsAdmin() *UserUpsert {
 	return u
 }
 
+// SetStatus sets the "status" field.
+func (u *UserUpsert) SetStatus(v schema.UserStatusType) *UserUpsert {
+	u.Set(user.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *UserUpsert) UpdateStatus() *UserUpsert {
+	u.SetExcluded(user.FieldStatus)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -561,6 +604,20 @@ func (u *UserUpsertOne) SetIsAdmin(v bool) *UserUpsertOne {
 func (u *UserUpsertOne) UpdateIsAdmin() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateIsAdmin()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *UserUpsertOne) SetStatus(v schema.UserStatusType) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateStatus() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateStatus()
 	})
 }
 
@@ -863,6 +920,20 @@ func (u *UserUpsertBulk) SetIsAdmin(v bool) *UserUpsertBulk {
 func (u *UserUpsertBulk) UpdateIsAdmin() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateIsAdmin()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *UserUpsertBulk) SetStatus(v schema.UserStatusType) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateStatus() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateStatus()
 	})
 }
 

@@ -10,6 +10,7 @@ import (
 	"registry-backend/ent/personalaccesstoken"
 	"registry-backend/ent/publisher"
 	"registry-backend/ent/publisherpermission"
+	"registry-backend/ent/schema"
 	"time"
 
 	"entgo.io/ent/dialect"
@@ -131,6 +132,20 @@ func (pc *PublisherCreate) SetNillableLogoURL(s *string) *PublisherCreate {
 	return pc
 }
 
+// SetStatus sets the "status" field.
+func (pc *PublisherCreate) SetStatus(sst schema.PublisherStatusType) *PublisherCreate {
+	pc.mutation.SetStatus(sst)
+	return pc
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (pc *PublisherCreate) SetNillableStatus(sst *schema.PublisherStatusType) *PublisherCreate {
+	if sst != nil {
+		pc.SetStatus(*sst)
+	}
+	return pc
+}
+
 // SetID sets the "id" field.
 func (pc *PublisherCreate) SetID(s string) *PublisherCreate {
 	pc.mutation.SetID(s)
@@ -225,6 +240,10 @@ func (pc *PublisherCreate) defaults() {
 		v := publisher.DefaultUpdateTime()
 		pc.mutation.SetUpdateTime(v)
 	}
+	if _, ok := pc.mutation.Status(); !ok {
+		v := publisher.DefaultStatus
+		pc.mutation.SetStatus(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -237,6 +256,14 @@ func (pc *PublisherCreate) check() error {
 	}
 	if _, ok := pc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Publisher.name"`)}
+	}
+	if _, ok := pc.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Publisher.status"`)}
+	}
+	if v, ok := pc.mutation.Status(); ok {
+		if err := publisher.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Publisher.status": %w`, err)}
+		}
 	}
 	return nil
 }
@@ -305,6 +332,10 @@ func (pc *PublisherCreate) createSpec() (*Publisher, *sqlgraph.CreateSpec) {
 	if value, ok := pc.mutation.LogoURL(); ok {
 		_spec.SetField(publisher.FieldLogoURL, field.TypeString, value)
 		_node.LogoURL = value
+	}
+	if value, ok := pc.mutation.Status(); ok {
+		_spec.SetField(publisher.FieldStatus, field.TypeEnum, value)
+		_node.Status = value
 	}
 	if nodes := pc.mutation.PublisherPermissionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -520,6 +551,18 @@ func (u *PublisherUpsert) ClearLogoURL() *PublisherUpsert {
 	return u
 }
 
+// SetStatus sets the "status" field.
+func (u *PublisherUpsert) SetStatus(v schema.PublisherStatusType) *PublisherUpsert {
+	u.Set(publisher.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *PublisherUpsert) UpdateStatus() *PublisherUpsert {
+	u.SetExcluded(publisher.FieldStatus)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -701,6 +744,20 @@ func (u *PublisherUpsertOne) UpdateLogoURL() *PublisherUpsertOne {
 func (u *PublisherUpsertOne) ClearLogoURL() *PublisherUpsertOne {
 	return u.Update(func(s *PublisherUpsert) {
 		s.ClearLogoURL()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *PublisherUpsertOne) SetStatus(v schema.PublisherStatusType) *PublisherUpsertOne {
+	return u.Update(func(s *PublisherUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *PublisherUpsertOne) UpdateStatus() *PublisherUpsertOne {
+	return u.Update(func(s *PublisherUpsert) {
+		s.UpdateStatus()
 	})
 }
 
@@ -1052,6 +1109,20 @@ func (u *PublisherUpsertBulk) UpdateLogoURL() *PublisherUpsertBulk {
 func (u *PublisherUpsertBulk) ClearLogoURL() *PublisherUpsertBulk {
 	return u.Update(func(s *PublisherUpsert) {
 		s.ClearLogoURL()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *PublisherUpsertBulk) SetStatus(v schema.PublisherStatusType) *PublisherUpsertBulk {
+	return u.Update(func(s *PublisherUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *PublisherUpsertBulk) UpdateStatus() *PublisherUpsertBulk {
+	return u.Update(func(s *PublisherUpsert) {
+		s.UpdateStatus()
 	})
 }
 

@@ -4,6 +4,7 @@ package ent
 
 import (
 	"fmt"
+	"registry-backend/ent/schema"
 	"registry-backend/ent/user"
 	"strings"
 	"time"
@@ -30,6 +31,8 @@ type User struct {
 	IsApproved bool `json:"is_approved,omitempty"`
 	// Whether the user is approved to use the platform
 	IsAdmin bool `json:"is_admin,omitempty"`
+	// Status holds the value of the "status" field.
+	Status schema.UserStatusType `json:"status,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges        UserEdges `json:"edges"`
@@ -72,7 +75,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case user.FieldIsApproved, user.FieldIsAdmin:
 			values[i] = new(sql.NullBool)
-		case user.FieldID, user.FieldEmail, user.FieldName:
+		case user.FieldID, user.FieldEmail, user.FieldName, user.FieldStatus:
 			values[i] = new(sql.NullString)
 		case user.FieldCreateTime, user.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
@@ -132,6 +135,12 @@ func (u *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field is_admin", values[i])
 			} else if value.Valid {
 				u.IsAdmin = value.Bool
+			}
+		case user.FieldStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field status", values[i])
+			} else if value.Valid {
+				u.Status = schema.UserStatusType(value.String)
 			}
 		default:
 			u.selectValues.Set(columns[i], values[i])
@@ -196,6 +205,9 @@ func (u *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("is_admin=")
 	builder.WriteString(fmt.Sprintf("%v", u.IsAdmin))
+	builder.WriteString(", ")
+	builder.WriteString("status=")
+	builder.WriteString(fmt.Sprintf("%v", u.Status))
 	builder.WriteByte(')')
 	return builder.String()
 }

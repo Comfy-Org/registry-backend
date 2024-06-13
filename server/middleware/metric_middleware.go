@@ -4,9 +4,9 @@ import (
 	"context"
 	"os"
 	"registry-backend/config"
-	"registry-backend/server/middleware/metric"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
@@ -19,7 +19,8 @@ import (
 )
 
 const (
-	batchInterval = 30 * time.Second // Batch interval for sending metrics
+	MetricTypePrefix = "custom.googleapis.com/comfy_api_frontend"
+	batchInterval    = 5 * time.Minute // Batch interval for sending metrics
 )
 
 var (
@@ -35,10 +36,6 @@ func init() {
 func MetricsMiddleware(client *monitoring.MetricClient, config *config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			ctx := c.Request().Context()
-			c.SetRequest(c.Request().WithContext(metric.AttachCustomCounterMetric(ctx)))
-			ctx = c.Request().Context()
-
 			startTime := time.Now()
 			err := next(c)
 			endTime := time.Now()
@@ -46,16 +43,26 @@ func MetricsMiddleware(client *monitoring.MetricClient, config *config.Config) e
 			// Generate metrics for the request duration, count, and errors.
 			if config.DripEnv != "localdev" {
 				enqueueMetrics(
-					append(metric.CreateCustomCounterMetrics(ctx),
-						createDurationMetric(c, startTime, endTime),
-						createRequestMetric(c),
-						createErrorMetric(c, err),
-					)...,
+					createDurationMetric(c, startTime, endTime),
+					createRequestMetric(c),
+					createErrorMetric(c, err),
 				)
 			}
 			return err
 		}
 	}
+}
+
+// CounterMetric safely increments counters using concurrent maps and atomic operations.
+type CounterMetric struct{ sync.Map }
+
+func (c *CounterMetric) increment(key any, i int64) int64 {
+	v, loaded := c.LoadOrStore(key, new(atomic.Int64))
+	ai := v.(*atomic.Int64)
+	if !loaded {
+		ai.Add(i) // Initialize and increment atomically
+	}
+	return ai.Load()
 }
 
 // EndpointMetricKey provides a unique identifier for metrics based on request properties.
@@ -144,7 +151,7 @@ func createDurationMetric(c echo.Context, startTime, endTime time.Time) *monitor
 	key := endpointMetricKeyFromEcho(c)
 	return &monitoringpb.TimeSeries{
 		Metric: &metricpb.Metric{
-			Type:   metric.MetricTypePrefix + "/request_duration",
+			Type:   MetricTypePrefix + "/request_duration",
 			Labels: key.toLabels(),
 		},
 		Points: []*monitoringpb.Point{{
@@ -160,15 +167,15 @@ func createDurationMetric(c echo.Context, startTime, endTime time.Time) *monitor
 	}
 }
 
-var reqCountMetric = metric.CounterMetric{Map: sync.Map{}}
+var reqCountMetric = CounterMetric{Map: sync.Map{}}
 
 // createRequestMetric constructs a cumulative metric for counting requests.
 func createRequestMetric(c echo.Context) *monitoringpb.TimeSeries {
 	key := endpointMetricKeyFromEcho(c)
-	val := reqCountMetric.Increment(key, 1)
+	val := reqCountMetric.increment(key, 1)
 	return &monitoringpb.TimeSeries{
 		Metric: &metricpb.Metric{
-			Type:   metric.MetricTypePrefix + "/request_count",
+			Type:   MetricTypePrefix + "/request_count",
 			Labels: key.toLabels(),
 		},
 		MetricKind: metricpb.MetricDescriptor_CUMULATIVE,
@@ -188,7 +195,7 @@ func createRequestMetric(c echo.Context) *monitoringpb.TimeSeries {
 	}
 }
 
-var reqErrCountMetric = metric.CounterMetric{Map: sync.Map{}}
+var reqErrCountMetric = CounterMetric{Map: sync.Map{}}
 
 // createErrorMetric constructs a cumulative metric for counting request errors.
 func createErrorMetric(c echo.Context, err error) *monitoringpb.TimeSeries {
@@ -197,10 +204,10 @@ func createErrorMetric(c echo.Context, err error) *monitoringpb.TimeSeries {
 	}
 
 	key := endpointMetricKeyFromEcho(c)
-	val := reqErrCountMetric.Increment(key, 1)
+	val := reqErrCountMetric.increment(key, 1)
 	return &monitoringpb.TimeSeries{
 		Metric: &metricpb.Metric{
-			Type:   metric.MetricTypePrefix + "/request_errors",
+			Type:   MetricTypePrefix + "/request_errors",
 			Labels: key.toLabels(),
 		},
 		MetricKind: metricpb.MetricDescriptor_CUMULATIVE,

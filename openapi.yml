@@ -480,6 +480,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /publishers/{publisherId}/ban:
+    post:
+      summary: Ban a publisher
+      operationId: BanPublisher
+      parameters:
+        - in: path
+          name: publisherId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Publisher Banned Successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Publisher not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /publishers/{publisherId}/nodes:
     post:
       summary: Create a new custom node
@@ -654,7 +688,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  
+
   /publishers/{publisherId}/nodes/{nodeId}/permissions:
     get:
       summary: Retrieve permissions the user has for a given publisher

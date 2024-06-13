@@ -36,6 +36,7 @@ func (Publisher) Fields() []ent.Field {
 		field.String("logo_url").Optional().SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}).Optional(),
+		field.Enum("status").GoType(PublisherStatusType("")).Default(string(PublisherStatusTypeActive)),
 	}
 }
 
@@ -50,5 +51,19 @@ func (Publisher) Edges() []ent.Edge {
 		edge.To("publisher_permissions", PublisherPermission.Type),
 		edge.To("nodes", Node.Type),
 		edge.To("personal_access_tokens", PersonalAccessToken.Type),
+	}
+}
+
+type PublisherStatusType string
+
+const (
+	PublisherStatusTypeActive PublisherStatusType = "ACTIVE"
+	PublisherStatusTypeBanned PublisherStatusType = "BANNED"
+)
+
+func (PublisherStatusType) Values() (types []string) {
+	return []string{
+		string(PublisherStatusTypeActive),
+		string(PublisherStatusTypeBanned),
 	}
 }

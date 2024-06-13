@@ -937,7 +937,6 @@ func (s *DripStrictServerImplementation) InstallNode(
 				"Version": nodeVersion.Version,
 			}),
 		})
-
 		return drip.InstallNode200JSONResponse(
 			*mapper.DbNodeVersionToApiNodeVersion(nodeVersion),
 		), nil
@@ -964,7 +963,6 @@ func (s *DripStrictServerImplementation) InstallNode(
 				"Version": nodeVersion.Version,
 			}),
 		})
-
 		return drip.InstallNode200JSONResponse(
 			*mapper.DbNodeVersionToApiNodeVersion(nodeVersion),
 		), nil
@@ -1007,4 +1005,41 @@ func (s *DripStrictServerImplementation) GetPermissionOnPublisher(
 	}
 
 	return drip.GetPermissionOnPublisher200JSONResponse{CanEdit: proto.Bool(true)}, nil
+}
+
+// BanPublisher implements drip.StrictServerInterface.
+func (s *DripStrictServerImplementation) BanPublisher(ctx context.Context, request drip.BanPublisherRequestObject) (drip.BanPublisherResponseObject, error) {
+	userId, err := mapper.GetUserIDFromContext(ctx)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
+		return drip.BanPublisher401Response{}, nil
+	}
+	user, err := s.Client.User.Get(ctx, userId)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
+		return drip.BanPublisher401Response{}, nil
+	}
+	if !user.IsAdmin {
+		log.Ctx(ctx).Error().Msgf("User is not admin w/ err")
+		return drip.BanPublisher403JSONResponse{
+			Message: "User is not admin",
+		}, nil
+	}
+
+	err = s.RegistryService.BanPublisher(ctx, s.Client, request.PublisherId)
+	if ent.IsNotFound(err) {
+		log.Ctx(ctx).Error().Msgf("Publisher '%s' not found  w/ err: %v", request.PublisherId, err)
+		return drip.BanPublisher404JSONResponse{
+			Message: "Publisher not found",
+		}, nil
+	}
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Error banning publisher w/ err: %v", err)
+		return drip.BanPublisher500JSONResponse{
+			Message: "Error banning publisher",
+			Error:   err.Error(),
+		}, nil
+	}
+
+	return drip.BanPublisher204Response{}, nil
 }
