@@ -46,6 +46,9 @@ func (Node) Fields() []ent.Field {
 		field.Int64("total_install").Default(0),
 		field.Int64("total_star").Default(0),
 		field.Int64("total_review").Default(0),
+		field.Enum("status").
+			GoType(NodeStatus("")).
+			Default(string(NodeStatusPending)),
 	}
 }
 
@@ -60,5 +63,23 @@ func (Node) Edges() []ent.Edge {
 		edge.From("publisher", Publisher.Type).Field("publisher_id").Ref("nodes").Required().Unique(),
 		edge.To("versions", NodeVersion.Type),
 		edge.To("reviews", NodeReview.Type),
+	}
+}
+
+type NodeStatus string
+
+const (
+	NodeStatusActive  NodeStatus = "active"
+	NodeStatusPending NodeStatus = "pending"
+	NodeStatusDeleted NodeStatus = "deleted"
+	NodeStatusBanned  NodeStatus = "banned"
+)
+
+func (NodeStatus) Values() (types []string) {
+	return []string{
+		string(NodeStatusActive),
+		string(NodeStatusBanned),
+		string(NodeStatusDeleted),
+		string(NodeStatusPending),
 	}
 }

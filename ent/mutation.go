@@ -2118,6 +2118,7 @@ type NodeMutation struct {
 	addtotal_star    *int64
 	total_review     *int64
 	addtotal_review  *int64
+	status           *schema.NodeStatus
 	clearedFields    map[string]struct{}
 	publisher        *string
 	clearedpublisher bool
@@ -2818,6 +2819,42 @@ func (m *NodeMutation) ResetTotalReview() {
 	m.addtotal_review = nil
 }
 
+// SetStatus sets the "status" field.
+func (m *NodeMutation) SetStatus(ss schema.NodeStatus) {
+	m.status = &ss
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *NodeMutation) Status() (r schema.NodeStatus, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the Node entity.
+// If the Node object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NodeMutation) OldStatus(ctx context.Context) (v schema.NodeStatus, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *NodeMutation) ResetStatus() {
+	m.status = nil
+}
+
 // ClearPublisher clears the "publisher" edge to the Publisher entity.
 func (m *NodeMutation) ClearPublisher() {
 	m.clearedpublisher = true
@@ -2987,7 +3024,7 @@ func (m *NodeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NodeMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 14)
 	if m.create_time != nil {
 		fields = append(fields, node.FieldCreateTime)
 	}
@@ -3027,6 +3064,9 @@ func (m *NodeMutation) Fields() []string {
 	if m.total_review != nil {
 		fields = append(fields, node.FieldTotalReview)
 	}
+	if m.status != nil {
+		fields = append(fields, node.FieldStatus)
+	}
 	return fields
 }
 
@@ -3061,6 +3101,8 @@ func (m *NodeMutation) Field(name string) (ent.Value, bool) {
 		return m.TotalStar()
 	case node.FieldTotalReview:
 		return m.TotalReview()
+	case node.FieldStatus:
+		return m.Status()
 	}
 	return nil, false
 }
@@ -3096,6 +3138,8 @@ func (m *NodeMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldTotalStar(ctx)
 	case node.FieldTotalReview:
 		return m.OldTotalReview(ctx)
+	case node.FieldStatus:
+		return m.OldStatus(ctx)
 	}
 	return nil, fmt.Errorf("unknown Node field %s", name)
 }
@@ -3195,6 +3239,13 @@ func (m *NodeMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTotalReview(v)
+		return nil
+	case node.FieldStatus:
+		v, ok := value.(schema.NodeStatus)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Node field %s", name)
@@ -3343,6 +3394,9 @@ func (m *NodeMutation) ResetField(name string) error {
 		return nil
 	case node.FieldTotalReview:
 		m.ResetTotalReview()
+		return nil
+	case node.FieldStatus:
+		m.ResetStatus()
 		return nil
 	}
 	return fmt.Errorf("unknown Node field %s", name)

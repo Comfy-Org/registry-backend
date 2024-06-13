@@ -1538,6 +1538,9 @@ components:
         publisher:
           $ref: "#/components/schemas/Publisher"
           description: The publisher of the node.
+        status:
+          $ref: "#/components/schemas/NodeStatus"
+          description: The status of the node.
     NodeVersion:
       type: object
       properties:
@@ -1585,6 +1588,14 @@ components:
         deprecated:
           type: boolean
           description: Whether the version is deprecated.
+    # Enum of Node Status
+    NodeStatus:
+      type: string
+      enum:
+        - NodeStatusActive
+        - NodeStatusDeleted
+        - NodeStatusBanned
+        - NodeStatusPending
   securitySchemes:
     BearerAuth:
       type: http
