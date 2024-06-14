@@ -85,7 +85,7 @@ var (
 		{Name: "total_install", Type: field.TypeInt64, Default: 0},
 		{Name: "total_star", Type: field.TypeInt64, Default: 0},
 		{Name: "total_review", Type: field.TypeInt64, Default: 0},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "banned", "deleted", "pending"}, Default: "pending"},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "banned", "deleted"}, Default: "active"},
 		{Name: "publisher_id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 	}
 	// NodesTable holds the schema information for the "nodes" table.

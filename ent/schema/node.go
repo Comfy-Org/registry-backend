@@ -48,7 +48,7 @@ func (Node) Fields() []ent.Field {
 		field.Int64("total_review").Default(0),
 		field.Enum("status").
 			GoType(NodeStatus("")).
-			Default(string(NodeStatusPending)),
+			Default(string(NodeStatusActive)),
 	}
 }
 
@@ -70,7 +70,6 @@ type NodeStatus string
 
 const (
 	NodeStatusActive  NodeStatus = "active"
-	NodeStatusPending NodeStatus = "pending"
 	NodeStatusDeleted NodeStatus = "deleted"
 	NodeStatusBanned  NodeStatus = "banned"
 )
@@ -80,6 +79,5 @@ func (NodeStatus) Values() (types []string) {
 		string(NodeStatusActive),
 		string(NodeStatusBanned),
 		string(NodeStatusDeleted),
-		string(NodeStatusPending),
 	}
 }

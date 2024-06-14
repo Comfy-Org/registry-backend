@@ -121,12 +121,12 @@ var (
 	DefaultTotalReview int64
 )
 
-const DefaultStatus schema.NodeStatus = "pending"
+const DefaultStatus schema.NodeStatus = "active"
 
 // StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
 func StatusValidator(s schema.NodeStatus) error {
 	switch s {
-	case "active", "banned", "deleted", "pending":
+	case "active", "banned", "deleted":
 		return nil
 	default:
 		return fmt.Errorf("node: invalid enum value for status field: %q", s)
