@@ -3,6 +3,8 @@
 package publisher
 
 import (
+	"fmt"
+	"registry-backend/ent/schema"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -30,6 +32,8 @@ const (
 	FieldSourceCodeRepo = "source_code_repo"
 	// FieldLogoURL holds the string denoting the logo_url field in the database.
 	FieldLogoURL = "logo_url"
+	// FieldStatus holds the string denoting the status field in the database.
+	FieldStatus = "status"
 	// EdgePublisherPermissions holds the string denoting the publisher_permissions edge name in mutations.
 	EdgePublisherPermissions = "publisher_permissions"
 	// EdgeNodes holds the string denoting the nodes edge name in mutations.
@@ -72,6 +76,7 @@ var Columns = []string{
 	FieldSupportEmail,
 	FieldSourceCodeRepo,
 	FieldLogoURL,
+	FieldStatus,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -92,6 +97,18 @@ var (
 	// UpdateDefaultUpdateTime holds the default value on update for the "update_time" field.
 	UpdateDefaultUpdateTime func() time.Time
 )
+
+const DefaultStatus schema.PublisherStatusType = "ACTIVE"
+
+// StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
+func StatusValidator(s schema.PublisherStatusType) error {
+	switch s {
+	case "ACTIVE", "BANNED":
+		return nil
+	default:
+		return fmt.Errorf("publisher: invalid enum value for status field: %q", s)
+	}
+}
 
 // OrderOption defines the ordering options for the Publisher queries.
 type OrderOption func(*sql.Selector)
@@ -139,6 +156,11 @@ func BySourceCodeRepo(opts ...sql.OrderTermOption) OrderOption {
 // ByLogoURL orders the results by the logo_url field.
 func ByLogoURL(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLogoURL, opts...).ToFunc()
+}
+
+// ByStatus orders the results by the status field.
+func ByStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStatus, opts...).ToFunc()
 }
 
 // ByPublisherPermissionsCount orders the results by publisher_permissions count.

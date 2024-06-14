@@ -4,6 +4,7 @@ package publisher
 
 import (
 	"registry-backend/ent/predicate"
+	"registry-backend/ent/schema"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -623,6 +624,36 @@ func LogoURLEqualFold(v string) predicate.Publisher {
 // LogoURLContainsFold applies the ContainsFold predicate on the "logo_url" field.
 func LogoURLContainsFold(v string) predicate.Publisher {
 	return predicate.Publisher(sql.FieldContainsFold(FieldLogoURL, v))
+}
+
+// StatusEQ applies the EQ predicate on the "status" field.
+func StatusEQ(v schema.PublisherStatusType) predicate.Publisher {
+	vc := v
+	return predicate.Publisher(sql.FieldEQ(FieldStatus, vc))
+}
+
+// StatusNEQ applies the NEQ predicate on the "status" field.
+func StatusNEQ(v schema.PublisherStatusType) predicate.Publisher {
+	vc := v
+	return predicate.Publisher(sql.FieldNEQ(FieldStatus, vc))
+}
+
+// StatusIn applies the In predicate on the "status" field.
+func StatusIn(vs ...schema.PublisherStatusType) predicate.Publisher {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Publisher(sql.FieldIn(FieldStatus, v...))
+}
+
+// StatusNotIn applies the NotIn predicate on the "status" field.
+func StatusNotIn(vs ...schema.PublisherStatusType) predicate.Publisher {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Publisher(sql.FieldNotIn(FieldStatus, v...))
 }
 
 // HasPublisherPermissions applies the HasEdge predicate on the "publisher_permissions" edge.

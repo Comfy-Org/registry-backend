@@ -5583,6 +5583,7 @@ type PublisherMutation struct {
 	support_email                 *string
 	source_code_repo              *string
 	logo_url                      *string
+	status                        *schema.PublisherStatusType
 	clearedFields                 map[string]struct{}
 	publisher_permissions         map[int]struct{}
 	removedpublisher_permissions  map[int]struct{}
@@ -6055,6 +6056,42 @@ func (m *PublisherMutation) ResetLogoURL() {
 	delete(m.clearedFields, publisher.FieldLogoURL)
 }
 
+// SetStatus sets the "status" field.
+func (m *PublisherMutation) SetStatus(sst schema.PublisherStatusType) {
+	m.status = &sst
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *PublisherMutation) Status() (r schema.PublisherStatusType, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the Publisher entity.
+// If the Publisher object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PublisherMutation) OldStatus(ctx context.Context) (v schema.PublisherStatusType, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *PublisherMutation) ResetStatus() {
+	m.status = nil
+}
+
 // AddPublisherPermissionIDs adds the "publisher_permissions" edge to the PublisherPermission entity by ids.
 func (m *PublisherMutation) AddPublisherPermissionIDs(ids ...int) {
 	if m.publisher_permissions == nil {
@@ -6251,7 +6288,7 @@ func (m *PublisherMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PublisherMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.create_time != nil {
 		fields = append(fields, publisher.FieldCreateTime)
 	}
@@ -6275,6 +6312,9 @@ func (m *PublisherMutation) Fields() []string {
 	}
 	if m.logo_url != nil {
 		fields = append(fields, publisher.FieldLogoURL)
+	}
+	if m.status != nil {
+		fields = append(fields, publisher.FieldStatus)
 	}
 	return fields
 }
@@ -6300,6 +6340,8 @@ func (m *PublisherMutation) Field(name string) (ent.Value, bool) {
 		return m.SourceCodeRepo()
 	case publisher.FieldLogoURL:
 		return m.LogoURL()
+	case publisher.FieldStatus:
+		return m.Status()
 	}
 	return nil, false
 }
@@ -6325,6 +6367,8 @@ func (m *PublisherMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldSourceCodeRepo(ctx)
 	case publisher.FieldLogoURL:
 		return m.OldLogoURL(ctx)
+	case publisher.FieldStatus:
+		return m.OldStatus(ctx)
 	}
 	return nil, fmt.Errorf("unknown Publisher field %s", name)
 }
@@ -6389,6 +6433,13 @@ func (m *PublisherMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLogoURL(v)
+		return nil
+	case publisher.FieldStatus:
+		v, ok := value.(schema.PublisherStatusType)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Publisher field %s", name)
@@ -6495,6 +6546,9 @@ func (m *PublisherMutation) ResetField(name string) error {
 		return nil
 	case publisher.FieldLogoURL:
 		m.ResetLogoURL()
+		return nil
+	case publisher.FieldStatus:
+		m.ResetStatus()
 		return nil
 	}
 	return fmt.Errorf("unknown Publisher field %s", name)
@@ -7879,6 +7933,7 @@ type UserMutation struct {
 	name                         *string
 	is_approved                  *bool
 	is_admin                     *bool
+	status                       *schema.UserStatusType
 	clearedFields                map[string]struct{}
 	publisher_permissions        map[int]struct{}
 	removedpublisher_permissions map[int]struct{}
@@ -8237,6 +8292,42 @@ func (m *UserMutation) ResetIsAdmin() {
 	m.is_admin = nil
 }
 
+// SetStatus sets the "status" field.
+func (m *UserMutation) SetStatus(sst schema.UserStatusType) {
+	m.status = &sst
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *UserMutation) Status() (r schema.UserStatusType, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldStatus(ctx context.Context) (v schema.UserStatusType, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *UserMutation) ResetStatus() {
+	m.status = nil
+}
+
 // AddPublisherPermissionIDs adds the "publisher_permissions" edge to the PublisherPermission entity by ids.
 func (m *UserMutation) AddPublisherPermissionIDs(ids ...int) {
 	if m.publisher_permissions == nil {
@@ -8379,7 +8470,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.create_time != nil {
 		fields = append(fields, user.FieldCreateTime)
 	}
@@ -8397,6 +8488,9 @@ func (m *UserMutation) Fields() []string {
 	}
 	if m.is_admin != nil {
 		fields = append(fields, user.FieldIsAdmin)
+	}
+	if m.status != nil {
+		fields = append(fields, user.FieldStatus)
 	}
 	return fields
 }
@@ -8418,6 +8512,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.IsApproved()
 	case user.FieldIsAdmin:
 		return m.IsAdmin()
+	case user.FieldStatus:
+		return m.Status()
 	}
 	return nil, false
 }
@@ -8439,6 +8535,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldIsApproved(ctx)
 	case user.FieldIsAdmin:
 		return m.OldIsAdmin(ctx)
+	case user.FieldStatus:
+		return m.OldStatus(ctx)
 	}
 	return nil, fmt.Errorf("unknown User field %s", name)
 }
@@ -8489,6 +8587,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetIsAdmin(v)
+		return nil
+	case user.FieldStatus:
+		v, ok := value.(schema.UserStatusType)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
@@ -8571,6 +8676,9 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldIsAdmin:
 		m.ResetIsAdmin()
+		return nil
+	case user.FieldStatus:
+		m.ResetStatus()
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)

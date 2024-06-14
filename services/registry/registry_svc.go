@@ -14,6 +14,7 @@ import (
 	"registry-backend/ent/publisher"
 	"registry-backend/ent/publisherpermission"
 	"registry-backend/ent/schema"
+	"registry-backend/ent/user"
 	gateway "registry-backend/gateways/slack"
 	"registry-backend/gateways/storage"
 	"registry-backend/mapper"
@@ -564,4 +565,33 @@ func IsPermissionError(err error) bool {
 	}
 	var e *errorPermission
 	return errors.As(err, &e)
+}
+
+func (s *RegistryService) BanPublisher(ctx context.Context, client *ent.Client, id string) error {
+	log.Ctx(ctx).Info().Msgf("banning publisher: %v", id)
+	pub, err := client.Publisher.Get(ctx, id)
+	if err != nil {
+		return fmt.Errorf("fail to find publisher: %w", err)
+	}
+
+	err = db.WithTx(ctx, client, func(tx *ent.Tx) error {
+		cli := tx.Client()
+
+		err = pub.Update().SetStatus(schema.PublisherStatusTypeBanned).Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("fail to update publisher: %w", err)
+		}
+
+		err = cli.User.Update().
+			Where(user.HasPublisherPermissionsWith(publisherpermission.HasPublisherWith(publisher.IDEQ(pub.ID)))).
+			SetStatus(schema.UserStatusTypeBanned).
+			Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("fail to update users: %w", err)
+		}
+
+		return nil
+	})
+
+	return err
 }

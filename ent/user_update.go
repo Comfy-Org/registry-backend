@@ -9,6 +9,7 @@ import (
 	"registry-backend/ent/nodereview"
 	"registry-backend/ent/predicate"
 	"registry-backend/ent/publisherpermission"
+	"registry-backend/ent/schema"
 	"registry-backend/ent/user"
 	"time"
 
@@ -101,6 +102,20 @@ func (uu *UserUpdate) SetIsAdmin(b bool) *UserUpdate {
 func (uu *UserUpdate) SetNillableIsAdmin(b *bool) *UserUpdate {
 	if b != nil {
 		uu.SetIsAdmin(*b)
+	}
+	return uu
+}
+
+// SetStatus sets the "status" field.
+func (uu *UserUpdate) SetStatus(sst schema.UserStatusType) *UserUpdate {
+	uu.mutation.SetStatus(sst)
+	return uu
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableStatus(sst *schema.UserStatusType) *UserUpdate {
+	if sst != nil {
+		uu.SetStatus(*sst)
 	}
 	return uu
 }
@@ -218,7 +233,20 @@ func (uu *UserUpdate) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (uu *UserUpdate) check() error {
+	if v, ok := uu.mutation.Status(); ok {
+		if err := user.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "User.status": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := uu.check(); err != nil {
+		return n, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeString))
 	if ps := uu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -247,6 +275,9 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := uu.mutation.IsAdmin(); ok {
 		_spec.SetField(user.FieldIsAdmin, field.TypeBool, value)
+	}
+	if value, ok := uu.mutation.Status(); ok {
+		_spec.SetField(user.FieldStatus, field.TypeEnum, value)
 	}
 	if uu.mutation.PublisherPermissionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -432,6 +463,20 @@ func (uuo *UserUpdateOne) SetNillableIsAdmin(b *bool) *UserUpdateOne {
 	return uuo
 }
 
+// SetStatus sets the "status" field.
+func (uuo *UserUpdateOne) SetStatus(sst schema.UserStatusType) *UserUpdateOne {
+	uuo.mutation.SetStatus(sst)
+	return uuo
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableStatus(sst *schema.UserStatusType) *UserUpdateOne {
+	if sst != nil {
+		uuo.SetStatus(*sst)
+	}
+	return uuo
+}
+
 // AddPublisherPermissionIDs adds the "publisher_permissions" edge to the PublisherPermission entity by IDs.
 func (uuo *UserUpdateOne) AddPublisherPermissionIDs(ids ...int) *UserUpdateOne {
 	uuo.mutation.AddPublisherPermissionIDs(ids...)
@@ -558,7 +603,20 @@ func (uuo *UserUpdateOne) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (uuo *UserUpdateOne) check() error {
+	if v, ok := uuo.mutation.Status(); ok {
+		if err := user.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "User.status": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
+	if err := uuo.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeString))
 	id, ok := uuo.mutation.ID()
 	if !ok {
@@ -604,6 +662,9 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	}
 	if value, ok := uuo.mutation.IsAdmin(); ok {
 		_spec.SetField(user.FieldIsAdmin, field.TypeBool, value)
+	}
+	if value, ok := uuo.mutation.Status(); ok {
+		_spec.SetField(user.FieldStatus, field.TypeEnum, value)
 	}
 	if uuo.mutation.PublisherPermissionsCleared() {
 		edge := &sqlgraph.EdgeSpec{

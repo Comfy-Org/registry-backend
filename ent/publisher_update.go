@@ -11,6 +11,7 @@ import (
 	"registry-backend/ent/predicate"
 	"registry-backend/ent/publisher"
 	"registry-backend/ent/publisherpermission"
+	"registry-backend/ent/schema"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -149,6 +150,20 @@ func (pu *PublisherUpdate) SetNillableLogoURL(s *string) *PublisherUpdate {
 // ClearLogoURL clears the value of the "logo_url" field.
 func (pu *PublisherUpdate) ClearLogoURL() *PublisherUpdate {
 	pu.mutation.ClearLogoURL()
+	return pu
+}
+
+// SetStatus sets the "status" field.
+func (pu *PublisherUpdate) SetStatus(sst schema.PublisherStatusType) *PublisherUpdate {
+	pu.mutation.SetStatus(sst)
+	return pu
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (pu *PublisherUpdate) SetNillableStatus(sst *schema.PublisherStatusType) *PublisherUpdate {
+	if sst != nil {
+		pu.SetStatus(*sst)
+	}
 	return pu
 }
 
@@ -301,7 +316,20 @@ func (pu *PublisherUpdate) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (pu *PublisherUpdate) check() error {
+	if v, ok := pu.mutation.Status(); ok {
+		if err := publisher.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Publisher.status": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (pu *PublisherUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := pu.check(); err != nil {
+		return n, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(publisher.Table, publisher.Columns, sqlgraph.NewFieldSpec(publisher.FieldID, field.TypeString))
 	if ps := pu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -345,6 +373,9 @@ func (pu *PublisherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if pu.mutation.LogoURLCleared() {
 		_spec.ClearField(publisher.FieldLogoURL, field.TypeString)
+	}
+	if value, ok := pu.mutation.Status(); ok {
+		_spec.SetField(publisher.FieldStatus, field.TypeEnum, value)
 	}
 	if pu.mutation.PublisherPermissionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -621,6 +652,20 @@ func (puo *PublisherUpdateOne) ClearLogoURL() *PublisherUpdateOne {
 	return puo
 }
 
+// SetStatus sets the "status" field.
+func (puo *PublisherUpdateOne) SetStatus(sst schema.PublisherStatusType) *PublisherUpdateOne {
+	puo.mutation.SetStatus(sst)
+	return puo
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (puo *PublisherUpdateOne) SetNillableStatus(sst *schema.PublisherStatusType) *PublisherUpdateOne {
+	if sst != nil {
+		puo.SetStatus(*sst)
+	}
+	return puo
+}
+
 // AddPublisherPermissionIDs adds the "publisher_permissions" edge to the PublisherPermission entity by IDs.
 func (puo *PublisherUpdateOne) AddPublisherPermissionIDs(ids ...int) *PublisherUpdateOne {
 	puo.mutation.AddPublisherPermissionIDs(ids...)
@@ -783,7 +828,20 @@ func (puo *PublisherUpdateOne) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (puo *PublisherUpdateOne) check() error {
+	if v, ok := puo.mutation.Status(); ok {
+		if err := publisher.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Publisher.status": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (puo *PublisherUpdateOne) sqlSave(ctx context.Context) (_node *Publisher, err error) {
+	if err := puo.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(publisher.Table, publisher.Columns, sqlgraph.NewFieldSpec(publisher.FieldID, field.TypeString))
 	id, ok := puo.mutation.ID()
 	if !ok {
@@ -844,6 +902,9 @@ func (puo *PublisherUpdateOne) sqlSave(ctx context.Context) (_node *Publisher, e
 	}
 	if puo.mutation.LogoURLCleared() {
 		_spec.ClearField(publisher.FieldLogoURL, field.TypeString)
+	}
+	if value, ok := puo.mutation.Status(); ok {
+		_spec.SetField(publisher.FieldStatus, field.TypeEnum, value)
 	}
 	if puo.mutation.PublisherPermissionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
