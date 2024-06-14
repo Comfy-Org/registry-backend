@@ -25,6 +25,12 @@ func AuthorizationMiddleware(entClient *ent.Client) drip.StrictMiddlewareFunc {
 	}
 	return func(f strictecho.StrictEchoHandlerFunc, operationID string) strictecho.StrictEchoHandlerFunc {
 		return func(c echo.Context, request interface{}) (response interface{}, err error) {
+			// Bypass authorization for non-write operations
+			if _, ok := restrictedOperationsForBannedUsers[operationID]; !ok {
+				return f(c, request)
+			}
+
+			// Get user details from the context
 			ctx := c.Request().Context()
 			v := ctx.Value(UserContextKey)
 			userDetails, ok := v.(*UserDetails)
