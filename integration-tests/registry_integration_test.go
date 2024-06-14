@@ -321,7 +321,7 @@ func TestRegistry(t *testing.T) {
 			assert.Equal(t, nodeTags, *createNodeResponse.(drip.CreateNode201JSONResponse).Tags)
 			assert.Equal(t, icon, *createNodeResponse.(drip.CreateNode201JSONResponse).Icon)
 			assert.Equal(t, githubUrl, *createNodeResponse.(drip.CreateNode201JSONResponse).Repository)
-			assert.Equal(t, drip.NodeStatusPending, *createNodeResponse.(drip.CreateNode201JSONResponse).Status)
+			assert.Equal(t, drip.NodeStatusActive, *createNodeResponse.(drip.CreateNode201JSONResponse).Status)
 			real_node_id = createNodeResponse.(drip.CreateNode201JSONResponse).Id
 
 		})
@@ -332,7 +332,7 @@ func TestRegistry(t *testing.T) {
 			require.IsType(t, drip.GetNode200JSONResponse{}, res)
 			res200 := res.(drip.GetNode200JSONResponse)
 			expDl, expRate := 0, float32(0)
-			nodeStatus := drip.NodeStatusPending
+			nodeStatus := drip.NodeStatusActive
 			assert.Equal(t, drip.GetNode200JSONResponse{
 				Id:          &nodeId,
 				Name:        &nodeName,
@@ -364,7 +364,7 @@ func TestRegistry(t *testing.T) {
 			res200 := res.(drip.ListNodesForPublisher200JSONResponse)
 			require.Len(t, res200, 1)
 			expDl, expRate := 0, float32(0)
-			nodeStatus := drip.NodeStatusPending
+			nodeStatus := drip.NodeStatusActive
 			assert.Equal(t, drip.Node{
 				Id:          &nodeId,
 				Name:        &nodeName,
@@ -419,7 +419,7 @@ func TestRegistry(t *testing.T) {
 			require.IsType(t, drip.GetNode200JSONResponse{}, resUpdated)
 			res200Updated := resUpdated.(drip.GetNode200JSONResponse)
 			expDl, expRate := 0, float32(0)
-			nodeStatus := drip.NodeStatusPending
+			nodeStatus := drip.NodeStatusActive
 			assert.Equal(t, drip.GetNode200JSONResponse{
 				Id:          &nodeId,
 				Description: &updateNodeDescription,
@@ -642,7 +642,7 @@ func TestRegistry(t *testing.T) {
 			assert.Len(t, *resNodes200.Nodes, 1, "should only contain 1 node")
 
 			expDl, expRate := 0, float32(0)
-			nodeStatus := drip.NodeStatusPending
+			nodeStatus := drip.NodeStatusActive
 			expectedNode := drip.Node{
 				Id:            &nodeId,
 				Name:          &nodeName,

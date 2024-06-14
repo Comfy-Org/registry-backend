@@ -142,8 +142,6 @@ func DbNodeStatusToApiNodeStatus(status schema.NodeStatus) *drip.NodeStatus {
 		nodeStatus = drip.NodeStatusBanned
 	case schema.NodeStatusDeleted:
 		nodeStatus = drip.NodeStatusDeleted
-	case schema.NodeStatusPending:
-		nodeStatus = drip.NodeStatusPending
 	default:
 		nodeStatus = ""
 	}
