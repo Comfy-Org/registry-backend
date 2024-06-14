@@ -564,6 +564,7 @@ func TestRegistry(t *testing.T) {
 			require.Equal(t, changelog, *createNodeVersionResp.(drip.PublishNodeVersion201JSONResponse).NodeVersion.Changelog, "should return changelog")
 			versionStatus := drip.NodeVersionStatusPending
 			require.Equal(t, versionStatus, *createNodeVersionResp.(drip.PublishNodeVersion201JSONResponse).NodeVersion.Status, "should return pending status")
+			createdNodeVersion = *createNodeVersionResp.(drip.PublishNodeVersion201JSONResponse).NodeVersion // Needed for downstream tests.
 		})
 
 		t.Run("Get not exist Node Version ", func(t *testing.T) {
@@ -588,6 +589,7 @@ func TestRegistry(t *testing.T) {
 			require.IsType(t, drip.ListNodeVersions200JSONResponse{}, resVersions, "should return 200")
 			resVersions200 := resVersions.(drip.ListNodeVersions200JSONResponse)
 			require.Len(t, resVersions200, 1, "should return only one version")
+			nodeVersionStatus := drip.NodeVersionStatusPending
 			assert.Equal(t, drip.NodeVersion{
 				// generated attribute
 				Id:        resVersions200[0].Id,
@@ -598,6 +600,7 @@ func TestRegistry(t *testing.T) {
 				Changelog:    &changelog,
 				Dependencies: &dependencies,
 				DownloadUrl:  &downloadUrl,
+				Status:       &nodeVersionStatus,
 			}, resVersions200[0], "should be equal")
 		})
 
@@ -620,6 +623,7 @@ func TestRegistry(t *testing.T) {
 			require.IsType(t, drip.ListNodeVersions200JSONResponse{}, res, "should return 200")
 			res200 := res.(drip.ListNodeVersions200JSONResponse)
 			require.Len(t, res200, 1, "should return only one version")
+			status := drip.NodeVersionStatusPending
 			updatedNodeVersion := drip.NodeVersion{
 				// generated attribute
 				Id:        res200[0].Id,
@@ -630,6 +634,7 @@ func TestRegistry(t *testing.T) {
 				Changelog:    &updatedChangelog,
 				Dependencies: &dependencies,
 				DownloadUrl:  &downloadUrl,
+				Status:       &status,
 			}
 			assert.Equal(t, updatedNodeVersion, res200[0], "should be equal")
 			createdNodeVersion = res200[0]

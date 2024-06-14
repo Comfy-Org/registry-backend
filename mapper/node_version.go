@@ -92,6 +92,8 @@ func DbNodeVersionStatusToApiNodeVersionStatus(status schema.NodeVersionStatus) 
 		nodeVersionStatus = drip.NodeVersionStatusBanned
 	case schema.NodeVersionStatusDeleted:
 		nodeVersionStatus = drip.NodeVersionStatusDeleted
+	case schema.NodeVersionStatusPending:
+		nodeVersionStatus = drip.NodeVersionStatusPending
 	default:
 		nodeVersionStatus = ""
 	}
