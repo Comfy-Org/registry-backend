@@ -24,6 +24,11 @@ spec:
               secretKeyRef:
                 key: 1
                 name: STAGING_SUPABASE_CONNECTION_STRING
+        - name: JWT_SECRET
+          valueFrom:
+              secretKeyRef:
+                key: 1
+                name: STAGING_JWT_SECRET
         - name: PROJECT_ID
           value: dreamboothy
           # TODO(robinhuang): Switch to a list of strings

@@ -22,6 +22,11 @@ spec:
               secretKeyRef:
                 key: 1
                 name: PROD_SUPABASE_CONNECTION_STRING
+        - name: JWT_SECRET
+          valueFrom:
+              secretKeyRef:
+                  key: 1
+                  name: PROD_JWT_SECRET
         - name: SLACK_REGISTRY_CHANNEL_WEBHOOK
           valueFrom:
               secretKeyRef:
