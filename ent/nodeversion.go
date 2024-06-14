@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"registry-backend/ent/node"
 	"registry-backend/ent/nodeversion"
+	"registry-backend/ent/schema"
 	"registry-backend/ent/storagefile"
 	"strings"
 	"time"
@@ -35,6 +36,8 @@ type NodeVersion struct {
 	PipDependencies []string `json:"pip_dependencies,omitempty"`
 	// Deprecated holds the value of the "deprecated" field.
 	Deprecated bool `json:"deprecated,omitempty"`
+	// Status holds the value of the "status" field.
+	Status schema.NodeVersionStatus `json:"status,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the NodeVersionQuery when eager-loading is set.
 	Edges                     NodeVersionEdges `json:"edges"`
@@ -84,7 +87,7 @@ func (*NodeVersion) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case nodeversion.FieldDeprecated:
 			values[i] = new(sql.NullBool)
-		case nodeversion.FieldNodeID, nodeversion.FieldVersion, nodeversion.FieldChangelog:
+		case nodeversion.FieldNodeID, nodeversion.FieldVersion, nodeversion.FieldChangelog, nodeversion.FieldStatus:
 			values[i] = new(sql.NullString)
 		case nodeversion.FieldCreateTime, nodeversion.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
@@ -156,6 +159,12 @@ func (nv *NodeVersion) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field deprecated", values[i])
 			} else if value.Valid {
 				nv.Deprecated = value.Bool
+			}
+		case nodeversion.FieldStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field status", values[i])
+			} else if value.Valid {
+				nv.Status = schema.NodeVersionStatus(value.String)
 			}
 		case nodeversion.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -230,6 +239,9 @@ func (nv *NodeVersion) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("deprecated=")
 	builder.WriteString(fmt.Sprintf("%v", nv.Deprecated))
+	builder.WriteString(", ")
+	builder.WriteString("status=")
+	builder.WriteString(fmt.Sprintf("%v", nv.Status))
 	builder.WriteByte(')')
 	return builder.String()
 }

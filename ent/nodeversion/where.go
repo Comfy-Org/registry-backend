@@ -4,6 +4,7 @@ package nodeversion
 
 import (
 	"registry-backend/ent/predicate"
+	"registry-backend/ent/schema"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -379,6 +380,36 @@ func DeprecatedEQ(v bool) predicate.NodeVersion {
 // DeprecatedNEQ applies the NEQ predicate on the "deprecated" field.
 func DeprecatedNEQ(v bool) predicate.NodeVersion {
 	return predicate.NodeVersion(sql.FieldNEQ(FieldDeprecated, v))
+}
+
+// StatusEQ applies the EQ predicate on the "status" field.
+func StatusEQ(v schema.NodeVersionStatus) predicate.NodeVersion {
+	vc := v
+	return predicate.NodeVersion(sql.FieldEQ(FieldStatus, vc))
+}
+
+// StatusNEQ applies the NEQ predicate on the "status" field.
+func StatusNEQ(v schema.NodeVersionStatus) predicate.NodeVersion {
+	vc := v
+	return predicate.NodeVersion(sql.FieldNEQ(FieldStatus, vc))
+}
+
+// StatusIn applies the In predicate on the "status" field.
+func StatusIn(vs ...schema.NodeVersionStatus) predicate.NodeVersion {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.NodeVersion(sql.FieldIn(FieldStatus, v...))
+}
+
+// StatusNotIn applies the NotIn predicate on the "status" field.
+func StatusNotIn(vs ...schema.NodeVersionStatus) predicate.NodeVersion {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.NodeVersion(sql.FieldNotIn(FieldStatus, v...))
 }
 
 // HasNode applies the HasEdge predicate on the "node" edge.

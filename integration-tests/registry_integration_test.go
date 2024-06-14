@@ -562,7 +562,8 @@ func TestRegistry(t *testing.T) {
 			require.Equal(t, "test-url", *createNodeVersionResp.(drip.PublishNodeVersion201JSONResponse).SignedUrl, "should return signed url")
 			require.Equal(t, dependencies, *createNodeVersionResp.(drip.PublishNodeVersion201JSONResponse).NodeVersion.Dependencies, "should return pip dependencies")
 			require.Equal(t, changelog, *createNodeVersionResp.(drip.PublishNodeVersion201JSONResponse).NodeVersion.Changelog, "should return changelog")
-			createdNodeVersion = *createNodeVersionResp.(drip.PublishNodeVersion201JSONResponse).NodeVersion
+			versionStatus := drip.NodeVersionStatusPending
+			require.Equal(t, versionStatus, *createNodeVersionResp.(drip.PublishNodeVersion201JSONResponse).NodeVersion.Status, "should return pending status")
 		})
 
 		t.Run("Get not exist Node Version ", func(t *testing.T) {
