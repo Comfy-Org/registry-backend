@@ -45,8 +45,9 @@ type PublisherFilter struct {
 
 // NodeFilter holds optional parameters for filtering node results
 type NodeFilter struct {
-	PublisherID string
-	Search      string
+	PublisherID   string
+	Search        string
+	IncludeBanned bool
 
 	// Add more filter fields here
 }
@@ -94,6 +95,10 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 				node.DescriptionContainsFold(filter.Search),
 				node.AuthorContainsFold(filter.Search),
 			))
+		}
+
+		if !filter.IncludeBanned {
+			p = append(p, node.StatusNEQ(schema.NodeStatusBanned))
 		}
 
 		if len(p) > 1 {
@@ -563,7 +568,7 @@ func IsPermissionError(err error) bool {
 	if err == nil {
 		return false
 	}
-	var e *errorPermission
+	var e errorPermission
 	return errors.As(err, &e)
 }
 
@@ -590,8 +595,50 @@ func (s *RegistryService) BanPublisher(ctx context.Context, client *ent.Client, 
 			return fmt.Errorf("fail to update users: %w", err)
 		}
 
+		err = cli.Node.Update().
+			Where(node.PublisherIDEQ(pub.ID)).
+			SetStatus(schema.NodeStatusBanned).
+			Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("fail to update users: %w", err)
+		}
+
 		return nil
 	})
 
 	return err
+}
+
+func (s *RegistryService) BanNode(ctx context.Context, client *ent.Client, publisherid, id string) error {
+	log.Ctx(ctx).Info().Msgf("banning publisher node: %v %v", publisherid, id)
+
+	n, err := client.Node.Update().
+		Where(node.And(
+			node.IDEQ(id),
+			node.PublisherIDEQ(publisherid),
+		)).
+		SetStatus(schema.NodeStatusBanned).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("fail to ban node: %w", err)
+	}
+	if n < 1 {
+		return fmt.Errorf("publisher or node not found :%w", &ent.NotFoundError{})
+	}
+
+	return err
+}
+
+func (s *RegistryService) AssertNodeBanned(ctx context.Context, client *ent.Client, nodeID string) error {
+	node, err := client.Node.Get(ctx, nodeID)
+	if ent.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("failed to get node: %w", err)
+	}
+	if node.Status == schema.NodeStatusBanned {
+		return newErrorPermission("node '%s' is currently banned", nodeID)
+	}
+	return nil
 }

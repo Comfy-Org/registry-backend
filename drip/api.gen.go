@@ -285,6 +285,9 @@ type ListAllNodesParams struct {
 
 	// Limit Number of nodes to return per page
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// IncludeBanned Number of nodes to return per page
+	IncludeBanned *bool `form:"include_banned,omitempty" json:"include_banned,omitempty"`
 }
 
 // SearchNodesParams defines parameters for SearchNodes.
@@ -297,6 +300,9 @@ type SearchNodesParams struct {
 
 	// Search Keyword to search the nodes
 	Search *string `form:"search,omitempty" json:"search,omitempty"`
+
+	// IncludeBanned Number of nodes to return per page
+	IncludeBanned *bool `form:"include_banned,omitempty" json:"include_banned,omitempty"`
 }
 
 // InstallNodeParams defines parameters for InstallNode.
@@ -315,6 +321,12 @@ type PostNodeReviewParams struct {
 type ValidatePublisherParams struct {
 	// Username The publisher username to validate.
 	Username string `form:"username" json:"username"`
+}
+
+// ListNodesForPublisherParams defines parameters for ListNodesForPublisher.
+type ListNodesForPublisherParams struct {
+	// IncludeBanned Number of nodes to return per page
+	IncludeBanned *bool `form:"include_banned,omitempty" json:"include_banned,omitempty"`
 }
 
 // PublishNodeVersionJSONBody defines parameters for PublishNodeVersion.
@@ -445,7 +457,7 @@ type ServerInterface interface {
 	BanPublisher(ctx echo.Context, publisherId string) error
 	// Retrieve all nodes
 	// (GET /publishers/{publisherId}/nodes)
-	ListNodesForPublisher(ctx echo.Context, publisherId string) error
+	ListNodesForPublisher(ctx echo.Context, publisherId string, params ListNodesForPublisherParams) error
 	// Create a new custom node
 	// (POST /publishers/{publisherId}/nodes)
 	CreateNode(ctx echo.Context, publisherId string) error
@@ -455,6 +467,9 @@ type ServerInterface interface {
 	// Update a specific node
 	// (PUT /publishers/{publisherId}/nodes/{nodeId})
 	UpdateNode(ctx echo.Context, publisherId string, nodeId string) error
+	// Ban a publisher's Node
+	// (POST /publishers/{publisherId}/nodes/{nodeId}/ban)
+	BanPublisherNode(ctx echo.Context, publisherId string, nodeId string) error
 	// Retrieve permissions the user has for a given publisher
 	// (GET /publishers/{publisherId}/nodes/{nodeId}/permissions)
 	GetPermissionOnPublisherNodes(ctx echo.Context, publisherId string, nodeId string) error
@@ -593,6 +608,13 @@ func (w *ServerInterfaceWrapper) ListAllNodes(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
 	}
 
+	// ------------- Optional query parameter "include_banned" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "include_banned", ctx.QueryParams(), &params.IncludeBanned)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter include_banned: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.ListAllNodes(ctx, params)
 	return err
@@ -623,6 +645,13 @@ func (w *ServerInterfaceWrapper) SearchNodes(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, false, "search", ctx.QueryParams(), &params.Search)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter search: %s", err))
+	}
+
+	// ------------- Optional query parameter "include_banned" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "include_banned", ctx.QueryParams(), &params.IncludeBanned)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter include_banned: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -855,8 +884,17 @@ func (w *ServerInterfaceWrapper) ListNodesForPublisher(ctx echo.Context) error {
 
 	ctx.Set(BearerAuthScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListNodesForPublisherParams
+	// ------------- Optional query parameter "include_banned" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "include_banned", ctx.QueryParams(), &params.IncludeBanned)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter include_banned: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ListNodesForPublisher(ctx, publisherId)
+	err = w.Handler.ListNodesForPublisher(ctx, publisherId, params)
 	return err
 }
 
@@ -927,6 +965,30 @@ func (w *ServerInterfaceWrapper) UpdateNode(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.UpdateNode(ctx, publisherId, nodeId)
+	return err
+}
+
+// BanPublisherNode converts echo context to params.
+func (w *ServerInterfaceWrapper) BanPublisherNode(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "publisherId" -------------
+	var publisherId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "publisherId", ctx.Param("publisherId"), &publisherId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter publisherId: %s", err))
+	}
+
+	// ------------- Path parameter "nodeId" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "nodeId", ctx.Param("nodeId"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter nodeId: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.BanPublisherNode(ctx, publisherId, nodeId)
 	return err
 }
 
@@ -1203,6 +1265,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/publishers/:publisherId/nodes", wrapper.CreateNode)
 	router.DELETE(baseURL+"/publishers/:publisherId/nodes/:nodeId", wrapper.DeleteNode)
 	router.PUT(baseURL+"/publishers/:publisherId/nodes/:nodeId", wrapper.UpdateNode)
+	router.POST(baseURL+"/publishers/:publisherId/nodes/:nodeId/ban", wrapper.BanPublisherNode)
 	router.GET(baseURL+"/publishers/:publisherId/nodes/:nodeId/permissions", wrapper.GetPermissionOnPublisherNodes)
 	router.POST(baseURL+"/publishers/:publisherId/nodes/:nodeId/versions", wrapper.PublishNodeVersion)
 	router.DELETE(baseURL+"/publishers/:publisherId/nodes/:nodeId/versions/:versionId", wrapper.DeleteNodeVersion)
@@ -1553,6 +1616,15 @@ type ListNodeVersions200JSONResponse []NodeVersion
 func (response ListNodeVersions200JSONResponse) VisitListNodeVersionsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListNodeVersions403JSONResponse ErrorResponse
+
+func (response ListNodeVersions403JSONResponse) VisitListNodeVersionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -1910,6 +1982,7 @@ func (response BanPublisher500JSONResponse) VisitBanPublisherResponse(w http.Res
 
 type ListNodesForPublisherRequestObject struct {
 	PublisherId string `json:"publisherId"`
+	Params      ListNodesForPublisherParams
 }
 
 type ListNodesForPublisherResponseObject interface {
@@ -2094,6 +2167,58 @@ func (response UpdateNode500JSONResponse) VisitUpdateNodeResponse(w http.Respons
 	return json.NewEncoder(w).Encode(response)
 }
 
+type BanPublisherNodeRequestObject struct {
+	PublisherId string `json:"publisherId"`
+	NodeId      string `json:"nodeId"`
+}
+
+type BanPublisherNodeResponseObject interface {
+	VisitBanPublisherNodeResponse(w http.ResponseWriter) error
+}
+
+type BanPublisherNode204Response struct {
+}
+
+func (response BanPublisherNode204Response) VisitBanPublisherNodeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type BanPublisherNode401Response struct {
+}
+
+func (response BanPublisherNode401Response) VisitBanPublisherNodeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type BanPublisherNode403JSONResponse ErrorResponse
+
+func (response BanPublisherNode403JSONResponse) VisitBanPublisherNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BanPublisherNode404JSONResponse ErrorResponse
+
+func (response BanPublisherNode404JSONResponse) VisitBanPublisherNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BanPublisherNode500JSONResponse ErrorResponse
+
+func (response BanPublisherNode500JSONResponse) VisitBanPublisherNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type GetPermissionOnPublisherNodesRequestObject struct {
 	PublisherId string `json:"publisherId"`
 	NodeId      string `json:"nodeId"`
@@ -2201,11 +2326,29 @@ func (response DeleteNodeVersion204Response) VisitDeleteNodeVersionResponse(w ht
 	return nil
 }
 
+type DeleteNodeVersion403JSONResponse ErrorResponse
+
+func (response DeleteNodeVersion403JSONResponse) VisitDeleteNodeVersionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type DeleteNodeVersion404JSONResponse Error
 
 func (response DeleteNodeVersion404JSONResponse) VisitDeleteNodeVersionResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteNodeVersion500JSONResponse ErrorResponse
+
+func (response DeleteNodeVersion500JSONResponse) VisitDeleteNodeVersionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -2610,6 +2753,9 @@ type StrictServerInterface interface {
 	// Update a specific node
 	// (PUT /publishers/{publisherId}/nodes/{nodeId})
 	UpdateNode(ctx context.Context, request UpdateNodeRequestObject) (UpdateNodeResponseObject, error)
+	// Ban a publisher's Node
+	// (POST /publishers/{publisherId}/nodes/{nodeId}/ban)
+	BanPublisherNode(ctx context.Context, request BanPublisherNodeRequestObject) (BanPublisherNodeResponseObject, error)
 	// Retrieve permissions the user has for a given publisher
 	// (GET /publishers/{publisherId}/nodes/{nodeId}/permissions)
 	GetPermissionOnPublisherNodes(ctx context.Context, request GetPermissionOnPublisherNodesRequestObject) (GetPermissionOnPublisherNodesResponseObject, error)
@@ -3069,10 +3215,11 @@ func (sh *strictHandler) BanPublisher(ctx echo.Context, publisherId string) erro
 }
 
 // ListNodesForPublisher operation middleware
-func (sh *strictHandler) ListNodesForPublisher(ctx echo.Context, publisherId string) error {
+func (sh *strictHandler) ListNodesForPublisher(ctx echo.Context, publisherId string, params ListNodesForPublisherParams) error {
 	var request ListNodesForPublisherRequestObject
 
 	request.PublisherId = publisherId
+	request.Params = params
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListNodesForPublisher(ctx.Request().Context(), request.(ListNodesForPublisherRequestObject))
@@ -3176,6 +3323,32 @@ func (sh *strictHandler) UpdateNode(ctx echo.Context, publisherId string, nodeId
 		return err
 	} else if validResponse, ok := response.(UpdateNodeResponseObject); ok {
 		return validResponse.VisitUpdateNodeResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// BanPublisherNode operation middleware
+func (sh *strictHandler) BanPublisherNode(ctx echo.Context, publisherId string, nodeId string) error {
+	var request BanPublisherNodeRequestObject
+
+	request.PublisherId = publisherId
+	request.NodeId = nodeId
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.BanPublisherNode(ctx.Request().Context(), request.(BanPublisherNodeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "BanPublisherNode")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(BanPublisherNodeResponseObject); ok {
+		return validResponse.VisitBanPublisherNodeResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}
@@ -3485,77 +3658,79 @@ func (sh *strictHandler) ListPublishersForUser(ctx echo.Context) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"n0R3N3f/DQAA//9WtbW7rIoAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
