@@ -32,6 +32,9 @@ func (NodeVersion) Fields() []ent.Field {
 			dialect.Postgres: "text",
 		}),
 		field.Bool("deprecated").Default(false),
+		field.Enum("status").
+			GoType(NodeVersionStatus("")).
+			Default(string(NodeVersionStatusPending)),
 	}
 }
 
@@ -51,5 +54,23 @@ func (NodeVersion) Edges() []ent.Edge {
 func (NodeVersion) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("node_id", "version").Unique(),
+	}
+}
+
+type NodeVersionStatus string
+
+const (
+	NodeVersionStatusActive  NodeVersionStatus = "active"
+	NodeVersionStatusDeleted NodeVersionStatus = "deleted"
+	NodeVersionStatusBanned  NodeVersionStatus = "banned"
+	NodeVersionStatusPending NodeVersionStatus = "pending"
+)
+
+func (NodeVersionStatus) Values() (types []string) {
+	return []string{
+		string(NodeVersionStatusActive),
+		string(NodeVersionStatusBanned),
+		string(NodeVersionStatusDeleted),
+		string(NodeVersionStatusPending),
 	}
 }

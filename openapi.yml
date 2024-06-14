@@ -1676,6 +1676,9 @@ components:
         deprecated:
           type: boolean
           description: Indicates if this version is deprecated.
+        status:
+          $ref: "#/components/schemas/NodeVersionStatus"
+          description: The status of the node version.
     Error:
       type: object
       properties:
@@ -1704,7 +1707,14 @@ components:
         - NodeStatusActive
         - NodeStatusDeleted
         - NodeStatusBanned
-        - NodeStatusPending
+    # Enum of Node Version Status
+    NodeVersionStatus:
+      type: string
+      enum:
+        - NodeVersionStatusActive
+        - NodeVersionStatusDeleted
+        - NodeVersionStatusBanned
+        - NodeVersionStatusPending
 
   securitySchemes:
     BearerAuth:

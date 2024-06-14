@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"registry-backend/ent/node"
 	"registry-backend/ent/nodeversion"
+	"registry-backend/ent/schema"
 	"registry-backend/ent/storagefile"
 	"time"
 
@@ -100,6 +101,20 @@ func (nvc *NodeVersionCreate) SetNillableDeprecated(b *bool) *NodeVersionCreate 
 	return nvc
 }
 
+// SetStatus sets the "status" field.
+func (nvc *NodeVersionCreate) SetStatus(svs schema.NodeVersionStatus) *NodeVersionCreate {
+	nvc.mutation.SetStatus(svs)
+	return nvc
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (nvc *NodeVersionCreate) SetNillableStatus(svs *schema.NodeVersionStatus) *NodeVersionCreate {
+	if svs != nil {
+		nvc.SetStatus(*svs)
+	}
+	return nvc
+}
+
 // SetID sets the "id" field.
 func (nvc *NodeVersionCreate) SetID(u uuid.UUID) *NodeVersionCreate {
 	nvc.mutation.SetID(u)
@@ -185,6 +200,10 @@ func (nvc *NodeVersionCreate) defaults() {
 		v := nodeversion.DefaultDeprecated
 		nvc.mutation.SetDeprecated(v)
 	}
+	if _, ok := nvc.mutation.Status(); !ok {
+		v := nodeversion.DefaultStatus
+		nvc.mutation.SetStatus(v)
+	}
 	if _, ok := nvc.mutation.ID(); !ok {
 		v := nodeversion.DefaultID()
 		nvc.mutation.SetID(v)
@@ -210,6 +229,14 @@ func (nvc *NodeVersionCreate) check() error {
 	}
 	if _, ok := nvc.mutation.Deprecated(); !ok {
 		return &ValidationError{Name: "deprecated", err: errors.New(`ent: missing required field "NodeVersion.deprecated"`)}
+	}
+	if _, ok := nvc.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "NodeVersion.status"`)}
+	}
+	if v, ok := nvc.mutation.Status(); ok {
+		if err := nodeversion.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "NodeVersion.status": %w`, err)}
+		}
 	}
 	if _, ok := nvc.mutation.NodeID(); !ok {
 		return &ValidationError{Name: "node", err: errors.New(`ent: missing required edge "NodeVersion.node"`)}
@@ -273,6 +300,10 @@ func (nvc *NodeVersionCreate) createSpec() (*NodeVersion, *sqlgraph.CreateSpec) 
 	if value, ok := nvc.mutation.Deprecated(); ok {
 		_spec.SetField(nodeversion.FieldDeprecated, field.TypeBool, value)
 		_node.Deprecated = value
+	}
+	if value, ok := nvc.mutation.Status(); ok {
+		_spec.SetField(nodeversion.FieldStatus, field.TypeEnum, value)
+		_node.Status = value
 	}
 	if nodes := nvc.mutation.NodeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -438,6 +469,18 @@ func (u *NodeVersionUpsert) UpdateDeprecated() *NodeVersionUpsert {
 	return u
 }
 
+// SetStatus sets the "status" field.
+func (u *NodeVersionUpsert) SetStatus(v schema.NodeVersionStatus) *NodeVersionUpsert {
+	u.Set(nodeversion.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *NodeVersionUpsert) UpdateStatus() *NodeVersionUpsert {
+	u.SetExcluded(nodeversion.FieldStatus)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -577,6 +620,20 @@ func (u *NodeVersionUpsertOne) SetDeprecated(v bool) *NodeVersionUpsertOne {
 func (u *NodeVersionUpsertOne) UpdateDeprecated() *NodeVersionUpsertOne {
 	return u.Update(func(s *NodeVersionUpsert) {
 		s.UpdateDeprecated()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *NodeVersionUpsertOne) SetStatus(v schema.NodeVersionStatus) *NodeVersionUpsertOne {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *NodeVersionUpsertOne) UpdateStatus() *NodeVersionUpsertOne {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.UpdateStatus()
 	})
 }
 
@@ -886,6 +943,20 @@ func (u *NodeVersionUpsertBulk) SetDeprecated(v bool) *NodeVersionUpsertBulk {
 func (u *NodeVersionUpsertBulk) UpdateDeprecated() *NodeVersionUpsertBulk {
 	return u.Update(func(s *NodeVersionUpsert) {
 		s.UpdateDeprecated()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *NodeVersionUpsertBulk) SetStatus(v schema.NodeVersionStatus) *NodeVersionUpsertBulk {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *NodeVersionUpsertBulk) UpdateStatus() *NodeVersionUpsertBulk {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.UpdateStatus()
 	})
 }
 
