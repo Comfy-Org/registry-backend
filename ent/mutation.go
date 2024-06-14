@@ -5583,6 +5583,7 @@ type PublisherMutation struct {
 	support_email                 *string
 	source_code_repo              *string
 	logo_url                      *string
+	status                        *schema.PublisherStatus
 	clearedFields                 map[string]struct{}
 	publisher_permissions         map[int]struct{}
 	removedpublisher_permissions  map[int]struct{}
@@ -6055,6 +6056,42 @@ func (m *PublisherMutation) ResetLogoURL() {
 	delete(m.clearedFields, publisher.FieldLogoURL)
 }
 
+// SetStatus sets the "status" field.
+func (m *PublisherMutation) SetStatus(ss schema.PublisherStatus) {
+	m.status = &ss
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *PublisherMutation) Status() (r schema.PublisherStatus, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the Publisher entity.
+// If the Publisher object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PublisherMutation) OldStatus(ctx context.Context) (v schema.PublisherStatus, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *PublisherMutation) ResetStatus() {
+	m.status = nil
+}
+
 // AddPublisherPermissionIDs adds the "publisher_permissions" edge to the PublisherPermission entity by ids.
 func (m *PublisherMutation) AddPublisherPermissionIDs(ids ...int) {
 	if m.publisher_permissions == nil {
@@ -6251,7 +6288,7 @@ func (m *PublisherMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PublisherMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.create_time != nil {
 		fields = append(fields, publisher.FieldCreateTime)
 	}
@@ -6275,6 +6312,9 @@ func (m *PublisherMutation) Fields() []string {
 	}
 	if m.logo_url != nil {
 		fields = append(fields, publisher.FieldLogoURL)
+	}
+	if m.status != nil {
+		fields = append(fields, publisher.FieldStatus)
 	}
 	return fields
 }
@@ -6300,6 +6340,8 @@ func (m *PublisherMutation) Field(name string) (ent.Value, bool) {
 		return m.SourceCodeRepo()
 	case publisher.FieldLogoURL:
 		return m.LogoURL()
+	case publisher.FieldStatus:
+		return m.Status()
 	}
 	return nil, false
 }
@@ -6325,6 +6367,8 @@ func (m *PublisherMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldSourceCodeRepo(ctx)
 	case publisher.FieldLogoURL:
 		return m.OldLogoURL(ctx)
+	case publisher.FieldStatus:
+		return m.OldStatus(ctx)
 	}
 	return nil, fmt.Errorf("unknown Publisher field %s", name)
 }
@@ -6389,6 +6433,13 @@ func (m *PublisherMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLogoURL(v)
+		return nil
+	case publisher.FieldStatus:
+		v, ok := value.(schema.PublisherStatus)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Publisher field %s", name)
@@ -6495,6 +6546,9 @@ func (m *PublisherMutation) ResetField(name string) error {
 		return nil
 	case publisher.FieldLogoURL:
 		m.ResetLogoURL()
+		return nil
+	case publisher.FieldStatus:
+		m.ResetStatus()
 		return nil
 	}
 	return fmt.Errorf("unknown Publisher field %s", name)

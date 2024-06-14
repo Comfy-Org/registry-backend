@@ -53,6 +53,7 @@ func TestRegistry(t *testing.T) {
 		support := "test-support"
 		logo := "test-logo"
 		name := "test-name"
+		status := drip.PublisherStatusActive
 
 		t.Run("Create Publisher", func(t *testing.T) {
 			createPublisherResponse, err := impl.CreatePublisher(ctx, drip.CreatePublisherRequestObject{
@@ -74,6 +75,9 @@ func TestRegistry(t *testing.T) {
 			assert.Equal(t, website, *createPublisherResponse.(drip.CreatePublisher201JSONResponse).Website)
 			assert.Equal(t, support, *createPublisherResponse.(drip.CreatePublisher201JSONResponse).Support)
 			assert.Equal(t, logo, *createPublisherResponse.(drip.CreatePublisher201JSONResponse).Logo)
+			assert.Equal(t, name, *createPublisherResponse.(drip.CreatePublisher201JSONResponse).Name)
+			assert.Equal(t, drip.PublisherStatusActive, *createPublisherResponse.(drip.CreatePublisher201JSONResponse).Status)
+
 		})
 
 		t.Run("Validate Publisher", func(t *testing.T) {
@@ -129,7 +133,7 @@ func TestRegistry(t *testing.T) {
 				Support:        &support,
 				Logo:           &logo,
 				Name:           &name,
-
+				Status:         &status,
 				// generated thus ignored in comparison
 				Members:   res200[0].Members,
 				CreatedAt: res200[0].CreatedAt,

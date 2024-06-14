@@ -217,6 +217,7 @@ var (
 		{Name: "support_email", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "source_code_repo", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "logo_url", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "banned", "deleted", "pending"}, Default: "active"},
 	}
 	// PublishersTable holds the schema information for the "publishers" table.
 	PublishersTable = &schema.Table{

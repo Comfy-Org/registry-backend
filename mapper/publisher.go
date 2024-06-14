@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"registry-backend/drip"
 	"registry-backend/ent"
+	"registry-backend/ent/schema"
 )
 
 func ApiCreatePublisherToDb(publisher *drip.Publisher, client *ent.Client) (*ent.PublisherCreate, error) {
@@ -112,9 +113,27 @@ func DbPublisherToApiPublisher(publisher *ent.Publisher, public bool) *drip.Publ
 		Website:        &publisher.Website,
 		CreatedAt:      &publisher.CreateTime,
 		Members:        &members,
+		Status:         DbPublisherStatusToApiPublisherStatus(publisher.Status),
 	}
 }
 
 func ToStringPointer(s string) *string {
 	return &s
+}
+
+func DbPublisherStatusToApiPublisherStatus(status schema.PublisherStatus) *drip.PublisherStatus {
+	var publisherStatus drip.PublisherStatus
+
+	switch status {
+	case schema.PublisherStatusActive:
+		publisherStatus = drip.PublisherStatusActive
+	case schema.PublisherStatusBanned:
+		publisherStatus = drip.PublisherStatusBanned
+	case schema.PublisherStatusDeleted:
+		publisherStatus = drip.PublisherStatusDeleted
+	default:
+		publisherStatus = ""
+	}
+
+	return &publisherStatus
 }
