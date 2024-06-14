@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"registry-backend/drip"
 	"registry-backend/ent"
+	"registry-backend/ent/schema"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/uuid"
@@ -60,6 +61,7 @@ func DbNodeVersionToApiNodeVersion(dbNodeVersion *ent.NodeVersion) *drip.NodeVer
 			Deprecated:   &dbNodeVersion.Deprecated,
 			Dependencies: &dbNodeVersion.PipDependencies,
 			CreatedAt:    &dbNodeVersion.CreateTime,
+			Status:       DbNodeVersionStatusToApiNodeVersionStatus(dbNodeVersion.Status),
 		}
 	}
 
@@ -71,10 +73,28 @@ func DbNodeVersionToApiNodeVersion(dbNodeVersion *ent.NodeVersion) *drip.NodeVer
 		Deprecated:   &dbNodeVersion.Deprecated,
 		Dependencies: &dbNodeVersion.PipDependencies,
 		CreatedAt:    &dbNodeVersion.CreateTime,
+		Status:       DbNodeVersionStatusToApiNodeVersionStatus(dbNodeVersion.Status),
 	}
 }
 
 func CheckValidSemv(version string) bool {
 	_, err := semver.NewVersion(version)
 	return err == nil
+}
+
+func DbNodeVersionStatusToApiNodeVersionStatus(status schema.NodeVersionStatus) *drip.NodeVersionStatus {
+	var nodeVersionStatus drip.NodeVersionStatus
+
+	switch status {
+	case schema.NodeVersionStatusActive:
+		nodeVersionStatus = drip.NodeVersionStatusActive
+	case schema.NodeVersionStatusBanned:
+		nodeVersionStatus = drip.NodeVersionStatusBanned
+	case schema.NodeVersionStatusDeleted:
+		nodeVersionStatus = drip.NodeVersionStatusDeleted
+	default:
+		nodeVersionStatus = ""
+	}
+
+	return &nodeVersionStatus
 }
