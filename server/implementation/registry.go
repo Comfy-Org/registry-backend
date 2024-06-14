@@ -306,9 +306,13 @@ func (s *DripStrictServerImplementation) ListAllNodes(
 	if request.Params.Limit != nil {
 		limit = *request.Params.Limit
 	}
+	f := &drip_services.NodeFilter{}
+	if request.Params.IncludeBanned != nil {
+		f.IncludeBanned = *request.Params.IncludeBanned
+	}
 
 	// List nodes from the registry service
-	nodeResults, err := s.RegistryService.ListNodes(ctx, s.Client, page, limit, &drip_services.NodeFilter{})
+	nodeResults, err := s.RegistryService.ListNodes(ctx, s.Client, page, limit, f)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to list nodes w/ err: %v", err)
 		return drip.ListAllNodes500JSONResponse{Message: "Failed to list nodes", Error: err.Error()}, err
@@ -363,6 +367,9 @@ func (s *DripStrictServerImplementation) SearchNodes(ctx context.Context, reques
 	f := &drip_services.NodeFilter{}
 	if request.Params.Search != nil {
 		f.Search = *request.Params.Search
+	}
+	if request.Params.IncludeBanned != nil {
+		f.IncludeBanned = *request.Params.IncludeBanned
 	}
 	// List nodes from the registry service
 	nodeResults, err := s.RegistryService.ListNodes(ctx, s.Client, page, limit, f)
@@ -470,6 +477,16 @@ func (s *DripStrictServerImplementation) GetNode(
 		return drip.GetNode500JSONResponse{Message: "Failed to get node"}, err
 	}
 
+	switch err = s.RegistryService.AssertNodeBanned(ctx, s.Client, request.NodeId); {
+	case drip_services.IsPermissionError(err):
+		log.Ctx(ctx).Error().Msgf("Node %s banned", request.NodeId)
+		return drip.GetNode403JSONResponse{}, nil
+
+	case err != nil:
+		log.Ctx(ctx).Error().Msgf("Failed to assert node ban status %s w/ err: %v", request.NodeId, err)
+		return drip.GetNode500JSONResponse{Message: "Failed to assert node ban status", Error: err.Error()}, err
+	}
+
 	nodeVersion, err := s.RegistryService.GetLatestNodeVersion(ctx, s.Client, request.NodeId)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf(
@@ -493,6 +510,16 @@ func (s *DripStrictServerImplementation) UpdateNode(
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
 		return drip.UpdateNode404JSONResponse{Message: "Invalid user ID"}, err
+	}
+
+	switch err := s.RegistryService.AssertNodeBanned(ctx, s.Client, request.NodeId); {
+	case drip_services.IsPermissionError(err):
+		log.Ctx(ctx).Error().Msgf("Node %s banned", request.NodeId)
+		return drip.UpdateNode403JSONResponse{Message: "Node banned"}, nil
+
+	case err != nil:
+		log.Ctx(ctx).Error().Msgf("Failed to assert node ban status %s w/ err: %v", request.NodeId, err)
+		return drip.UpdateNode500JSONResponse{Message: "Failed to assert node ban status", Error: err.Error()}, err
 	}
 
 	err = s.RegistryService.AssertPublisherPermissions(
@@ -538,6 +565,16 @@ func (s *DripStrictServerImplementation) ListNodeVersions(
 
 	log.Ctx(ctx).Info().Msgf("ListNodeVersions request received for node ID: %s", request.NodeId)
 
+	switch err := s.RegistryService.AssertNodeBanned(ctx, s.Client, request.NodeId); {
+	case drip_services.IsPermissionError(err):
+		log.Ctx(ctx).Error().Msgf("Node %s banned", request.NodeId)
+		return drip.ListNodeVersions403JSONResponse{Message: "Node banned"}, nil
+
+	case err != nil:
+		log.Ctx(ctx).Error().Msgf("Failed to assert node ban status %s w/ err: %v", request.NodeId, err)
+		return drip.ListNodeVersions500JSONResponse{Message: "Failed to assert node ban status", Error: err.Error()}, err
+	}
+
 	nodeVersions, err := s.RegistryService.ListNodeVersions(ctx, s.Client, request.NodeId)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to list node versions for node %s w/ err: %v", request.NodeId, err)
@@ -567,6 +604,16 @@ func (s *DripStrictServerImplementation) PublishNodeVersion(
 		errMessage := "Invalid personal access token"
 		log.Ctx(ctx).Error().Msg(errMessage)
 		return drip.PublishNodeVersion400JSONResponse{Message: errMessage}, nil
+	}
+
+	switch err := s.RegistryService.AssertNodeBanned(ctx, s.Client, request.NodeId); {
+	case drip_services.IsPermissionError(err):
+		log.Ctx(ctx).Error().Msgf("Node %s banned", request.NodeId)
+		return drip.PublishNodeVersion403JSONResponse{}, nil
+
+	case err != nil:
+		log.Ctx(ctx).Error().Msgf("Failed to assert node banned status %s w/ err: %v", request.NodeId, err)
+		return drip.PublishNodeVersion500JSONResponse{Message: "Failed to assert node ban status", Error: err.Error()}, err
 	}
 
 	// Check if node exists, create if not
@@ -629,6 +676,16 @@ func (s *DripStrictServerImplementation) UpdateNodeVersion(
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
 		return drip.UpdateNodeVersion404JSONResponse{Message: "Invalid user ID"}, err
+	}
+
+	switch err := s.RegistryService.AssertNodeBanned(ctx, s.Client, request.NodeId); {
+	case drip_services.IsPermissionError(err):
+		log.Ctx(ctx).Error().Msgf("Node %s banned", request.NodeId)
+		return drip.UpdateNodeVersion404JSONResponse{Message: "Node banned"}, nil
+
+	case err != nil:
+		log.Ctx(ctx).Error().Msgf("Failed to assert node ban status %s w/ err: %v", request.NodeId, err)
+		return drip.UpdateNodeVersion500JSONResponse{Message: "Failed to assert node ban status", Error: err.Error()}, err
 	}
 
 	// Assert publisher permissions
@@ -715,6 +772,16 @@ func (s *DripStrictServerImplementation) DeleteNodeVersion(
 	log.Ctx(ctx).Info().Msgf("DeleteNodeVersion request received for node ID: "+
 		"%s, version ID: %s", request.NodeId, request.VersionId)
 
+	switch err := s.RegistryService.AssertNodeBanned(ctx, s.Client, request.NodeId); {
+	case drip_services.IsPermissionError(err):
+		log.Ctx(ctx).Error().Msgf("Node %s banned", request.NodeId)
+		return drip.DeleteNodeVersion403JSONResponse{Message: "Node banned"}, nil
+
+	case err != nil:
+		log.Ctx(ctx).Error().Msgf("Failed to assert node ban status %s w/ err: %v", request.NodeId, err)
+		return drip.DeleteNodeVersion500JSONResponse{Message: "Failed to assert node ban status", Error: err.Error()}, err
+	}
+
 	// Directly return the message that node versions cannot be deleted
 	errMessage := "Cannot delete node versions. Please deprecate it instead."
 	log.Ctx(ctx).Warn().Msg(errMessage)
@@ -727,6 +794,16 @@ func (s *DripStrictServerImplementation) GetNodeVersion(
 	ctx context.Context, request drip.GetNodeVersionRequestObject) (drip.GetNodeVersionResponseObject, error) {
 	log.Ctx(ctx).Info().Msgf("GetNodeVersion request received for "+
 		"node ID: %s, version ID: %s", request.NodeId, request.VersionId)
+
+	switch err := s.RegistryService.AssertNodeBanned(ctx, s.Client, request.NodeId); {
+	case drip_services.IsPermissionError(err):
+		log.Ctx(ctx).Error().Msgf("Node %s banned", request.NodeId)
+		return drip.GetNodeVersion404JSONResponse{}, nil
+
+	case err != nil:
+		log.Ctx(ctx).Error().Msgf("Failed to assert node banned status %s w/ err: %v", request.NodeId, err)
+		return drip.GetNodeVersion500JSONResponse{Message: "Failed to assert node ban status", Error: err.Error()}, err
+	}
 
 	nodeVersion, err := s.RegistryService.GetNodeVersion(ctx, s.Client, request.NodeId, request.VersionId)
 	if ent.IsNotFound(err) {
@@ -913,6 +990,16 @@ func (s *DripStrictServerImplementation) InstallNode(
 		return drip.InstallNode500JSONResponse{Message: "Failed to get node"}, err
 	}
 
+	switch err := s.RegistryService.AssertNodeBanned(ctx, s.Client, request.NodeId); {
+	case drip_services.IsPermissionError(err):
+		log.Ctx(ctx).Error().Msgf("Node %s banned", request.NodeId)
+		return drip.InstallNode403JSONResponse{Message: "Node banned"}, nil
+
+	case err != nil:
+		log.Ctx(ctx).Error().Msgf("Failed to assert node ban status %s w/ err: %v", request.NodeId, err)
+		return drip.InstallNode500JSONResponse{Message: "Failed to assert node ban status", Error: err.Error()}, err
+	}
+
 	// Install node version
 	if request.Params.Version == nil {
 		nodeVersion, err := s.RegistryService.GetLatestNodeVersion(ctx, s.Client, request.NodeId)
@@ -1040,6 +1127,42 @@ func (s *DripStrictServerImplementation) BanPublisher(ctx context.Context, reque
 			Error:   err.Error(),
 		}, nil
 	}
-
 	return drip.BanPublisher204Response{}, nil
+}
+
+// BanPublisherNode implements drip.StrictServerInterface.
+func (s *DripStrictServerImplementation) BanPublisherNode(ctx context.Context, request drip.BanPublisherNodeRequestObject) (drip.BanPublisherNodeResponseObject, error) {
+	userId, err := mapper.GetUserIDFromContext(ctx)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
+		return drip.BanPublisherNode401Response{}, nil
+	}
+	user, err := s.Client.User.Get(ctx, userId)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
+		return drip.BanPublisherNode401Response{}, nil
+	}
+	if !user.IsAdmin {
+		log.Ctx(ctx).Error().Msgf("User is not admin w/ err")
+		return drip.BanPublisherNode403JSONResponse{
+			Message: "User is not admin",
+		}, nil
+	}
+
+	err = s.RegistryService.BanNode(ctx, s.Client, request.PublisherId, request.NodeId)
+	if ent.IsNotFound(err) {
+		log.Ctx(ctx).Error().Msgf("Publisher '%s' or node '%s' not found  w/ err: %v", request.PublisherId, request.NodeId, err)
+		return drip.BanPublisherNode404JSONResponse{
+			Message: "Publisher or Node not found",
+		}, nil
+	}
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Error banning node w/ err: %v", err)
+		return drip.BanPublisherNode500JSONResponse{
+			Message: "Error banning node",
+			Error:   err.Error(),
+		}, nil
+	}
+	return drip.BanPublisherNode204Response{}, nil
+
 }
