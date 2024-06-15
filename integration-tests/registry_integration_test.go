@@ -140,6 +140,7 @@ func TestRegistry(t *testing.T) {
 				// generated thus ignored in comparison
 				Members:   res200[0].Members,
 				CreatedAt: res200[0].CreatedAt,
+				Status:    res200[0].Status,
 			}, res200[0], "should return correct publishers")
 		})
 
