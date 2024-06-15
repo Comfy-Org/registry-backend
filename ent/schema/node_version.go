@@ -35,6 +35,9 @@ func (NodeVersion) Fields() []ent.Field {
 		field.Enum("status").
 			GoType(NodeVersionStatus("")).
 			Default(string(NodeVersionStatusPending)),
+		field.String("status_reason").SchemaType(map[string]string{
+			dialect.Postgres: "text",
+		}).Default("").Comment("Give a reason for the status change. Eg. 'Banned due to security vulnerability'"),
 	}
 }
 

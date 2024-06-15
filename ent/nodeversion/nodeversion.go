@@ -33,6 +33,8 @@ const (
 	FieldDeprecated = "deprecated"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldStatusReason holds the string denoting the status_reason field in the database.
+	FieldStatusReason = "status_reason"
 	// EdgeNode holds the string denoting the node edge name in mutations.
 	EdgeNode = "node"
 	// EdgeStorageFile holds the string denoting the storage_file edge name in mutations.
@@ -66,6 +68,7 @@ var Columns = []string{
 	FieldPipDependencies,
 	FieldDeprecated,
 	FieldStatus,
+	FieldStatusReason,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "node_versions"
@@ -98,6 +101,8 @@ var (
 	UpdateDefaultUpdateTime func() time.Time
 	// DefaultDeprecated holds the default value on creation for the "deprecated" field.
 	DefaultDeprecated bool
+	// DefaultStatusReason holds the default value on creation for the "status_reason" field.
+	DefaultStatusReason string
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -155,6 +160,11 @@ func ByDeprecated(opts ...sql.OrderTermOption) OrderOption {
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// ByStatusReason orders the results by the status_reason field.
+func ByStatusReason(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStatusReason, opts...).ToFunc()
 }
 
 // ByNodeField orders the results by node field.

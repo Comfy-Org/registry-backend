@@ -115,6 +115,20 @@ func (nvc *NodeVersionCreate) SetNillableStatus(svs *schema.NodeVersionStatus) *
 	return nvc
 }
 
+// SetStatusReason sets the "status_reason" field.
+func (nvc *NodeVersionCreate) SetStatusReason(s string) *NodeVersionCreate {
+	nvc.mutation.SetStatusReason(s)
+	return nvc
+}
+
+// SetNillableStatusReason sets the "status_reason" field if the given value is not nil.
+func (nvc *NodeVersionCreate) SetNillableStatusReason(s *string) *NodeVersionCreate {
+	if s != nil {
+		nvc.SetStatusReason(*s)
+	}
+	return nvc
+}
+
 // SetID sets the "id" field.
 func (nvc *NodeVersionCreate) SetID(u uuid.UUID) *NodeVersionCreate {
 	nvc.mutation.SetID(u)
@@ -204,6 +218,10 @@ func (nvc *NodeVersionCreate) defaults() {
 		v := nodeversion.DefaultStatus
 		nvc.mutation.SetStatus(v)
 	}
+	if _, ok := nvc.mutation.StatusReason(); !ok {
+		v := nodeversion.DefaultStatusReason
+		nvc.mutation.SetStatusReason(v)
+	}
 	if _, ok := nvc.mutation.ID(); !ok {
 		v := nodeversion.DefaultID()
 		nvc.mutation.SetID(v)
@@ -237,6 +255,9 @@ func (nvc *NodeVersionCreate) check() error {
 		if err := nodeversion.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "NodeVersion.status": %w`, err)}
 		}
+	}
+	if _, ok := nvc.mutation.StatusReason(); !ok {
+		return &ValidationError{Name: "status_reason", err: errors.New(`ent: missing required field "NodeVersion.status_reason"`)}
 	}
 	if _, ok := nvc.mutation.NodeID(); !ok {
 		return &ValidationError{Name: "node", err: errors.New(`ent: missing required edge "NodeVersion.node"`)}
@@ -304,6 +325,10 @@ func (nvc *NodeVersionCreate) createSpec() (*NodeVersion, *sqlgraph.CreateSpec) 
 	if value, ok := nvc.mutation.Status(); ok {
 		_spec.SetField(nodeversion.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
+	}
+	if value, ok := nvc.mutation.StatusReason(); ok {
+		_spec.SetField(nodeversion.FieldStatusReason, field.TypeString, value)
+		_node.StatusReason = value
 	}
 	if nodes := nvc.mutation.NodeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -481,6 +506,18 @@ func (u *NodeVersionUpsert) UpdateStatus() *NodeVersionUpsert {
 	return u
 }
 
+// SetStatusReason sets the "status_reason" field.
+func (u *NodeVersionUpsert) SetStatusReason(v string) *NodeVersionUpsert {
+	u.Set(nodeversion.FieldStatusReason, v)
+	return u
+}
+
+// UpdateStatusReason sets the "status_reason" field to the value that was provided on create.
+func (u *NodeVersionUpsert) UpdateStatusReason() *NodeVersionUpsert {
+	u.SetExcluded(nodeversion.FieldStatusReason)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -634,6 +671,20 @@ func (u *NodeVersionUpsertOne) SetStatus(v schema.NodeVersionStatus) *NodeVersio
 func (u *NodeVersionUpsertOne) UpdateStatus() *NodeVersionUpsertOne {
 	return u.Update(func(s *NodeVersionUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetStatusReason sets the "status_reason" field.
+func (u *NodeVersionUpsertOne) SetStatusReason(v string) *NodeVersionUpsertOne {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.SetStatusReason(v)
+	})
+}
+
+// UpdateStatusReason sets the "status_reason" field to the value that was provided on create.
+func (u *NodeVersionUpsertOne) UpdateStatusReason() *NodeVersionUpsertOne {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.UpdateStatusReason()
 	})
 }
 
@@ -957,6 +1008,20 @@ func (u *NodeVersionUpsertBulk) SetStatus(v schema.NodeVersionStatus) *NodeVersi
 func (u *NodeVersionUpsertBulk) UpdateStatus() *NodeVersionUpsertBulk {
 	return u.Update(func(s *NodeVersionUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetStatusReason sets the "status_reason" field.
+func (u *NodeVersionUpsertBulk) SetStatusReason(v string) *NodeVersionUpsertBulk {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.SetStatusReason(v)
+	})
+}
+
+// UpdateStatusReason sets the "status_reason" field to the value that was provided on create.
+func (u *NodeVersionUpsertBulk) UpdateStatusReason() *NodeVersionUpsertBulk {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.UpdateStatusReason()
 	})
 }
 

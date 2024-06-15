@@ -1452,6 +1452,10 @@ paths:
               properties:
                 status:
                   $ref: "#/components/schemas/NodeVersionStatus"
+                status_reason:
+                  type: string
+                  description: The reason for the status change.
+
       responses:
         '200':
           description: Version updated successfully
