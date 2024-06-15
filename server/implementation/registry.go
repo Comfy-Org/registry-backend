@@ -1219,7 +1219,11 @@ func (s *DripStrictServerImplementation) AdminUpdateNodeVersion(
 	}
 
 	dbNodeVersion := mapper.ApiNodeVersionStatusToDbNodeVersionStatus(*request.Body.Status)
-	err = nodeVersion.Update().SetStatus(dbNodeVersion).SetStatusReason(*request.Body.StatusReason).Exec(ctx)
+	statusReason := ""
+	if request.Body.StatusReason != nil {
+		statusReason = *request.Body.StatusReason
+	}
+	err = nodeVersion.Update().SetStatus(dbNodeVersion).SetStatusReason(statusReason).Exec(ctx)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to update node version w/ err: %v", err)
 		return drip.AdminUpdateNodeVersion500JSONResponse{}, err
