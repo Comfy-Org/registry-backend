@@ -65,15 +65,21 @@ func DbNodeVersionToApiNodeVersion(dbNodeVersion *ent.NodeVersion) *drip.NodeVer
 		}
 	}
 
+	status := DbNodeVersionStatusToApiNodeVersionStatus(dbNodeVersion.Status)
+	downloadUrl := ""
+	if dbNodeVersion.Status == schema.NodeVersionStatus(drip.NodeVersionStatusActive) {
+		downloadUrl = dbNodeVersion.Edges.StorageFile.FileURL
+	}
+
 	return &drip.NodeVersion{
 		Id:           &id,
 		Version:      &dbNodeVersion.Version,
 		Changelog:    &dbNodeVersion.Changelog,
-		DownloadUrl:  &dbNodeVersion.Edges.StorageFile.FileURL,
+		DownloadUrl:  &downloadUrl,
 		Deprecated:   &dbNodeVersion.Deprecated,
 		Dependencies: &dbNodeVersion.PipDependencies,
 		CreatedAt:    &dbNodeVersion.CreateTime,
-		Status:       DbNodeVersionStatusToApiNodeVersionStatus(dbNodeVersion.Status),
+		Status:       status,
 	}
 }
 
