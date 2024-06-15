@@ -87,6 +87,11 @@ func Deprecated(v bool) predicate.NodeVersion {
 	return predicate.NodeVersion(sql.FieldEQ(FieldDeprecated, v))
 }
 
+// StatusReason applies equality check predicate on the "status_reason" field. It's identical to StatusReasonEQ.
+func StatusReason(v string) predicate.NodeVersion {
+	return predicate.NodeVersion(sql.FieldEQ(FieldStatusReason, v))
+}
+
 // CreateTimeEQ applies the EQ predicate on the "create_time" field.
 func CreateTimeEQ(v time.Time) predicate.NodeVersion {
 	return predicate.NodeVersion(sql.FieldEQ(FieldCreateTime, v))
@@ -410,6 +415,71 @@ func StatusNotIn(vs ...schema.NodeVersionStatus) predicate.NodeVersion {
 		v[i] = vs[i]
 	}
 	return predicate.NodeVersion(sql.FieldNotIn(FieldStatus, v...))
+}
+
+// StatusReasonEQ applies the EQ predicate on the "status_reason" field.
+func StatusReasonEQ(v string) predicate.NodeVersion {
+	return predicate.NodeVersion(sql.FieldEQ(FieldStatusReason, v))
+}
+
+// StatusReasonNEQ applies the NEQ predicate on the "status_reason" field.
+func StatusReasonNEQ(v string) predicate.NodeVersion {
+	return predicate.NodeVersion(sql.FieldNEQ(FieldStatusReason, v))
+}
+
+// StatusReasonIn applies the In predicate on the "status_reason" field.
+func StatusReasonIn(vs ...string) predicate.NodeVersion {
+	return predicate.NodeVersion(sql.FieldIn(FieldStatusReason, vs...))
+}
+
+// StatusReasonNotIn applies the NotIn predicate on the "status_reason" field.
+func StatusReasonNotIn(vs ...string) predicate.NodeVersion {
+	return predicate.NodeVersion(sql.FieldNotIn(FieldStatusReason, vs...))
+}
+
+// StatusReasonGT applies the GT predicate on the "status_reason" field.
+func StatusReasonGT(v string) predicate.NodeVersion {
+	return predicate.NodeVersion(sql.FieldGT(FieldStatusReason, v))
+}
+
+// StatusReasonGTE applies the GTE predicate on the "status_reason" field.
+func StatusReasonGTE(v string) predicate.NodeVersion {
+	return predicate.NodeVersion(sql.FieldGTE(FieldStatusReason, v))
+}
+
+// StatusReasonLT applies the LT predicate on the "status_reason" field.
+func StatusReasonLT(v string) predicate.NodeVersion {
+	return predicate.NodeVersion(sql.FieldLT(FieldStatusReason, v))
+}
+
+// StatusReasonLTE applies the LTE predicate on the "status_reason" field.
+func StatusReasonLTE(v string) predicate.NodeVersion {
+	return predicate.NodeVersion(sql.FieldLTE(FieldStatusReason, v))
+}
+
+// StatusReasonContains applies the Contains predicate on the "status_reason" field.
+func StatusReasonContains(v string) predicate.NodeVersion {
+	return predicate.NodeVersion(sql.FieldContains(FieldStatusReason, v))
+}
+
+// StatusReasonHasPrefix applies the HasPrefix predicate on the "status_reason" field.
+func StatusReasonHasPrefix(v string) predicate.NodeVersion {
+	return predicate.NodeVersion(sql.FieldHasPrefix(FieldStatusReason, v))
+}
+
+// StatusReasonHasSuffix applies the HasSuffix predicate on the "status_reason" field.
+func StatusReasonHasSuffix(v string) predicate.NodeVersion {
+	return predicate.NodeVersion(sql.FieldHasSuffix(FieldStatusReason, v))
+}
+
+// StatusReasonEqualFold applies the EqualFold predicate on the "status_reason" field.
+func StatusReasonEqualFold(v string) predicate.NodeVersion {
+	return predicate.NodeVersion(sql.FieldEqualFold(FieldStatusReason, v))
+}
+
+// StatusReasonContainsFold applies the ContainsFold predicate on the "status_reason" field.
+func StatusReasonContainsFold(v string) predicate.NodeVersion {
+	return predicate.NodeVersion(sql.FieldContainsFold(FieldStatusReason, v))
 }
 
 // HasNode applies the HasEdge predicate on the "node" edge.

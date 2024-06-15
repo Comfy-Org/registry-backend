@@ -4266,6 +4266,7 @@ type NodeVersionMutation struct {
 	appendpip_dependencies []string
 	deprecated             *bool
 	status                 *schema.NodeVersionStatus
+	status_reason          *string
 	clearedFields          map[string]struct{}
 	node                   *string
 	clearednode            bool
@@ -4696,6 +4697,42 @@ func (m *NodeVersionMutation) ResetStatus() {
 	m.status = nil
 }
 
+// SetStatusReason sets the "status_reason" field.
+func (m *NodeVersionMutation) SetStatusReason(s string) {
+	m.status_reason = &s
+}
+
+// StatusReason returns the value of the "status_reason" field in the mutation.
+func (m *NodeVersionMutation) StatusReason() (r string, exists bool) {
+	v := m.status_reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatusReason returns the old "status_reason" field's value of the NodeVersion entity.
+// If the NodeVersion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NodeVersionMutation) OldStatusReason(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatusReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatusReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatusReason: %w", err)
+	}
+	return oldValue.StatusReason, nil
+}
+
+// ResetStatusReason resets all changes to the "status_reason" field.
+func (m *NodeVersionMutation) ResetStatusReason() {
+	m.status_reason = nil
+}
+
 // ClearNode clears the "node" edge to the Node entity.
 func (m *NodeVersionMutation) ClearNode() {
 	m.clearednode = true
@@ -4796,7 +4833,7 @@ func (m *NodeVersionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NodeVersionMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.create_time != nil {
 		fields = append(fields, nodeversion.FieldCreateTime)
 	}
@@ -4820,6 +4857,9 @@ func (m *NodeVersionMutation) Fields() []string {
 	}
 	if m.status != nil {
 		fields = append(fields, nodeversion.FieldStatus)
+	}
+	if m.status_reason != nil {
+		fields = append(fields, nodeversion.FieldStatusReason)
 	}
 	return fields
 }
@@ -4845,6 +4885,8 @@ func (m *NodeVersionMutation) Field(name string) (ent.Value, bool) {
 		return m.Deprecated()
 	case nodeversion.FieldStatus:
 		return m.Status()
+	case nodeversion.FieldStatusReason:
+		return m.StatusReason()
 	}
 	return nil, false
 }
@@ -4870,6 +4912,8 @@ func (m *NodeVersionMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldDeprecated(ctx)
 	case nodeversion.FieldStatus:
 		return m.OldStatus(ctx)
+	case nodeversion.FieldStatusReason:
+		return m.OldStatusReason(ctx)
 	}
 	return nil, fmt.Errorf("unknown NodeVersion field %s", name)
 }
@@ -4934,6 +4978,13 @@ func (m *NodeVersionMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
+		return nil
+	case nodeversion.FieldStatusReason:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatusReason(v)
 		return nil
 	}
 	return fmt.Errorf("unknown NodeVersion field %s", name)
@@ -5016,6 +5067,9 @@ func (m *NodeVersionMutation) ResetField(name string) error {
 		return nil
 	case nodeversion.FieldStatus:
 		m.ResetStatus()
+		return nil
+	case nodeversion.FieldStatusReason:
+		m.ResetStatusReason()
 		return nil
 	}
 	return fmt.Errorf("unknown NodeVersion field %s", name)

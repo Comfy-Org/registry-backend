@@ -127,6 +127,20 @@ func (nvu *NodeVersionUpdate) SetNillableStatus(svs *schema.NodeVersionStatus) *
 	return nvu
 }
 
+// SetStatusReason sets the "status_reason" field.
+func (nvu *NodeVersionUpdate) SetStatusReason(s string) *NodeVersionUpdate {
+	nvu.mutation.SetStatusReason(s)
+	return nvu
+}
+
+// SetNillableStatusReason sets the "status_reason" field if the given value is not nil.
+func (nvu *NodeVersionUpdate) SetNillableStatusReason(s *string) *NodeVersionUpdate {
+	if s != nil {
+		nvu.SetStatusReason(*s)
+	}
+	return nvu
+}
+
 // SetNode sets the "node" edge to the Node entity.
 func (nvu *NodeVersionUpdate) SetNode(n *Node) *NodeVersionUpdate {
 	return nvu.SetNodeID(n.ID)
@@ -254,6 +268,9 @@ func (nvu *NodeVersionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := nvu.mutation.Status(); ok {
 		_spec.SetField(nodeversion.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := nvu.mutation.StatusReason(); ok {
+		_spec.SetField(nodeversion.FieldStatusReason, field.TypeString, value)
 	}
 	if nvu.mutation.NodeCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -427,6 +444,20 @@ func (nvuo *NodeVersionUpdateOne) SetNillableStatus(svs *schema.NodeVersionStatu
 	return nvuo
 }
 
+// SetStatusReason sets the "status_reason" field.
+func (nvuo *NodeVersionUpdateOne) SetStatusReason(s string) *NodeVersionUpdateOne {
+	nvuo.mutation.SetStatusReason(s)
+	return nvuo
+}
+
+// SetNillableStatusReason sets the "status_reason" field if the given value is not nil.
+func (nvuo *NodeVersionUpdateOne) SetNillableStatusReason(s *string) *NodeVersionUpdateOne {
+	if s != nil {
+		nvuo.SetStatusReason(*s)
+	}
+	return nvuo
+}
+
 // SetNode sets the "node" edge to the Node entity.
 func (nvuo *NodeVersionUpdateOne) SetNode(n *Node) *NodeVersionUpdateOne {
 	return nvuo.SetNodeID(n.ID)
@@ -584,6 +615,9 @@ func (nvuo *NodeVersionUpdateOne) sqlSave(ctx context.Context) (_node *NodeVersi
 	}
 	if value, ok := nvuo.mutation.Status(); ok {
 		_spec.SetField(nodeversion.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := nvuo.mutation.StatusReason(); ok {
+		_spec.SetField(nodeversion.FieldStatusReason, field.TypeString, value)
 	}
 	if nvuo.mutation.NodeCleared() {
 		edge := &sqlgraph.EdgeSpec{

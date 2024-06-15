@@ -120,6 +120,10 @@ func init() {
 	nodeversionDescDeprecated := nodeversionFields[5].Descriptor()
 	// nodeversion.DefaultDeprecated holds the default value on creation for the deprecated field.
 	nodeversion.DefaultDeprecated = nodeversionDescDeprecated.Default.(bool)
+	// nodeversionDescStatusReason is the schema descriptor for status_reason field.
+	nodeversionDescStatusReason := nodeversionFields[7].Descriptor()
+	// nodeversion.DefaultStatusReason holds the default value on creation for the status_reason field.
+	nodeversion.DefaultStatusReason = nodeversionDescStatusReason.Default.(string)
 	// nodeversionDescID is the schema descriptor for id field.
 	nodeversionDescID := nodeversionFields[0].Descriptor()
 	// nodeversion.DefaultID holds the default value on creation for the id field.
