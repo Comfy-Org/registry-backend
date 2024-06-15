@@ -429,7 +429,7 @@ func (s *RegistryService) GetLatestNodeVersion(ctx context.Context, client *ent.
 	log.Ctx(ctx).Info().Msgf("getting latest version of node: %v", nodeId)
 	nodeVersion, err := client.NodeVersion.
 		Query().
-		Where(nodeversion.NodeIDEQ(nodeId)).
+		Where(nodeversion.NodeIDEQ(nodeId), nodeversion.StatusEQ(schema.NodeVersionStatusActive)).
 		Order(ent.Desc(nodeversion.FieldCreateTime)).
 		WithStorageFile().
 		First(ctx)
