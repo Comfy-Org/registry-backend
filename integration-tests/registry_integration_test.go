@@ -663,7 +663,7 @@ func TestRegistry(t *testing.T) {
 			createdNodeVersion = res200[0]
 		})
 
-		t.Run("List Nodes", func(t *testing.T) {
+		t.Run("List All Nodes", func(t *testing.T) {
 			resNodes, err := impl.ListAllNodes(ctx, drip.ListAllNodesRequestObject{})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.ListAllNodes200JSONResponse{}, resNodes, "should return 200 server response")

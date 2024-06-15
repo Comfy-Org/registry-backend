@@ -334,7 +334,7 @@ func (s *DripStrictServerImplementation) ListAllNodes(
 		apiNode := mapper.DbNodeToApiNode(dbNode)
 		if dbNode.Edges.Versions != nil && len(dbNode.Edges.Versions) > 0 {
 			latestVersion, err := s.RegistryService.GetLatestNodeVersion(ctx, s.Client, dbNode.ID)
-			if err != nil {
+			if err == nil {
 				apiNode.LatestVersion = mapper.DbNodeVersionToApiNodeVersion(latestVersion)
 			} else {
 				log.Ctx(ctx).Error().Msgf("Failed to get latest version for node %s w/ err: %v", dbNode.ID, err)
@@ -398,7 +398,7 @@ func (s *DripStrictServerImplementation) SearchNodes(ctx context.Context, reques
 		apiNode := mapper.DbNodeToApiNode(dbNode)
 		if dbNode.Edges.Versions != nil && len(dbNode.Edges.Versions) > 0 {
 			latestVersion, err := s.RegistryService.GetLatestNodeVersion(ctx, s.Client, dbNode.ID)
-			if err != nil {
+			if err == nil {
 				apiNode.LatestVersion = mapper.DbNodeVersionToApiNodeVersion(latestVersion)
 			} else {
 				log.Ctx(ctx).Error().Msgf("Failed to get latest version for node %s w/ err: %v", dbNode.ID, err)
