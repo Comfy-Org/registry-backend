@@ -12,12 +12,12 @@ import (
 
 func AuthorizationMiddleware(entClient *ent.Client) drip.StrictMiddlewareFunc {
 	restrictedOperationsForBannedUsers := map[string]struct{}{
-		"CreatePublisher":           {},
-		"UpdatePublisher":           {},
-		"CreateNode":                {},
-		"DeleteNode":                {},
-		"UpdateNode":                {},
-		"PublishNodeVersion":        {},
+		"CreatePublisher": {},
+		"UpdatePublisher": {},
+		"CreateNode":      {},
+		"DeleteNode":      {},
+		"UpdateNode":      {},
+		//"PublishNodeVersion":        {},
 		"UpdateNodeVersion":         {},
 		"DeleteNodeVersion":         {},
 		"CreatePersonalAccessToken": {},
