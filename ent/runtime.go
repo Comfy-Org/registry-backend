@@ -76,19 +76,19 @@ func init() {
 	// node.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
 	node.UpdateDefaultUpdateTime = nodeDescUpdateTime.UpdateDefault.(func() time.Time)
 	// nodeDescTags is the schema descriptor for tags field.
-	nodeDescTags := nodeFields[8].Descriptor()
+	nodeDescTags := nodeFields[9].Descriptor()
 	// node.DefaultTags holds the default value on creation for the tags field.
 	node.DefaultTags = nodeDescTags.Default.([]string)
 	// nodeDescTotalInstall is the schema descriptor for total_install field.
-	nodeDescTotalInstall := nodeFields[9].Descriptor()
+	nodeDescTotalInstall := nodeFields[10].Descriptor()
 	// node.DefaultTotalInstall holds the default value on creation for the total_install field.
 	node.DefaultTotalInstall = nodeDescTotalInstall.Default.(int64)
 	// nodeDescTotalStar is the schema descriptor for total_star field.
-	nodeDescTotalStar := nodeFields[10].Descriptor()
+	nodeDescTotalStar := nodeFields[11].Descriptor()
 	// node.DefaultTotalStar holds the default value on creation for the total_star field.
 	node.DefaultTotalStar = nodeDescTotalStar.Default.(int64)
 	// nodeDescTotalReview is the schema descriptor for total_review field.
-	nodeDescTotalReview := nodeFields[11].Descriptor()
+	nodeDescTotalReview := nodeFields[12].Descriptor()
 	// node.DefaultTotalReview holds the default value on creation for the total_review field.
 	node.DefaultTotalReview = nodeDescTotalReview.Default.(int64)
 	nodereviewFields := schema.NodeReview{}.Fields()

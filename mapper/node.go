@@ -28,6 +28,9 @@ func ApiCreateNodeToDb(publisherId string, node *drip.Node, client *ent.Client) 
 	if node.Name != nil {
 		newNode.SetName(*node.Name)
 	}
+	if node.Category != nil {
+		newNode.SetCategory(*node.Category)
+	}
 	if node.Tags != nil {
 		newNode.SetTags(*node.Tags)
 	}
@@ -57,6 +60,9 @@ func ApiUpdateNodeToUpdateFields(nodeID string, node *drip.Node, client *ent.Cli
 	}
 	if node.Tags != nil {
 		update.SetTags(*node.Tags)
+	}
+	if node.Category != nil {
+		update.SetCategory(*node.Category)
 	}
 	if node.Repository != nil {
 		update.SetRepositoryURL(*node.Repository)
@@ -118,17 +124,19 @@ func DbNodeToApiNode(node *ent.Node) *drip.Node {
 	}
 
 	return &drip.Node{
-		Author:      &node.Author,
-		Description: &node.Description,
-		Id:          &node.ID,
-		License:     &node.License,
-		Name:        &node.Name,
-		Tags:        &node.Tags,
-		Repository:  &node.RepositoryURL,
-		Icon:        &node.IconURL,
-		Downloads:   &downloads,
-		Rating:      &rate,
-		Status:      DbNodeStatusToApiNodeStatus(node.Status),
+		Author:       &node.Author,
+		Description:  &node.Description,
+		Category:     &node.Category,
+		Id:           &node.ID,
+		License:      &node.License,
+		Name:         &node.Name,
+		Tags:         &node.Tags,
+		Repository:   &node.RepositoryURL,
+		Icon:         &node.IconURL,
+		Downloads:    &downloads,
+		Rating:       &rate,
+		Status:       DbNodeStatusToApiNodeStatus(node.Status),
+		StatusDetail: &node.StatusDetail,
 	}
 }
 

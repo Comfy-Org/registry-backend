@@ -88,6 +88,26 @@ func (nu *NodeUpdate) ClearDescription() *NodeUpdate {
 	return nu
 }
 
+// SetCategory sets the "category" field.
+func (nu *NodeUpdate) SetCategory(s string) *NodeUpdate {
+	nu.mutation.SetCategory(s)
+	return nu
+}
+
+// SetNillableCategory sets the "category" field if the given value is not nil.
+func (nu *NodeUpdate) SetNillableCategory(s *string) *NodeUpdate {
+	if s != nil {
+		nu.SetCategory(*s)
+	}
+	return nu
+}
+
+// ClearCategory clears the value of the "category" field.
+func (nu *NodeUpdate) ClearCategory() *NodeUpdate {
+	nu.mutation.ClearCategory()
+	return nu
+}
+
 // SetAuthor sets the "author" field.
 func (nu *NodeUpdate) SetAuthor(s string) *NodeUpdate {
 	nu.mutation.SetAuthor(s)
@@ -242,6 +262,26 @@ func (nu *NodeUpdate) SetNillableStatus(ss *schema.NodeStatus) *NodeUpdate {
 	if ss != nil {
 		nu.SetStatus(*ss)
 	}
+	return nu
+}
+
+// SetStatusDetail sets the "status_detail" field.
+func (nu *NodeUpdate) SetStatusDetail(s string) *NodeUpdate {
+	nu.mutation.SetStatusDetail(s)
+	return nu
+}
+
+// SetNillableStatusDetail sets the "status_detail" field if the given value is not nil.
+func (nu *NodeUpdate) SetNillableStatusDetail(s *string) *NodeUpdate {
+	if s != nil {
+		nu.SetStatusDetail(*s)
+	}
+	return nu
+}
+
+// ClearStatusDetail clears the value of the "status_detail" field.
+func (nu *NodeUpdate) ClearStatusDetail() *NodeUpdate {
+	nu.mutation.ClearStatusDetail()
 	return nu
 }
 
@@ -406,6 +446,12 @@ func (nu *NodeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if nu.mutation.DescriptionCleared() {
 		_spec.ClearField(node.FieldDescription, field.TypeString)
 	}
+	if value, ok := nu.mutation.Category(); ok {
+		_spec.SetField(node.FieldCategory, field.TypeString, value)
+	}
+	if nu.mutation.CategoryCleared() {
+		_spec.ClearField(node.FieldCategory, field.TypeString)
+	}
 	if value, ok := nu.mutation.Author(); ok {
 		_spec.SetField(node.FieldAuthor, field.TypeString, value)
 	}
@@ -452,6 +498,12 @@ func (nu *NodeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := nu.mutation.Status(); ok {
 		_spec.SetField(node.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := nu.mutation.StatusDetail(); ok {
+		_spec.SetField(node.FieldStatusDetail, field.TypeString, value)
+	}
+	if nu.mutation.StatusDetailCleared() {
+		_spec.ClearField(node.FieldStatusDetail, field.TypeString)
 	}
 	if nu.mutation.PublisherCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -646,6 +698,26 @@ func (nuo *NodeUpdateOne) ClearDescription() *NodeUpdateOne {
 	return nuo
 }
 
+// SetCategory sets the "category" field.
+func (nuo *NodeUpdateOne) SetCategory(s string) *NodeUpdateOne {
+	nuo.mutation.SetCategory(s)
+	return nuo
+}
+
+// SetNillableCategory sets the "category" field if the given value is not nil.
+func (nuo *NodeUpdateOne) SetNillableCategory(s *string) *NodeUpdateOne {
+	if s != nil {
+		nuo.SetCategory(*s)
+	}
+	return nuo
+}
+
+// ClearCategory clears the value of the "category" field.
+func (nuo *NodeUpdateOne) ClearCategory() *NodeUpdateOne {
+	nuo.mutation.ClearCategory()
+	return nuo
+}
+
 // SetAuthor sets the "author" field.
 func (nuo *NodeUpdateOne) SetAuthor(s string) *NodeUpdateOne {
 	nuo.mutation.SetAuthor(s)
@@ -800,6 +872,26 @@ func (nuo *NodeUpdateOne) SetNillableStatus(ss *schema.NodeStatus) *NodeUpdateOn
 	if ss != nil {
 		nuo.SetStatus(*ss)
 	}
+	return nuo
+}
+
+// SetStatusDetail sets the "status_detail" field.
+func (nuo *NodeUpdateOne) SetStatusDetail(s string) *NodeUpdateOne {
+	nuo.mutation.SetStatusDetail(s)
+	return nuo
+}
+
+// SetNillableStatusDetail sets the "status_detail" field if the given value is not nil.
+func (nuo *NodeUpdateOne) SetNillableStatusDetail(s *string) *NodeUpdateOne {
+	if s != nil {
+		nuo.SetStatusDetail(*s)
+	}
+	return nuo
+}
+
+// ClearStatusDetail clears the value of the "status_detail" field.
+func (nuo *NodeUpdateOne) ClearStatusDetail() *NodeUpdateOne {
+	nuo.mutation.ClearStatusDetail()
 	return nuo
 }
 
@@ -994,6 +1086,12 @@ func (nuo *NodeUpdateOne) sqlSave(ctx context.Context) (_node *Node, err error) 
 	if nuo.mutation.DescriptionCleared() {
 		_spec.ClearField(node.FieldDescription, field.TypeString)
 	}
+	if value, ok := nuo.mutation.Category(); ok {
+		_spec.SetField(node.FieldCategory, field.TypeString, value)
+	}
+	if nuo.mutation.CategoryCleared() {
+		_spec.ClearField(node.FieldCategory, field.TypeString)
+	}
 	if value, ok := nuo.mutation.Author(); ok {
 		_spec.SetField(node.FieldAuthor, field.TypeString, value)
 	}
@@ -1040,6 +1138,12 @@ func (nuo *NodeUpdateOne) sqlSave(ctx context.Context) (_node *Node, err error) 
 	}
 	if value, ok := nuo.mutation.Status(); ok {
 		_spec.SetField(node.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := nuo.mutation.StatusDetail(); ok {
+		_spec.SetField(node.FieldStatusDetail, field.TypeString, value)
+	}
+	if nuo.mutation.StatusDetailCleared() {
+		_spec.ClearField(node.FieldStatusDetail, field.TypeString)
 	}
 	if nuo.mutation.PublisherCleared() {
 		edge := &sqlgraph.EdgeSpec{

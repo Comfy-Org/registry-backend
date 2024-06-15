@@ -82,6 +82,20 @@ func (nc *NodeCreate) SetNillableDescription(s *string) *NodeCreate {
 	return nc
 }
 
+// SetCategory sets the "category" field.
+func (nc *NodeCreate) SetCategory(s string) *NodeCreate {
+	nc.mutation.SetCategory(s)
+	return nc
+}
+
+// SetNillableCategory sets the "category" field if the given value is not nil.
+func (nc *NodeCreate) SetNillableCategory(s *string) *NodeCreate {
+	if s != nil {
+		nc.SetCategory(*s)
+	}
+	return nc
+}
+
 // SetAuthor sets the "author" field.
 func (nc *NodeCreate) SetAuthor(s string) *NodeCreate {
 	nc.mutation.SetAuthor(s)
@@ -180,6 +194,20 @@ func (nc *NodeCreate) SetStatus(ss schema.NodeStatus) *NodeCreate {
 func (nc *NodeCreate) SetNillableStatus(ss *schema.NodeStatus) *NodeCreate {
 	if ss != nil {
 		nc.SetStatus(*ss)
+	}
+	return nc
+}
+
+// SetStatusDetail sets the "status_detail" field.
+func (nc *NodeCreate) SetStatusDetail(s string) *NodeCreate {
+	nc.mutation.SetStatusDetail(s)
+	return nc
+}
+
+// SetNillableStatusDetail sets the "status_detail" field if the given value is not nil.
+func (nc *NodeCreate) SetNillableStatusDetail(s *string) *NodeCreate {
+	if s != nil {
+		nc.SetStatusDetail(*s)
 	}
 	return nc
 }
@@ -385,6 +413,10 @@ func (nc *NodeCreate) createSpec() (*Node, *sqlgraph.CreateSpec) {
 		_spec.SetField(node.FieldDescription, field.TypeString, value)
 		_node.Description = value
 	}
+	if value, ok := nc.mutation.Category(); ok {
+		_spec.SetField(node.FieldCategory, field.TypeString, value)
+		_node.Category = value
+	}
 	if value, ok := nc.mutation.Author(); ok {
 		_spec.SetField(node.FieldAuthor, field.TypeString, value)
 		_node.Author = value
@@ -420,6 +452,10 @@ func (nc *NodeCreate) createSpec() (*Node, *sqlgraph.CreateSpec) {
 	if value, ok := nc.mutation.Status(); ok {
 		_spec.SetField(node.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
+	}
+	if value, ok := nc.mutation.StatusDetail(); ok {
+		_spec.SetField(node.FieldStatusDetail, field.TypeString, value)
+		_node.StatusDetail = value
 	}
 	if nodes := nc.mutation.PublisherIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -576,6 +612,24 @@ func (u *NodeUpsert) ClearDescription() *NodeUpsert {
 	return u
 }
 
+// SetCategory sets the "category" field.
+func (u *NodeUpsert) SetCategory(v string) *NodeUpsert {
+	u.Set(node.FieldCategory, v)
+	return u
+}
+
+// UpdateCategory sets the "category" field to the value that was provided on create.
+func (u *NodeUpsert) UpdateCategory() *NodeUpsert {
+	u.SetExcluded(node.FieldCategory)
+	return u
+}
+
+// ClearCategory clears the value of the "category" field.
+func (u *NodeUpsert) ClearCategory() *NodeUpsert {
+	u.SetNull(node.FieldCategory)
+	return u
+}
+
 // SetAuthor sets the "author" field.
 func (u *NodeUpsert) SetAuthor(v string) *NodeUpsert {
 	u.Set(node.FieldAuthor, v)
@@ -714,6 +768,24 @@ func (u *NodeUpsert) UpdateStatus() *NodeUpsert {
 	return u
 }
 
+// SetStatusDetail sets the "status_detail" field.
+func (u *NodeUpsert) SetStatusDetail(v string) *NodeUpsert {
+	u.Set(node.FieldStatusDetail, v)
+	return u
+}
+
+// UpdateStatusDetail sets the "status_detail" field to the value that was provided on create.
+func (u *NodeUpsert) UpdateStatusDetail() *NodeUpsert {
+	u.SetExcluded(node.FieldStatusDetail)
+	return u
+}
+
+// ClearStatusDetail clears the value of the "status_detail" field.
+func (u *NodeUpsert) ClearStatusDetail() *NodeUpsert {
+	u.SetNull(node.FieldStatusDetail)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -825,6 +897,27 @@ func (u *NodeUpsertOne) UpdateDescription() *NodeUpsertOne {
 func (u *NodeUpsertOne) ClearDescription() *NodeUpsertOne {
 	return u.Update(func(s *NodeUpsert) {
 		s.ClearDescription()
+	})
+}
+
+// SetCategory sets the "category" field.
+func (u *NodeUpsertOne) SetCategory(v string) *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetCategory(v)
+	})
+}
+
+// UpdateCategory sets the "category" field to the value that was provided on create.
+func (u *NodeUpsertOne) UpdateCategory() *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateCategory()
+	})
+}
+
+// ClearCategory clears the value of the "category" field.
+func (u *NodeUpsertOne) ClearCategory() *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.ClearCategory()
 	})
 }
 
@@ -986,6 +1079,27 @@ func (u *NodeUpsertOne) SetStatus(v schema.NodeStatus) *NodeUpsertOne {
 func (u *NodeUpsertOne) UpdateStatus() *NodeUpsertOne {
 	return u.Update(func(s *NodeUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetStatusDetail sets the "status_detail" field.
+func (u *NodeUpsertOne) SetStatusDetail(v string) *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetStatusDetail(v)
+	})
+}
+
+// UpdateStatusDetail sets the "status_detail" field to the value that was provided on create.
+func (u *NodeUpsertOne) UpdateStatusDetail() *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateStatusDetail()
+	})
+}
+
+// ClearStatusDetail clears the value of the "status_detail" field.
+func (u *NodeUpsertOne) ClearStatusDetail() *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.ClearStatusDetail()
 	})
 }
 
@@ -1270,6 +1384,27 @@ func (u *NodeUpsertBulk) ClearDescription() *NodeUpsertBulk {
 	})
 }
 
+// SetCategory sets the "category" field.
+func (u *NodeUpsertBulk) SetCategory(v string) *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetCategory(v)
+	})
+}
+
+// UpdateCategory sets the "category" field to the value that was provided on create.
+func (u *NodeUpsertBulk) UpdateCategory() *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateCategory()
+	})
+}
+
+// ClearCategory clears the value of the "category" field.
+func (u *NodeUpsertBulk) ClearCategory() *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.ClearCategory()
+	})
+}
+
 // SetAuthor sets the "author" field.
 func (u *NodeUpsertBulk) SetAuthor(v string) *NodeUpsertBulk {
 	return u.Update(func(s *NodeUpsert) {
@@ -1428,6 +1563,27 @@ func (u *NodeUpsertBulk) SetStatus(v schema.NodeStatus) *NodeUpsertBulk {
 func (u *NodeUpsertBulk) UpdateStatus() *NodeUpsertBulk {
 	return u.Update(func(s *NodeUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetStatusDetail sets the "status_detail" field.
+func (u *NodeUpsertBulk) SetStatusDetail(v string) *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetStatusDetail(v)
+	})
+}
+
+// UpdateStatusDetail sets the "status_detail" field to the value that was provided on create.
+func (u *NodeUpsertBulk) UpdateStatusDetail() *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateStatusDetail()
+	})
+}
+
+// ClearStatusDetail clears the value of the "status_detail" field.
+func (u *NodeUpsertBulk) ClearStatusDetail() *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.ClearStatusDetail()
 	})
 }
 

@@ -26,6 +26,8 @@ const (
 	FieldName = "name"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
+	// FieldCategory holds the string denoting the category field in the database.
+	FieldCategory = "category"
 	// FieldAuthor holds the string denoting the author field in the database.
 	FieldAuthor = "author"
 	// FieldLicense holds the string denoting the license field in the database.
@@ -44,6 +46,8 @@ const (
 	FieldTotalReview = "total_review"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldStatusDetail holds the string denoting the status_detail field in the database.
+	FieldStatusDetail = "status_detail"
 	// EdgePublisher holds the string denoting the publisher edge name in mutations.
 	EdgePublisher = "publisher"
 	// EdgeVersions holds the string denoting the versions edge name in mutations.
@@ -83,6 +87,7 @@ var Columns = []string{
 	FieldPublisherID,
 	FieldName,
 	FieldDescription,
+	FieldCategory,
 	FieldAuthor,
 	FieldLicense,
 	FieldRepositoryURL,
@@ -92,6 +97,7 @@ var Columns = []string{
 	FieldTotalStar,
 	FieldTotalReview,
 	FieldStatus,
+	FieldStatusDetail,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -166,6 +172,11 @@ func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDescription, opts...).ToFunc()
 }
 
+// ByCategory orders the results by the category field.
+func ByCategory(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCategory, opts...).ToFunc()
+}
+
 // ByAuthor orders the results by the author field.
 func ByAuthor(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAuthor, opts...).ToFunc()
@@ -204,6 +215,11 @@ func ByTotalReview(opts ...sql.OrderTermOption) OrderOption {
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// ByStatusDetail orders the results by the status_detail field.
+func ByStatusDetail(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStatusDetail, opts...).ToFunc()
 }
 
 // ByPublisherField orders the results by publisher field.
