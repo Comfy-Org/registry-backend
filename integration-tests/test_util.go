@@ -29,6 +29,16 @@ func createTestUser(ctx context.Context, client *ent.Client) *ent.User {
 		SaveX(ctx)
 }
 
+func createAdminUser(ctx context.Context, client *ent.Client) *ent.User {
+	return client.User.Create().
+		SetID(uuid.New().String()).
+		SetIsApproved(true).
+		SetIsAdmin(true).
+		SetName("admin").
+		SetEmail("admin@gmail.com").
+		SaveX(ctx)
+}
+
 func decorateUserInContext(ctx context.Context, user *ent.User) context.Context {
 	return context.WithValue(ctx, auth.UserContextKey, &auth.UserDetails{
 		ID:    user.ID,
