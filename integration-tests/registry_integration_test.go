@@ -350,9 +350,11 @@ func TestRegistry(t *testing.T) {
 				Icon:        &icon,
 				Repository:  &githubUrl,
 
-				Downloads: &expDl,
-				Rating:    &expRate,
-				Status:    &nodeStatus,
+				Downloads:    &expDl,
+				Rating:       &expRate,
+				Status:       &nodeStatus,
+				StatusDetail: proto.String(""),
+				Category:     proto.String(""),
 			}, res200, "should return stored node data")
 		})
 
@@ -382,9 +384,11 @@ func TestRegistry(t *testing.T) {
 				Icon:        &icon,
 				Repository:  &githubUrl,
 
-				Downloads: &expDl,
-				Rating:    &expRate,
-				Status:    &nodeStatus,
+				Downloads:    &expDl,
+				Rating:       &expRate,
+				Status:       &nodeStatus,
+				StatusDetail: proto.String(""),
+				Category:     proto.String(""),
 			}, res200[0], "should return stored node data")
 		})
 
@@ -437,9 +441,11 @@ func TestRegistry(t *testing.T) {
 				Icon:        &updateIcon,
 				Repository:  &updateGithubUrl,
 
-				Downloads: &expDl,
-				Rating:    &expRate,
-				Status:    &nodeStatus,
+				Downloads:    &expDl,
+				Rating:       &expRate,
+				Status:       &nodeStatus,
+				StatusDetail: proto.String(""),
+				Category:     proto.String(""),
 			}, res200Updated, "should return updated node data")
 		})
 
@@ -686,6 +692,8 @@ func TestRegistry(t *testing.T) {
 				Downloads:     &expDl,
 				Rating:        &expRate,
 				Status:        &nodeStatus,
+				StatusDetail:  proto.String(""),
+				Category:      proto.String(""),
 			}
 			expectedNode.LatestVersion.DownloadUrl = (*resNodes200.Nodes)[0].LatestVersion.DownloadUrl // generated
 			expectedNode.LatestVersion.Deprecated = (*resNodes200.Nodes)[0].LatestVersion.Deprecated   // generated
