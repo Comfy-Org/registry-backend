@@ -1680,6 +1680,9 @@ components:
         name:
           type: string
           description: The display name of the node.
+        category:
+          type: string
+          description: The category of the node.
         description:
           type: string
         author:
@@ -1712,6 +1715,9 @@ components:
         status:
           $ref: "#/components/schemas/NodeStatus"
           description: The status of the node.
+        status_detail:
+          type: string
+          description: The status detail of the node.
     NodeVersion:
       type: object
       properties:

@@ -91,6 +91,11 @@ func Description(v string) predicate.Node {
 	return predicate.Node(sql.FieldEQ(FieldDescription, v))
 }
 
+// Category applies equality check predicate on the "category" field. It's identical to CategoryEQ.
+func Category(v string) predicate.Node {
+	return predicate.Node(sql.FieldEQ(FieldCategory, v))
+}
+
 // Author applies equality check predicate on the "author" field. It's identical to AuthorEQ.
 func Author(v string) predicate.Node {
 	return predicate.Node(sql.FieldEQ(FieldAuthor, v))
@@ -124,6 +129,11 @@ func TotalStar(v int64) predicate.Node {
 // TotalReview applies equality check predicate on the "total_review" field. It's identical to TotalReviewEQ.
 func TotalReview(v int64) predicate.Node {
 	return predicate.Node(sql.FieldEQ(FieldTotalReview, v))
+}
+
+// StatusDetail applies equality check predicate on the "status_detail" field. It's identical to StatusDetailEQ.
+func StatusDetail(v string) predicate.Node {
+	return predicate.Node(sql.FieldEQ(FieldStatusDetail, v))
 }
 
 // CreateTimeEQ applies the EQ predicate on the "create_time" field.
@@ -409,6 +419,81 @@ func DescriptionEqualFold(v string) predicate.Node {
 // DescriptionContainsFold applies the ContainsFold predicate on the "description" field.
 func DescriptionContainsFold(v string) predicate.Node {
 	return predicate.Node(sql.FieldContainsFold(FieldDescription, v))
+}
+
+// CategoryEQ applies the EQ predicate on the "category" field.
+func CategoryEQ(v string) predicate.Node {
+	return predicate.Node(sql.FieldEQ(FieldCategory, v))
+}
+
+// CategoryNEQ applies the NEQ predicate on the "category" field.
+func CategoryNEQ(v string) predicate.Node {
+	return predicate.Node(sql.FieldNEQ(FieldCategory, v))
+}
+
+// CategoryIn applies the In predicate on the "category" field.
+func CategoryIn(vs ...string) predicate.Node {
+	return predicate.Node(sql.FieldIn(FieldCategory, vs...))
+}
+
+// CategoryNotIn applies the NotIn predicate on the "category" field.
+func CategoryNotIn(vs ...string) predicate.Node {
+	return predicate.Node(sql.FieldNotIn(FieldCategory, vs...))
+}
+
+// CategoryGT applies the GT predicate on the "category" field.
+func CategoryGT(v string) predicate.Node {
+	return predicate.Node(sql.FieldGT(FieldCategory, v))
+}
+
+// CategoryGTE applies the GTE predicate on the "category" field.
+func CategoryGTE(v string) predicate.Node {
+	return predicate.Node(sql.FieldGTE(FieldCategory, v))
+}
+
+// CategoryLT applies the LT predicate on the "category" field.
+func CategoryLT(v string) predicate.Node {
+	return predicate.Node(sql.FieldLT(FieldCategory, v))
+}
+
+// CategoryLTE applies the LTE predicate on the "category" field.
+func CategoryLTE(v string) predicate.Node {
+	return predicate.Node(sql.FieldLTE(FieldCategory, v))
+}
+
+// CategoryContains applies the Contains predicate on the "category" field.
+func CategoryContains(v string) predicate.Node {
+	return predicate.Node(sql.FieldContains(FieldCategory, v))
+}
+
+// CategoryHasPrefix applies the HasPrefix predicate on the "category" field.
+func CategoryHasPrefix(v string) predicate.Node {
+	return predicate.Node(sql.FieldHasPrefix(FieldCategory, v))
+}
+
+// CategoryHasSuffix applies the HasSuffix predicate on the "category" field.
+func CategoryHasSuffix(v string) predicate.Node {
+	return predicate.Node(sql.FieldHasSuffix(FieldCategory, v))
+}
+
+// CategoryIsNil applies the IsNil predicate on the "category" field.
+func CategoryIsNil() predicate.Node {
+	return predicate.Node(sql.FieldIsNull(FieldCategory))
+}
+
+// CategoryNotNil applies the NotNil predicate on the "category" field.
+func CategoryNotNil() predicate.Node {
+	return predicate.Node(sql.FieldNotNull(FieldCategory))
+}
+
+// CategoryEqualFold applies the EqualFold predicate on the "category" field.
+func CategoryEqualFold(v string) predicate.Node {
+	return predicate.Node(sql.FieldEqualFold(FieldCategory, v))
+}
+
+// CategoryContainsFold applies the ContainsFold predicate on the "category" field.
+func CategoryContainsFold(v string) predicate.Node {
+	return predicate.Node(sql.FieldContainsFold(FieldCategory, v))
 }
 
 // AuthorEQ applies the EQ predicate on the "author" field.
@@ -839,6 +924,81 @@ func StatusNotIn(vs ...schema.NodeStatus) predicate.Node {
 		v[i] = vs[i]
 	}
 	return predicate.Node(sql.FieldNotIn(FieldStatus, v...))
+}
+
+// StatusDetailEQ applies the EQ predicate on the "status_detail" field.
+func StatusDetailEQ(v string) predicate.Node {
+	return predicate.Node(sql.FieldEQ(FieldStatusDetail, v))
+}
+
+// StatusDetailNEQ applies the NEQ predicate on the "status_detail" field.
+func StatusDetailNEQ(v string) predicate.Node {
+	return predicate.Node(sql.FieldNEQ(FieldStatusDetail, v))
+}
+
+// StatusDetailIn applies the In predicate on the "status_detail" field.
+func StatusDetailIn(vs ...string) predicate.Node {
+	return predicate.Node(sql.FieldIn(FieldStatusDetail, vs...))
+}
+
+// StatusDetailNotIn applies the NotIn predicate on the "status_detail" field.
+func StatusDetailNotIn(vs ...string) predicate.Node {
+	return predicate.Node(sql.FieldNotIn(FieldStatusDetail, vs...))
+}
+
+// StatusDetailGT applies the GT predicate on the "status_detail" field.
+func StatusDetailGT(v string) predicate.Node {
+	return predicate.Node(sql.FieldGT(FieldStatusDetail, v))
+}
+
+// StatusDetailGTE applies the GTE predicate on the "status_detail" field.
+func StatusDetailGTE(v string) predicate.Node {
+	return predicate.Node(sql.FieldGTE(FieldStatusDetail, v))
+}
+
+// StatusDetailLT applies the LT predicate on the "status_detail" field.
+func StatusDetailLT(v string) predicate.Node {
+	return predicate.Node(sql.FieldLT(FieldStatusDetail, v))
+}
+
+// StatusDetailLTE applies the LTE predicate on the "status_detail" field.
+func StatusDetailLTE(v string) predicate.Node {
+	return predicate.Node(sql.FieldLTE(FieldStatusDetail, v))
+}
+
+// StatusDetailContains applies the Contains predicate on the "status_detail" field.
+func StatusDetailContains(v string) predicate.Node {
+	return predicate.Node(sql.FieldContains(FieldStatusDetail, v))
+}
+
+// StatusDetailHasPrefix applies the HasPrefix predicate on the "status_detail" field.
+func StatusDetailHasPrefix(v string) predicate.Node {
+	return predicate.Node(sql.FieldHasPrefix(FieldStatusDetail, v))
+}
+
+// StatusDetailHasSuffix applies the HasSuffix predicate on the "status_detail" field.
+func StatusDetailHasSuffix(v string) predicate.Node {
+	return predicate.Node(sql.FieldHasSuffix(FieldStatusDetail, v))
+}
+
+// StatusDetailIsNil applies the IsNil predicate on the "status_detail" field.
+func StatusDetailIsNil() predicate.Node {
+	return predicate.Node(sql.FieldIsNull(FieldStatusDetail))
+}
+
+// StatusDetailNotNil applies the NotNil predicate on the "status_detail" field.
+func StatusDetailNotNil() predicate.Node {
+	return predicate.Node(sql.FieldNotNull(FieldStatusDetail))
+}
+
+// StatusDetailEqualFold applies the EqualFold predicate on the "status_detail" field.
+func StatusDetailEqualFold(v string) predicate.Node {
+	return predicate.Node(sql.FieldEqualFold(FieldStatusDetail, v))
+}
+
+// StatusDetailContainsFold applies the ContainsFold predicate on the "status_detail" field.
+func StatusDetailContainsFold(v string) predicate.Node {
+	return predicate.Node(sql.FieldContainsFold(FieldStatusDetail, v))
 }
 
 // HasPublisher applies the HasEdge predicate on the "publisher" edge.

@@ -28,6 +28,9 @@ func (Node) Fields() []ent.Field {
 		field.String("description").Optional().SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}),
+		field.String("category").SchemaType(map[string]string{
+			dialect.Postgres: "text",
+		}).Optional(),
 		field.String("author").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}).Optional(),
@@ -49,6 +52,9 @@ func (Node) Fields() []ent.Field {
 		field.Enum("status").
 			GoType(NodeStatus("")).
 			Default(string(NodeStatusActive)),
+		field.String("status_detail").SchemaType(map[string]string{
+			dialect.Postgres: "text",
+		}).Optional(),
 	}
 }
 

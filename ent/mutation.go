@@ -2106,6 +2106,7 @@ type NodeMutation struct {
 	update_time      *time.Time
 	name             *string
 	description      *string
+	category         *string
 	author           *string
 	license          *string
 	repository_url   *string
@@ -2119,6 +2120,7 @@ type NodeMutation struct {
 	total_review     *int64
 	addtotal_review  *int64
 	status           *schema.NodeStatus
+	status_detail    *string
 	clearedFields    map[string]struct{}
 	publisher        *string
 	clearedpublisher bool
@@ -2428,6 +2430,55 @@ func (m *NodeMutation) DescriptionCleared() bool {
 func (m *NodeMutation) ResetDescription() {
 	m.description = nil
 	delete(m.clearedFields, node.FieldDescription)
+}
+
+// SetCategory sets the "category" field.
+func (m *NodeMutation) SetCategory(s string) {
+	m.category = &s
+}
+
+// Category returns the value of the "category" field in the mutation.
+func (m *NodeMutation) Category() (r string, exists bool) {
+	v := m.category
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCategory returns the old "category" field's value of the Node entity.
+// If the Node object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NodeMutation) OldCategory(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCategory is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCategory requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCategory: %w", err)
+	}
+	return oldValue.Category, nil
+}
+
+// ClearCategory clears the value of the "category" field.
+func (m *NodeMutation) ClearCategory() {
+	m.category = nil
+	m.clearedFields[node.FieldCategory] = struct{}{}
+}
+
+// CategoryCleared returns if the "category" field was cleared in this mutation.
+func (m *NodeMutation) CategoryCleared() bool {
+	_, ok := m.clearedFields[node.FieldCategory]
+	return ok
+}
+
+// ResetCategory resets all changes to the "category" field.
+func (m *NodeMutation) ResetCategory() {
+	m.category = nil
+	delete(m.clearedFields, node.FieldCategory)
 }
 
 // SetAuthor sets the "author" field.
@@ -2855,6 +2906,55 @@ func (m *NodeMutation) ResetStatus() {
 	m.status = nil
 }
 
+// SetStatusDetail sets the "status_detail" field.
+func (m *NodeMutation) SetStatusDetail(s string) {
+	m.status_detail = &s
+}
+
+// StatusDetail returns the value of the "status_detail" field in the mutation.
+func (m *NodeMutation) StatusDetail() (r string, exists bool) {
+	v := m.status_detail
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatusDetail returns the old "status_detail" field's value of the Node entity.
+// If the Node object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NodeMutation) OldStatusDetail(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatusDetail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatusDetail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatusDetail: %w", err)
+	}
+	return oldValue.StatusDetail, nil
+}
+
+// ClearStatusDetail clears the value of the "status_detail" field.
+func (m *NodeMutation) ClearStatusDetail() {
+	m.status_detail = nil
+	m.clearedFields[node.FieldStatusDetail] = struct{}{}
+}
+
+// StatusDetailCleared returns if the "status_detail" field was cleared in this mutation.
+func (m *NodeMutation) StatusDetailCleared() bool {
+	_, ok := m.clearedFields[node.FieldStatusDetail]
+	return ok
+}
+
+// ResetStatusDetail resets all changes to the "status_detail" field.
+func (m *NodeMutation) ResetStatusDetail() {
+	m.status_detail = nil
+	delete(m.clearedFields, node.FieldStatusDetail)
+}
+
 // ClearPublisher clears the "publisher" edge to the Publisher entity.
 func (m *NodeMutation) ClearPublisher() {
 	m.clearedpublisher = true
@@ -3024,7 +3124,7 @@ func (m *NodeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NodeMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 16)
 	if m.create_time != nil {
 		fields = append(fields, node.FieldCreateTime)
 	}
@@ -3039,6 +3139,9 @@ func (m *NodeMutation) Fields() []string {
 	}
 	if m.description != nil {
 		fields = append(fields, node.FieldDescription)
+	}
+	if m.category != nil {
+		fields = append(fields, node.FieldCategory)
 	}
 	if m.author != nil {
 		fields = append(fields, node.FieldAuthor)
@@ -3067,6 +3170,9 @@ func (m *NodeMutation) Fields() []string {
 	if m.status != nil {
 		fields = append(fields, node.FieldStatus)
 	}
+	if m.status_detail != nil {
+		fields = append(fields, node.FieldStatusDetail)
+	}
 	return fields
 }
 
@@ -3085,6 +3191,8 @@ func (m *NodeMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case node.FieldDescription:
 		return m.Description()
+	case node.FieldCategory:
+		return m.Category()
 	case node.FieldAuthor:
 		return m.Author()
 	case node.FieldLicense:
@@ -3103,6 +3211,8 @@ func (m *NodeMutation) Field(name string) (ent.Value, bool) {
 		return m.TotalReview()
 	case node.FieldStatus:
 		return m.Status()
+	case node.FieldStatusDetail:
+		return m.StatusDetail()
 	}
 	return nil, false
 }
@@ -3122,6 +3232,8 @@ func (m *NodeMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldName(ctx)
 	case node.FieldDescription:
 		return m.OldDescription(ctx)
+	case node.FieldCategory:
+		return m.OldCategory(ctx)
 	case node.FieldAuthor:
 		return m.OldAuthor(ctx)
 	case node.FieldLicense:
@@ -3140,6 +3252,8 @@ func (m *NodeMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldTotalReview(ctx)
 	case node.FieldStatus:
 		return m.OldStatus(ctx)
+	case node.FieldStatusDetail:
+		return m.OldStatusDetail(ctx)
 	}
 	return nil, fmt.Errorf("unknown Node field %s", name)
 }
@@ -3183,6 +3297,13 @@ func (m *NodeMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDescription(v)
+		return nil
+	case node.FieldCategory:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCategory(v)
 		return nil
 	case node.FieldAuthor:
 		v, ok := value.(string)
@@ -3246,6 +3367,13 @@ func (m *NodeMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
+		return nil
+	case node.FieldStatusDetail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatusDetail(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Node field %s", name)
@@ -3319,11 +3447,17 @@ func (m *NodeMutation) ClearedFields() []string {
 	if m.FieldCleared(node.FieldDescription) {
 		fields = append(fields, node.FieldDescription)
 	}
+	if m.FieldCleared(node.FieldCategory) {
+		fields = append(fields, node.FieldCategory)
+	}
 	if m.FieldCleared(node.FieldAuthor) {
 		fields = append(fields, node.FieldAuthor)
 	}
 	if m.FieldCleared(node.FieldIconURL) {
 		fields = append(fields, node.FieldIconURL)
+	}
+	if m.FieldCleared(node.FieldStatusDetail) {
+		fields = append(fields, node.FieldStatusDetail)
 	}
 	return fields
 }
@@ -3342,11 +3476,17 @@ func (m *NodeMutation) ClearField(name string) error {
 	case node.FieldDescription:
 		m.ClearDescription()
 		return nil
+	case node.FieldCategory:
+		m.ClearCategory()
+		return nil
 	case node.FieldAuthor:
 		m.ClearAuthor()
 		return nil
 	case node.FieldIconURL:
 		m.ClearIconURL()
+		return nil
+	case node.FieldStatusDetail:
+		m.ClearStatusDetail()
 		return nil
 	}
 	return fmt.Errorf("unknown Node nullable field %s", name)
@@ -3370,6 +3510,9 @@ func (m *NodeMutation) ResetField(name string) error {
 		return nil
 	case node.FieldDescription:
 		m.ResetDescription()
+		return nil
+	case node.FieldCategory:
+		m.ResetCategory()
 		return nil
 	case node.FieldAuthor:
 		m.ResetAuthor()
@@ -3397,6 +3540,9 @@ func (m *NodeMutation) ResetField(name string) error {
 		return nil
 	case node.FieldStatus:
 		m.ResetStatus()
+		return nil
+	case node.FieldStatusDetail:
+		m.ResetStatusDetail()
 		return nil
 	}
 	return fmt.Errorf("unknown Node field %s", name)

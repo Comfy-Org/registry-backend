@@ -30,6 +30,8 @@ type Node struct {
 	Name string `json:"name,omitempty"`
 	// Description holds the value of the "description" field.
 	Description string `json:"description,omitempty"`
+	// Category holds the value of the "category" field.
+	Category string `json:"category,omitempty"`
 	// Author holds the value of the "author" field.
 	Author string `json:"author,omitempty"`
 	// License holds the value of the "license" field.
@@ -48,6 +50,8 @@ type Node struct {
 	TotalReview int64 `json:"total_review,omitempty"`
 	// Status holds the value of the "status" field.
 	Status schema.NodeStatus `json:"status,omitempty"`
+	// StatusDetail holds the value of the "status_detail" field.
+	StatusDetail string `json:"status_detail,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the NodeQuery when eager-loading is set.
 	Edges        NodeEdges `json:"edges"`
@@ -105,7 +109,7 @@ func (*Node) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case node.FieldTotalInstall, node.FieldTotalStar, node.FieldTotalReview:
 			values[i] = new(sql.NullInt64)
-		case node.FieldID, node.FieldPublisherID, node.FieldName, node.FieldDescription, node.FieldAuthor, node.FieldLicense, node.FieldRepositoryURL, node.FieldIconURL, node.FieldStatus:
+		case node.FieldID, node.FieldPublisherID, node.FieldName, node.FieldDescription, node.FieldCategory, node.FieldAuthor, node.FieldLicense, node.FieldRepositoryURL, node.FieldIconURL, node.FieldStatus, node.FieldStatusDetail:
 			values[i] = new(sql.NullString)
 		case node.FieldCreateTime, node.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
@@ -159,6 +163,12 @@ func (n *Node) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
 				n.Description = value.String
+			}
+		case node.FieldCategory:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field category", values[i])
+			} else if value.Valid {
+				n.Category = value.String
 			}
 		case node.FieldAuthor:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -215,6 +225,12 @@ func (n *Node) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
 				n.Status = schema.NodeStatus(value.String)
+			}
+		case node.FieldStatusDetail:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field status_detail", values[i])
+			} else if value.Valid {
+				n.StatusDetail = value.String
 			}
 		default:
 			n.selectValues.Set(columns[i], values[i])
@@ -282,6 +298,9 @@ func (n *Node) String() string {
 	builder.WriteString("description=")
 	builder.WriteString(n.Description)
 	builder.WriteString(", ")
+	builder.WriteString("category=")
+	builder.WriteString(n.Category)
+	builder.WriteString(", ")
 	builder.WriteString("author=")
 	builder.WriteString(n.Author)
 	builder.WriteString(", ")
@@ -308,6 +327,9 @@ func (n *Node) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", n.Status))
+	builder.WriteString(", ")
+	builder.WriteString("status_detail=")
+	builder.WriteString(n.StatusDetail)
 	builder.WriteByte(')')
 	return builder.String()
 }
