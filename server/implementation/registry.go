@@ -575,7 +575,8 @@ func (s *DripStrictServerImplementation) ListNodeVersions(
 		return drip.ListNodeVersions500JSONResponse{Message: "Failed to assert node ban status", Error: err.Error()}, err
 	}
 
-	nodeVersions, err := s.RegistryService.ListNodeVersions(ctx, s.Client, request.NodeId)
+	filter := &drip_services.NodeVersionFilter{}
+	nodeVersions, err := s.RegistryService.ListNodeVersions(ctx, s.Client, request.NodeId, filter)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to list node versions for node %s w/ err: %v", request.NodeId, err)
 		return drip.ListNodeVersions500JSONResponse{Message: "Failed to list node versions", Error: err.Error()}, err
@@ -819,7 +820,7 @@ func (s *DripStrictServerImplementation) GetNodeVersion(
 		return drip.GetNodeVersion500JSONResponse{Message: "Failed to assert node ban status", Error: err.Error()}, err
 	}
 
-	nodeVersion, err := s.RegistryService.GetNodeVersion(ctx, s.Client, request.NodeId, request.VersionId)
+	nodeVersion, err := s.RegistryService.GetNodeVersionByVersion(ctx, s.Client, request.NodeId, request.VersionId)
 	if ent.IsNotFound(err) {
 		log.Ctx(ctx).Error().Msgf("Error retrieving node version w/ err: %v", err)
 		return drip.GetNodeVersion404JSONResponse{}, nil
@@ -1042,7 +1043,7 @@ func (s *DripStrictServerImplementation) InstallNode(
 			*mapper.DbNodeVersionToApiNodeVersion(nodeVersion),
 		), nil
 	} else {
-		nodeVersion, err := s.RegistryService.GetNodeVersion(ctx, s.Client, request.NodeId, *request.Params.Version)
+		nodeVersion, err := s.RegistryService.GetNodeVersionByVersion(ctx, s.Client, request.NodeId, *request.Params.Version)
 		if ent.IsNotFound(err) {
 			log.Ctx(ctx).Error().Msgf("Error retrieving node version w/ err: %v", err)
 			return drip.InstallNode404JSONResponse{Message: "Not found"}, nil
@@ -1179,4 +1180,45 @@ func (s *DripStrictServerImplementation) BanPublisherNode(ctx context.Context, r
 	}
 	return drip.BanPublisherNode204Response{}, nil
 
+}
+
+func (s *DripStrictServerImplementation) AdminUpdateNodeVersion(
+	ctx context.Context, request drip.AdminUpdateNodeVersionRequestObject) (drip.AdminUpdateNodeVersionResponseObject, error) {
+	userId, err := mapper.GetUserIDFromContext(ctx)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
+		return drip.AdminUpdateNodeVersion401Response{}, nil
+	}
+	user, err := s.Client.User.Get(ctx, userId)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
+		return drip.AdminUpdateNodeVersion401Response{}, nil
+	}
+	if !user.IsAdmin {
+		log.Ctx(ctx).Error().Msgf("User is not admin w/ err")
+		return drip.AdminUpdateNodeVersion403JSONResponse{
+			Message: "User is not admin",
+		}, nil
+	}
+
+	nodeVersion, err := s.RegistryService.GetNodeVersionByVersion(ctx, s.Client, request.NodeId, request.VersionNumber)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Error retrieving node version w/ err: %v", err)
+		if ent.IsNotFound(err) {
+			return drip.AdminUpdateNodeVersion404JSONResponse{}, nil
+		}
+		return drip.AdminUpdateNodeVersion500JSONResponse{}, err
+	}
+
+	dbNodeVersion := mapper.ApiNodeVersionStatusToDbNodeVersionStatus(*request.Body.Status)
+	err = nodeVersion.Update().SetStatus(dbNodeVersion).Exec(ctx)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to update node version w/ err: %v", err)
+		return drip.AdminUpdateNodeVersion500JSONResponse{}, err
+	}
+
+	log.Ctx(ctx).Info().Msgf("Node version %s updated successfully", request.VersionNumber)
+	return drip.AdminUpdateNodeVersion200JSONResponse{
+		Status: request.Body.Status,
+	}, nil
 }

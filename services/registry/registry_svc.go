@@ -52,6 +52,10 @@ type NodeFilter struct {
 	// Add more filter fields here
 }
 
+type NodeVersionFilter struct {
+	Status []schema.NodeVersionStatus
+}
+
 type NodeData struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -351,13 +355,18 @@ type NodeVersionCreation struct {
 	SignedUrl   string
 }
 
-func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Client, nodeID string) ([]*ent.NodeVersion, error) {
+func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Client, nodeID string, filter *NodeVersionFilter) ([]*ent.NodeVersion, error) {
 	log.Ctx(ctx).Info().Msgf("listing node versions: %v", nodeID)
-	versions, err := client.NodeVersion.Query().
+	query := client.NodeVersion.Query().
 		Where(nodeversion.NodeIDEQ(nodeID)).
 		WithStorageFile().
-		Order(ent.Desc(nodeversion.FieldCreateTime)).
-		All(ctx)
+		Order(ent.Desc(nodeversion.FieldCreateTime))
+
+	if filter.Status != nil {
+		query.Where(nodeversion.StatusIn(filter.Status...))
+	}
+
+	versions, err := query.All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list node versions: %w", err)
 	}
@@ -397,8 +406,8 @@ func (s *RegistryService) AddNodeReview(ctx context.Context, client *ent.Client,
 	return
 }
 
-func (s *RegistryService) GetNodeVersion(ctx context.Context, client *ent.Client, nodeId, nodeVersion string) (*ent.NodeVersion, error) {
-	log.Ctx(ctx).Info().Msgf("getting node version: %v", nodeVersion)
+func (s *RegistryService) GetNodeVersionByVersion(ctx context.Context, client *ent.Client, nodeId, nodeVersion string) (*ent.NodeVersion, error) {
+	log.Ctx(ctx).Info().Msgf("getting node version %v@%v", nodeId, nodeVersion)
 	return client.NodeVersion.
 		Query().
 		Where(nodeversion.VersionEQ(nodeVersion)).
