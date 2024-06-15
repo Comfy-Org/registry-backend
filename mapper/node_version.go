@@ -62,6 +62,7 @@ func DbNodeVersionToApiNodeVersion(dbNodeVersion *ent.NodeVersion) *drip.NodeVer
 			Dependencies: &dbNodeVersion.PipDependencies,
 			CreatedAt:    &dbNodeVersion.CreateTime,
 			Status:       DbNodeVersionStatusToApiNodeVersionStatus(dbNodeVersion.Status),
+			StatusReason: &dbNodeVersion.StatusReason,
 		}
 	}
 
@@ -80,6 +81,7 @@ func DbNodeVersionToApiNodeVersion(dbNodeVersion *ent.NodeVersion) *drip.NodeVer
 		Dependencies: &dbNodeVersion.PipDependencies,
 		CreatedAt:    &dbNodeVersion.CreateTime,
 		Status:       status,
+		StatusReason: &dbNodeVersion.StatusReason,
 	}
 }
 
