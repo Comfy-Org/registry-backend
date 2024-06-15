@@ -11,6 +11,7 @@ import (
 	handler "registry-backend/server/handlers"
 	"registry-backend/server/implementation"
 	drip_middleware "registry-backend/server/middleware"
+	drip_authentication "registry-backend/server/middleware/authentication"
 	"strings"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
@@ -93,10 +94,10 @@ func (s *Server) Start() error {
 	// Attach implementation of generated oapi strict server.
 	impl := implementation.NewStrictServerImplementation(s.Client, s.Config, storageService, slackService)
 
-	var middlewares []generated.StrictMiddlewareFunc
-	//middlewares := []generated.StrictMiddlewareFunc{
-	//	drip_middleware.AuthorizationMiddleware(s.Client),
-	//}
+	// Define middlewares in the order of operations
+	middlewares := []generated.StrictMiddlewareFunc{
+		drip_middleware.AuthorizationMiddleware(s.Client),
+	}
 	wrapped := generated.NewStrictHandler(impl, middlewares)
 
 	generated.RegisterHandlers(e, wrapped)
@@ -108,11 +109,8 @@ func (s *Server) Start() error {
 
 	// Global Middlewares
 	e.Use(drip_middleware.MetricsMiddleware(mon, s.Config))
-	//e.Use(
-	//	drip_middleware.JWTWrapperMiddleware(s.Client, s.Config.JWTSecret,
-	//		drip_middleware.FirebaseMiddleware(s.Client)))
-	e.Use(drip_middleware.FirebaseMiddleware(s.Client))
-	e.Use(drip_middleware.ServiceAccountAuthMiddleware())
+	e.Use(drip_authentication.FirebaseAuthMiddleware(s.Client))
+	e.Use(drip_authentication.JWTAdminAuthMiddleware(s.Client, s.Config.JWTSecret))
 	e.Use(drip_middleware.ErrorLoggingMiddleware())
 
 	e.Logger.Fatal(e.Start(":8080"))
