@@ -594,7 +594,20 @@ func (s *DripStrictServerImplementation) PublishNodeVersion(
 	ctx context.Context, request drip.PublishNodeVersionRequestObject) (drip.PublishNodeVersionResponseObject, error) {
 	log.Ctx(ctx).Info().Msgf("PublishNodeVersion request received for node ID: %s", request.NodeId)
 
-	// TODO(james): move this logic to a middleware authenticaion layer.
+	// TODO(james): move personal access token & publisher banned status checking logic to middleware
+	//  authorization/authentication layer
+	publisher, err := s.Client.Publisher.Get(ctx, request.PublisherId)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to get publisher w/ err: %v", err)
+		return drip.PublishNodeVersion500JSONResponse{Message: "Failed to get publisher", Error: err.Error()}, err
+	}
+
+	// Check if the publisher is banned
+	if publisher.Status == schema.PublisherStatusTypeBanned {
+		log.Ctx(ctx).Error().Msgf("Publisher %s banned", request.PublisherId)
+		return drip.PublishNodeVersion403JSONResponse{Message: "Publisher banned"}, nil
+	}
+
 	tokenValid, err := s.RegistryService.IsPersonalAccessTokenValidForPublisher(
 		ctx, s.Client, request.PublisherId, request.Body.PersonalAccessToken)
 	if err != nil {
