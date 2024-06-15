@@ -675,6 +675,9 @@ func (s *DripStrictServerImplementation) PublishNodeVersion(
 	// Create node version
 	nodeVersionCreation, err := s.RegistryService.CreateNodeVersion(ctx, s.Client, request.PublisherId, node.ID, &request.Body.NodeVersion)
 	if err != nil {
+		if ent.IsConstraintError(err) {
+			return drip.PublishNodeVersion400JSONResponse{Message: "The node version already exists"}, nil
+		}
 		errMessage := "Failed to create node version: " + err.Error()
 		log.Ctx(ctx).Error().Msgf("Node version creation failed w/ err: %v", err)
 		return drip.PublishNodeVersion400JSONResponse{Message: errMessage}, err
