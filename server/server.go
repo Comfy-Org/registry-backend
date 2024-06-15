@@ -93,10 +93,10 @@ func (s *Server) Start() error {
 	// Attach implementation of generated oapi strict server.
 	impl := implementation.NewStrictServerImplementation(s.Client, s.Config, storageService, slackService)
 
-	var middlewares []generated.StrictMiddlewareFunc
-	//middlewares := []generated.StrictMiddlewareFunc{
-	//	drip_middleware.AuthorizationMiddleware(s.Client),
-	//}
+	// var middlewares []generated.StrictMiddlewareFunc
+	middlewares := []generated.StrictMiddlewareFunc{
+		drip_middleware.AuthorizationMiddleware(s.Client),
+	}
 	wrapped := generated.NewStrictHandler(impl, middlewares)
 
 	generated.RegisterHandlers(e, wrapped)
@@ -108,10 +108,10 @@ func (s *Server) Start() error {
 
 	// Global Middlewares
 	e.Use(drip_middleware.MetricsMiddleware(mon, s.Config))
-	//e.Use(
-	//	drip_middleware.JWTWrapperMiddleware(s.Client, s.Config.JWTSecret,
-	//		drip_middleware.FirebaseMiddleware(s.Client)))
-	e.Use(drip_middleware.FirebaseMiddleware(s.Client))
+	e.Use(
+		drip_middleware.JWTWrapperMiddleware(s.Client, s.Config.JWTSecret,
+			drip_middleware.FirebaseMiddleware(s.Client)))
+	// e.Use(drip_middleware.FirebaseMiddleware(s.Client))
 	e.Use(drip_middleware.ServiceAccountAuthMiddleware())
 	e.Use(drip_middleware.ErrorLoggingMiddleware())
 

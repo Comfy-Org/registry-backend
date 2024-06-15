@@ -191,6 +191,16 @@ func TestBan(t *testing.T) {
 					})
 				}
 			})
+
+			t.Run("No User", func(t *testing.T) {
+				for _, tt := range testtable {
+					t.Run(tt.name, func(t *testing.T) {
+						c := e.NewContext(tt.req(context.Background()), httptest.NewRecorder())
+						err := tt.fn(c)
+						assert.Equal(t, errNotBanned, err, "should pass the authorization middleware")
+					})
+				}
+			})
 		})
 	})
 

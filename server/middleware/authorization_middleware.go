@@ -35,12 +35,12 @@ func AuthorizationMiddleware(entClient *ent.Client) drip.StrictMiddlewareFunc {
 			v := ctx.Value(UserContextKey)
 			userDetails, ok := v.(*UserDetails)
 			if !ok {
-				return nil, echo.NewHTTPError(http.StatusUnauthorized, "user not found")
+				return f(c, request)
 			}
 
 			u, err := entClient.User.Get(ctx, userDetails.ID)
 			if err != nil {
-				return nil, echo.NewHTTPError(http.StatusUnauthorized, "user not found")
+				return f(c, request)
 			}
 
 			if _, ok := restrictedOperationsForBannedUsers[operationID]; ok && u.Status == schema.UserStatusTypeBanned {
