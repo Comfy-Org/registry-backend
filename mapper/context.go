@@ -3,7 +3,7 @@ package mapper
 import (
 	"context"
 	"errors"
-	auth "registry-backend/server/middleware"
+	auth "registry-backend/server/middleware/authentication"
 )
 
 func GetUserIDFromContext(ctx context.Context) (string, error) {

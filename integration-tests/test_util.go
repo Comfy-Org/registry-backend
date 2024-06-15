@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net"
+	auth "registry-backend/server/middleware/authentication"
 
 	"registry-backend/ent"
 	"registry-backend/ent/migrate"
-	auth "registry-backend/server/middleware"
 	"testing"
 	"time"
 

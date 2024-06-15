@@ -594,6 +594,7 @@ func (s *DripStrictServerImplementation) PublishNodeVersion(
 	ctx context.Context, request drip.PublishNodeVersionRequestObject) (drip.PublishNodeVersionResponseObject, error) {
 	log.Ctx(ctx).Info().Msgf("PublishNodeVersion request received for node ID: %s", request.NodeId)
 
+	// TODO(james): move this logic to a middleware authenticaion layer.
 	tokenValid, err := s.RegistryService.IsPersonalAccessTokenValidForPublisher(
 		ctx, s.Client, request.PublisherId, request.Body.PersonalAccessToken)
 	if err != nil {

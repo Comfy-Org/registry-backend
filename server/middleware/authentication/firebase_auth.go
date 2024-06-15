@@ -1,4 +1,4 @@
-package drip_middleware
+package drip_authentication
 
 import (
 	"context"
@@ -15,8 +15,9 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// TODO(robinhuang): Have this middleware only validate and extract the user details. Move all authorization logic to another middleware.
-func FirebaseMiddleware(entClient *ent.Client) echo.MiddlewareFunc {
+// FirebaseAuthMiddleware validates and extracts user details from the Firebase token.
+// Certain endpoints are allow-listed and bypass this middleware.
+func FirebaseAuthMiddleware(entClient *ent.Client) echo.MiddlewareFunc {
 	// Handlers in here should bypass this middleware.
 	var allowlist = map[*regexp.Regexp][]string{
 		regexp.MustCompile(`^/openapi$`):                               {"GET"},
@@ -33,10 +34,13 @@ func FirebaseMiddleware(entClient *ent.Client) echo.MiddlewareFunc {
 		regexp.MustCompile(`^/nodes/[^/]+$`):                           {"GET"},
 		regexp.MustCompile(`^/nodes/[^/]+/versions$`):                  {"GET"},
 		regexp.MustCompile(`^/nodes/[^/]+/install$`):                   {"GET"},
+		regexp.MustCompile(`^/publishers/[^/]+/ban$`):                  {"POST"},
+		regexp.MustCompile(`^/publishers/[^/]+/nodes/[^/]+/ban$`):      {"POST"},
 	}
+
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			// Check if the request is in the allowlist.
+			// Check if the request is in the allow list.
 			reqPath := ctx.Request().URL.Path
 			reqMethod := ctx.Request().Method
 			for basePathRegex, methods := range allowlist {
@@ -54,7 +58,6 @@ func FirebaseMiddleware(entClient *ent.Client) echo.MiddlewareFunc {
 			// If header is present, extract the token and verify it.
 			header := ctx.Request().Header.Get("Authorization")
 			if header != "" {
-
 				// Extract the JWT token from the header
 				splitToken := strings.Split(header, "Bearer ")
 				if len(splitToken) != 2 {
@@ -83,12 +86,16 @@ func FirebaseMiddleware(entClient *ent.Client) echo.MiddlewareFunc {
 
 				userDetails := extractUserDetails(token)
 				log.Ctx(ctx.Request().Context()).Debug().Msg("Authenticated user " + userDetails.Email)
-				authdCtx := context.WithValue(ctx.Request().Context(), UserContextKey, userDetails)
-				ctx.SetRequest(ctx.Request().WithContext(authdCtx))
-				newUserError := db.UpsertUser(ctx.Request().Context(), entClient, token.UID, userDetails.Email, userDetails.Name)
+
+				authContext := context.WithValue(ctx.Request().Context(), UserContextKey, userDetails)
+				ctx.SetRequest(ctx.Request().WithContext(authContext))
+
+				newUserError := db.UpsertUser(
+					ctx.Request().Context(), entClient, token.UID, userDetails.Email, userDetails.Name)
 				if newUserError != nil {
 					log.Ctx(ctx.Request().Context()).Error().Err(newUserError).Msg("error User upserted successfully.")
 				}
+
 				return next(ctx)
 			}
 

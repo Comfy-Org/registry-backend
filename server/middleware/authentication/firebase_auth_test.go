@@ -1,10 +1,9 @@
-package drip_middleware_test
+package drip_authentication
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"registry-backend/ent"
-	drip_middleware "registry-backend/server/middleware"
 	"testing"
 
 	"github.com/labstack/echo/v4"
@@ -20,7 +19,7 @@ func TestAllowlist(t *testing.T) {
 	// Mock ent.Client
 	mockEntClient := &ent.Client{}
 
-	middleware := drip_middleware.FirebaseMiddleware(mockEntClient)
+	middleware := FirebaseAuthMiddleware(mockEntClient)
 
 	tests := []struct {
 		name    string
