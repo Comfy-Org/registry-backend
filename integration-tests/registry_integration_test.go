@@ -25,6 +25,13 @@ func setUpTest(client *ent.Client) (context.Context, *ent.User) {
 	return ctx, testUser
 }
 
+func setUpAdminTest(client *ent.Client) (context.Context, *ent.User) {
+	ctx := context.Background()
+	testUser := createAdminUser(ctx, client)
+	ctx = decorateUserInContext(ctx, testUser)
+	return ctx, testUser
+}
+
 func TestRegistry(t *testing.T) {
 	clientCtx := context.Background()
 	client, postgresContainer := setupDB(t, clientCtx)
@@ -565,6 +572,18 @@ func TestRegistry(t *testing.T) {
 			versionStatus := drip.NodeVersionStatusPending
 			require.Equal(t, versionStatus, *createNodeVersionResp.(drip.PublishNodeVersion201JSONResponse).NodeVersion.Status, "should return pending status")
 			createdNodeVersion = *createNodeVersionResp.(drip.PublishNodeVersion201JSONResponse).NodeVersion // Needed for downstream tests.
+
+			adminCtx, _ := setUpAdminTest(client)
+			activeStatus := drip.NodeVersionStatusActive
+			adminUpdateNodeVersionResp, err := impl.AdminUpdateNodeVersion(adminCtx, drip.AdminUpdateNodeVersionRequestObject{
+				NodeId:        nodeId,
+				VersionNumber: *createdNodeVersion.Version,
+				Body: &drip.AdminUpdateNodeVersionJSONRequestBody{
+					Status: &activeStatus,
+				},
+			})
+			require.NoError(t, err, "should return updated node version")
+			assert.Equal(t, activeStatus, *adminUpdateNodeVersionResp.(drip.AdminUpdateNodeVersion200JSONResponse).Status)
 		})
 
 		t.Run("Get not exist Node Version ", func(t *testing.T) {
@@ -589,7 +608,11 @@ func TestRegistry(t *testing.T) {
 			require.IsType(t, drip.ListNodeVersions200JSONResponse{}, resVersions, "should return 200")
 			resVersions200 := resVersions.(drip.ListNodeVersions200JSONResponse)
 			require.Len(t, resVersions200, 1, "should return only one version")
-			nodeVersionStatus := drip.NodeVersionStatusPending
+			nodeVersionStatus := drip.NodeVersionStatusActive
+			println("Download URL: ", *resVersions200[0].DownloadUrl)
+			println("Download URL: ", downloadUrl)
+			println("Status: ", *resVersions200[0].Status)
+			println("Status: ", nodeVersionStatus)
 			assert.Equal(t, drip.NodeVersion{
 				// generated attribute
 				Id:        resVersions200[0].Id,
@@ -623,7 +646,7 @@ func TestRegistry(t *testing.T) {
 			require.IsType(t, drip.ListNodeVersions200JSONResponse{}, res, "should return 200")
 			res200 := res.(drip.ListNodeVersions200JSONResponse)
 			require.Len(t, res200, 1, "should return only one version")
-			status := drip.NodeVersionStatusPending
+			status := drip.NodeVersionStatusActive
 			updatedNodeVersion := drip.NodeVersion{
 				// generated attribute
 				Id:        res200[0].Id,

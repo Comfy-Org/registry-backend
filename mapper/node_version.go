@@ -67,7 +67,7 @@ func DbNodeVersionToApiNodeVersion(dbNodeVersion *ent.NodeVersion) *drip.NodeVer
 
 	status := DbNodeVersionStatusToApiNodeVersionStatus(dbNodeVersion.Status)
 	downloadUrl := ""
-	if dbNodeVersion.Status == schema.NodeVersionStatus(drip.NodeVersionStatusActive) {
+	if dbNodeVersion.Status == schema.NodeVersionStatusActive {
 		downloadUrl = dbNodeVersion.Edges.StorageFile.FileURL
 	}
 
