@@ -1663,6 +1663,9 @@ components:
           items:
             $ref: "#/components/schemas/PublisherMember"
           description: A list of members in the publisher.
+        status:
+          $ref: "#/components/schemas/PublisherStatus"
+          description: The status of the publisher.
     PublisherMember:
       type: object
       properties:
@@ -1790,6 +1793,11 @@ components:
         - NodeVersionStatusDeleted
         - NodeVersionStatusBanned
         - NodeVersionStatusPending
+    PublisherStatus:
+      type: string
+      enum:
+        - PublisherStatusActive
+        - PublisherStatusBanned
 
   securitySchemes:
     BearerAuth:
