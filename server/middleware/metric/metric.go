@@ -1,4 +1,4 @@
-package metric
+package drip_metric
 
 import (
 	"context"
