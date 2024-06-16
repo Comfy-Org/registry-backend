@@ -3,7 +3,11 @@ package integration
 import (
 	"context"
 	"fmt"
+	"github.com/labstack/echo/v4"
 	"net"
+	"net/http"
+	"net/http/httptest"
+	"registry-backend/drip"
 	auth "registry-backend/server/middleware/authentication"
 
 	"registry-backend/ent"
@@ -117,5 +121,23 @@ func waitPortOpen(t *testing.T, host string, port string, timeout time.Duration)
 		conn.Close()
 		return
 	}
+}
 
+func withMiddleware[R any, S any](mw drip.StrictMiddlewareFunc, opname string, h func(ctx context.Context, req R) (res S, err error)) func(ctx context.Context, req R) (res S, err error) {
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return h(ctx.Request().Context(), request.(R))
+	}
+
+	return func(ctx context.Context, req R) (res S, err error) {
+		fakeReq := httptest.NewRequest(http.MethodGet, "/", nil).WithContext(ctx)
+		fakeRes := httptest.NewRecorder()
+		fakeCtx := echo.New().NewContext(fakeReq, fakeRes)
+
+		f := mw(handler, opname)
+		r, err := f(fakeCtx, req)
+		if r == nil {
+			return *new(S), err
+		}
+		return r.(S), err
+	}
 }
