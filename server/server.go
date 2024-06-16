@@ -13,6 +13,7 @@ import (
 	drip_middleware "registry-backend/server/middleware"
 	drip_authentication "registry-backend/server/middleware/authentication"
 	drip_authorization "registry-backend/server/middleware/authorization"
+	"registry-backend/server/middleware/metric"
 	"strings"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
@@ -110,7 +111,7 @@ func (s *Server) Start() error {
 	})
 
 	// Global Middlewares
-	e.Use(drip_middleware.MetricsMiddleware(mon, s.Config))
+	e.Use(metric.MetricsMiddleware(mon, s.Config))
 	e.Use(drip_authentication.FirebaseAuthMiddleware(s.Client))
 	e.Use(drip_authentication.JWTAdminAuthMiddleware(s.Client, s.Config.JWTSecret))
 	e.Use(drip_middleware.ErrorLoggingMiddleware())

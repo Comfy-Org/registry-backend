@@ -1,4 +1,4 @@
-package drip_middleware
+package metric
 
 import (
 	"context"
