@@ -12,6 +12,7 @@ import (
 	"registry-backend/server/implementation"
 	drip_middleware "registry-backend/server/middleware"
 	drip_authentication "registry-backend/server/middleware/authentication"
+	drip_authorization "registry-backend/server/middleware/authorization"
 	"strings"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
@@ -95,8 +96,9 @@ func (s *Server) Start() error {
 	impl := implementation.NewStrictServerImplementation(s.Client, s.Config, storageService, slackService)
 
 	// Define middlewares in the order of operations
+	authorizationManager := drip_authorization.NewAuthorizationManager(s.Client, impl.RegistryService)
 	middlewares := []generated.StrictMiddlewareFunc{
-		drip_middleware.AuthorizationMiddleware(s.Client),
+		authorizationManager.AuthorizationMiddleware(),
 	}
 	wrapped := generated.NewStrictHandler(impl, middlewares)
 

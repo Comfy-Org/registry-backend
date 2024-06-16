@@ -12,7 +12,7 @@ import (
 	"registry-backend/ent/schema"
 	"registry-backend/mock/gateways"
 	"registry-backend/server/implementation"
-	drip_middleware "registry-backend/server/middleware"
+	drip_authorization "registry-backend/server/middleware/authorization"
 	"testing"
 
 	strictecho "github.com/oapi-codegen/runtime/strictmiddleware/echo"
@@ -51,9 +51,11 @@ func TestBan(t *testing.T) {
 			return nil, errNotBanned
 		}
 	}
+	authorizationManager := drip_authorization.NewAuthorizationManager(client, impl.RegistryService)
+	authz := authorizationManager.AuthorizationMiddleware()
 	wrapped := drip.NewStrictHandler(impl, []strictecho.StrictEchoMiddlewareFunc{
 		notBanned,
-		drip_middleware.AuthorizationMiddleware(client),
+		authz,
 	})
 
 	t.Run("Publisher", func(t *testing.T) {
@@ -148,17 +150,17 @@ func TestBan(t *testing.T) {
 					fn: wrapped.CreatePublisher,
 				},
 				{
-					name: "UpdatePublisher",
+					name: "DeleteNodeVersion",
 					req: func(ctx context.Context) (req *http.Request) {
 						payloadBuf := new(bytes.Buffer)
-						json.NewEncoder(payloadBuf).Encode(drip.UpdatePublisherJSONRequestBody{})
+						json.NewEncoder(payloadBuf).Encode(drip.DeleteNodeVersionRequestObject{})
 
 						req = httptest.NewRequest(http.MethodPost, "/", payloadBuf).WithContext(ctx)
 						req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 						return
 					},
 					fn: func(ctx echo.Context) error {
-						return wrapped.UpdatePublisher(ctx, "")
+						return wrapped.DeleteNodeVersion(ctx, "", "", "")
 					},
 				},
 			}
@@ -225,7 +227,7 @@ func TestBan(t *testing.T) {
 		nodeTags := []string{"test-node-tag"}
 		icon := "https://wwww.github.com/test-icon.svg"
 		githubUrl := "https://www.github.com/test-github-url"
-		_, err = impl.CreateNode(ctx, drip.CreateNodeRequestObject{
+		_, err = withMiddleware(authz, "CreateNode", impl.CreateNode)(ctx, drip.CreateNodeRequestObject{
 			PublisherId: publisherId,
 			Body: &drip.Node{
 				Id:          &nodeId,
@@ -276,42 +278,53 @@ func TestBan(t *testing.T) {
 
 		t.Run("Operate", func(t *testing.T) {
 			t.Run("Get", func(t *testing.T) {
-				res, err := impl.GetNode(ctx, drip.GetNodeRequestObject{NodeId: nodeId})
-				require.NoError(t, err)
-				require.IsType(t, drip.GetNode403JSONResponse{}, res)
+				f := withMiddleware(authz, "GetNode", impl.GetNode)
+				_, err := f(ctx, drip.GetNodeRequestObject{NodeId: nodeId})
+				require.Error(t, err)
+				require.IsType(t, &echo.HTTPError{}, err)
+				assert.Equal(t, err.(*echo.HTTPError).Code, http.StatusForbidden)
 			})
 			t.Run("Update", func(t *testing.T) {
-				res, err := impl.UpdateNode(ctx, drip.UpdateNodeRequestObject{PublisherId: publisherId, NodeId: nodeId})
-				require.NoError(t, err)
-				require.IsType(t, drip.UpdateNode403JSONResponse{}, res)
+				f := withMiddleware(authz, "UpdateNode", impl.UpdateNode)
+				_, err := f(ctx, drip.UpdateNodeRequestObject{PublisherId: publisherId, NodeId: nodeId})
+				require.Error(t, err)
+				require.IsType(t, &echo.HTTPError{}, err)
+				assert.Equal(t, err.(*echo.HTTPError).Code, http.StatusForbidden)
 			})
 			t.Run("ListNodeVersion", func(t *testing.T) {
-				res, err := impl.ListNodeVersions(ctx, drip.ListNodeVersionsRequestObject{NodeId: nodeId})
-				require.NoError(t, err)
-				require.IsType(t, drip.ListNodeVersions403JSONResponse{}, res)
+				f := withMiddleware(authz, "ListNodeVersions", impl.ListNodeVersions)
+				_, err := f(ctx, drip.ListNodeVersionsRequestObject{NodeId: nodeId})
+				require.Error(t, err)
+				require.IsType(t, &echo.HTTPError{}, err)
+				assert.Equal(t, err.(*echo.HTTPError).Code, http.StatusForbidden)
 			})
 			t.Run("PublishNodeVersion", func(t *testing.T) {
-				res, err := impl.PublishNodeVersion(ctx, drip.PublishNodeVersionRequestObject{
+				f := withMiddleware(authz, "PublishNodeVersion", impl.PublishNodeVersion)
+				_, err := f(ctx, drip.PublishNodeVersionRequestObject{
 					PublisherId: publisherId, NodeId: nodeId,
 					Body: &drip.PublishNodeVersionJSONRequestBody{PersonalAccessToken: *pat},
 				})
-				require.NoError(t, err)
-				require.IsType(t, drip.PublishNodeVersion403JSONResponse{}, res)
+				require.Error(t, err)
+				require.IsType(t, &echo.HTTPError{}, err)
+				assert.Equal(t, err.(*echo.HTTPError).Code, http.StatusForbidden)
 			})
 			t.Run("InstallNode", func(t *testing.T) {
-				res, err := impl.InstallNode(ctx, drip.InstallNodeRequestObject{NodeId: nodeId})
-				require.NoError(t, err)
-				require.IsType(t, drip.InstallNode403JSONResponse{}, res)
+				f := withMiddleware(authz, "InstallNode", impl.InstallNode)
+				_, err := f(ctx, drip.InstallNodeRequestObject{NodeId: nodeId})
+				require.Error(t, err)
+				require.IsType(t, &echo.HTTPError{}, err)
+				assert.Equal(t, err.(*echo.HTTPError).Code, http.StatusForbidden)
 			})
 			t.Run("SearchNodes", func(t *testing.T) {
-				res, err := impl.SearchNodes(ctx, drip.SearchNodesRequestObject{
+				f := withMiddleware(authz, "SearchNodes", impl.SearchNodes)
+				res, err := f(ctx, drip.SearchNodesRequestObject{
 					Params: drip.SearchNodesParams{},
 				})
 				require.NoError(t, err)
 				require.IsType(t, drip.SearchNodes200JSONResponse{}, res)
 				require.Empty(t, res.(drip.SearchNodes200JSONResponse).Nodes)
 
-				res, err = impl.SearchNodes(ctx, drip.SearchNodesRequestObject{
+				res, err = f(ctx, drip.SearchNodesRequestObject{
 					Params: drip.SearchNodesParams{IncludeBanned: proto.Bool(true)},
 				})
 				require.NoError(t, err)

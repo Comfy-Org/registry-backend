@@ -52,23 +52,20 @@ func JWTAdminAuthMiddleware(entClient *ent.Client, secret string) echo.Middlewar
 			// Get the Authorization header
 			header := c.Request().Header.Get("Authorization")
 			if header == "" {
-				// No Authorization header, pass to the next auth middleware
-				return next(c)
+				return echo.NewHTTPError(http.StatusUnauthorized, "invalid jwt token")
 			}
 
 			// Extract the JWT token from the header
 			splitToken := strings.Split(header, "Bearer ")
 			if len(splitToken) != 2 {
-				// Invalid format, pass to the next auth middleware
-				return next(c)
+				return echo.NewHTTPError(http.StatusUnauthorized, "invalid jwt token")
 			}
 			token := splitToken[1]
 
 			// Parse and validate the JWT token
 			tokenData, err := jwt.Parse(token, keyfunc)
 			if err != nil {
-				// Invalid token, pass to the next auth middleware
-				return next(c)
+				return echo.NewHTTPError(http.StatusUnauthorized, "invalid jwt token")
 			}
 
 			// Extract claims from the token
