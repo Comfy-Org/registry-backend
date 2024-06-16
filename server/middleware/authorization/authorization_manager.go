@@ -12,11 +12,13 @@ import (
 	drip_services "registry-backend/services/registry"
 )
 
+// AuthorizationManager manages authorization-related tasks
 type AuthorizationManager struct {
 	EntClient       *ent.Client
 	RegistryService *drip_services.RegistryService
 }
 
+// NewAuthorizationManager creates a new instance of AuthorizationManager
 func NewAuthorizationManager(
 	entClient *ent.Client, registryService *drip_services.RegistryService) *AuthorizationManager {
 	return &AuthorizationManager{
@@ -25,6 +27,7 @@ func NewAuthorizationManager(
 	}
 }
 
+// assertUserBanned checks if the user is banned
 func (m *AuthorizationManager) assertUserBanned() drip.StrictMiddlewareFunc {
 	return func(f strictecho.StrictEchoHandlerFunc, operationID string) strictecho.StrictEchoHandlerFunc {
 		return func(c echo.Context, request interface{}) (response interface{}, err error) {
@@ -49,7 +52,9 @@ func (m *AuthorizationManager) assertUserBanned() drip.StrictMiddlewareFunc {
 	}
 }
 
-func (m *AuthorizationManager) assertPublisherPermission(permissions []schema.PublisherPermissionType, extractor func(req interface{}) (publisherID string)) drip.StrictMiddlewareFunc {
+// assertPublisherPermission checks if the user has the required permissions for the publisher
+func (m *AuthorizationManager) assertPublisherPermission(
+	permissions []schema.PublisherPermissionType, extractor func(req interface{}) string) drip.StrictMiddlewareFunc {
 	return func(f strictecho.StrictEchoHandlerFunc, operationID string) strictecho.StrictEchoHandlerFunc {
 		return func(c echo.Context, request interface{}) (response interface{}, err error) {
 			ctx := c.Request().Context()
@@ -60,7 +65,8 @@ func (m *AuthorizationManager) assertPublisherPermission(permissions []schema.Pu
 			}
 			publisherID := extractor(request)
 
-			log.Ctx(ctx).Info().Msgf("Checking if user ID %s has permission to update publisher ID %s", userDetails.ID, publisherID)
+			log.Ctx(ctx).Info().Msgf("Checking if user ID %s has permission "+
+				"to update publisher ID %s", userDetails.ID, publisherID)
 			err = m.RegistryService.AssertPublisherPermissions(ctx, m.EntClient, publisherID, userDetails.ID, permissions)
 			switch {
 			case ent.IsNotFound(err):
@@ -68,11 +74,13 @@ func (m *AuthorizationManager) assertPublisherPermission(permissions []schema.Pu
 				return nil, echo.NewHTTPError(http.StatusNotFound, "Publisher Not Found")
 
 			case drip_services.IsPermissionError(err):
-				log.Ctx(ctx).Error().Msgf("Permission denied for user ID %s on publisher ID %s w/ err: %v", userDetails.ID, publisherID, err)
+				log.Ctx(ctx).Error().Msgf("Permission denied for user ID %s on "+
+					"publisher ID %s w/ err: %v", userDetails.ID, publisherID, err)
 				return nil, echo.NewHTTPError(http.StatusForbidden, "Permission denied")
 
 			case err != nil:
-				log.Ctx(ctx).Error().Msgf("Failed to assert publisher permission %s w/ err: %v", publisherID, err)
+				log.Ctx(ctx).Error().Msgf("Failed to assert publisher "+
+					"permission %s w/ err: %v", publisherID, err)
 				return nil, err
 			}
 
@@ -81,12 +89,14 @@ func (m *AuthorizationManager) assertPublisherPermission(permissions []schema.Pu
 	}
 }
 
-func (m *AuthorizationManager) assertNodeBanned(extractor func(req interface{}) (nodeid string)) drip.StrictMiddlewareFunc {
+// assertNodeBanned checks if the node is banned
+func (m *AuthorizationManager) assertNodeBanned(extractor func(req interface{}) string) drip.StrictMiddlewareFunc {
 	return func(f strictecho.StrictEchoHandlerFunc, operationID string) strictecho.StrictEchoHandlerFunc {
 		return func(c echo.Context, request interface{}) (response interface{}, err error) {
 			ctx := c.Request().Context()
 			nodeID := extractor(request)
-			switch err = m.RegistryService.AssertNodeBanned(ctx, m.EntClient, nodeID); {
+			err = m.RegistryService.AssertNodeBanned(ctx, m.EntClient, nodeID)
+			switch {
 			case drip_services.IsPermissionError(err):
 				log.Ctx(ctx).Error().Msgf("Node %s banned", nodeID)
 				return nil, echo.NewHTTPError(http.StatusForbidden, "Node Banned")
@@ -101,7 +111,8 @@ func (m *AuthorizationManager) assertNodeBanned(extractor func(req interface{}) 
 	}
 }
 
-func (m *AuthorizationManager) assertPublisherBanned(extractor func(req interface{}) (publisherID string)) drip.StrictMiddlewareFunc {
+// assertPublisherBanned checks if the publisher is banned
+func (m *AuthorizationManager) assertPublisherBanned(extractor func(req interface{}) string) drip.StrictMiddlewareFunc {
 	return func(f strictecho.StrictEchoHandlerFunc, operationID string) strictecho.StrictEchoHandlerFunc {
 		return func(c echo.Context, request interface{}) (response interface{}, err error) {
 			ctx := c.Request().Context()
