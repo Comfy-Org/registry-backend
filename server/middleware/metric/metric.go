@@ -1,4 +1,4 @@
-package metric
+package drip_metric
 
 import (
 	"context"
@@ -12,12 +12,6 @@ import (
 	metricpb "google.golang.org/genproto/googleapis/api/metric"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
-
-const (
-	MetricTypePrefix = "custom.googleapis.com/comfy_api_frontend"
-)
-
-type CounterMetric struct{ sync.Map }
 
 func (c *CounterMetric) Increment(key any, i int64) int64 {
 	v, _ := c.LoadOrStore(key, new(atomic.Int64))
