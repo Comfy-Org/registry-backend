@@ -13,7 +13,7 @@ import (
 	drip_middleware "registry-backend/server/middleware"
 	drip_authentication "registry-backend/server/middleware/authentication"
 	drip_authorization "registry-backend/server/middleware/authorization"
-	"registry-backend/server/middleware/metric"
+	drip_metric "registry-backend/server/middleware/metric"
 	"strings"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"

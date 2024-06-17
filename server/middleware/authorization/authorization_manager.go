@@ -1,29 +1,49 @@
 package drip_authorization
 
 import (
-	"github.com/labstack/echo/v4"
-	strictecho "github.com/oapi-codegen/runtime/strictmiddleware/echo"
-	"github.com/rs/zerolog/log"
+	"context"
 	"net/http"
 	"registry-backend/drip"
 	"registry-backend/ent"
 	"registry-backend/ent/schema"
 	drip_authentication "registry-backend/server/middleware/authentication"
 	drip_services "registry-backend/services/registry"
+
+	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
+	strictecho "github.com/oapi-codegen/runtime/strictmiddleware/echo"
+	"github.com/rs/zerolog/log"
 )
+
+type Assertor interface {
+	AssertPublisherBanned(ctx context.Context, client *ent.Client, publisherID string) error
+	AssertPublisherPermissions(ctx context.Context,
+		client *ent.Client,
+		publisherID string,
+		userID string,
+		permissions []schema.PublisherPermissionType) (err error)
+	IsPersonalAccessTokenValidForPublisher(ctx context.Context,
+		client *ent.Client,
+		publisherID string,
+		accessToken string,
+	) (bool, error)
+	AssertNodeBelongsToPublisher(ctx context.Context, client *ent.Client, publisherID string, nodeID string) error
+	AssertAccessTokenBelongsToPublisher(ctx context.Context, client *ent.Client, publisherID string, tokenId uuid.UUID) error
+	AssertNodeBanned(ctx context.Context, client *ent.Client, nodeID string) error
+}
 
 // AuthorizationManager manages authorization-related tasks
 type AuthorizationManager struct {
-	EntClient       *ent.Client
-	RegistryService *drip_services.RegistryService
+	EntClient *ent.Client
+	Assertor  Assertor
 }
 
 // NewAuthorizationManager creates a new instance of AuthorizationManager
 func NewAuthorizationManager(
-	entClient *ent.Client, registryService *drip_services.RegistryService) *AuthorizationManager {
+	entClient *ent.Client, assertor Assertor) *AuthorizationManager {
 	return &AuthorizationManager{
-		EntClient:       entClient,
-		RegistryService: registryService,
+		EntClient: entClient,
+		Assertor:  assertor,
 	}
 }
 
@@ -67,7 +87,7 @@ func (m *AuthorizationManager) assertPublisherPermission(
 
 			log.Ctx(ctx).Info().Msgf("Checking if user ID %s has permission "+
 				"to update publisher ID %s", userDetails.ID, publisherID)
-			err = m.RegistryService.AssertPublisherPermissions(ctx, m.EntClient, publisherID, userDetails.ID, permissions)
+			err = m.Assertor.AssertPublisherPermissions(ctx, m.EntClient, publisherID, userDetails.ID, permissions)
 			switch {
 			case ent.IsNotFound(err):
 				log.Ctx(ctx).Info().Msgf("Publisher with ID %s not found", publisherID)
@@ -95,7 +115,7 @@ func (m *AuthorizationManager) assertNodeBanned(extractor func(req interface{}) 
 		return func(c echo.Context, request interface{}) (response interface{}, err error) {
 			ctx := c.Request().Context()
 			nodeID := extractor(request)
-			err = m.RegistryService.AssertNodeBanned(ctx, m.EntClient, nodeID)
+			err = m.Assertor.AssertNodeBanned(ctx, m.EntClient, nodeID)
 			switch {
 			case drip_services.IsPermissionError(err):
 				log.Ctx(ctx).Error().Msgf("Node %s banned", nodeID)
@@ -118,10 +138,70 @@ func (m *AuthorizationManager) assertPublisherBanned(extractor func(req interfac
 			ctx := c.Request().Context()
 			publisherID := extractor(request)
 
-			pub, _ := m.RegistryService.GetPublisher(ctx, m.EntClient, publisherID)
-			if pub != nil && pub.Status == schema.PublisherStatusTypeBanned {
+			switch err = m.Assertor.AssertPublisherBanned(ctx, m.EntClient, publisherID); {
+			case drip_services.IsPermissionError(err):
 				log.Ctx(ctx).Error().Msgf("Publisher %s banned", publisherID)
-				return nil, echo.NewHTTPError(http.StatusForbidden, "Publisher Banned")
+				return nil, echo.NewHTTPError(http.StatusForbidden, "Node Banned")
+
+			case err != nil:
+				log.Ctx(ctx).Error().Msgf("Failed to assert publisher ban status %s w/ err: %v", publisherID, err)
+				return nil, err
+			}
+
+			return f(c, request)
+		}
+	}
+}
+
+// assertPersonalAccessTokenValid check if personal access token is valid for a publisher
+func (m *AuthorizationManager) assertPersonalAccessTokenValid(
+	extractorPublsherID func(req interface{}) (nodeid string),
+	extractorPAT func(req interface{}) (pat string),
+) drip.StrictMiddlewareFunc {
+	return func(f strictecho.StrictEchoHandlerFunc, operationID string) strictecho.StrictEchoHandlerFunc {
+		return func(c echo.Context, request interface{}) (response interface{}, err error) {
+			ctx := c.Request().Context()
+			pubID := extractorPublsherID(request)
+			pat := extractorPAT(request)
+			tokenValid, err := m.Assertor.IsPersonalAccessTokenValidForPublisher(
+				ctx, m.EntClient, pubID, pat)
+			if err != nil {
+				log.Ctx(ctx).Error().Msgf("Token validation failed w/ err: %v", err)
+				return nil, echo.NewHTTPError(http.StatusBadRequest, "Failed to validate token")
+			}
+			if !tokenValid {
+				log.Ctx(ctx).Error().Msg("Invalid personal access token")
+				return nil, echo.NewHTTPError(http.StatusBadRequest, "Invalid personal access token")
+			}
+
+			return f(c, request)
+		}
+	}
+}
+
+// assertNodeBelongsToPublisher check if a node belongs to a publisher
+func (m *AuthorizationManager) assertNodeBelongsToPublisher(
+	extractorPublsherID func(req interface{}) (nodeid string),
+	extractorNodeID func(req interface{}) (nodeid string),
+) drip.StrictMiddlewareFunc {
+	return func(f strictecho.StrictEchoHandlerFunc, operationID string) strictecho.StrictEchoHandlerFunc {
+		return func(c echo.Context, request interface{}) (response interface{}, err error) {
+			ctx := c.Request().Context()
+			pubID := extractorPublsherID(request)
+			nodeID := extractorNodeID(request)
+
+			err = m.Assertor.AssertNodeBelongsToPublisher(ctx, m.EntClient, pubID, nodeID)
+			switch {
+			case ent.IsNotFound(err):
+				return f(c, request)
+
+			case drip_services.IsPermissionError(err):
+				log.Ctx(ctx).Error().Msgf(
+					"Permission denied for publisher ID %s on node ID %s w/ err: %v", pubID, nodeID, err)
+				return nil, echo.NewHTTPError(http.StatusForbidden, "Permission denied")
+
+			case err != nil:
+				return nil, err
 			}
 
 			return f(c, request)

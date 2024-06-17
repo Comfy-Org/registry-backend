@@ -3,12 +3,14 @@ package integration
 import (
 	"context"
 	"fmt"
-	"github.com/labstack/echo/v4"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"registry-backend/drip"
 	auth "registry-backend/server/middleware/authentication"
+	"runtime"
+	"strings"
 
 	"registry-backend/ent"
 	"registry-backend/ent/migrate"
@@ -16,6 +18,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -123,10 +126,14 @@ func waitPortOpen(t *testing.T, host string, port string, timeout time.Duration)
 	}
 }
 
-func withMiddleware[R any, S any](mw drip.StrictMiddlewareFunc, opname string, h func(ctx context.Context, req R) (res S, err error)) func(ctx context.Context, req R) (res S, err error) {
+func withMiddleware[R any, S any](mw drip.StrictMiddlewareFunc, h func(ctx context.Context, req R) (res S, err error)) func(ctx context.Context, req R) (res S, err error) {
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
 		return h(ctx.Request().Context(), request.(R))
 	}
+
+	nameA := strings.Split((runtime.FuncForPC(reflect.ValueOf(h).Pointer()).Name()), ".")
+	nameA = strings.Split(nameA[len(nameA)-1], "-")
+	opname := nameA[0]
 
 	return func(ctx context.Context, req R) (res S, err error) {
 		fakeReq := httptest.NewRequest(http.MethodGet, "/", nil).WithContext(ctx)

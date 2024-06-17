@@ -18,7 +18,7 @@ import (
 	gateway "registry-backend/gateways/slack"
 	"registry-backend/gateways/storage"
 	"registry-backend/mapper"
-	"registry-backend/server/middleware/metric"
+	drip_metric "registry-backend/server/middleware/metric"
 
 	"github.com/Masterminds/semver/v3"
 	"google.golang.org/protobuf/proto"
@@ -649,6 +649,19 @@ func (s *RegistryService) AssertNodeBanned(ctx context.Context, client *ent.Clie
 	}
 	if node.Status == schema.NodeStatusBanned {
 		return newErrorPermission("node '%s' is currently banned", nodeID)
+	}
+	return nil
+}
+func (s *RegistryService) AssertPublisherBanned(ctx context.Context, client *ent.Client, publisherID string) error {
+	publisher, err := client.Publisher.Get(ctx, publisherID)
+	if ent.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("failed to get node: %w", err)
+	}
+	if publisher.Status == schema.PublisherStatusTypeBanned {
+		return newErrorPermission("node '%s' is currently banned", publisherID)
 	}
 	return nil
 }

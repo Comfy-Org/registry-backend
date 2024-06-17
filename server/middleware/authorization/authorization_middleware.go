@@ -39,6 +39,14 @@ func (m *AuthorizationManager) AuthorizationMiddleware() drip.StrictMiddlewareFu
 					return req.(drip.DeleteNodeRequestObject).PublisherId
 				},
 			),
+			m.assertNodeBelongsToPublisher(
+				func(req interface{}) (publisherID string) {
+					return req.(drip.DeleteNodeRequestObject).PublisherId
+				},
+				func(req interface{}) (nodeID string) {
+					return req.(drip.DeleteNodeRequestObject).NodeId
+				},
+			),
 		},
 		"UpdateNode": {
 			m.assertUserBanned(),
@@ -51,6 +59,14 @@ func (m *AuthorizationManager) AuthorizationMiddleware() drip.StrictMiddlewareFu
 				[]schema.PublisherPermissionType{schema.PublisherPermissionTypeOwner},
 				func(req interface{}) (publisherID string) {
 					return req.(drip.UpdateNodeRequestObject).PublisherId
+				},
+			),
+			m.assertNodeBelongsToPublisher(
+				func(req interface{}) (publisherID string) {
+					return req.(drip.UpdateNodeRequestObject).PublisherId
+				},
+				func(req interface{}) (nodeID string) {
+					return req.(drip.UpdateNodeRequestObject).NodeId
 				},
 			),
 		},
@@ -71,6 +87,22 @@ func (m *AuthorizationManager) AuthorizationMiddleware() drip.StrictMiddlewareFu
 					return req.(drip.PublishNodeVersionRequestObject).NodeId
 				},
 			),
+			m.assertNodeBelongsToPublisher(
+				func(req interface{}) (publisherID string) {
+					return req.(drip.PublishNodeVersionRequestObject).PublisherId
+				},
+				func(req interface{}) (NodeId string) {
+					return req.(drip.PublishNodeVersionRequestObject).NodeId
+				},
+			),
+			m.assertPersonalAccessTokenValid(
+				func(req interface{}) (publisherID string) {
+					return req.(drip.PublishNodeVersionRequestObject).PublisherId
+				},
+				func(req interface{}) (pat string) {
+					return req.(drip.PublishNodeVersionRequestObject).Body.PersonalAccessToken
+				},
+			),
 		},
 		"UpdateNodeVersion": {
 			m.assertUserBanned(),
@@ -83,6 +115,14 @@ func (m *AuthorizationManager) AuthorizationMiddleware() drip.StrictMiddlewareFu
 				[]schema.PublisherPermissionType{schema.PublisherPermissionTypeOwner},
 				func(req interface{}) (publisherID string) {
 					return req.(drip.UpdateNodeVersionRequestObject).PublisherId
+				},
+			),
+			m.assertNodeBelongsToPublisher(
+				func(req interface{}) (publisherID string) {
+					return req.(drip.UpdateNodeVersionRequestObject).PublisherId
+				},
+				func(req interface{}) (publisherID string) {
+					return req.(drip.UpdateNodeVersionRequestObject).NodeId
 				},
 			),
 		},
