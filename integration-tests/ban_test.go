@@ -1,12 +1,8 @@
 package integration
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"errors"
 	"net/http"
-	"net/http/httptest"
 	"registry-backend/config"
 	"registry-backend/drip"
 	"registry-backend/ent/schema"
@@ -15,7 +11,6 @@ import (
 	drip_authorization "registry-backend/server/middleware/authorization"
 	"testing"
 
-	strictecho "github.com/oapi-codegen/runtime/strictmiddleware/echo"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/labstack/echo/v4"
@@ -45,18 +40,7 @@ func TestBan(t *testing.T) {
 	impl := implementation.NewStrictServerImplementation(
 		client, &config.Config{}, mockStorageService, mockSlackService)
 
-	errNotBanned := errors.New("passed authorization middleware")
-	notBanned := func(f strictecho.StrictEchoHandlerFunc, operationID string) strictecho.StrictEchoHandlerFunc {
-		return func(ctx echo.Context, request interface{}) (response interface{}, err error) {
-			return nil, errNotBanned
-		}
-	}
-	authorizationManager := drip_authorization.NewAuthorizationManager(client, impl.RegistryService)
-	authz := authorizationManager.AuthorizationMiddleware()
-	wrapped := drip.NewStrictHandler(impl, []strictecho.StrictEchoMiddlewareFunc{
-		notBanned,
-		authz,
-	})
+	authz := drip_authorization.NewAuthorizationManager(client, impl.RegistryService).AuthorizationMiddleware()
 
 	t.Run("Publisher", func(t *testing.T) {
 		t.Run("Ban", func(t *testing.T) {
@@ -69,7 +53,7 @@ func TestBan(t *testing.T) {
 			support := "test-support"
 			logo := "test-logo"
 			name := "test-name"
-			_, err := impl.CreatePublisher(ctx, drip.CreatePublisherRequestObject{
+			_, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{
 				Body: &drip.Publisher{
 					Id:             &publisherId,
 					Description:    &description,
@@ -90,7 +74,7 @@ func TestBan(t *testing.T) {
 			nodeTags := []string{"test-node-tag"}
 			icon := "https://wwww.github.com/test-icon.svg"
 			githubUrl := "https://www.github.com/test-github-url"
-			_, err = impl.CreateNode(ctx, drip.CreateNodeRequestObject{
+			_, err = withMiddleware(authz, impl.CreateNode)(ctx, drip.CreateNodeRequestObject{
 				PublisherId: publisherId,
 				Body: &drip.Node{
 					Id:          &nodeId,
@@ -107,7 +91,7 @@ func TestBan(t *testing.T) {
 
 			t.Run("By Non Admin", func(t *testing.T) {
 				ctx, _ := setUpTest(client)
-				res, err := impl.BanPublisher(ctx, drip.BanPublisherRequestObject{PublisherId: publisherId})
+				res, err := withMiddleware(authz, impl.BanPublisher)(ctx, drip.BanPublisherRequestObject{PublisherId: publisherId})
 				require.NoError(t, err, "should not ban publisher")
 				require.IsType(t, drip.BanPublisher403JSONResponse{}, res)
 			})
@@ -116,7 +100,7 @@ func TestBan(t *testing.T) {
 				ctx, admin := setUpTest(client)
 				err = admin.Update().SetIsAdmin(true).Exec(clientCtx)
 				require.NoError(t, err)
-				_, err = impl.BanPublisher(ctx, drip.BanPublisherRequestObject{PublisherId: publisherId})
+				_, err = withMiddleware(authz, impl.BanPublisher)(ctx, drip.BanPublisherRequestObject{PublisherId: publisherId})
 				require.NoError(t, err)
 
 				pub, err := client.Publisher.Get(ctx, publisherId)
@@ -133,39 +117,24 @@ func TestBan(t *testing.T) {
 
 		t.Run("Access", func(t *testing.T) {
 			testtable := []struct {
-				name string
-				req  func(ctx context.Context) *http.Request
-				fn   func(ctx echo.Context) error
+				name   string
+				invoke func(ctx context.Context) error
 			}{
 				{
 					name: "CreatePublisher",
-					req: func(ctx context.Context) (req *http.Request) {
-						payloadBuf := new(bytes.Buffer)
-						json.NewEncoder(payloadBuf).Encode(drip.CreatePublisherJSONRequestBody{})
-
-						req = httptest.NewRequest(http.MethodPost, "/", payloadBuf).WithContext(ctx)
-						req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-						return
+					invoke: func(ctx context.Context) error {
+						_, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{Body: &drip.Publisher{}})
+						return err
 					},
-					fn: wrapped.CreatePublisher,
 				},
 				{
 					name: "DeleteNodeVersion",
-					req: func(ctx context.Context) (req *http.Request) {
-						payloadBuf := new(bytes.Buffer)
-						json.NewEncoder(payloadBuf).Encode(drip.DeleteNodeVersionRequestObject{})
-
-						req = httptest.NewRequest(http.MethodPost, "/", payloadBuf).WithContext(ctx)
-						req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-						return
-					},
-					fn: func(ctx echo.Context) error {
-						return wrapped.DeleteNodeVersion(ctx, "", "", "")
+					invoke: func(ctx context.Context) error {
+						_, err := withMiddleware(authz, impl.DeleteNodeVersion)(ctx, drip.DeleteNodeVersionRequestObject{})
+						return err
 					},
 				},
 			}
-
-			e := echo.New()
 
 			t.Run("Banned", func(t *testing.T) {
 				ctxBanned, testUserBanned := setUpTest(client)
@@ -173,8 +142,7 @@ func TestBan(t *testing.T) {
 				require.NoError(t, err)
 				for _, tt := range testtable {
 					t.Run(tt.name, func(t *testing.T) {
-						c := e.NewContext(tt.req(ctxBanned), httptest.NewRecorder())
-						err = tt.fn(c)
+						err = tt.invoke(ctxBanned)
 						require.Error(t, err, "should return error")
 						require.IsType(t, &echo.HTTPError{}, err, "should return echo http error")
 						echoErr := err.(*echo.HTTPError)
@@ -187,9 +155,9 @@ func TestBan(t *testing.T) {
 				ctx, _ := setUpTest(client)
 				for _, tt := range testtable {
 					t.Run(tt.name, func(t *testing.T) {
-						c := e.NewContext(tt.req(ctx), httptest.NewRecorder())
-						err := tt.fn(c)
-						assert.Equal(t, errNotBanned, err, "should pass the authorization middleware")
+						err := tt.invoke(ctx)
+						_, ok := err.(*echo.HTTPError)
+						assert.False(t, ok, err, "should pass the authorization middleware")
 					})
 				}
 			})
@@ -206,7 +174,7 @@ func TestBan(t *testing.T) {
 		support := "test-support"
 		logo := "test-logo"
 		name := "test-name"
-		_, err := impl.CreatePublisher(ctx, drip.CreatePublisherRequestObject{
+		_, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{
 			Body: &drip.Publisher{
 				Id:             &publisherId,
 				Description:    &description,
@@ -227,7 +195,7 @@ func TestBan(t *testing.T) {
 		nodeTags := []string{"test-node-tag"}
 		icon := "https://wwww.github.com/test-icon.svg"
 		githubUrl := "https://www.github.com/test-github-url"
-		_, err = withMiddleware(authz, "CreateNode", impl.CreateNode)(ctx, drip.CreateNodeRequestObject{
+		_, err = withMiddleware(authz, impl.CreateNode)(ctx, drip.CreateNodeRequestObject{
 			PublisherId: publisherId,
 			Body: &drip.Node{
 				Id:          &nodeId,
@@ -244,7 +212,7 @@ func TestBan(t *testing.T) {
 
 		tokenName := "name"
 		tokenDescription := "name"
-		res, err := impl.CreatePersonalAccessToken(ctx, drip.CreatePersonalAccessTokenRequestObject{
+		res, err := withMiddleware(authz, impl.CreatePersonalAccessToken)(ctx, drip.CreatePersonalAccessTokenRequestObject{
 			PublisherId: publisherId,
 			Body: &drip.PersonalAccessToken{
 				Name:        &tokenName,
@@ -258,7 +226,7 @@ func TestBan(t *testing.T) {
 		t.Run("Ban", func(t *testing.T) {
 			t.Run("By Non Admin", func(t *testing.T) {
 				ctx, _ := setUpTest(client)
-				res, err := impl.BanPublisherNode(ctx, drip.BanPublisherNodeRequestObject{PublisherId: publisherId, NodeId: nodeId})
+				res, err := withMiddleware(authz, impl.BanPublisherNode)(ctx, drip.BanPublisherNodeRequestObject{PublisherId: publisherId, NodeId: nodeId})
 				require.NoError(t, err, "should not ban publisher node")
 				require.IsType(t, drip.BanPublisherNode403JSONResponse{}, res)
 			})
@@ -267,7 +235,7 @@ func TestBan(t *testing.T) {
 				ctx, admin := setUpTest(client)
 				err = admin.Update().SetIsAdmin(true).Exec(clientCtx)
 				require.NoError(t, err)
-				_, err = impl.BanPublisherNode(ctx, drip.BanPublisherNodeRequestObject{PublisherId: publisherId, NodeId: nodeId})
+				_, err = withMiddleware(authz, impl.BanPublisherNode)(ctx, drip.BanPublisherNodeRequestObject{PublisherId: publisherId, NodeId: nodeId})
 				require.NoError(t, err)
 
 				node, err := client.Node.Get(ctx, nodeId)
@@ -278,28 +246,28 @@ func TestBan(t *testing.T) {
 
 		t.Run("Operate", func(t *testing.T) {
 			t.Run("Get", func(t *testing.T) {
-				f := withMiddleware(authz, "GetNode", impl.GetNode)
+				f := withMiddleware(authz, impl.GetNode)
 				_, err := f(ctx, drip.GetNodeRequestObject{NodeId: nodeId})
 				require.Error(t, err)
 				require.IsType(t, &echo.HTTPError{}, err)
 				assert.Equal(t, err.(*echo.HTTPError).Code, http.StatusForbidden)
 			})
 			t.Run("Update", func(t *testing.T) {
-				f := withMiddleware(authz, "UpdateNode", impl.UpdateNode)
+				f := withMiddleware(authz, impl.UpdateNode)
 				_, err := f(ctx, drip.UpdateNodeRequestObject{PublisherId: publisherId, NodeId: nodeId})
 				require.Error(t, err)
 				require.IsType(t, &echo.HTTPError{}, err)
 				assert.Equal(t, err.(*echo.HTTPError).Code, http.StatusForbidden)
 			})
 			t.Run("ListNodeVersion", func(t *testing.T) {
-				f := withMiddleware(authz, "ListNodeVersions", impl.ListNodeVersions)
+				f := withMiddleware(authz, impl.ListNodeVersions)
 				_, err := f(ctx, drip.ListNodeVersionsRequestObject{NodeId: nodeId})
 				require.Error(t, err)
 				require.IsType(t, &echo.HTTPError{}, err)
 				assert.Equal(t, err.(*echo.HTTPError).Code, http.StatusForbidden)
 			})
 			t.Run("PublishNodeVersion", func(t *testing.T) {
-				f := withMiddleware(authz, "PublishNodeVersion", impl.PublishNodeVersion)
+				f := withMiddleware(authz, impl.PublishNodeVersion)
 				_, err := f(ctx, drip.PublishNodeVersionRequestObject{
 					PublisherId: publisherId, NodeId: nodeId,
 					Body: &drip.PublishNodeVersionJSONRequestBody{PersonalAccessToken: *pat},
@@ -309,14 +277,14 @@ func TestBan(t *testing.T) {
 				assert.Equal(t, err.(*echo.HTTPError).Code, http.StatusForbidden)
 			})
 			t.Run("InstallNode", func(t *testing.T) {
-				f := withMiddleware(authz, "InstallNode", impl.InstallNode)
+				f := withMiddleware(authz, impl.InstallNode)
 				_, err := f(ctx, drip.InstallNodeRequestObject{NodeId: nodeId})
 				require.Error(t, err)
 				require.IsType(t, &echo.HTTPError{}, err)
 				assert.Equal(t, err.(*echo.HTTPError).Code, http.StatusForbidden)
 			})
 			t.Run("SearchNodes", func(t *testing.T) {
-				f := withMiddleware(authz, "SearchNodes", impl.SearchNodes)
+				f := withMiddleware(authz, impl.SearchNodes)
 				res, err := f(ctx, drip.SearchNodesRequestObject{
 					Params: drip.SearchNodesParams{},
 				})

@@ -2,14 +2,17 @@ package integration
 
 import (
 	"context"
+	"net/http"
 	"registry-backend/config"
 	"registry-backend/drip"
 	"registry-backend/ent"
 	"registry-backend/mock/gateways"
 	"registry-backend/server/implementation"
+	drip_authorization "registry-backend/server/middleware/authorization"
 	"strings"
 	"testing"
 
+	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -50,6 +53,8 @@ func TestRegistry(t *testing.T) {
 		Return(nil) // Do nothing for all slack messsage calls.
 	impl := implementation.NewStrictServerImplementation(
 		client, &config.Config{}, mockStorageService, mockSlackService)
+	authz := drip_authorization.NewAuthorizationManager(client, impl.RegistryService).
+		AuthorizationMiddleware()
 
 	t.Run("Publisher", func(t *testing.T) {
 		ctx, testUser := setUpTest(client)
@@ -62,7 +67,7 @@ func TestRegistry(t *testing.T) {
 		name := "test-name"
 
 		t.Run("Create Publisher", func(t *testing.T) {
-			createPublisherResponse, err := impl.CreatePublisher(ctx, drip.CreatePublisherRequestObject{
+			createPublisherResponse, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{
 				Body: &drip.Publisher{
 					Id:             &publisherId,
 					Description:    &description,
@@ -84,7 +89,7 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("Validate Publisher", func(t *testing.T) {
-			res, err := impl.ValidatePublisher(ctx, drip.ValidatePublisherRequestObject{
+			res, err := withMiddleware(authz, impl.ValidatePublisher)(ctx, drip.ValidatePublisherRequestObject{
 				Params: drip.ValidatePublisherParams{Username: name},
 			})
 			require.NoError(t, err, "should not return error")
@@ -93,7 +98,7 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("Get Publisher", func(t *testing.T) {
-			getPublisherResponse, err := impl.GetPublisher(ctx, drip.GetPublisherRequestObject{
+			getPublisherResponse, err := withMiddleware(authz, impl.GetPublisher)(ctx, drip.GetPublisherRequestObject{
 				PublisherId: publisherId})
 			require.NoError(t, err, "should return created publisher")
 			assert.Equal(t, publisherId, *getPublisherResponse.(drip.GetPublisher200JSONResponse).Id)
@@ -123,7 +128,7 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("List Publishers", func(t *testing.T) {
-			res, err := impl.ListPublishers(ctx, drip.ListPublishersRequestObject{})
+			res, err := withMiddleware(authz, impl.ListPublishers)(ctx, drip.ListPublishersRequestObject{})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.ListPublishers200JSONResponse{}, res, "should return 200 status code")
 			res200 := res.(drip.ListPublishers200JSONResponse)
@@ -145,7 +150,7 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("Get Non-Exist Publisher", func(t *testing.T) {
-			res, err := impl.GetPublisher(ctx, drip.GetPublisherRequestObject{PublisherId: publisherId + "invalid"})
+			res, err := withMiddleware(authz, impl.GetPublisher)(ctx, drip.GetPublisherRequestObject{PublisherId: publisherId + "invalid"})
 			require.NoError(t, err, "should not return error")
 			assert.IsType(t, drip.GetPublisher404JSONResponse{}, res)
 		})
@@ -158,7 +163,7 @@ func TestRegistry(t *testing.T) {
 			update_logo := "update-test-logo"
 			update_name := "update-test-name"
 
-			updatePublisherResponse, err := impl.UpdatePublisher(ctx, drip.UpdatePublisherRequestObject{
+			updatePublisherResponse, err := withMiddleware(authz, impl.UpdatePublisher)(ctx, drip.UpdatePublisherRequestObject{
 				PublisherId: publisherId,
 				Body: &drip.Publisher{
 					Description:    &update_description,
@@ -177,12 +182,12 @@ func TestRegistry(t *testing.T) {
 			assert.Equal(t, update_support, *updatePublisherResponse.(drip.UpdatePublisher200JSONResponse).Support)
 			assert.Equal(t, update_logo, *updatePublisherResponse.(drip.UpdatePublisher200JSONResponse).Logo)
 
-			_, err = impl.ListPublishersForUser(ctx, drip.ListPublishersForUserRequestObject{})
+			_, err = withMiddleware(authz, impl.ListPublishersForUser)(ctx, drip.ListPublishersForUserRequestObject{})
 			require.NoError(t, err, "should return created publisher")
 		})
 
 		t.Run("Reject New Publisher With The Same Name", func(t *testing.T) {
-			duplicateCreatePublisherResponse, err := impl.CreatePublisher(ctx, drip.CreatePublisherRequestObject{
+			duplicateCreatePublisherResponse, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{
 				Body: &drip.Publisher{
 					Id:             &publisherId,
 					Description:    &description,
@@ -198,7 +203,7 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("Delete Publisher", func(t *testing.T) {
-			res, err := impl.DeletePublisher(ctx, drip.DeletePublisherRequestObject{PublisherId: publisherId})
+			res, err := withMiddleware(authz, impl.DeletePublisher)(ctx, drip.DeletePublisherRequestObject{PublisherId: publisherId})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.DeletePublisher204Response{}, res, "should return 204")
 		})
@@ -217,7 +222,7 @@ func TestRegistry(t *testing.T) {
 		tokenDescription := "test-token-description"
 
 		t.Run("Create Publisher", func(t *testing.T) {
-			createPublisherResponse, err := impl.CreatePublisher(ctx, drip.CreatePublisherRequestObject{
+			createPublisherResponse, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{
 				Body: &drip.Publisher{
 					Id:             &publisherId,
 					Description:    &description,
@@ -234,7 +239,7 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("List Personal Access Token Before Create", func(t *testing.T) {
-			none, err := impl.ListPersonalAccessTokens(ctx, drip.ListPersonalAccessTokensRequestObject{
+			none, err := withMiddleware(authz, impl.ListPersonalAccessTokens)(ctx, drip.ListPersonalAccessTokensRequestObject{
 				PublisherId: publisherId,
 			})
 			require.NoError(t, err, "should not return error")
@@ -243,7 +248,7 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("Create Personal Acccess Token", func(t *testing.T) {
-			createPersonalAccessTokenResponse, err := impl.CreatePersonalAccessToken(
+			createPersonalAccessTokenResponse, err := withMiddleware(authz, impl.CreatePersonalAccessToken)(
 				ctx, drip.CreatePersonalAccessTokenRequestObject{
 					PublisherId: publisherId,
 					Body: &drip.PersonalAccessToken{
@@ -258,7 +263,7 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("List Personal Access Token", func(t *testing.T) {
-			getPersonalAccessTokenResponse, err := impl.ListPersonalAccessTokens(ctx, drip.ListPersonalAccessTokensRequestObject{
+			getPersonalAccessTokenResponse, err := withMiddleware(authz, impl.ListPersonalAccessTokens)(ctx, drip.ListPersonalAccessTokensRequestObject{
 				PublisherId: publisherId,
 			})
 			require.NoError(t, err, "should return created token")
@@ -281,7 +286,7 @@ func TestRegistry(t *testing.T) {
 		logo := "test-logo"
 		name := "test-name"
 
-		createPublisherResponse, err := impl.CreatePublisher(ctx, drip.CreatePublisherRequestObject{
+		createPublisherResponse, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{
 			Body: &drip.Publisher{
 				Id:             &publisherId,
 				Description:    &description,
@@ -306,7 +311,7 @@ func TestRegistry(t *testing.T) {
 
 		var real_node_id *string
 		t.Run("Create Node", func(t *testing.T) {
-			createNodeResponse, err := impl.CreateNode(ctx, drip.CreateNodeRequestObject{
+			createNodeResponse, err := withMiddleware(authz, impl.CreateNode)(ctx, drip.CreateNodeRequestObject{
 				PublisherId: publisherId,
 				Body: &drip.Node{
 					Id:          &nodeId,
@@ -335,7 +340,7 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("Get Node", func(t *testing.T) {
-			res, err := impl.GetNode(ctx, drip.GetNodeRequestObject{NodeId: nodeId})
+			res, err := withMiddleware(authz, impl.GetNode)(ctx, drip.GetNodeRequestObject{NodeId: nodeId})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.GetNode200JSONResponse{}, res)
 			res200 := res.(drip.GetNode200JSONResponse)
@@ -360,13 +365,13 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("Get Not Exist Node", func(t *testing.T) {
-			res, err := impl.GetNode(ctx, drip.GetNodeRequestObject{NodeId: nodeId + "fake"})
+			res, err := withMiddleware(authz, impl.GetNode)(ctx, drip.GetNodeRequestObject{NodeId: nodeId + "fake"})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.GetNode404JSONResponse{}, res)
 		})
 
 		t.Run("Get Publisher Nodes", func(t *testing.T) {
-			res, err := impl.ListNodesForPublisher(ctx, drip.ListNodesForPublisherRequestObject{
+			res, err := withMiddleware(authz, impl.ListNodesForPublisher)(ctx, drip.ListNodesForPublisherRequestObject{
 				PublisherId: publisherId,
 			})
 			require.NoError(t, err, "should not return error")
@@ -402,7 +407,7 @@ func TestRegistry(t *testing.T) {
 			updateIcon := "https://wwww.github.com/update-icon.svg"
 			updateGithubUrl := "https://www.github.com/update-github-url"
 
-			updateNodeResponse, err := impl.UpdateNode(ctx, drip.UpdateNodeRequestObject{
+			updateNodeResponse, err := withMiddleware(authz, impl.UpdateNode)(ctx, drip.UpdateNodeRequestObject{
 				PublisherId: publisherId,
 				NodeId:      *real_node_id,
 				Body: &drip.Node{
@@ -426,7 +431,7 @@ func TestRegistry(t *testing.T) {
 			assert.Equal(t, updateIcon, *updateNodeResponse.(drip.UpdateNode200JSONResponse).Icon)
 			assert.Equal(t, updateGithubUrl, *updateNodeResponse.(drip.UpdateNode200JSONResponse).Repository)
 
-			resUpdated, err := impl.GetNode(ctx, drip.GetNodeRequestObject{NodeId: nodeId})
+			resUpdated, err := withMiddleware(authz, impl.GetNode)(ctx, drip.GetNodeRequestObject{NodeId: nodeId})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.GetNode200JSONResponse{}, resUpdated)
 			res200Updated := resUpdated.(drip.GetNode200JSONResponse)
@@ -451,13 +456,18 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("Update Not Exist Node", func(t *testing.T) {
-			res, err := impl.UpdateNode(ctx, drip.UpdateNodeRequestObject{PublisherId: publisherId, NodeId: nodeId + "fake"})
+			res, err := withMiddleware(authz, impl.UpdateNode)(ctx, drip.UpdateNodeRequestObject{PublisherId: publisherId, NodeId: nodeId + "fake", Body: &drip.Node{}})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.UpdateNode404JSONResponse{}, res)
 		})
 
 		t.Run("Delete Node", func(t *testing.T) {
-			res, err := impl.DeleteNode(ctx, drip.DeleteNodeRequestObject{PublisherId: publisherId, NodeId: nodeId})
+			res, err := withMiddleware(authz, impl.DeleteNode)(ctx, drip.DeleteNodeRequestObject{PublisherId: publisherId, NodeId: nodeId})
+			require.NoError(t, err, "should not return error")
+			assert.IsType(t, drip.DeleteNode204Response{}, res)
+		})
+		t.Run("Delete Not Exist Node", func(t *testing.T) {
+			res, err := withMiddleware(authz, impl.DeleteNode)(ctx, drip.DeleteNodeRequestObject{PublisherId: publisherId, NodeId: nodeId + "fake"})
 			require.NoError(t, err, "should not return error")
 			assert.IsType(t, drip.DeleteNode204Response{}, res)
 		})
@@ -473,7 +483,7 @@ func TestRegistry(t *testing.T) {
 		logo := "test-logo"
 		name := "test-name"
 
-		createPublisherResponse, err := impl.CreatePublisher(ctx, drip.CreatePublisherRequestObject{
+		createPublisherResponse, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{
 			Body: &drip.Publisher{
 				Id:             &publisherId,
 				Description:    &description,
@@ -490,7 +500,7 @@ func TestRegistry(t *testing.T) {
 
 		tokenName := "test-token-name"
 		tokenDescription := "test-token-description"
-		createPersonalAccessTokenResponse, err := impl.CreatePersonalAccessToken(ctx, drip.CreatePersonalAccessTokenRequestObject{
+		createPersonalAccessTokenResponse, err := withMiddleware(authz, impl.CreatePersonalAccessToken)(ctx, drip.CreatePersonalAccessTokenRequestObject{
 			PublisherId: publisherId,
 			Body: &drip.PersonalAccessToken{
 				Name:        &tokenName,
@@ -515,14 +525,14 @@ func TestRegistry(t *testing.T) {
 		var createdNodeVersion drip.NodeVersion
 
 		t.Run("List Node Version Before Create", func(t *testing.T) {
-			resVersions, err := impl.ListNodeVersions(ctx, drip.ListNodeVersionsRequestObject{NodeId: nodeId})
+			resVersions, err := withMiddleware(authz, impl.ListNodeVersions)(ctx, drip.ListNodeVersionsRequestObject{NodeId: nodeId})
 			require.NoError(t, err, "should return error since node version doesn't exists")
 			require.IsType(t, drip.ListNodeVersions200JSONResponse{}, resVersions)
 			assert.Empty(t, resVersions.(drip.ListNodeVersions200JSONResponse), "should not return any node versions")
 		})
 
 		t.Run("Create Node Version with Fake Token", func(t *testing.T) {
-			response, err := impl.PublishNodeVersion(ctx, drip.PublishNodeVersionRequestObject{
+			_, err := withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
 				PublisherId: publisherId,
 				NodeId:      nodeId,
 				Body: &drip.PublishNodeVersionJSONRequestBody{
@@ -543,14 +553,14 @@ func TestRegistry(t *testing.T) {
 					PersonalAccessToken: "faketoken",
 				},
 			})
-			require.NoError(t, err)
-			assert.Equal(t, "Invalid personal access token", response.(drip.PublishNodeVersion400JSONResponse).Message, "should return error message")
+			require.Error(t, err)
+			assert.Equal(t, http.StatusBadRequest, err.(*echo.HTTPError).Code, "should return 400 bad request")
 		})
 
 		t.Run("Create Node Version", func(t *testing.T) {
 			mockStorageService.On("GenerateSignedURL", mock.Anything, mock.Anything).Return("test-url", nil)
 			mockStorageService.On("GetFileUrl", mock.Anything, mock.Anything, mock.Anything).Return("test-url", nil)
-			createNodeVersionResp, err := impl.PublishNodeVersion(ctx, drip.PublishNodeVersionRequestObject{
+			createNodeVersionResp, err := withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
 				PublisherId: publisherId,
 				NodeId:      nodeId,
 				Body: &drip.PublishNodeVersionJSONRequestBody{
@@ -594,23 +604,23 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("Get not exist Node Version ", func(t *testing.T) {
-			res, err := impl.GetNodeVersion(ctx, drip.GetNodeVersionRequestObject{NodeId: nodeId + "fake", VersionId: nodeVersionLiteral})
+			res, err := withMiddleware(authz, impl.GetNodeVersion)(ctx, drip.GetNodeVersionRequestObject{NodeId: nodeId + "fake", VersionId: nodeVersionLiteral})
 			require.NoError(t, err, "should not return error")
 			assert.IsType(t, drip.GetNodeVersion404JSONResponse{}, res)
 		})
 
 		t.Run("Create Node Version of Not Exist Node", func(t *testing.T) {
-			response, err := impl.PublishNodeVersion(ctx, drip.PublishNodeVersionRequestObject{
+			_, err := withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
 				PublisherId: publisherId,
 				NodeId:      nodeId + "fake",
 				Body:        &drip.PublishNodeVersionJSONRequestBody{},
 			})
-			require.NoError(t, err)
-			assert.Equal(t, "Invalid personal access token", response.(drip.PublishNodeVersion400JSONResponse).Message, "should return error message")
+			require.Error(t, err)
+			assert.Equal(t, http.StatusBadRequest, err.(*echo.HTTPError).Code, "should return 400 bad request")
 		})
 
 		t.Run("List Node Versions", func(t *testing.T) {
-			resVersions, err := impl.ListNodeVersions(ctx, drip.ListNodeVersionsRequestObject{NodeId: nodeId})
+			resVersions, err := withMiddleware(authz, impl.ListNodeVersions)(ctx, drip.ListNodeVersionsRequestObject{NodeId: nodeId})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.ListNodeVersions200JSONResponse{}, resVersions, "should return 200")
 			resVersions200 := resVersions.(drip.ListNodeVersions200JSONResponse)
@@ -637,7 +647,7 @@ func TestRegistry(t *testing.T) {
 
 		t.Run("Update Node Version", func(t *testing.T) {
 			updatedChangelog := "test-changelog-2"
-			resUNV, err := impl.UpdateNodeVersion(ctx, drip.UpdateNodeVersionRequestObject{
+			resUNV, err := withMiddleware(authz, impl.UpdateNodeVersion)(ctx, drip.UpdateNodeVersionRequestObject{
 				PublisherId: publisherId,
 				NodeId:      nodeId,
 				VersionId:   *createdNodeVersion.Id,
@@ -649,7 +659,7 @@ func TestRegistry(t *testing.T) {
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.UpdateNodeVersion200JSONResponse{}, resUNV, "should return 200")
 
-			res, err := impl.ListNodeVersions(ctx, drip.ListNodeVersionsRequestObject{NodeId: nodeId})
+			res, err := withMiddleware(authz, impl.ListNodeVersions)(ctx, drip.ListNodeVersionsRequestObject{NodeId: nodeId})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.ListNodeVersions200JSONResponse{}, res, "should return 200")
 			res200 := res.(drip.ListNodeVersions200JSONResponse)
@@ -672,8 +682,8 @@ func TestRegistry(t *testing.T) {
 			createdNodeVersion = res200[0]
 		})
 
-		t.Run("List All Nodes", func(t *testing.T) {
-			resNodes, err := impl.ListAllNodes(ctx, drip.ListAllNodesRequestObject{})
+		t.Run("List Nodes", func(t *testing.T) {
+			resNodes, err := withMiddleware(authz, impl.ListAllNodes)(ctx, drip.ListAllNodesRequestObject{})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.ListAllNodes200JSONResponse{}, resNodes, "should return 200 server response")
 			resNodes200 := resNodes.(drip.ListAllNodes200JSONResponse)
@@ -705,28 +715,28 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("Install Node", func(t *testing.T) {
-			resIns, err := impl.InstallNode(ctx, drip.InstallNodeRequestObject{NodeId: nodeId})
+			resIns, err := withMiddleware(authz, impl.InstallNode)(ctx, drip.InstallNodeRequestObject{NodeId: nodeId})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.InstallNode200JSONResponse{}, resIns, "should return 200")
 
-			resIns, err = impl.InstallNode(ctx, drip.InstallNodeRequestObject{
+			resIns, err = withMiddleware(authz, impl.InstallNode)(ctx, drip.InstallNodeRequestObject{
 				NodeId: nodeId, Params: drip.InstallNodeParams{Version: &nodeVersionLiteral}})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.InstallNode200JSONResponse{}, resIns, "should return 200")
 		})
 
 		t.Run("Install Node Version on not exist node or version", func(t *testing.T) {
-			resIns, err := impl.InstallNode(ctx, drip.InstallNodeRequestObject{NodeId: nodeId + "fake"})
+			resIns, err := withMiddleware(authz, impl.InstallNode)(ctx, drip.InstallNodeRequestObject{NodeId: nodeId + "fake"})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.InstallNode404JSONResponse{}, resIns, "should return 404")
-			resIns, err = impl.InstallNode(ctx, drip.InstallNodeRequestObject{
+			resIns, err = withMiddleware(authz, impl.InstallNode)(ctx, drip.InstallNodeRequestObject{
 				NodeId: nodeId, Params: drip.InstallNodeParams{Version: proto.String(nodeVersionLiteral + "fake")}})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.InstallNode404JSONResponse{}, resIns, "should return 404")
 		})
 
 		t.Run("Get Total Install", func(t *testing.T) {
-			res, err := impl.GetNode(ctx, drip.GetNodeRequestObject{
+			res, err := withMiddleware(authz, impl.GetNode)(ctx, drip.GetNodeRequestObject{
 				NodeId: nodeId,
 			})
 			require.NoError(t, err, "should not return error")
@@ -735,7 +745,7 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("Add review", func(t *testing.T) {
-			res, err := impl.PostNodeReview(ctx, drip.PostNodeReviewRequestObject{
+			res, err := withMiddleware(authz, impl.PostNodeReview)(ctx, drip.PostNodeReviewRequestObject{
 				NodeId: nodeId,
 				Params: drip.PostNodeReviewParams{Star: 5},
 			})
