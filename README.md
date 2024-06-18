@@ -72,7 +72,7 @@ Or manually run:
 
 ### Generate Migration Files
 
-Run this command to generate migration files needed for staging/prod database schema changes: 
+Run this command to generate migration files needed for staging/prod database schema changes:
 
 ```shell
 atlas migrate diff migration \
@@ -100,6 +100,14 @@ https://github.com/deepmap/oapi-codegen/issues/795
 ## TroubleShooting / Common Errors
 
 Here are some common errors and how to resolve them.
+
+### Security Scan
+
+If you are calling the `security-scan` endpoint, you need to add the endpoint url to `docker-compose.yml` and then make sure you have the correct permissions to call that function.
+
+Check the `security-scan` Cloud Function repo for instructions on how to do that with `gcloud`.
+
+For non Comfy-Org contributors, you can use your own hosted function or just avoid touching this part. We keep the security scan code private to avoid exploiters taking advantage of it.
 
 ### Firebase Token Errors
 

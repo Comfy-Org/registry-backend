@@ -21,6 +21,7 @@ func FirebaseAuthMiddleware(entClient *ent.Client) echo.MiddlewareFunc {
 	// Handlers in here should bypass this middleware.
 	var allowlist = map[*regexp.Regexp][]string{
 		regexp.MustCompile(`^/openapi$`):                               {"GET"},
+		regexp.MustCompile(`^/security-scan$`):                         {"GET"},
 		regexp.MustCompile(`^/users/sessions$`):                        {"DELETE"},
 		regexp.MustCompile(`^/vm$`):                                    {"ANY"},
 		regexp.MustCompile(`^/health$`):                                {"GET"},

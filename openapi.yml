@@ -1489,6 +1489,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /security-scan:
+    get:
+      summary: Security Scan
+      operationId: securityScan
+      description: Pull all pending node versions and conduct security scans.
+      
+      responses:
+        '200':
+          description: Scan completed successfully
+        '400':
+          description: Bad request, invalid input data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
     PersonalAccessToken:

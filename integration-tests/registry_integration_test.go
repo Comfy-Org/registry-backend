@@ -48,11 +48,12 @@ func TestRegistry(t *testing.T) {
 	// Initialize the Service
 	mockStorageService := new(gateways.MockStorageService)
 	mockSlackService := new(gateways.MockSlackService)
+	mockDiscordService := new(gateways.MockDiscordService)
 	mockSlackService.
 		On("SendRegistryMessageToSlack", mock.Anything).
 		Return(nil) // Do nothing for all slack messsage calls.
 	impl := implementation.NewStrictServerImplementation(
-		client, &config.Config{}, mockStorageService, mockSlackService)
+		client, &config.Config{}, mockStorageService, mockSlackService, mockDiscordService)
 	authz := drip_authorization.NewAuthorizationManager(client, impl.RegistryService).
 		AuthorizationMiddleware()
 
