@@ -1,9 +1,14 @@
-package drip_services
+package dripservices
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"registry-backend/config"
 	"registry-backend/db"
 	"registry-backend/drip"
 	"registry-backend/ent"
@@ -15,6 +20,7 @@ import (
 	"registry-backend/ent/publisherpermission"
 	"registry-backend/ent/schema"
 	"registry-backend/ent/user"
+	"registry-backend/gateways/discord"
 	gateway "registry-backend/gateways/slack"
 	"registry-backend/gateways/storage"
 	"registry-backend/mapper"
@@ -30,12 +36,16 @@ import (
 type RegistryService struct {
 	storageService storage.StorageService
 	slackService   gateway.SlackService
+	config         *config.Config
+	discordService discord.DiscordService
 }
 
-func NewRegistryService(storageSvc storage.StorageService, slackSvc gateway.SlackService) *RegistryService {
+func NewRegistryService(storageSvc storage.StorageService, slackSvc gateway.SlackService, discordSvc discord.DiscordService, config *config.Config) *RegistryService {
 	return &RegistryService{
 		storageService: storageSvc,
 		slackService:   slackSvc,
+		discordService: discordSvc,
+		config:         config,
 	}
 }
 
@@ -48,11 +58,10 @@ type NodeFilter struct {
 	PublisherID   string
 	Search        string
 	IncludeBanned bool
-
-	// Add more filter fields here
 }
 
 type NodeVersionFilter struct {
+	NodeId string
 	Status []schema.NodeVersionStatus
 }
 
@@ -60,7 +69,6 @@ type NodeData struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	PublisherID string `json:"publisherId"`
-	// Add other fields as necessary
 }
 
 // ListNodesResult is the structure that holds the paginated result of nodes
@@ -355,12 +363,15 @@ type NodeVersionCreation struct {
 	SignedUrl   string
 }
 
-func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Client, nodeID string, filter *NodeVersionFilter) ([]*ent.NodeVersion, error) {
-	log.Ctx(ctx).Info().Msgf("listing node versions: %v", nodeID)
+func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Client, filter *NodeVersionFilter) ([]*ent.NodeVersion, error) {
 	query := client.NodeVersion.Query().
-		Where(nodeversion.NodeIDEQ(nodeID)).
 		WithStorageFile().
 		Order(ent.Desc(nodeversion.FieldCreateTime))
+
+	if filter.NodeId != "" {
+		log.Ctx(ctx).Info().Msgf("listing node versions: %v", filter.NodeId)
+		query.Where(nodeversion.NodeIDEQ(filter.NodeId))
+	}
 
 	if filter.Status != nil {
 		query.Where(nodeversion.StatusIn(filter.Status...))
@@ -664,4 +675,71 @@ func (s *RegistryService) AssertPublisherBanned(ctx context.Context, client *ent
 		return newErrorPermission("node '%s' is currently banned", publisherID)
 	}
 	return nil
+}
+
+func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.Client, nodeVersion *ent.NodeVersion) error {
+	log.Ctx(ctx).Info().Msgf("scanning node %s@%s", nodeVersion.NodeID, nodeVersion.Version)
+
+	if (nodeVersion.Edges.StorageFile == nil) || (nodeVersion.Edges.StorageFile.FileURL == "") {
+		return fmt.Errorf("node version %s@%s does not have a storage file", nodeVersion.NodeID, nodeVersion.Version)
+	}
+
+	issues, err := sendScanRequest(s.config.SecretScannerURL, nodeVersion.Edges.StorageFile.FileURL)
+	if err != nil {
+		return err
+	}
+
+	if issues != "" {
+		log.Ctx(ctx).Info().Msgf("No security issues found in node %s@%s. Updating to active.", nodeVersion.NodeID, nodeVersion.Version)
+		err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusActive).Exec(ctx)
+		if err != nil {
+			log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to active")
+		}
+		s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Node %s@%s has passed automated scans. Changing status to active.", nodeVersion.NodeID, nodeVersion.Version))
+	} else {
+		log.Ctx(ctx).Info().Msgf("Security issues found in node %s@%s. Updating to flagged.", nodeVersion.NodeID, nodeVersion.Version)
+		err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusFlagged).SetStatusReason(issues).Exec(ctx)
+		if err != nil {
+			log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to security issue")
+		}
+		s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Security issues were found in node %s@%s. Status is flagged. Please check it here: https://registry.comfy.org/admin/nodes/%s/versions/%s", nodeVersion.NodeID, nodeVersion.Version, nodeVersion.NodeID, nodeVersion.Version))
+	}
+	return nil
+}
+
+type ScanRequest struct {
+	URL string `json:"url"`
+}
+
+func sendScanRequest(apiURL, fileURL string) (string, error) {
+	requestBody, err := json.Marshal(ScanRequest{URL: fileURL})
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	fmt.Println("Response Status:", resp.Status)
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("failed to scan file: %s", responseBody)
+	}
+
+	return string(responseBody), nil
 }

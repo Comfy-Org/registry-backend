@@ -6,6 +6,7 @@ import (
 	"registry-backend/config"
 	generated "registry-backend/drip"
 	"registry-backend/ent"
+	"registry-backend/gateways/discord"
 	gateway "registry-backend/gateways/slack"
 	"registry-backend/gateways/storage"
 	handler "registry-backend/server/handlers"
@@ -87,6 +88,7 @@ func (s *Server) Start() error {
 	}
 
 	slackService := gateway.NewSlackService(s.Config)
+	discordService := discord.NewDiscordService(s.Config)
 
 	mon, err := monitoring.NewMetricClient(context.Background())
 	if err != nil {
@@ -94,7 +96,7 @@ func (s *Server) Start() error {
 	}
 
 	// Attach implementation of generated oapi strict server.
-	impl := implementation.NewStrictServerImplementation(s.Client, s.Config, storageService, slackService)
+	impl := implementation.NewStrictServerImplementation(s.Client, s.Config, storageService, slackService, discordService)
 
 	// Define middlewares in the order of operations
 	authorizationManager := drip_authorization.NewAuthorizationManager(s.Client, impl.RegistryService)

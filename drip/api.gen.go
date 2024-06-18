@@ -538,6 +538,9 @@ type ServerInterface interface {
 	// Delete a specific personal access token
 	// (DELETE /publishers/{publisherId}/tokens/{tokenId})
 	DeletePersonalAccessToken(ctx echo.Context, publisherId string, tokenId string) error
+	// Security Scan
+	// (GET /security-scan)
+	SecurityScan(ctx echo.Context) error
 	// Receive artifacts (output files) from the ComfyUI GitHub Action
 	// (POST /upload-artifact)
 	PostUploadArtifact(ctx echo.Context) error
@@ -1258,6 +1261,15 @@ func (w *ServerInterfaceWrapper) DeletePersonalAccessToken(ctx echo.Context) err
 	return err
 }
 
+// SecurityScan converts echo context to params.
+func (w *ServerInterfaceWrapper) SecurityScan(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.SecurityScan(ctx)
+	return err
+}
+
 // PostUploadArtifact converts echo context to params.
 func (w *ServerInterfaceWrapper) PostUploadArtifact(ctx echo.Context) error {
 	var err error
@@ -1345,6 +1357,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/publishers/:publisherId/tokens", wrapper.ListPersonalAccessTokens)
 	router.POST(baseURL+"/publishers/:publisherId/tokens", wrapper.CreatePersonalAccessToken)
 	router.DELETE(baseURL+"/publishers/:publisherId/tokens/:tokenId", wrapper.DeletePersonalAccessToken)
+	router.GET(baseURL+"/security-scan", wrapper.SecurityScan)
 	router.POST(baseURL+"/upload-artifact", wrapper.PostUploadArtifact)
 	router.GET(baseURL+"/users", wrapper.GetUser)
 	router.GET(baseURL+"/users/publishers/", wrapper.ListPublishersForUser)
@@ -2724,6 +2737,56 @@ func (response DeletePersonalAccessToken500JSONResponse) VisitDeletePersonalAcce
 	return json.NewEncoder(w).Encode(response)
 }
 
+type SecurityScanRequestObject struct {
+}
+
+type SecurityScanResponseObject interface {
+	VisitSecurityScanResponse(w http.ResponseWriter) error
+}
+
+type SecurityScan200Response struct {
+}
+
+func (response SecurityScan200Response) VisitSecurityScanResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type SecurityScan400JSONResponse ErrorResponse
+
+func (response SecurityScan400JSONResponse) VisitSecurityScanResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SecurityScan401Response struct {
+}
+
+func (response SecurityScan401Response) VisitSecurityScanResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type SecurityScan403JSONResponse ErrorResponse
+
+func (response SecurityScan403JSONResponse) VisitSecurityScanResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SecurityScan500JSONResponse ErrorResponse
+
+func (response SecurityScan500JSONResponse) VisitSecurityScanResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type PostUploadArtifactRequestObject struct {
 	Body *PostUploadArtifactJSONRequestBody
 }
@@ -2917,6 +2980,9 @@ type StrictServerInterface interface {
 	// Delete a specific personal access token
 	// (DELETE /publishers/{publisherId}/tokens/{tokenId})
 	DeletePersonalAccessToken(ctx context.Context, request DeletePersonalAccessTokenRequestObject) (DeletePersonalAccessTokenResponseObject, error)
+	// Security Scan
+	// (GET /security-scan)
+	SecurityScan(ctx context.Context, request SecurityScanRequestObject) (SecurityScanResponseObject, error)
 	// Receive artifacts (output files) from the ComfyUI GitHub Action
 	// (POST /upload-artifact)
 	PostUploadArtifact(ctx context.Context, request PostUploadArtifactRequestObject) (PostUploadArtifactResponseObject, error)
@@ -3749,6 +3815,29 @@ func (sh *strictHandler) DeletePersonalAccessToken(ctx echo.Context, publisherId
 	return nil
 }
 
+// SecurityScan operation middleware
+func (sh *strictHandler) SecurityScan(ctx echo.Context) error {
+	var request SecurityScanRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.SecurityScan(ctx.Request().Context(), request.(SecurityScanRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SecurityScan")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(SecurityScanResponseObject); ok {
+		return validResponse.VisitSecurityScanResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // PostUploadArtifact operation middleware
 func (sh *strictHandler) PostUploadArtifact(ctx echo.Context) error {
 	var request PostUploadArtifactRequestObject
@@ -3893,16 +3982,18 @@ var swaggerSpec = []string{
 	"aje76PmvJ7qPEzoMPsJzuLv5cHfz4e7mRnAxDG1qdD621c6dr2vo3Ce+stM5sIeIyHcXEdE+4oqzjs3X",
 	"0cROs3G/I5WBN9/WzD8Kvhz2fd0kZce8v3qjeuYzuKBW2kJyptkGvcUUz2ChxrvyVGiA6/YxXT0kPI8d",
 	"Tmt50k/fAQ636bLInAq/6LdZHMys8B7lZB3iX5scVA1xTLec99Cqo6/6334n6bYMDGHf19L78EErM4Hf",
-	"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",
+	"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",
+	"u1B48JQAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -25,6 +25,7 @@ func main() {
 		DripEnv:                     os.Getenv("DRIP_ENV"),
 		SlackRegistryChannelWebhook: os.Getenv("SLACK_REGISTRY_CHANNEL_WEBHOOK"),
 		JWTSecret:                   os.Getenv("JWT_SECRET"),
+		SecretScannerURL:            os.Getenv("SECRET_SCANNER_URL"),
 	}
 
 	var dsn string

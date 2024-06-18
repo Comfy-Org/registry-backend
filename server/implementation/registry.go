@@ -5,6 +5,7 @@ import (
 	"registry-backend/drip"
 	"registry-backend/ent"
 	"registry-backend/ent/publisher"
+	"registry-backend/ent/schema"
 	"registry-backend/mapper"
 	drip_services "registry-backend/services/registry"
 
@@ -434,7 +435,9 @@ func (s *DripStrictServerImplementation) ListNodeVersions(
 
 	log.Ctx(ctx).Info().Msgf("ListNodeVersions request received for node ID: %s", request.NodeId)
 
-	nodeVersions, err := s.RegistryService.ListNodeVersions(ctx, s.Client, request.NodeId, &drip_services.NodeVersionFilter{})
+	nodeVersions, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &drip_services.NodeVersionFilter{
+		NodeId: request.NodeId,
+	})
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to list node versions for node %s w/ err: %v", request.NodeId, err)
 		return drip.ListNodeVersions500JSONResponse{Message: "Failed to list node versions", Error: err.Error()}, err
@@ -886,4 +889,30 @@ func (s *DripStrictServerImplementation) AdminUpdateNodeVersion(
 	return drip.AdminUpdateNodeVersion200JSONResponse{
 		Status: request.Body.Status,
 	}, nil
+}
+
+func (s *DripStrictServerImplementation) SecurityScan(
+	ctx context.Context, request drip.SecurityScanRequestObject) (drip.SecurityScanResponseObject, error) {
+	nodeVersions, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &drip_services.NodeVersionFilter{
+		Status: []schema.NodeVersionStatus{schema.NodeVersionStatusPending},
+	})
+
+	log.Ctx(ctx).Info().Msgf("Found %d node versions to scan", len(nodeVersions))
+
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to list node versions w/ err: %v", err)
+		return drip.SecurityScan500JSONResponse{}, err
+	}
+
+	for _, nodeVersion := range nodeVersions {
+		err := s.RegistryService.PerformSecurityCheck(ctx, s.Client, nodeVersion)
+		if err != nil {
+			log.Ctx(ctx).Error().Msgf("Failed to perform security scan w/ err: %v", err)
+			return drip.SecurityScan500JSONResponse{
+				Message: "Failed to perform security scan",
+				Error:   err.Error(),
+			}, nil
+		}
+	}
+	return drip.SecurityScan200Response{}, nil
 }

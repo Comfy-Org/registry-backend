@@ -67,6 +67,7 @@ const (
 	NodeVersionStatusDeleted NodeVersionStatus = "deleted"
 	NodeVersionStatusBanned  NodeVersionStatus = "banned"
 	NodeVersionStatusPending NodeVersionStatus = "pending"
+	NodeVersionStatusFlagged NodeVersionStatus = "flagged"
 )
 
 func (NodeVersionStatus) Values() (types []string) {
@@ -75,5 +76,6 @@ func (NodeVersionStatus) Values() (types []string) {
 		string(NodeVersionStatusBanned),
 		string(NodeVersionStatusDeleted),
 		string(NodeVersionStatusPending),
+		string(NodeVersionStatusFlagged),
 	}
 }
