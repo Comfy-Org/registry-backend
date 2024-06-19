@@ -1439,7 +1439,7 @@ paths:
       parameters:
         - in: query
           name: nodeId
-          required: true
+          required: false
           schema:
             type: string
         - in: query

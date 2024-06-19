@@ -426,7 +426,7 @@ type PostUploadArtifactJSONBody struct {
 
 // ListAllNodeVersionsParams defines parameters for ListAllNodeVersions.
 type ListAllNodeVersionsParams struct {
-	NodeId   string               `form:"nodeId" json:"nodeId"`
+	NodeId   *string              `form:"nodeId,omitempty" json:"nodeId,omitempty"`
 	Statuses *[]NodeVersionStatus `form:"statuses,omitempty" json:"statuses,omitempty"`
 
 	// Page The page number to retrieve.
@@ -1334,9 +1334,9 @@ func (w *ServerInterfaceWrapper) ListAllNodeVersions(ctx echo.Context) error {
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListAllNodeVersionsParams
-	// ------------- Required query parameter "nodeId" -------------
+	// ------------- Optional query parameter "nodeId" -------------
 
-	err = runtime.BindQueryParameter("form", true, true, "nodeId", ctx.QueryParams(), &params.NodeId)
+	err = runtime.BindQueryParameter("form", true, false, "nodeId", ctx.QueryParams(), &params.NodeId)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter nodeId: %s", err))
 	}
@@ -4139,9 +4139,9 @@ var swaggerSpec = []string{
 	"aCv4MZhN2WaYbmY0E0QyvkT2lZDmhzldc/lblk1IzLsoX5c/IN24zFk9ccpVD9pofsCHXsmCLIsF0vQ1",
 	"iGZZPtbfVxGlyvkNNBlUMLc+9sraecx3vYUUnlXJ4KHfPQxZP0gUcYiB3ICJGXHirvr+esfT/rx8G3WD",
 	"HE16BEXnAj3xme8pmnK2MAnSrFh5Q+Qv+QSZdFdWXouud9regNQJnB/xWMxmKm8s9rt/rnsZvZkO4fX6",
-	"h8hvQAYeD9TSDKepe95m6C2eb8L2fPDuNeMPsayHd+92/d27yilDLroPGHo94muToK14x7d2VXlfHvL9",
-	"LnMwPuyJ42aJdorh98wdVPoRioVBriYR6PnR0XDThD6eq2KLiX2K9PTigR6I7qFe7OyT0bv7dnOVQAzM",
-	"CrYAm7tUDFtCE7RGoJo3mJnzNDqO5lJmyiLBGRlqy33I+Cy6u777bwAAAP//MgWXJNOaAAA=",
+	"h8hvQAYeD9TSDKepe95m6C2eb8L2fPDuNeMPsayHd+92/d27yilDLroPGHo94muToK14x7d2Vbk42N+x",
+	"h3u/y5yLD3vCuFlinWL4PXMFlX6DYmGQq0kEen50NNw0gY/nmthiIp8iHb14oAehe6gTO/tE9O6+1Vwl",
+	"EAOrgi3A5ioVw5ZQBK0BqOYNRuY8jY6juZSZskBwRobaUh8yPovuru/+GwAA//9SCQOEw5oAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
