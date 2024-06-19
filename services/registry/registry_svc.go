@@ -393,16 +393,20 @@ func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Clie
 	}
 	total, err := query.Count(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to count nodes: %w", err)
+		return nil, fmt.Errorf("failed to count node versions: %w", err)
 	}
 	versions, err := query.All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list node versions: %w", err)
 	}
 
-	totalPages := total / filter.PageSize
-	if total%filter.PageSize != 0 {
-		totalPages += 1
+	totalPages := 0
+	if total > 0 && filter.PageSize > 0 {
+		totalPages = total / filter.PageSize
+
+		if total%filter.PageSize != 0 {
+			totalPages += 1
+		}
 	}
 	return &ListNodeVersionsResult{
 		Total:        total,
