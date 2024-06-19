@@ -109,6 +109,20 @@ func DbNodeVersionStatusToApiNodeVersionStatus(status schema.NodeVersionStatus) 
 	return &nodeVersionStatus
 }
 
+func ApiNodeVersionStatusesToDbNodeVersionStatuses(status *[]drip.NodeVersionStatus) []schema.NodeVersionStatus {
+	var nodeVersionStatus []schema.NodeVersionStatus
+
+	if status == nil {
+		return nodeVersionStatus
+	}
+
+	for _, s := range *status {
+		nodeVersionStatus = append(nodeVersionStatus, ApiNodeVersionStatusToDbNodeVersionStatus(s))
+	}
+
+	return nodeVersionStatus
+}
+
 func ApiNodeVersionStatusToDbNodeVersionStatus(status drip.NodeVersionStatus) schema.NodeVersionStatus {
 	var nodeVersionStatus schema.NodeVersionStatus
 

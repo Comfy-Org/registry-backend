@@ -373,7 +373,7 @@ func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Clie
 		query.Where(nodeversion.NodeIDEQ(filter.NodeId))
 	}
 
-	if filter.Status != nil {
+	if filter.Status != nil && len(filter.Status) > 0 {
 		query.Where(nodeversion.StatusIn(filter.Status...))
 	}
 

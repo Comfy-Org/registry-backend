@@ -1359,6 +1359,13 @@ paths:
           required: true
           schema:
             type: string
+        - in: query
+          name: statuses
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/NodeVersionStatus'
       responses:
         '200':
           description: List of all node versions

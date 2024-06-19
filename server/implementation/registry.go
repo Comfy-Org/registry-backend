@@ -432,11 +432,13 @@ func (s *DripStrictServerImplementation) UpdateNode(
 
 func (s *DripStrictServerImplementation) ListNodeVersions(
 	ctx context.Context, request drip.ListNodeVersionsRequestObject) (drip.ListNodeVersionsResponseObject, error) {
-
 	log.Ctx(ctx).Info().Msgf("ListNodeVersions request received for node ID: %s", request.NodeId)
+
+	apiStatus := mapper.ApiNodeVersionStatusesToDbNodeVersionStatuses(request.Params.Statuses)
 
 	nodeVersions, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &drip_services.NodeVersionFilter{
 		NodeId: request.NodeId,
+		Status: apiStatus,
 	})
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to list node versions for node %s w/ err: %v", request.NodeId, err)
