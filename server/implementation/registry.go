@@ -436,7 +436,7 @@ func (s *DripStrictServerImplementation) ListNodeVersions(
 
 	apiStatus := mapper.ApiNodeVersionStatusesToDbNodeVersionStatuses(request.Params.Statuses)
 
-	nodeVersions, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &drip_services.NodeVersionFilter{
+	nodeVersionsResult, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &drip_services.NodeVersionFilter{
 		NodeId: request.NodeId,
 		Status: apiStatus,
 	})
@@ -444,7 +444,7 @@ func (s *DripStrictServerImplementation) ListNodeVersions(
 		log.Ctx(ctx).Error().Msgf("Failed to list node versions for node %s w/ err: %v", request.NodeId, err)
 		return drip.ListNodeVersions500JSONResponse{Message: "Failed to list node versions", Error: err.Error()}, err
 	}
-
+	nodeVersions := nodeVersionsResult.NodeVersions
 	apiNodeVersions := make([]drip.NodeVersion, 0, len(nodeVersions))
 	for _, dbNodeVersion := range nodeVersions {
 		apiNodeVersions = append(apiNodeVersions, *mapper.DbNodeVersionToApiNodeVersion(dbNodeVersion))
@@ -895,9 +895,10 @@ func (s *DripStrictServerImplementation) AdminUpdateNodeVersion(
 
 func (s *DripStrictServerImplementation) SecurityScan(
 	ctx context.Context, request drip.SecurityScanRequestObject) (drip.SecurityScanResponseObject, error) {
-	nodeVersions, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &drip_services.NodeVersionFilter{
+	nodeVersionsResult, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &drip_services.NodeVersionFilter{
 		Status: []schema.NodeVersionStatus{schema.NodeVersionStatusPending},
 	})
+	nodeVersions := nodeVersionsResult.NodeVersions
 
 	log.Ctx(ctx).Info().Msgf("Found %d node versions to scan", len(nodeVersions))
 
@@ -917,4 +918,57 @@ func (s *DripStrictServerImplementation) SecurityScan(
 		}
 	}
 	return drip.SecurityScan200Response{}, nil
+}
+
+func (s *DripStrictServerImplementation) ListAllNodeVersions(
+	ctx context.Context, request drip.ListAllNodeVersionsRequestObject) (drip.ListAllNodeVersionsResponseObject, error) {
+	log.Ctx(ctx).Info().Msg("ListAllNodeVersions request received")
+
+	page := 1
+	if request.Params.Page != nil {
+		page = *request.Params.Page
+	}
+	pageSize := 10
+	if request.Params.PageSize != nil {
+		pageSize = *request.Params.PageSize
+	}
+	f := &drip_services.NodeVersionFilter{
+		Page:     page,
+		PageSize: pageSize,
+	}
+	if request.Params.Statuses != nil {
+		f.Status = mapper.ApiNodeVersionStatusesToDbNodeVersionStatuses(request.Params.Statuses)
+	}
+
+	// List nodes from the registry service
+	nodeVersionResults, err := s.RegistryService.ListNodeVersions(ctx, s.Client, f)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to list node versions w/ err: %v", err)
+		return drip.ListAllNodeVersions500JSONResponse{Message: "Failed to list node versions", Error: err.Error()}, nil
+	}
+
+	if len(nodeVersionResults.NodeVersions) == 0 {
+		log.Ctx(ctx).Info().Msg("No node versions found")
+		return drip.ListAllNodeVersions200JSONResponse{
+			Versions:   &[]drip.NodeVersion{},
+			Total:      &nodeVersionResults.Total,
+			Page:       &nodeVersionResults.Page,
+			PageSize:   &nodeVersionResults.Limit,
+			TotalPages: &nodeVersionResults.TotalPages,
+		}, nil
+	}
+
+	apiNodeVersions := make([]drip.NodeVersion, 0, len(nodeVersionResults.NodeVersions))
+	for _, dbNodeVersion := range nodeVersionResults.NodeVersions {
+		apiNodeVersions = append(apiNodeVersions, *mapper.DbNodeVersionToApiNodeVersion(dbNodeVersion))
+	}
+
+	log.Ctx(ctx).Info().Msgf("Found %d node versions", len(apiNodeVersions))
+	return drip.ListAllNodeVersions200JSONResponse{
+		Versions:   &apiNodeVersions,
+		Total:      &nodeVersionResults.Total,
+		Page:       &nodeVersionResults.Page,
+		PageSize:   &nodeVersionResults.Limit,
+		TotalPages: &nodeVersionResults.TotalPages,
+	}, nil
 }

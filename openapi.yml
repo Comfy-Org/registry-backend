@@ -1430,6 +1430,77 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /versions:
+    get:
+      summary: List all node versions given some filters.
+      operationId: listAllNodeVersions
+      tags:
+        - Versions
+      parameters:
+        - in: query
+          name: nodeId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: statuses
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/NodeVersionStatus'
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+          description: The page number to retrieve.
+        - in: query
+          name: pageSize
+          required: false
+          schema:
+            type: integer
+            default: 10
+          description: The number of items to include per page.
+      responses:
+        '200':
+          description: List of all node versions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: Total number of node versions available
+                  versions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NodeVersion'
+                  page:
+                    type: integer
+                    description: Current page number
+                  pageSize:
+                    type: integer
+                    description: Maximum number of node versions per page
+                  totalPages:
+                    type: integer
+                    description: Total number of pages available
+
+        '403':
+          description: Node banned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /admin/nodes/{nodeId}/versions/{versionNumber}:
     put:
       summary: Admin Update Node Version Status
