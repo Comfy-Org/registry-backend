@@ -929,7 +929,7 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 		page = *request.Params.Page
 	}
 	pageSize := 10
-	if request.Params.PageSize != nil {
+	if request.Params.PageSize != nil && *request.Params.PageSize < 100 {
 		pageSize = *request.Params.PageSize
 	}
 	f := &drip_services.NodeVersionFilter{
