@@ -61,8 +61,10 @@ type NodeFilter struct {
 }
 
 type NodeVersionFilter struct {
-	NodeId string
-	Status []schema.NodeVersionStatus
+	NodeId   string
+	Status   []schema.NodeVersionStatus
+	PageSize int
+	Page     int
 }
 
 type NodeData struct {
@@ -78,6 +80,14 @@ type ListNodesResult struct {
 	Page       int         `json:"page"`
 	Limit      int         `json:"limit"`
 	TotalPages int         `json:"totalPages"`
+}
+
+type ListNodeVersionsResult struct {
+	Total        int                `json:"total"`
+	NodeVersions []*ent.NodeVersion `json:"nodes"`
+	Page         int                `json:"page"`
+	Limit        int                `json:"limit"`
+	TotalPages   int                `json:"totalPages"`
 }
 
 // ListNodes retrieves a paginated list of nodes with optional filtering.
@@ -363,7 +373,7 @@ type NodeVersionCreation struct {
 	SignedUrl   string
 }
 
-func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Client, filter *NodeVersionFilter) ([]*ent.NodeVersion, error) {
+func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Client, filter *NodeVersionFilter) (*ListNodeVersionsResult, error) {
 	query := client.NodeVersion.Query().
 		WithStorageFile().
 		Order(ent.Desc(nodeversion.FieldCreateTime))
@@ -373,15 +383,38 @@ func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Clie
 		query.Where(nodeversion.NodeIDEQ(filter.NodeId))
 	}
 
-	if filter.Status != nil {
+	if filter.Status != nil && len(filter.Status) > 0 {
 		query.Where(nodeversion.StatusIn(filter.Status...))
 	}
 
+	if filter.Page > 0 && filter.PageSize > 0 {
+		query.Offset((filter.Page - 1) * filter.PageSize)
+		query.Limit(filter.PageSize)
+	}
+	total, err := query.Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count node versions: %w", err)
+	}
 	versions, err := query.All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list node versions: %w", err)
 	}
-	return versions, nil
+
+	totalPages := 0
+	if total > 0 && filter.PageSize > 0 {
+		totalPages = total / filter.PageSize
+
+		if total%filter.PageSize != 0 {
+			totalPages += 1
+		}
+	}
+	return &ListNodeVersionsResult{
+		Total:        total,
+		NodeVersions: versions,
+		Page:         filter.Page,
+		Limit:        filter.PageSize,
+		TotalPages:   totalPages,
+	}, nil
 }
 
 func (s *RegistryService) AddNodeReview(ctx context.Context, client *ent.Client, nodeId, userID string, star int) (nv *ent.Node, err error) {
