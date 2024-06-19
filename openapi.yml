@@ -1900,6 +1900,7 @@ components:
         - NodeVersionStatusDeleted
         - NodeVersionStatusBanned
         - NodeVersionStatusPending
+        - NodeVersionStatusFlagged
     PublisherStatus:
       type: string
       enum:
