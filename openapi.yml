@@ -1483,7 +1483,7 @@ paths:
                     description: Current page number
                   pageSize:
                     type: integer
-                    description: Maximum number of node versions per page
+                    description: Maximum number of node versions per page. Maximum is 100.
                   totalPages:
                     type: integer
                     description: Total number of pages available

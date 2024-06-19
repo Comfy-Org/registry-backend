@@ -2970,7 +2970,7 @@ type ListAllNodeVersions200JSONResponse struct {
 	// Page Current page number
 	Page *int `json:"page,omitempty"`
 
-	// PageSize Maximum number of node versions per page
+	// PageSize Maximum number of node versions per page. Maximum is 100.
 	PageSize *int `json:"pageSize,omitempty"`
 
 	// Total Total number of node versions available
@@ -4140,8 +4140,8 @@ var swaggerSpec = []string{
 	"iGZZPtbfVxGlyvkNNBlUMLc+9sraecx3vYUUnlXJ4KHfPQxZP0gUcYiB3ICJGXHirvr+esfT/rx8G3WD",
 	"HE16BEXnAj3xme8pmnK2MAnSrFh5Q+Qv+QSZdFdWXouud9regNQJnB/xWMxmKm8s9rt/rnsZvZkO4fX6",
 	"h8hvQAYeD9TSDKepe95m6C2eb8L2fPDuNeMPsayHd+92/d27yilDLroPGHo94muToK14x7d2VXlfHvL9",
-	"LnMwPuyJ42aJdorh98wdVPoROnMIrZG/x/NMbDGPT5GNXjzQe9A9tImdfSF6d59qrhKIQVXBFmBTlYph",
-	"SySCVgBU8wYic55Gx9FcykwZIDgjQ22oDxmfRXfXd/8NAAD//zdNoaLCmgAA",
+	"LnMwPuyJ42aJdorh98wdVPoRioVBriYR6PnR0XDThD6eq2KLiX2K9PTigR6I7qFe7OyT0bv7dnOVQAzM",
+	"CrYAm7tUDFtCE7RGoJo3mJnzNDqO5lJmyiLBGRlqy33I+Cy6u777bwAAAP//MgWXJNOaAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
