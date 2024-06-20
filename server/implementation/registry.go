@@ -244,6 +244,7 @@ func (s *DripStrictServerImplementation) ListNodesForPublisher(
 
 func (s *DripStrictServerImplementation) ListAllNodes(
 	ctx context.Context, request drip.ListAllNodesRequestObject) (drip.ListAllNodesResponseObject, error) {
+
 	log.Ctx(ctx).Info().Msg("ListAllNodes request received")
 
 	// Set default values for pagination parameters
@@ -255,18 +256,21 @@ func (s *DripStrictServerImplementation) ListAllNodes(
 	if request.Params.Limit != nil {
 		limit = *request.Params.Limit
 	}
-	f := &drip_services.NodeFilter{}
+
+	// Initialize the node filter
+	filter := &drip_services.NodeFilter{}
 	if request.Params.IncludeBanned != nil {
-		f.IncludeBanned = *request.Params.IncludeBanned
+		filter.IncludeBanned = *request.Params.IncludeBanned
 	}
 
 	// List nodes from the registry service
-	nodeResults, err := s.RegistryService.ListNodes(ctx, s.Client, page, limit, f)
+	nodeResults, err := s.RegistryService.ListNodes(ctx, s.Client, page, limit, filter)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to list nodes w/ err: %v", err)
 		return drip.ListAllNodes500JSONResponse{Message: "Failed to list nodes", Error: err.Error()}, err
 	}
 
+	// Handle case when no nodes are found
 	if len(nodeResults.Nodes) == 0 {
 		log.Ctx(ctx).Info().Msg("No nodes found")
 		return drip.ListAllNodes200JSONResponse{
@@ -278,9 +282,12 @@ func (s *DripStrictServerImplementation) ListAllNodes(
 		}, nil
 	}
 
+	// Convert database nodes to API nodes
 	apiNodes := make([]drip.Node, 0, len(nodeResults.Nodes))
 	for _, dbNode := range nodeResults.Nodes {
 		apiNode := mapper.DbNodeToApiNode(dbNode)
+
+		// Fetch the latest version if available
 		if dbNode.Edges.Versions != nil && len(dbNode.Edges.Versions) > 0 {
 			latestVersion, err := s.RegistryService.GetLatestNodeVersion(ctx, s.Client, dbNode.ID)
 			if err == nil {
@@ -289,6 +296,8 @@ func (s *DripStrictServerImplementation) ListAllNodes(
 				log.Ctx(ctx).Error().Msgf("Failed to get latest version for node %s w/ err: %v", dbNode.ID, err)
 			}
 		}
+
+		// Map publisher information
 		apiNode.Publisher = mapper.DbPublisherToApiPublisher(dbNode.Edges.Publisher, false)
 		apiNodes = append(apiNodes, *apiNode)
 	}

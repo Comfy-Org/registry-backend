@@ -131,7 +131,7 @@ func withMiddleware[R any, S any](mw drip.StrictMiddlewareFunc, h func(ctx conte
 		return h(ctx.Request().Context(), request.(R))
 	}
 
-	nameA := strings.Split((runtime.FuncForPC(reflect.ValueOf(h).Pointer()).Name()), ".")
+	nameA := strings.Split(runtime.FuncForPC(reflect.ValueOf(h).Pointer()).Name(), ".")
 	nameA = strings.Split(nameA[len(nameA)-1], "-")
 	opname := nameA[0]
 
