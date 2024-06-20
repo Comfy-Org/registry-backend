@@ -92,6 +92,7 @@ type ListNodeVersionsResult struct {
 
 // ListNodes retrieves a paginated list of nodes with optional filtering.
 func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, page, limit int, filter *NodeFilter) (*ListNodesResult, error) {
+	// Ensure valid pagination parameters
 	if page < 1 {
 		page = 1
 	}
@@ -99,19 +100,25 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 		limit = 10
 	}
 
-	query := client.Node.Query().WithPublisher().WithVersions(
-		func(q *ent.NodeVersionQuery) {
+	// Initialize the query with relationships
+	query := client.Node.Query().
+		WithPublisher().
+		WithVersions(func(q *ent.NodeVersionQuery) {
 			q.Order(ent.Desc(nodeversion.FieldCreateTime))
-		},
-	)
+		})
+
+	// Apply filters if provided
 	if filter != nil {
-		var p []predicate.Node
+		var predicates []predicate.Node
+
+		// Filter by PublisherID
 		if filter.PublisherID != "" {
-			p = append(p, node.PublisherID(filter.PublisherID))
+			predicates = append(predicates, node.PublisherID(filter.PublisherID))
 		}
 
+		// Filter by search term across multiple fields
 		if filter.Search != "" {
-			p = append(p, node.Or(
+			predicates = append(predicates, node.Or(
 				node.IDContainsFold(filter.Search),
 				node.NameContainsFold(filter.Search),
 				node.DescriptionContainsFold(filter.Search),
@@ -119,22 +126,29 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 			))
 		}
 
+		// Exclude banned nodes if not requested
 		if !filter.IncludeBanned {
-			p = append(p, node.StatusNEQ(schema.NodeStatusBanned))
+			predicates = append(predicates, node.StatusNEQ(schema.NodeStatusBanned))
 		}
 
-		if len(p) > 1 {
-			query.Where(node.And(p...))
-		} else {
-			query.Where(p...)
+		// Apply predicates to the query
+		if len(predicates) > 1 {
+			query.Where(node.And(predicates...))
+		} else if len(predicates) == 1 {
+			query.Where(predicates[0])
 		}
 	}
+
+	// Calculate pagination offset
 	offset := (page - 1) * limit
+
+	// Count total nodes
 	total, err := query.Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count nodes: %w", err)
 	}
 
+	// Fetch nodes with pagination
 	nodes, err := query.
 		Offset(offset).
 		Limit(limit).
@@ -143,11 +157,13 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 		return nil, fmt.Errorf("failed to list nodes: %w", err)
 	}
 
+	// Calculate total pages
 	totalPages := total / limit
 	if total%limit != 0 {
-		totalPages += 1
+		totalPages++
 	}
 
+	// Return the result
 	return &ListNodesResult{
 		Total:      total,
 		Nodes:      nodes,
@@ -470,7 +486,7 @@ func (s *RegistryService) UpdateNodeVersion(ctx context.Context, client *ent.Cli
 }
 
 func (s *RegistryService) GetLatestNodeVersion(ctx context.Context, client *ent.Client, nodeId string) (*ent.NodeVersion, error) {
-	log.Ctx(ctx).Info().Msgf("getting latest version of node: %v", nodeId)
+	log.Ctx(ctx).Info().Msgf("Getting latest version of node: %v", nodeId)
 	nodeVersion, err := client.NodeVersion.
 		Query().
 		Where(nodeversion.NodeIDEQ(nodeId)).
@@ -481,11 +497,15 @@ func (s *RegistryService) GetLatestNodeVersion(ctx context.Context, client *ent.
 
 	if err != nil {
 		if ent.IsNotFound(err) {
-
+			log.Ctx(ctx).Info().Msgf("No versions found for node %v", nodeId)
 			return nil, nil
 		}
+
+		log.Ctx(ctx).Error().Msgf("Error fetching latest version for node %v: %v", nodeId, err)
 		return nil, err
 	}
+
+	log.Ctx(ctx).Info().Msgf("Found latest version for node %v: %v", nodeId, nodeVersion)
 	return nodeVersion, nil
 }
 
