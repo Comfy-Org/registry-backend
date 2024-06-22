@@ -905,7 +905,9 @@ func (s *DripStrictServerImplementation) AdminUpdateNodeVersion(
 func (s *DripStrictServerImplementation) SecurityScan(
 	ctx context.Context, request drip.SecurityScanRequestObject) (drip.SecurityScanResponseObject, error) {
 	nodeVersionsResult, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &drip_services.NodeVersionFilter{
-		Status: []schema.NodeVersionStatus{schema.NodeVersionStatusPending},
+		Status:   []schema.NodeVersionStatus{schema.NodeVersionStatusPending},
+		PageSize: 5,
+		Page:     1,
 	})
 	nodeVersions := nodeVersionsResult.NodeVersions
 
