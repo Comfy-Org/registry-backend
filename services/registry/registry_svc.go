@@ -751,14 +751,20 @@ func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to active")
 		}
-		s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Node %s@%s has passed automated scans. Changing status to active.", nodeVersion.NodeID, nodeVersion.Version))
+		err = s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Node %s@%s has passed automated scans. Changing status to active.", nodeVersion.NodeID, nodeVersion.Version))
+		if err != nil {
+			log.Ctx(ctx).Error().Err(err).Msgf("failed to send message to discord")
+		}
 	} else {
 		log.Ctx(ctx).Info().Msgf("Security issues found in node %s@%s. Updating to flagged.", nodeVersion.NodeID, nodeVersion.Version)
 		err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusFlagged).SetStatusReason(issues).Exec(ctx)
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to security issue")
 		}
-		s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Security issues were found in node %s@%s. Status is flagged. Please check it here: https://registry.comfy.org/admin/nodes/%s/versions/%s", nodeVersion.NodeID, nodeVersion.Version, nodeVersion.NodeID, nodeVersion.Version))
+		err = s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Security issues were found in node %s@%s. Status is flagged. Please check it here: https://registry.comfy.org/admin/nodes/%s/versions/%s", nodeVersion.NodeID, nodeVersion.Version, nodeVersion.NodeID, nodeVersion.Version))
+		if err != nil {
+			log.Ctx(ctx).Error().Err(err).Msgf("failed to send message to discord")
+		}
 	}
 	return nil
 }
