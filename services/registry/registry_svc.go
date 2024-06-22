@@ -367,7 +367,9 @@ func (s *RegistryService) CreateNodeVersion(
 			return nil, fmt.Errorf("failed to create node version: %w", err)
 		}
 
-		slackErr := s.slackService.SendRegistryMessageToSlack(fmt.Sprintf("Version %s of node %s was published successfully. Publisher: %s. https://comfyregistry.org/nodes/%s", createdNodeVersion.Version, createdNodeVersion.NodeID, publisherID, nodeID))
+		message := fmt.Sprintf("Version %s of node %s was published successfully. Publisher: %s. https://registry.comfy.org/nodes/%s", createdNodeVersion.Version, createdNodeVersion.NodeID, publisherID, nodeID)
+		slackErr := s.slackService.SendRegistryMessageToSlack(message)
+		s.discordService.SendSecurityCouncilMessage(message)
 		if slackErr != nil {
 			log.Ctx(ctx).Error().Msgf("Failed to send message to Slack w/ err: %v", slackErr)
 			drip_metric.IncrementCustomCounterMetric(ctx, drip_metric.CustomCounterIncrement{
