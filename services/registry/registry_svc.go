@@ -400,6 +400,7 @@ func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Clie
 	}
 
 	if filter.Status != nil && len(filter.Status) > 0 {
+		log.Ctx(ctx).Info().Msgf("listing node versions with status: %v", filter.Status)
 		query.Where(nodeversion.StatusIn(filter.Status...))
 	}
 
@@ -744,7 +745,7 @@ func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.
 
 	if issues != "" {
 		log.Ctx(ctx).Info().Msgf("No security issues found in node %s@%s. Updating to active.", nodeVersion.NodeID, nodeVersion.Version)
-		err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusActive).Exec(ctx)
+		err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusActive).SetStatusReason("Passed automated checks").Exec(ctx)
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to active")
 		}

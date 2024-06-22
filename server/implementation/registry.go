@@ -945,6 +945,7 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 		Page:     page,
 		PageSize: pageSize,
 	}
+
 	if request.Params.Statuses != nil {
 		f.Status = mapper.ApiNodeVersionStatusesToDbNodeVersionStatuses(request.Params.Statuses)
 	}
@@ -972,7 +973,7 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 		apiNodeVersions = append(apiNodeVersions, *mapper.DbNodeVersionToApiNodeVersion(dbNodeVersion))
 	}
 
-	log.Ctx(ctx).Info().Msgf("Found %d node versions", len(apiNodeVersions))
+	log.Ctx(ctx).Info().Msgf("Found %d node versions", nodeVersionResults.Total)
 	return drip.ListAllNodeVersions200JSONResponse{
 		Versions:   &apiNodeVersions,
 		Total:      &nodeVersionResults.Total,
