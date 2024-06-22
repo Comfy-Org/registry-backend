@@ -51,26 +51,38 @@ func DbNodeVersionToApiNodeVersion(dbNodeVersion *ent.NodeVersion) *drip.NodeVer
 	if dbNodeVersion == nil {
 		return nil
 	}
-
 	id := dbNodeVersion.ID.String()
-	var downloadUrl string
+
+	if dbNodeVersion.Edges.StorageFile == nil {
+		return &drip.NodeVersion{
+			Id:           &id,
+			Version:      &dbNodeVersion.Version,
+			Changelog:    &dbNodeVersion.Changelog,
+			Deprecated:   &dbNodeVersion.Deprecated,
+			Dependencies: &dbNodeVersion.PipDependencies,
+			CreatedAt:    &dbNodeVersion.CreateTime,
+			Status:       DbNodeVersionStatusToApiNodeVersionStatus(dbNodeVersion.Status),
+			StatusReason: &dbNodeVersion.StatusReason,
+		}
+	}
+
 	status := DbNodeVersionStatusToApiNodeVersionStatus(dbNodeVersion.Status)
-	if dbNodeVersion.Edges.StorageFile != nil && dbNodeVersion.Status == schema.NodeVersionStatusActive {
+	downloadUrl := ""
+	if dbNodeVersion.Status == schema.NodeVersionStatusActive {
 		downloadUrl = dbNodeVersion.Edges.StorageFile.FileURL
 	}
 
-	apiVersion := &drip.NodeVersion{
+	return &drip.NodeVersion{
 		Id:           &id,
 		Version:      &dbNodeVersion.Version,
 		Changelog:    &dbNodeVersion.Changelog,
+		DownloadUrl:  &downloadUrl,
 		Deprecated:   &dbNodeVersion.Deprecated,
 		Dependencies: &dbNodeVersion.PipDependencies,
 		CreatedAt:    &dbNodeVersion.CreateTime,
 		Status:       status,
 		StatusReason: &dbNodeVersion.StatusReason,
-		DownloadUrl:  &downloadUrl,
 	}
-	return apiVersion
 }
 
 func CheckValidSemv(version string) bool {
@@ -90,27 +102,11 @@ func DbNodeVersionStatusToApiNodeVersionStatus(status schema.NodeVersionStatus) 
 		nodeVersionStatus = drip.NodeVersionStatusDeleted
 	case schema.NodeVersionStatusPending:
 		nodeVersionStatus = drip.NodeVersionStatusPending
-	case schema.NodeVersionStatusFlagged:
-		nodeVersionStatus = drip.NodeVersionStatusFlagged
 	default:
 		nodeVersionStatus = ""
 	}
 
 	return &nodeVersionStatus
-}
-
-func ApiNodeVersionStatusesToDbNodeVersionStatuses(status *[]drip.NodeVersionStatus) []schema.NodeVersionStatus {
-	var nodeVersionStatus []schema.NodeVersionStatus
-
-	if status == nil {
-		return nodeVersionStatus
-	}
-
-	for _, s := range *status {
-		nodeVersionStatus = append(nodeVersionStatus, ApiNodeVersionStatusToDbNodeVersionStatus(s))
-	}
-
-	return nodeVersionStatus
 }
 
 func ApiNodeVersionStatusToDbNodeVersionStatus(status drip.NodeVersionStatus) schema.NodeVersionStatus {

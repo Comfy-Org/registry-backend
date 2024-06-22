@@ -147,7 +147,7 @@ var (
 		{Name: "changelog", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "pip_dependencies", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "deprecated", Type: field.TypeBool, Default: false},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "banned", "deleted", "pending", "flagged"}, Default: "pending"},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "banned", "deleted", "pending"}, Default: "pending"},
 		{Name: "status_reason", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "node_id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "node_version_storage_file", Type: field.TypeUUID, Nullable: true},

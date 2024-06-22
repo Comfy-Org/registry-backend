@@ -18,4 +18,5 @@ services:
       CORS_ORIGIN: "http://localhost:3000"
       JWT_SECRET: 8zT9YknYUTZRVAkgov86gT1NLezTtwrd # test secret
       LOG_LEVEL: info # Set the log level here
-      SECRET_SCANNER_URL: ""
+      ALGOLIA_APP_ID: 
+      ALGOLIA_API_KEY: 

@@ -37,8 +37,3 @@ spec:
         # TODO(robinhuang): Switch to a list of strings
         - name: CORS_ORIGIN
           value: https://comfyregistry.org
-        - name: SECRET_SCANNER_URL
-          valueFrom:
-              secretKeyRef:
-                  key: 1
-                  name: SECURITY_SCANNER_CLOUD_FUNCTION_URL
