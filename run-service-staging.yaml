@@ -39,3 +39,8 @@ spec:
               secretKeyRef:
                   key: 1
                   name: SECURITY_SCANNER_CLOUD_FUNCTION_URL
+        - name: SECURITY_COUNCIL_DISCORD_WEBHOOK
+          valueFrom:
+              secretKeyRef:
+                  key: 1
+                  name: SECURITY_COUNCIL_DISCORD_WEBHOOK
