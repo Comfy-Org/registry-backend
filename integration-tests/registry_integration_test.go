@@ -567,6 +567,7 @@ func TestRegistry(t *testing.T) {
 		t.Run("Create Node Version", func(t *testing.T) {
 			mockStorageService.On("GenerateSignedURL", mock.Anything, mock.Anything).Return("test-url", nil)
 			mockStorageService.On("GetFileUrl", mock.Anything, mock.Anything, mock.Anything).Return("test-url", nil)
+			mockDiscordService.On("SendSecurityCouncilMessage", mock.Anything, mock.Anything).Return(nil)
 			createNodeVersionResp, err := withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
 				PublisherId: publisherId,
 				NodeId:      nodeId,

@@ -37,6 +37,8 @@ spec:
         # TODO(robinhuang): Switch to a list of strings
         - name: CORS_ORIGIN
           value: https://comfyregistry.org
+        - name: REINDEX_NODES_CRONTAB
+          value: "0 3 * * *" # run every 3am
         - name: SECRET_SCANNER_URL
           valueFrom:
               secretKeyRef:
@@ -47,3 +49,13 @@ spec:
               secretKeyRef:
                   key: 1
                   name: SECURITY_COUNCIL_DISCORD_WEBHOOK
+        - name: ALGOLIA_APP_ID
+          valueFrom:
+            secretKeyRef:
+              key: 1
+              name: PROD_ALGOLIA_APP_ID
+        - name: ALGOLIA_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: 1
+              name: PROD_ALGOLIA_API_KEY
