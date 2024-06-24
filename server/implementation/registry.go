@@ -424,8 +424,10 @@ func (s *DripStrictServerImplementation) UpdateNode(
 
 	log.Ctx(ctx).Info().Msgf("UpdateNode request received for node ID: %s", request.NodeId)
 
-	updateOne := mapper.ApiUpdateNodeToUpdateFields(request.NodeId, request.Body, s.Client)
-	updatedNode, err := s.RegistryService.UpdateNode(ctx, s.Client, updateOne)
+	updateOneFunc := func(client *ent.Client) *ent.NodeUpdateOne {
+		return mapper.ApiUpdateNodeToUpdateFields(request.NodeId, request.Body, client)
+	}
+	updatedNode, err := s.RegistryService.UpdateNode(ctx, s.Client, updateOneFunc)
 	if ent.IsNotFound(err) {
 		log.Ctx(ctx).Error().Msgf("Node %s not found w/ err: %v", request.NodeId, err)
 		return drip.UpdateNode404JSONResponse{Message: "Not Found"}, nil
@@ -484,8 +486,10 @@ func (s *DripStrictServerImplementation) PublishNodeVersion(
 	} else {
 		// TODO(james): distinguish between not found vs. nodes that belong to other publishers
 		// If node already exists, validate ownership
-		updateOne := mapper.ApiUpdateNodeToUpdateFields(node.ID, &request.Body.Node, s.Client)
-		_, err = s.RegistryService.UpdateNode(ctx, s.Client, updateOne)
+		updateOneFunc := func(client *ent.Client) *ent.NodeUpdateOne {
+			return mapper.ApiUpdateNodeToUpdateFields(node.ID, &request.Body.Node, s.Client)
+		}
+		_, err = s.RegistryService.UpdateNode(ctx, s.Client, updateOneFunc)
 		if err != nil {
 			errMessage := "Failed to update node: " + err.Error()
 			log.Ctx(ctx).Error().Msgf("Node update failed w/ err: %v", err)
@@ -723,7 +727,7 @@ func (s *DripStrictServerImplementation) InstallNode(
 			log.Ctx(ctx).Error().Msgf("Error retrieving latest node version w/ err: %v", err)
 			return drip.InstallNode500JSONResponse{Message: errMessage}, err
 		}
-		err = node.Update().AddTotalInstall(1).Exec(ctx)
+		_, err = s.RegistryService.RecordNodeInstalation(ctx, s.Client, node)
 		if err != nil {
 			errMessage := "Failed to get increment number of node version install: " + err.Error()
 			log.Ctx(ctx).Error().Msgf("Error incrementing number of latest node version install w/ err: %v", err)
@@ -749,7 +753,7 @@ func (s *DripStrictServerImplementation) InstallNode(
 			log.Ctx(ctx).Error().Msgf("Error retrieving node version w/ err: %v", err)
 			return drip.InstallNode500JSONResponse{Message: errMessage}, err
 		}
-		err = node.Update().AddTotalInstall(1).Exec(ctx)
+		_, err = s.RegistryService.RecordNodeInstalation(ctx, s.Client, node)
 		if err != nil {
 			errMessage := "Failed to get increment number of node version install: " + err.Error()
 			log.Ctx(ctx).Error().Msgf("Error incrementing number of latest node version install w/ err: %v", err)
