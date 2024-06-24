@@ -909,7 +909,9 @@ func (s *DripStrictServerImplementation) AdminUpdateNodeVersion(
 func (s *DripStrictServerImplementation) SecurityScan(
 	ctx context.Context, request drip.SecurityScanRequestObject) (drip.SecurityScanResponseObject, error) {
 	nodeVersionsResult, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &drip_services.NodeVersionFilter{
-		Status: []schema.NodeVersionStatus{schema.NodeVersionStatusPending},
+		Status:   []schema.NodeVersionStatus{schema.NodeVersionStatusPending},
+		PageSize: 5,
+		Page:     1,
 	})
 	nodeVersions := nodeVersionsResult.NodeVersions
 
@@ -949,6 +951,7 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 		Page:     page,
 		PageSize: pageSize,
 	}
+
 	if request.Params.Statuses != nil {
 		f.Status = mapper.ApiNodeVersionStatusesToDbNodeVersionStatuses(request.Params.Statuses)
 	}
@@ -976,7 +979,7 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 		apiNodeVersions = append(apiNodeVersions, *mapper.DbNodeVersionToApiNodeVersion(dbNodeVersion))
 	}
 
-	log.Ctx(ctx).Info().Msgf("Found %d node versions", len(apiNodeVersions))
+	log.Ctx(ctx).Info().Msgf("Found %d node versions", nodeVersionResults.Total)
 	return drip.ListAllNodeVersions200JSONResponse{
 		Versions:   &apiNodeVersions,
 		Total:      &nodeVersionResults.Total,

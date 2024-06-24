@@ -390,7 +390,9 @@ func (s *RegistryService) CreateNodeVersion(
 			return nil, fmt.Errorf("failed to create node version: %w", err)
 		}
 
-		slackErr := s.slackService.SendRegistryMessageToSlack(fmt.Sprintf("Version %s of node %s was published successfully. Publisher: %s. https://comfyregistry.org/nodes/%s", createdNodeVersion.Version, createdNodeVersion.NodeID, publisherID, nodeID))
+		message := fmt.Sprintf("Version %s of node %s was published successfully. Publisher: %s. https://registry.comfy.org/nodes/%s", createdNodeVersion.Version, createdNodeVersion.NodeID, publisherID, nodeID)
+		slackErr := s.slackService.SendRegistryMessageToSlack(message)
+		s.discordService.SendSecurityCouncilMessage(message)
 		if slackErr != nil {
 			log.Ctx(ctx).Error().Msgf("Failed to send message to Slack w/ err: %v", slackErr)
 			drip_metric.IncrementCustomCounterMetric(ctx, drip_metric.CustomCounterIncrement{
@@ -423,6 +425,7 @@ func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Clie
 	}
 
 	if filter.Status != nil && len(filter.Status) > 0 {
+		log.Ctx(ctx).Info().Msgf("listing node versions with status: %v", filter.Status)
 		query.Where(nodeversion.StatusIn(filter.Status...))
 	}
 
@@ -831,18 +834,24 @@ func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.
 
 	if issues != "" {
 		log.Ctx(ctx).Info().Msgf("No security issues found in node %s@%s. Updating to active.", nodeVersion.NodeID, nodeVersion.Version)
-		err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusActive).Exec(ctx)
+		err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusActive).SetStatusReason("Passed automated checks").Exec(ctx)
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to active")
 		}
-		s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Node %s@%s has passed automated scans. Changing status to active.", nodeVersion.NodeID, nodeVersion.Version))
+		err = s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Node %s@%s has passed automated scans. Changing status to active.", nodeVersion.NodeID, nodeVersion.Version))
+		if err != nil {
+			log.Ctx(ctx).Error().Err(err).Msgf("failed to send message to discord")
+		}
 	} else {
 		log.Ctx(ctx).Info().Msgf("Security issues found in node %s@%s. Updating to flagged.", nodeVersion.NodeID, nodeVersion.Version)
 		err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusFlagged).SetStatusReason(issues).Exec(ctx)
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to security issue")
 		}
-		s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Security issues were found in node %s@%s. Status is flagged. Please check it here: https://registry.comfy.org/admin/nodes/%s/versions/%s", nodeVersion.NodeID, nodeVersion.Version, nodeVersion.NodeID, nodeVersion.Version))
+		err = s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Security issues were found in node %s@%s. Status is flagged. Please check it here: https://registry.comfy.org/admin/nodes/%s/versions/%s", nodeVersion.NodeID, nodeVersion.Version, nodeVersion.NodeID, nodeVersion.Version))
+		if err != nil {
+			log.Ctx(ctx).Error().Err(err).Msgf("failed to send message to discord")
+		}
 	}
 	return nil
 }
