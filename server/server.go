@@ -7,6 +7,7 @@ import (
 	generated "registry-backend/drip"
 	"registry-backend/ent"
 	"registry-backend/gateways/algolia"
+	"registry-backend/gateways/discord"
 	gateway "registry-backend/gateways/slack"
 	"registry-backend/gateways/storage"
 	handler "registry-backend/server/handlers"
@@ -93,6 +94,7 @@ func (s *Server) Start() error {
 	if err != nil {
 		return err
 	}
+	discordService := discord.NewDiscordService(s.Config)
 
 	mon, err := monitoring.NewMetricClient(context.Background())
 	if err != nil {
@@ -100,7 +102,7 @@ func (s *Server) Start() error {
 	}
 
 	// Attach implementation of generated oapi strict server.
-	impl := implementation.NewStrictServerImplementation(s.Client, s.Config, storageService, slackService, algoliaService)
+	impl := implementation.NewStrictServerImplementation(s.Client, s.Config, storageService, slackService, discordService, algoliaService)
 
 	// start jobs
 	go drip_jobs.ReindexAllNodes(context.Background(), s.Client, *impl.RegistryService, s.Config.ReindexNodesCrontab)

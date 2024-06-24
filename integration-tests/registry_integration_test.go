@@ -48,6 +48,7 @@ func TestRegistry(t *testing.T) {
 	// Initialize the Service
 	mockStorageService := new(gateways.MockStorageService)
 	mockSlackService := new(gateways.MockSlackService)
+	mockDiscordService := new(gateways.MockDiscordService)
 	mockSlackService.
 		On("SendRegistryMessageToSlack", mock.Anything).
 		Return(nil) // Do nothing for all slack messsage calls.
@@ -58,7 +59,7 @@ func TestRegistry(t *testing.T) {
 		On("DeleteNode", mock.Anything, mock.Anything).
 		Return(nil)
 	impl := implementation.NewStrictServerImplementation(
-		client, &config.Config{}, mockStorageService, mockSlackService, mockAlgolia)
+		client, &config.Config{}, mockStorageService, mockSlackService, mockDiscordService, mockAlgolia)
 	authz := drip_authorization.NewAuthorizationManager(client, impl.RegistryService).
 		AuthorizationMiddleware()
 
@@ -538,7 +539,7 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("Create Node Version with Fake Token", func(t *testing.T) {
-			_, err := withMiddleware(authz, impl.PublishNodeVersion)(context.Background(), drip.PublishNodeVersionRequestObject{
+			_, err := withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
 				PublisherId: publisherId,
 				NodeId:      nodeId,
 				Body: &drip.PublishNodeVersionJSONRequestBody{
@@ -566,7 +567,7 @@ func TestRegistry(t *testing.T) {
 		t.Run("Create Node Version", func(t *testing.T) {
 			mockStorageService.On("GenerateSignedURL", mock.Anything, mock.Anything).Return("test-url", nil)
 			mockStorageService.On("GetFileUrl", mock.Anything, mock.Anything, mock.Anything).Return("test-url", nil)
-			createNodeVersionResp, err := withMiddleware(authz, impl.PublishNodeVersion)(context.Background(), drip.PublishNodeVersionRequestObject{
+			createNodeVersionResp, err := withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
 				PublisherId: publisherId,
 				NodeId:      nodeId,
 				Body: &drip.PublishNodeVersionJSONRequestBody{
@@ -616,7 +617,7 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("Create Node Version of Not Exist Node", func(t *testing.T) {
-			_, err := withMiddleware(authz, impl.PublishNodeVersion)(context.Background(), drip.PublishNodeVersionRequestObject{
+			_, err := withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
 				PublisherId: publisherId,
 				NodeId:      nodeId + "fake",
 				Body:        &drip.PublishNodeVersionJSONRequestBody{},

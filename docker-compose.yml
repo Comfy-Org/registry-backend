@@ -20,3 +20,4 @@ services:
       LOG_LEVEL: info # Set the log level here
       ALGOLIA_APP_ID: 
       ALGOLIA_API_KEY: 
+      SECRET_SCANNER_URL: ""

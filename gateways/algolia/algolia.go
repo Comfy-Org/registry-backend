@@ -15,22 +15,6 @@ type AlgoliaService interface {
 	DeleteNode(ctx context.Context, n *ent.Node) error
 }
 
-type Record interface{}
-
-type Guest1 struct {
-	Name string
-}
-type Guest2 struct {
-	Name     string
-	LastName string
-}
-
-type object struct {
-	Guest1
-	*Guest2  `json:"guest2,omitempty"`
-	ObjectID string `json:"objectID"`
-}
-
 var _ AlgoliaService = algolia{}
 
 type algolia struct {

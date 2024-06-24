@@ -112,7 +112,7 @@ const DefaultStatus schema.NodeVersionStatus = "pending"
 // StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
 func StatusValidator(s schema.NodeVersionStatus) error {
 	switch s {
-	case "active", "banned", "deleted", "pending":
+	case "active", "banned", "deleted", "pending", "flagged":
 		return nil
 	default:
 		return fmt.Errorf("nodeversion: invalid enum value for status field: %q", s)

@@ -1,9 +1,14 @@
-package drip_services
+package dripservices
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"registry-backend/config"
 	"registry-backend/db"
 	"registry-backend/drip"
 	"registry-backend/ent"
@@ -16,6 +21,7 @@ import (
 	"registry-backend/ent/schema"
 	"registry-backend/ent/user"
 	"registry-backend/gateways/algolia"
+	"registry-backend/gateways/discord"
 	gateway "registry-backend/gateways/slack"
 	"registry-backend/gateways/storage"
 	"registry-backend/mapper"
@@ -32,13 +38,17 @@ type RegistryService struct {
 	storageService storage.StorageService
 	slackService   gateway.SlackService
 	algolia        algolia.AlgoliaService
+	discordService discord.DiscordService
+	config         *config.Config
 }
 
-func NewRegistryService(storageSvc storage.StorageService, slackSvc gateway.SlackService, algolia algolia.AlgoliaService) *RegistryService {
+func NewRegistryService(storageSvc storage.StorageService, slackSvc gateway.SlackService, discordSvc discord.DiscordService, algoliaSvc algolia.AlgoliaService, config *config.Config) *RegistryService {
 	return &RegistryService{
 		storageService: storageSvc,
 		slackService:   slackSvc,
-		algolia:        algolia,
+		discordService: discordSvc,
+		algolia:        algoliaSvc,
+		config:         config,
 	}
 }
 
@@ -51,19 +61,19 @@ type NodeFilter struct {
 	PublisherID   string
 	Search        string
 	IncludeBanned bool
-
-	// Add more filter fields here
 }
 
 type NodeVersionFilter struct {
-	Status []schema.NodeVersionStatus
+	NodeId   string
+	Status   []schema.NodeVersionStatus
+	PageSize int
+	Page     int
 }
 
 type NodeData struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	PublisherID string `json:"publisherId"`
-	// Add other fields as necessary
 }
 
 // ListNodesResult is the structure that holds the paginated result of nodes
@@ -75,8 +85,17 @@ type ListNodesResult struct {
 	TotalPages int         `json:"totalPages"`
 }
 
+type ListNodeVersionsResult struct {
+	Total        int                `json:"total"`
+	NodeVersions []*ent.NodeVersion `json:"nodes"`
+	Page         int                `json:"page"`
+	Limit        int                `json:"limit"`
+	TotalPages   int                `json:"totalPages"`
+}
+
 // ListNodes retrieves a paginated list of nodes with optional filtering.
 func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, page, limit int, filter *NodeFilter) (*ListNodesResult, error) {
+	// Ensure valid pagination parameters
 	if page < 1 {
 		page = 1
 	}
@@ -84,19 +103,25 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 		limit = 10
 	}
 
-	query := client.Node.Query().WithPublisher().WithVersions(
-		func(q *ent.NodeVersionQuery) {
+	// Initialize the query with relationships
+	query := client.Node.Query().
+		WithPublisher().
+		WithVersions(func(q *ent.NodeVersionQuery) {
 			q.Order(ent.Desc(nodeversion.FieldCreateTime))
-		},
-	)
+		})
+
+	// Apply filters if provided
 	if filter != nil {
-		var p []predicate.Node
+		var predicates []predicate.Node
+
+		// Filter by PublisherID
 		if filter.PublisherID != "" {
-			p = append(p, node.PublisherID(filter.PublisherID))
+			predicates = append(predicates, node.PublisherID(filter.PublisherID))
 		}
 
+		// Filter by search term across multiple fields
 		if filter.Search != "" {
-			p = append(p, node.Or(
+			predicates = append(predicates, node.Or(
 				node.IDContainsFold(filter.Search),
 				node.NameContainsFold(filter.Search),
 				node.DescriptionContainsFold(filter.Search),
@@ -104,22 +129,29 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 			))
 		}
 
+		// Exclude banned nodes if not requested
 		if !filter.IncludeBanned {
-			p = append(p, node.StatusNEQ(schema.NodeStatusBanned))
+			predicates = append(predicates, node.StatusNEQ(schema.NodeStatusBanned))
 		}
 
-		if len(p) > 1 {
-			query.Where(node.And(p...))
-		} else {
-			query.Where(p...)
+		// Apply predicates to the query
+		if len(predicates) > 1 {
+			query.Where(node.And(predicates...))
+		} else if len(predicates) == 1 {
+			query.Where(predicates[0])
 		}
 	}
+
+	// Calculate pagination offset
 	offset := (page - 1) * limit
+
+	// Count total nodes
 	total, err := query.Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count nodes: %w", err)
 	}
 
+	// Fetch nodes with pagination
 	nodes, err := query.
 		Offset(offset).
 		Limit(limit).
@@ -128,11 +160,13 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 		return nil, fmt.Errorf("failed to list nodes: %w", err)
 	}
 
+	// Calculate total pages
 	totalPages := total / limit
 	if total%limit != 0 {
-		totalPages += 1
+		totalPages++
 	}
 
+	// Return the result
 	return &ListNodesResult{
 		Total:      total,
 		Nodes:      nodes,
@@ -378,22 +412,48 @@ type NodeVersionCreation struct {
 	SignedUrl   string
 }
 
-func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Client, nodeID string, filter *NodeVersionFilter) ([]*ent.NodeVersion, error) {
-	log.Ctx(ctx).Info().Msgf("listing node versions: %v", nodeID)
+func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Client, filter *NodeVersionFilter) (*ListNodeVersionsResult, error) {
 	query := client.NodeVersion.Query().
-		Where(nodeversion.NodeIDEQ(nodeID)).
 		WithStorageFile().
 		Order(ent.Desc(nodeversion.FieldCreateTime))
 
-	if filter.Status != nil {
+	if filter.NodeId != "" {
+		log.Ctx(ctx).Info().Msgf("listing node versions: %v", filter.NodeId)
+		query.Where(nodeversion.NodeIDEQ(filter.NodeId))
+	}
+
+	if filter.Status != nil && len(filter.Status) > 0 {
 		query.Where(nodeversion.StatusIn(filter.Status...))
 	}
 
+	if filter.Page > 0 && filter.PageSize > 0 {
+		query.Offset((filter.Page - 1) * filter.PageSize)
+		query.Limit(filter.PageSize)
+	}
+	total, err := query.Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count node versions: %w", err)
+	}
 	versions, err := query.All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list node versions: %w", err)
 	}
-	return versions, nil
+
+	totalPages := 0
+	if total > 0 && filter.PageSize > 0 {
+		totalPages = total / filter.PageSize
+
+		if total%filter.PageSize != 0 {
+			totalPages += 1
+		}
+	}
+	return &ListNodeVersionsResult{
+		Total:        total,
+		NodeVersions: versions,
+		Page:         filter.Page,
+		Limit:        filter.PageSize,
+		TotalPages:   totalPages,
+	}, nil
 }
 
 func (s *RegistryService) AddNodeReview(ctx context.Context, client *ent.Client, nodeId, userID string, star int) (nv *ent.Node, err error) {
@@ -471,22 +531,26 @@ func (s *RegistryService) RecordNodeInstalation(ctx context.Context, client *ent
 }
 
 func (s *RegistryService) GetLatestNodeVersion(ctx context.Context, client *ent.Client, nodeId string) (*ent.NodeVersion, error) {
-	log.Ctx(ctx).Info().Msgf("getting latest version of node: %v", nodeId)
+	log.Ctx(ctx).Info().Msgf("Getting latest version of node: %v", nodeId)
 	nodeVersion, err := client.NodeVersion.
 		Query().
 		Where(nodeversion.NodeIDEQ(nodeId)).
-		Where(nodeversion.StatusEQ(schema.NodeVersionStatusActive)).
+		//Where(nodeversion.StatusEQ(schema.NodeVersionStatusActive)).
 		Order(ent.Desc(nodeversion.FieldCreateTime)).
 		WithStorageFile().
 		First(ctx)
 
 	if err != nil {
 		if ent.IsNotFound(err) {
-
+			log.Ctx(ctx).Info().Msgf("No versions found for node %v", nodeId)
 			return nil, nil
 		}
+
+		log.Ctx(ctx).Error().Msgf("Error fetching latest version for node %v: %v", nodeId, err)
 		return nil, err
 	}
+
+	log.Ctx(ctx).Info().Msgf("Found latest version for node %v: %v", nodeId, nodeVersion)
 	return nodeVersion, nil
 }
 
@@ -752,4 +816,70 @@ func (s *RegistryService) ReindexAllNodes(ctx context.Context, client *ent.Clien
 		return fmt.Errorf("failed to reindex all nodes: %w", err)
 	}
 	return nil
+}
+func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.Client, nodeVersion *ent.NodeVersion) error {
+	log.Ctx(ctx).Info().Msgf("scanning node %s@%s", nodeVersion.NodeID, nodeVersion.Version)
+
+	if (nodeVersion.Edges.StorageFile == nil) || (nodeVersion.Edges.StorageFile.FileURL == "") {
+		return fmt.Errorf("node version %s@%s does not have a storage file", nodeVersion.NodeID, nodeVersion.Version)
+	}
+
+	issues, err := sendScanRequest(s.config.SecretScannerURL, nodeVersion.Edges.StorageFile.FileURL)
+	if err != nil {
+		return err
+	}
+
+	if issues != "" {
+		log.Ctx(ctx).Info().Msgf("No security issues found in node %s@%s. Updating to active.", nodeVersion.NodeID, nodeVersion.Version)
+		err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusActive).Exec(ctx)
+		if err != nil {
+			log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to active")
+		}
+		s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Node %s@%s has passed automated scans. Changing status to active.", nodeVersion.NodeID, nodeVersion.Version))
+	} else {
+		log.Ctx(ctx).Info().Msgf("Security issues found in node %s@%s. Updating to flagged.", nodeVersion.NodeID, nodeVersion.Version)
+		err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusFlagged).SetStatusReason(issues).Exec(ctx)
+		if err != nil {
+			log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to security issue")
+		}
+		s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Security issues were found in node %s@%s. Status is flagged. Please check it here: https://registry.comfy.org/admin/nodes/%s/versions/%s", nodeVersion.NodeID, nodeVersion.Version, nodeVersion.NodeID, nodeVersion.Version))
+	}
+	return nil
+}
+
+type ScanRequest struct {
+	URL string `json:"url"`
+}
+
+func sendScanRequest(apiURL, fileURL string) (string, error) {
+	requestBody, err := json.Marshal(ScanRequest{URL: fileURL})
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	fmt.Println("Response Status:", resp.Status)
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("failed to scan file: %s", responseBody)
+	}
+
+	return string(responseBody), nil
 }
