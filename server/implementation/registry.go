@@ -8,6 +8,7 @@ import (
 	"registry-backend/ent/schema"
 	"registry-backend/mapper"
 	drip_services "registry-backend/services/registry"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/mixpanel/mixpanel-go"
@@ -908,9 +909,14 @@ func (s *DripStrictServerImplementation) AdminUpdateNodeVersion(
 
 func (s *DripStrictServerImplementation) SecurityScan(
 	ctx context.Context, request drip.SecurityScanRequestObject) (drip.SecurityScanResponseObject, error) {
+	minAge := 30 * time.Minute
+	if request.Params.MinAge != nil {
+		minAge = *request.Params.MinAge
+	}
 	nodeVersionsResult, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &drip_services.NodeVersionFilter{
 		Status:   []schema.NodeVersionStatus{schema.NodeVersionStatusPending},
-		PageSize: 10,
+		MinAge:   minAge,
+		PageSize: 50,
 		Page:     1,
 	})
 	nodeVersions := nodeVersionsResult.NodeVersions
@@ -926,10 +932,6 @@ func (s *DripStrictServerImplementation) SecurityScan(
 		err := s.RegistryService.PerformSecurityCheck(ctx, s.Client, nodeVersion)
 		if err != nil {
 			log.Ctx(ctx).Error().Msgf("Failed to perform security scan w/ err: %v", err)
-			return drip.SecurityScan500JSONResponse{
-				Message: "Failed to perform security scan",
-				Error:   err.Error(),
-			}, nil
 		}
 	}
 	return drip.SecurityScan200Response{}, nil
