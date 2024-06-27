@@ -20,11 +20,14 @@ import (
 	"registry-backend/ent/publisherpermission"
 	"registry-backend/ent/schema"
 	"registry-backend/ent/user"
+	"registry-backend/gateways/algolia"
 	"registry-backend/gateways/discord"
 	gateway "registry-backend/gateways/slack"
 	"registry-backend/gateways/storage"
 	"registry-backend/mapper"
 	drip_metric "registry-backend/server/middleware/metric"
+	"strings"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"google.golang.org/protobuf/proto"
@@ -36,15 +39,17 @@ import (
 type RegistryService struct {
 	storageService storage.StorageService
 	slackService   gateway.SlackService
-	config         *config.Config
+	algolia        algolia.AlgoliaService
 	discordService discord.DiscordService
+	config         *config.Config
 }
 
-func NewRegistryService(storageSvc storage.StorageService, slackSvc gateway.SlackService, discordSvc discord.DiscordService, config *config.Config) *RegistryService {
+func NewRegistryService(storageSvc storage.StorageService, slackSvc gateway.SlackService, discordSvc discord.DiscordService, algoliaSvc algolia.AlgoliaService, config *config.Config) *RegistryService {
 	return &RegistryService{
 		storageService: storageSvc,
 		slackService:   slackSvc,
 		discordService: discordSvc,
+		algolia:        algoliaSvc,
 		config:         config,
 	}
 }
@@ -63,6 +68,7 @@ type NodeFilter struct {
 type NodeVersionFilter struct {
 	NodeId   string
 	Status   []schema.NodeVersionStatus
+	MinAge   time.Duration
 	PageSize int
 	Page     int
 }
@@ -293,29 +299,49 @@ func (s *RegistryService) CreateNode(ctx context.Context, client *ent.Client, pu
 		return nil, fmt.Errorf("invalid node: %w", validNode)
 	}
 
-	createNode, err := mapper.ApiCreateNodeToDb(publisherId, node, client)
-	log.Ctx(ctx).Info().Msgf("creating node with fields: %v", createNode.Mutation().Fields())
-	if err != nil {
-		return nil, fmt.Errorf("failed to map node: %w", err)
-	}
+	var createdNode *ent.Node
+	err := db.WithTx(ctx, client, func(tx *ent.Tx) (err error) {
+		createNode, err := mapper.ApiCreateNodeToDb(publisherId, node, tx.Client())
+		log.Ctx(ctx).Info().Msgf("creating node with fields: %v", createNode.Mutation().Fields())
+		if err != nil {
+			return fmt.Errorf("failed to map node: %w", err)
+		}
 
-	createdNode, err := createNode.Save(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create node: %w", err)
-	}
+		createdNode, err = createNode.Save(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to create node: %w", err)
+		}
 
-	return createdNode, nil
+		err = s.algolia.IndexNodes(ctx, createdNode)
+		if err != nil {
+			return fmt.Errorf("failed to index node: %w", err)
+		}
+
+		return
+	})
+
+	return createdNode, err
 }
 
-func (s *RegistryService) UpdateNode(ctx context.Context, client *ent.Client, update *ent.NodeUpdateOne) (*ent.Node, error) {
-	log.Ctx(ctx).Info().Msgf("updating node fields: %v", update.Mutation().Fields())
-	node, err := update.
-		Save(ctx)
+func (s *RegistryService) UpdateNode(ctx context.Context, client *ent.Client, updateFunc func(client *ent.Client) *ent.NodeUpdateOne) (*ent.Node, error) {
+	var node *ent.Node
+	err := db.WithTx(ctx, client, func(tx *ent.Tx) (err error) {
+		update := updateFunc(tx.Client())
+		log.Ctx(ctx).Info().Msgf("updating node fields: %v", update.Mutation().Fields())
 
-	if err != nil {
-		return nil, fmt.Errorf("failed to update node: %w", err)
-	}
-	return node, nil
+		node, err = update.Save(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update node: %w", err)
+		}
+
+		err = s.algolia.IndexNodes(ctx, node)
+		if err != nil {
+			return fmt.Errorf("failed to index node: %w", err)
+		}
+
+		return err
+	})
+	return node, err
 }
 
 func (s *RegistryService) GetNode(ctx context.Context, client *ent.Client, nodeID string) (*ent.Node, error) {
@@ -367,7 +393,9 @@ func (s *RegistryService) CreateNodeVersion(
 			return nil, fmt.Errorf("failed to create node version: %w", err)
 		}
 
-		slackErr := s.slackService.SendRegistryMessageToSlack(fmt.Sprintf("Version %s of node %s was published successfully. Publisher: %s. https://comfyregistry.org/nodes/%s", createdNodeVersion.Version, createdNodeVersion.NodeID, publisherID, nodeID))
+		message := fmt.Sprintf("Version %s of node %s was published successfully. Publisher: %s. https://registry.comfy.org/nodes/%s", createdNodeVersion.Version, createdNodeVersion.NodeID, publisherID, nodeID)
+		slackErr := s.slackService.SendRegistryMessageToSlack(message)
+		s.discordService.SendSecurityCouncilMessage(message)
 		if slackErr != nil {
 			log.Ctx(ctx).Error().Msgf("Failed to send message to Slack w/ err: %v", slackErr)
 			drip_metric.IncrementCustomCounterMetric(ctx, drip_metric.CustomCounterIncrement{
@@ -400,7 +428,12 @@ func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Clie
 	}
 
 	if filter.Status != nil && len(filter.Status) > 0 {
+		log.Ctx(ctx).Info().Msgf("listing node versions with status: %v", filter.Status)
 		query.Where(nodeversion.StatusIn(filter.Status...))
+	}
+
+	if filter.MinAge > 0 {
+		query.Where(nodeversion.CreateTimeLT(time.Now().Add(-filter.MinAge)))
 	}
 
 	if filter.Page > 0 && filter.PageSize > 0 {
@@ -442,7 +475,7 @@ func (s *RegistryService) AddNodeReview(ctx context.Context, client *ent.Client,
 			return fmt.Errorf("fail to fetch node version")
 		}
 
-		err = tx.Client().NodeReview.Create().
+		err = tx.NodeReview.Create().
 			SetNode(v).
 			SetUserID(userID).
 			SetStar(star).
@@ -460,6 +493,12 @@ func (s *RegistryService) AddNodeReview(ctx context.Context, client *ent.Client,
 		if err != nil {
 			return fmt.Errorf("fail to fetch node s")
 		}
+
+		err = s.algolia.IndexNodes(ctx, nv)
+		if err != nil {
+			return fmt.Errorf("failed to index node: %w", err)
+		}
+
 		return nil
 	})
 
@@ -483,6 +522,22 @@ func (s *RegistryService) UpdateNodeVersion(ctx context.Context, client *ent.Cli
 		return nil, fmt.Errorf("failed to update node version: %w", err)
 	}
 	return node, nil
+}
+
+func (s *RegistryService) RecordNodeInstalation(ctx context.Context, client *ent.Client, node *ent.Node) (*ent.Node, error) {
+	var n *ent.Node
+	err := db.WithTx(ctx, client, func(tx *ent.Tx) (err error) {
+		node, err = tx.Node.UpdateOne(node).AddTotalInstall(1).Save(ctx)
+		if err != nil {
+			return err
+		}
+		err = s.algolia.IndexNodes(ctx, node)
+		if err != nil {
+			return fmt.Errorf("failed to index node: %w", err)
+		}
+		return
+	})
+	return n, err
 }
 
 func (s *RegistryService) GetLatestNodeVersion(ctx context.Context, client *ent.Client, nodeId string) (*ent.NodeVersion, error) {
@@ -618,10 +673,17 @@ func (s *RegistryService) DeletePublisher(ctx context.Context, client *ent.Clien
 
 func (s *RegistryService) DeleteNode(ctx context.Context, client *ent.Client, nodeID string) error {
 	log.Ctx(ctx).Info().Msgf("deleting node: %v", nodeID)
-	err := client.Node.DeleteOneID(nodeID).Exec(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to delete node: %w", err)
-	}
+	db.WithTx(ctx, client, func(tx *ent.Tx) error {
+		err := tx.Client().Node.DeleteOneID(nodeID).Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to delete node: %w", err)
+		}
+
+		if err = s.algolia.DeleteNode(ctx, &ent.Node{ID: nodeID}); err != nil {
+			return fmt.Errorf("fail to delete node from algolia: %w", err)
+		}
+		return nil
+	})
 	return nil
 }
 
@@ -654,14 +716,12 @@ func (s *RegistryService) BanPublisher(ctx context.Context, client *ent.Client, 
 	}
 
 	err = db.WithTx(ctx, client, func(tx *ent.Tx) error {
-		cli := tx.Client()
-
 		err = pub.Update().SetStatus(schema.PublisherStatusTypeBanned).Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("fail to update publisher: %w", err)
 		}
 
-		err = cli.User.Update().
+		err = tx.User.Update().
 			Where(user.HasPublisherPermissionsWith(publisherpermission.HasPublisherWith(publisher.IDEQ(pub.ID)))).
 			SetStatus(schema.UserStatusTypeBanned).
 			Exec(ctx)
@@ -669,12 +729,25 @@ func (s *RegistryService) BanPublisher(ctx context.Context, client *ent.Client, 
 			return fmt.Errorf("fail to update users: %w", err)
 		}
 
-		err = cli.Node.Update().
+		err = tx.Node.Update().
 			Where(node.PublisherIDEQ(pub.ID)).
 			SetStatus(schema.NodeStatusBanned).
 			Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("fail to update users: %w", err)
+		}
+
+		nodes, err := tx.Node.Query().Where(node.PublisherID(id)).All(ctx)
+		if len(nodes) == 0 || ent.IsNotFound(err) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("fail to update nodes: %w", err)
+		}
+
+		err = s.algolia.IndexNodes(ctx, nodes...)
+		if err != nil {
+			return fmt.Errorf("failed to index node: %w", err)
 		}
 
 		return nil
@@ -686,21 +759,33 @@ func (s *RegistryService) BanPublisher(ctx context.Context, client *ent.Client, 
 func (s *RegistryService) BanNode(ctx context.Context, client *ent.Client, publisherid, id string) error {
 	log.Ctx(ctx).Info().Msgf("banning publisher node: %v %v", publisherid, id)
 
-	n, err := client.Node.Update().
-		Where(node.And(
+	return db.WithTx(ctx, client, func(tx *ent.Tx) error {
+		n, err := tx.Node.Query().Where(node.And(
 			node.IDEQ(id),
 			node.PublisherIDEQ(publisherid),
-		)).
-		SetStatus(schema.NodeStatusBanned).
-		Save(ctx)
-	if err != nil {
-		return fmt.Errorf("fail to ban node: %w", err)
-	}
-	if n < 1 {
-		return fmt.Errorf("publisher or node not found :%w", &ent.NotFoundError{})
-	}
+		)).Only(ctx)
+		if ent.IsNotFound(err) {
+			return nil
+		}
 
-	return err
+		n, err = n.Update().
+			SetStatus(schema.NodeStatusBanned).
+			Save(ctx)
+		if ent.IsNotFound(err) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("fail to ban node: %w", err)
+		}
+
+		err = s.algolia.IndexNodes(ctx, n)
+		if err != nil {
+			return fmt.Errorf("failed to index node: %w", err)
+		}
+
+		return err
+	})
+
 }
 
 func (s *RegistryService) AssertNodeBanned(ctx context.Context, client *ent.Client, nodeID string) error {
@@ -716,6 +801,7 @@ func (s *RegistryService) AssertNodeBanned(ctx context.Context, client *ent.Clie
 	}
 	return nil
 }
+
 func (s *RegistryService) AssertPublisherBanned(ctx context.Context, client *ent.Client, publisherID string) error {
 	publisher, err := client.Publisher.Get(ctx, publisherID)
 	if ent.IsNotFound(err) {
@@ -730,6 +816,17 @@ func (s *RegistryService) AssertPublisherBanned(ctx context.Context, client *ent
 	return nil
 }
 
+func (s *RegistryService) ReindexAllNodes(ctx context.Context, client *ent.Client) error {
+	nodes, err := client.Node.Query().All(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to fetch all nodes: %w", err)
+	}
+	err = s.algolia.IndexNodes(ctx, nodes...)
+	if err != nil {
+		return fmt.Errorf("failed to reindex all nodes: %w", err)
+	}
+	return nil
+}
 func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.Client, nodeVersion *ent.NodeVersion) error {
 	log.Ctx(ctx).Info().Msgf("scanning node %s@%s", nodeVersion.NodeID, nodeVersion.Version)
 
@@ -739,23 +836,35 @@ func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.
 
 	issues, err := sendScanRequest(s.config.SecretScannerURL, nodeVersion.Edges.StorageFile.FileURL)
 	if err != nil {
+		if strings.Contains(err.Error(), "404") {
+			err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusDeleted).SetStatusReason("Node zip file doesn’t exist").Exec(ctx)
+			if err != nil {
+				log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to active")
+			}
+		}
 		return err
 	}
 
 	if issues != "" {
 		log.Ctx(ctx).Info().Msgf("No security issues found in node %s@%s. Updating to active.", nodeVersion.NodeID, nodeVersion.Version)
-		err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusActive).Exec(ctx)
+		err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusActive).SetStatusReason("Passed automated checks").Exec(ctx)
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to active")
 		}
-		s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Node %s@%s has passed automated scans. Changing status to active.", nodeVersion.NodeID, nodeVersion.Version))
+		err = s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Node %s@%s has passed automated scans. Changing status to active.", nodeVersion.NodeID, nodeVersion.Version))
+		if err != nil {
+			log.Ctx(ctx).Error().Err(err).Msgf("failed to send message to discord")
+		}
 	} else {
 		log.Ctx(ctx).Info().Msgf("Security issues found in node %s@%s. Updating to flagged.", nodeVersion.NodeID, nodeVersion.Version)
 		err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusFlagged).SetStatusReason(issues).Exec(ctx)
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to security issue")
 		}
-		s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Security issues were found in node %s@%s. Status is flagged. Please check it here: https://registry.comfy.org/admin/nodes/%s/versions/%s", nodeVersion.NodeID, nodeVersion.Version, nodeVersion.NodeID, nodeVersion.Version))
+		err = s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Security issues were found in node %s@%s. Status is flagged. Please check it here: https://registry.comfy.org/admin/nodes/%s/versions/%s", nodeVersion.NodeID, nodeVersion.Version, nodeVersion.NodeID, nodeVersion.Version))
+		if err != nil {
+			log.Ctx(ctx).Error().Err(err).Msgf("failed to send message to discord")
+		}
 	}
 	return nil
 }

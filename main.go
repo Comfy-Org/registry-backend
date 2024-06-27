@@ -21,11 +21,13 @@ func main() {
 	connection_string := os.Getenv("DB_CONNECTION_STRING")
 
 	config := config.Config{
-		ProjectID:                   os.Getenv("PROJECT_ID"),
-		DripEnv:                     os.Getenv("DRIP_ENV"),
-		SlackRegistryChannelWebhook: os.Getenv("SLACK_REGISTRY_CHANNEL_WEBHOOK"),
-		JWTSecret:                   os.Getenv("JWT_SECRET"),
-		SecretScannerURL:            os.Getenv("SECRET_SCANNER_URL"),
+		ProjectID:                     os.Getenv("PROJECT_ID"),
+		DripEnv:                       os.Getenv("DRIP_ENV"),
+		SlackRegistryChannelWebhook:   os.Getenv("SLACK_REGISTRY_CHANNEL_WEBHOOK"),
+		JWTSecret:                     os.Getenv("JWT_SECRET"),
+		SecretScannerURL:              os.Getenv("SECRET_SCANNER_URL"),
+		DiscordSecurityChannelWebhook: os.Getenv("SECURITY_COUNCIL_DISCORD_WEBHOOK"),
+		ReindexNodesCrontab:           os.Getenv("REINDEX_NODES_CRONTAB"),
 	}
 
 	var dsn string
@@ -51,5 +53,5 @@ func main() {
 	}
 
 	server := server.NewServer(client, &config)
-	server.Start()
+	log.Fatal().Err(server.Start()).Msg("Server stopped")
 }

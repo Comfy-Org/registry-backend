@@ -8,6 +8,7 @@ import (
 	"registry-backend/ent/schema"
 	"registry-backend/mapper"
 	drip_services "registry-backend/services/registry"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/mixpanel/mixpanel-go"
@@ -419,8 +420,10 @@ func (s *DripStrictServerImplementation) UpdateNode(
 
 	log.Ctx(ctx).Info().Msgf("UpdateNode request received for node ID: %s", request.NodeId)
 
-	updateOne := mapper.ApiUpdateNodeToUpdateFields(request.NodeId, request.Body, s.Client)
-	updatedNode, err := s.RegistryService.UpdateNode(ctx, s.Client, updateOne)
+	updateOneFunc := func(client *ent.Client) *ent.NodeUpdateOne {
+		return mapper.ApiUpdateNodeToUpdateFields(request.NodeId, request.Body, client)
+	}
+	updatedNode, err := s.RegistryService.UpdateNode(ctx, s.Client, updateOneFunc)
 	if ent.IsNotFound(err) {
 		log.Ctx(ctx).Error().Msgf("Node %s not found w/ err: %v", request.NodeId, err)
 		return drip.UpdateNode404JSONResponse{Message: "Not Found"}, nil
@@ -479,8 +482,10 @@ func (s *DripStrictServerImplementation) PublishNodeVersion(
 	} else {
 		// TODO(james): distinguish between not found vs. nodes that belong to other publishers
 		// If node already exists, validate ownership
-		updateOne := mapper.ApiUpdateNodeToUpdateFields(node.ID, &request.Body.Node, s.Client)
-		_, err = s.RegistryService.UpdateNode(ctx, s.Client, updateOne)
+		updateOneFunc := func(client *ent.Client) *ent.NodeUpdateOne {
+			return mapper.ApiUpdateNodeToUpdateFields(node.ID, &request.Body.Node, s.Client)
+		}
+		_, err = s.RegistryService.UpdateNode(ctx, s.Client, updateOneFunc)
 		if err != nil {
 			errMessage := "Failed to update node: " + err.Error()
 			log.Ctx(ctx).Error().Msgf("Node update failed w/ err: %v", err)
@@ -718,7 +723,7 @@ func (s *DripStrictServerImplementation) InstallNode(
 			log.Ctx(ctx).Error().Msgf("Error retrieving latest node version w/ err: %v", err)
 			return drip.InstallNode500JSONResponse{Message: errMessage}, err
 		}
-		err = node.Update().AddTotalInstall(1).Exec(ctx)
+		_, err = s.RegistryService.RecordNodeInstalation(ctx, s.Client, node)
 		if err != nil {
 			errMessage := "Failed to get increment number of node version install: " + err.Error()
 			log.Ctx(ctx).Error().Msgf("Error incrementing number of latest node version install w/ err: %v", err)
@@ -744,7 +749,7 @@ func (s *DripStrictServerImplementation) InstallNode(
 			log.Ctx(ctx).Error().Msgf("Error retrieving node version w/ err: %v", err)
 			return drip.InstallNode500JSONResponse{Message: errMessage}, err
 		}
-		err = node.Update().AddTotalInstall(1).Exec(ctx)
+		_, err = s.RegistryService.RecordNodeInstalation(ctx, s.Client, node)
 		if err != nil {
 			errMessage := "Failed to get increment number of node version install: " + err.Error()
 			log.Ctx(ctx).Error().Msgf("Error incrementing number of latest node version install w/ err: %v", err)
@@ -899,8 +904,15 @@ func (s *DripStrictServerImplementation) AdminUpdateNodeVersion(
 
 func (s *DripStrictServerImplementation) SecurityScan(
 	ctx context.Context, request drip.SecurityScanRequestObject) (drip.SecurityScanResponseObject, error) {
+	minAge := 30 * time.Minute
+	if request.Params.MinAge != nil {
+		minAge = *request.Params.MinAge
+	}
 	nodeVersionsResult, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &drip_services.NodeVersionFilter{
-		Status: []schema.NodeVersionStatus{schema.NodeVersionStatusPending},
+		Status:   []schema.NodeVersionStatus{schema.NodeVersionStatusPending},
+		MinAge:   minAge,
+		PageSize: 50,
+		Page:     1,
 	})
 	nodeVersions := nodeVersionsResult.NodeVersions
 
@@ -915,10 +927,6 @@ func (s *DripStrictServerImplementation) SecurityScan(
 		err := s.RegistryService.PerformSecurityCheck(ctx, s.Client, nodeVersion)
 		if err != nil {
 			log.Ctx(ctx).Error().Msgf("Failed to perform security scan w/ err: %v", err)
-			return drip.SecurityScan500JSONResponse{
-				Message: "Failed to perform security scan",
-				Error:   err.Error(),
-			}, nil
 		}
 	}
 	return drip.SecurityScan200Response{}, nil
@@ -940,6 +948,7 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 		Page:     page,
 		PageSize: pageSize,
 	}
+
 	if request.Params.Statuses != nil {
 		f.Status = mapper.ApiNodeVersionStatusesToDbNodeVersionStatuses(request.Params.Statuses)
 	}
@@ -967,7 +976,7 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 		apiNodeVersions = append(apiNodeVersions, *mapper.DbNodeVersionToApiNodeVersion(dbNodeVersion))
 	}
 
-	log.Ctx(ctx).Info().Msgf("Found %d node versions", len(apiNodeVersions))
+	log.Ctx(ctx).Info().Msgf("Found %d node versions", nodeVersionResults.Total)
 	return drip.ListAllNodeVersions200JSONResponse{
 		Versions:   &apiNodeVersions,
 		Total:      &nodeVersionResults.Total,
