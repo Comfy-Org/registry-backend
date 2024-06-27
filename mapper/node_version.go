@@ -55,7 +55,7 @@ func DbNodeVersionToApiNodeVersion(dbNodeVersion *ent.NodeVersion) *drip.NodeVer
 	id := dbNodeVersion.ID.String()
 	var downloadUrl string
 	status := DbNodeVersionStatusToApiNodeVersionStatus(dbNodeVersion.Status)
-	if dbNodeVersion.Edges.StorageFile != nil {
+	if dbNodeVersion.Edges.StorageFile != nil && dbNodeVersion.Status == schema.NodeVersionStatusActive {
 		downloadUrl = dbNodeVersion.Edges.StorageFile.FileURL
 	}
 
@@ -107,8 +107,7 @@ func ApiNodeVersionStatusesToDbNodeVersionStatuses(status *[]drip.NodeVersionSta
 	}
 
 	for _, s := range *status {
-		dbNodeVersion := ApiNodeVersionStatusToDbNodeVersionStatus(s)
-		nodeVersionStatus = append(nodeVersionStatus, dbNodeVersion)
+		nodeVersionStatus = append(nodeVersionStatus, ApiNodeVersionStatusToDbNodeVersionStatus(s))
 	}
 
 	return nodeVersionStatus
@@ -126,8 +125,6 @@ func ApiNodeVersionStatusToDbNodeVersionStatus(status drip.NodeVersionStatus) sc
 		nodeVersionStatus = schema.NodeVersionStatusDeleted
 	case drip.NodeVersionStatusPending:
 		nodeVersionStatus = schema.NodeVersionStatusPending
-	case drip.NodeVersionStatusFlagged:
-		nodeVersionStatus = schema.NodeVersionStatusFlagged
 	default:
 		nodeVersionStatus = ""
 	}

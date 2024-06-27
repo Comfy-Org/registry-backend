@@ -2,19 +2,15 @@ package integration
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"registry-backend/config"
 	"registry-backend/drip"
 	"registry-backend/ent"
 	"registry-backend/mock/gateways"
 	"registry-backend/server/implementation"
 	drip_authorization "registry-backend/server/middleware/authorization"
-	dripservices_registry "registry-backend/services/registry"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
@@ -56,14 +52,8 @@ func TestRegistry(t *testing.T) {
 	mockSlackService.
 		On("SendRegistryMessageToSlack", mock.Anything).
 		Return(nil) // Do nothing for all slack messsage calls.
-	mockAlgolia := new(gateways.MockAlgoliaService)
-	mockAlgolia.
-		On("IndexNodes", mock.Anything, mock.Anything).
-		Return(nil).
-		On("DeleteNode", mock.Anything, mock.Anything).
-		Return(nil)
 	impl := implementation.NewStrictServerImplementation(
-		client, &config.Config{}, mockStorageService, mockSlackService, mockDiscordService, mockAlgolia)
+		client, &config.Config{}, mockStorageService, mockSlackService, mockDiscordService)
 	authz := drip_authorization.NewAuthorizationManager(client, impl.RegistryService).
 		AuthorizationMiddleware()
 
@@ -571,7 +561,6 @@ func TestRegistry(t *testing.T) {
 		t.Run("Create Node Version", func(t *testing.T) {
 			mockStorageService.On("GenerateSignedURL", mock.Anything, mock.Anything).Return("test-url", nil)
 			mockStorageService.On("GetFileUrl", mock.Anything, mock.Anything, mock.Anything).Return("test-url", nil)
-			mockDiscordService.On("SendSecurityCouncilMessage", mock.Anything, mock.Anything).Return(nil)
 			createNodeVersionResp, err := withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
 				PublisherId: publisherId,
 				NodeId:      nodeId,
@@ -695,6 +684,38 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("List Nodes", func(t *testing.T) {
+			nodeVersionLiteral = "1.1.0"
+
+			t.Run("Create New Node Version", func(t *testing.T) {
+				mockStorageService.On("GenerateSignedURL", mock.Anything, mock.Anything).Return("test-url", nil)
+				mockStorageService.On("GetFileUrl", mock.Anything, mock.Anything, mock.Anything).Return("test-url", nil)
+				res, err := withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
+					PublisherId: publisherId,
+					NodeId:      nodeId,
+					Body: &drip.PublishNodeVersionJSONRequestBody{
+						Node: drip.Node{
+							Id:          &nodeId,
+							Description: &nodeDescription,
+							Author:      &nodeAuthor,
+							License:     &nodeLicense,
+							Name:        &nodeName,
+							Tags:        &nodeTags,
+							Repository:  &source_code_repo,
+						},
+						NodeVersion: drip.NodeVersion{
+							Version:      &nodeVersionLiteral,
+							Changelog:    createdNodeVersion.Changelog,
+							Dependencies: &dependencies,
+						},
+						PersonalAccessToken: *createPersonalAccessTokenResponse.(drip.CreatePersonalAccessToken201JSONResponse).Token,
+					},
+				})
+				require.NoError(t, err, "should return created node version")
+				require.IsType(t, drip.PublishNodeVersion201JSONResponse{}, res)
+				res200 := res.(drip.PublishNodeVersion201JSONResponse)
+				createdNodeVersion = *res200.NodeVersion
+			})
+
 			resNodes, err := withMiddleware(authz, impl.ListAllNodes)(ctx, drip.ListAllNodesRequestObject{})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.ListAllNodes200JSONResponse{}, resNodes, "should return 200 server response")
@@ -722,6 +743,7 @@ func TestRegistry(t *testing.T) {
 			}
 			expectedNode.LatestVersion.DownloadUrl = (*resNodes200.Nodes)[0].LatestVersion.DownloadUrl // generated
 			expectedNode.LatestVersion.Deprecated = (*resNodes200.Nodes)[0].LatestVersion.Deprecated   // generated
+			expectedNode.LatestVersion.CreatedAt = (*resNodes200.Nodes)[0].LatestVersion.CreatedAt     // generated
 			expectedNode.Publisher.CreatedAt = (*resNodes200.Nodes)[0].Publisher.CreatedAt
 			assert.Equal(t, expectedNode, (*resNodes200.Nodes)[0])
 		})
@@ -765,63 +787,6 @@ func TestRegistry(t *testing.T) {
 			require.IsType(t, drip.PostNodeReview200JSONResponse{}, res)
 			res200 := res.(drip.PostNodeReview200JSONResponse)
 			assert.Equal(t, float32(5), *res200.Rating)
-		})
-
-		t.Run("Scan Node", func(t *testing.T) {
-			nodeId := nodeId + "-scan"
-			mockStorageService.On("GenerateSignedURL", mock.Anything, mock.Anything).Return("test-url", nil)
-			mockStorageService.On("GetFileUrl", mock.Anything, mock.Anything, mock.Anything).Return("test-url", nil)
-			mockDiscordService.On("SendSecurityCouncilMessage", mock.Anything, mock.Anything).Return(nil)
-			_, err := withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
-				PublisherId: publisherId,
-				NodeId:      nodeId,
-				Body: &drip.PublishNodeVersionJSONRequestBody{
-					Node: drip.Node{
-						Id:          &nodeId,
-						Description: &nodeDescription,
-						Author:      &nodeAuthor,
-						License:     &nodeLicense,
-						Name:        &nodeName,
-						Tags:        &nodeTags,
-						Repository:  &source_code_repo,
-					},
-					NodeVersion: drip.NodeVersion{
-						Version:      &nodeVersionLiteral,
-						Changelog:    &changelog,
-						Dependencies: &dependencies,
-					},
-					PersonalAccessToken: *createPersonalAccessTokenResponse.(drip.CreatePersonalAccessToken201JSONResponse).Token,
-				},
-			})
-			require.NoError(t, err, "should return created node version")
-
-			res, err := impl.GetNodeVersion(ctx, drip.GetNodeVersionRequestObject{NodeId: nodeId, VersionId: nodeVersionLiteral})
-			require.NoError(t, err)
-			require.IsType(t, drip.GetNodeVersion200JSONResponse{}, res)
-
-			handled := true
-			s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				req := dripservices_registry.ScanRequest{}
-				require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
-				assert.Equal(t, *res.(drip.GetNodeVersion200JSONResponse).DownloadUrl, req.URL)
-
-				handled = true
-				w.WriteHeader(http.StatusOK)
-			}))
-			t.Cleanup(s.Close)
-
-			cfg := &config.Config{SecretScannerURL: s.URL}
-			impl := implementation.NewStrictServerImplementation(
-				client, cfg, mockStorageService, mockSlackService, mockDiscordService, mockAlgolia)
-			dur := time.Duration(0)
-			scanres, err := withMiddleware(authz, impl.SecurityScan)(ctx, drip.SecurityScanRequestObject{
-				Params: drip.SecurityScanParams{
-					MinAge: &dur,
-				},
-			})
-			require.NoError(t, err)
-			require.IsType(t, drip.SecurityScan200Response{}, scanres)
-			assert.True(t, handled)
 		})
 	})
 }

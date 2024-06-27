@@ -36,12 +36,8 @@ func TestCICD(t *testing.T) {
 	mockSlackService.
 		On("SendRegistryMessageToSlack", mock.Anything).
 		Return(nil) // Do nothing for all slack messsage calls.
-	mockAlgolia := new(gateways.MockAlgoliaService)
-	mockAlgolia.
-		On("IndexNodes", mock.Anything, mock.Anything).
-		Return(nil)
 	impl := implementation.NewStrictServerImplementation(
-		client, &config.Config{}, mockStorageService, mockSlackService, mockDiscordService, mockAlgolia)
+		client, &config.Config{}, mockStorageService, mockSlackService, mockDiscordService)
 
 	ctx := context.Background()
 	now := time.Now()
