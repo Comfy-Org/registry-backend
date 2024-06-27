@@ -1574,7 +1574,13 @@ paths:
       summary: Security Scan
       operationId: securityScan
       description: Pull all pending node versions and conduct security scans.
-      
+      parameters:
+        - in: query
+          name: minAge
+          required: false
+          schema:
+            type: string
+            x-go-type: time.Duration
       responses:
         '200':
           description: Scan completed successfully

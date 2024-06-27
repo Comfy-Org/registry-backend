@@ -26,6 +26,8 @@ import (
 	"registry-backend/gateways/storage"
 	"registry-backend/mapper"
 	drip_metric "registry-backend/server/middleware/metric"
+	"strings"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"google.golang.org/protobuf/proto"
@@ -66,6 +68,7 @@ type NodeFilter struct {
 type NodeVersionFilter struct {
 	NodeId   string
 	Status   []schema.NodeVersionStatus
+	MinAge   time.Duration
 	PageSize int
 	Page     int
 }
@@ -427,6 +430,10 @@ func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Clie
 	if filter.Status != nil && len(filter.Status) > 0 {
 		log.Ctx(ctx).Info().Msgf("listing node versions with status: %v", filter.Status)
 		query.Where(nodeversion.StatusIn(filter.Status...))
+	}
+
+	if filter.MinAge > 0 {
+		query.Where(nodeversion.CreateTimeLT(time.Now().Add(-filter.MinAge)))
 	}
 
 	if filter.Page > 0 && filter.PageSize > 0 {
@@ -829,6 +836,12 @@ func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.
 
 	issues, err := sendScanRequest(s.config.SecretScannerURL, nodeVersion.Edges.StorageFile.FileURL)
 	if err != nil {
+		if strings.Contains(err.Error(), "404") {
+			err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusDeleted).SetStatusReason("Node zip file doesn’t exist").Exec(ctx)
+			if err != nil {
+				log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to active")
+			}
+		}
 		return err
 	}
 
