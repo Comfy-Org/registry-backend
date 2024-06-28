@@ -110,7 +110,7 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 	query := client.Node.Query().
 		WithPublisher().
 		WithVersions(func(q *ent.NodeVersionQuery) {
-			q.Order(ent.Desc(nodeversion.FieldCreateTime))
+			q.Order(ent.Desc(nodeversion.FieldCreateTime)).Limit(1)
 		})
 
 	// Apply filters if provided
@@ -837,6 +837,7 @@ func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.
 	issues, err := sendScanRequest(s.config.SecretScannerURL, nodeVersion.Edges.StorageFile.FileURL)
 	if err != nil {
 		if strings.Contains(err.Error(), "404") {
+			log.Ctx(ctx).Info().Msgf("Node zip file doesn’t exist %s@%s. Updating to deleted.", nodeVersion.NodeID, nodeVersion.Version)
 			err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusDeleted).SetStatusReason("Node zip file doesn’t exist").Exec(ctx)
 			if err != nil {
 				log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to active")

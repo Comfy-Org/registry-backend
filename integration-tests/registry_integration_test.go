@@ -8,6 +8,8 @@ import (
 	"registry-backend/config"
 	"registry-backend/drip"
 	"registry-backend/ent"
+	"registry-backend/ent/nodeversion"
+	"registry-backend/ent/schema"
 	"registry-backend/mock/gateways"
 	"registry-backend/server/implementation"
 	drip_authorization "registry-backend/server/middleware/authorization"
@@ -695,6 +697,38 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("List Nodes", func(t *testing.T) {
+			nodeVersionLiteral = "1.1.0"
+
+			t.Run("Create New Node Version", func(t *testing.T) {
+				mockStorageService.On("GenerateSignedURL", mock.Anything, mock.Anything).Return("test-url", nil)
+				mockStorageService.On("GetFileUrl", mock.Anything, mock.Anything, mock.Anything).Return("test-url", nil)
+				res, err := withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
+					PublisherId: publisherId,
+					NodeId:      nodeId,
+					Body: &drip.PublishNodeVersionJSONRequestBody{
+						Node: drip.Node{
+							Id:          &nodeId,
+							Description: &nodeDescription,
+							Author:      &nodeAuthor,
+							License:     &nodeLicense,
+							Name:        &nodeName,
+							Tags:        &nodeTags,
+							Repository:  &source_code_repo,
+						},
+						NodeVersion: drip.NodeVersion{
+							Version:      &nodeVersionLiteral,
+							Changelog:    createdNodeVersion.Changelog,
+							Dependencies: &dependencies,
+						},
+						PersonalAccessToken: *createPersonalAccessTokenResponse.(drip.CreatePersonalAccessToken201JSONResponse).Token,
+					},
+				})
+				require.NoError(t, err, "should return created node version")
+				require.IsType(t, drip.PublishNodeVersion201JSONResponse{}, res)
+				res200 := res.(drip.PublishNodeVersion201JSONResponse)
+				createdNodeVersion = *res200.NodeVersion
+			})
+
 			resNodes, err := withMiddleware(authz, impl.ListAllNodes)(ctx, drip.ListAllNodesRequestObject{})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.ListAllNodes200JSONResponse{}, resNodes, "should return 200 server response")
@@ -722,6 +756,7 @@ func TestRegistry(t *testing.T) {
 			}
 			expectedNode.LatestVersion.DownloadUrl = (*resNodes200.Nodes)[0].LatestVersion.DownloadUrl // generated
 			expectedNode.LatestVersion.Deprecated = (*resNodes200.Nodes)[0].LatestVersion.Deprecated   // generated
+			expectedNode.LatestVersion.CreatedAt = (*resNodes200.Nodes)[0].LatestVersion.CreatedAt     // generated
 			expectedNode.Publisher.CreatedAt = (*resNodes200.Nodes)[0].Publisher.CreatedAt
 			assert.Equal(t, expectedNode, (*resNodes200.Nodes)[0])
 		})
@@ -799,13 +834,19 @@ func TestRegistry(t *testing.T) {
 			require.NoError(t, err)
 			require.IsType(t, drip.GetNodeVersion200JSONResponse{}, res)
 
-			handled := true
+			nodesToScans, err := client.NodeVersion.Query().Where(nodeversion.StatusEQ(schema.NodeVersionStatusPending)).Count(ctx)
+			require.NoError(t, err)
+
+			newNodeScanned := false
+			nodesScanned := 0
 			s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				req := dripservices_registry.ScanRequest{}
 				require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
-				assert.Equal(t, *res.(drip.GetNodeVersion200JSONResponse).DownloadUrl, req.URL)
+				if *res.(drip.GetNodeVersion200JSONResponse).DownloadUrl == req.URL {
+					newNodeScanned = true
+				}
+				nodesScanned++
 
-				handled = true
 				w.WriteHeader(http.StatusOK)
 			}))
 			t.Cleanup(s.Close)
@@ -821,7 +862,8 @@ func TestRegistry(t *testing.T) {
 			})
 			require.NoError(t, err)
 			require.IsType(t, drip.SecurityScan200Response{}, scanres)
-			assert.True(t, handled)
+			assert.True(t, newNodeScanned)
+			assert.Equal(t, nodesToScans, nodesScanned)
 		})
 	})
 }
