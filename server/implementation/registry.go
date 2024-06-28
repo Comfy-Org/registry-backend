@@ -908,10 +908,14 @@ func (s *DripStrictServerImplementation) SecurityScan(
 	if request.Params.MinAge != nil {
 		minAge = *request.Params.MinAge
 	}
+	maxNodes := 50
+	if request.Params.MaxNodes != nil {
+		maxNodes = *request.Params.MaxNodes
+	}
 	nodeVersionsResult, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &drip_services.NodeVersionFilter{
 		Status:   []schema.NodeVersionStatus{schema.NodeVersionStatusPending},
 		MinAge:   minAge,
-		PageSize: 50,
+		PageSize: maxNodes,
 		Page:     1,
 	})
 	nodeVersions := nodeVersionsResult.NodeVersions
