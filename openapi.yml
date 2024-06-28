@@ -1601,6 +1601,11 @@ paths:
           schema:
             type: string
             x-go-type: time.Duration
+        - in: query
+          name: maxNodes
+          required: false
+          schema:
+            type: integer
       responses:
         '200':
           description: Scan completed successfully
