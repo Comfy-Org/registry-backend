@@ -8,6 +8,8 @@ import (
 	"registry-backend/config"
 	"registry-backend/drip"
 	"registry-backend/ent"
+	"registry-backend/ent/nodeversion"
+	"registry-backend/ent/schema"
 	"registry-backend/mock/gateways"
 	"registry-backend/server/implementation"
 	drip_authorization "registry-backend/server/middleware/authorization"
@@ -832,13 +834,19 @@ func TestRegistry(t *testing.T) {
 			require.NoError(t, err)
 			require.IsType(t, drip.GetNodeVersion200JSONResponse{}, res)
 
-			handled := true
+			nodesToScans, err := client.NodeVersion.Query().Where(nodeversion.StatusEQ(schema.NodeVersionStatusPending)).Count(ctx)
+			require.NoError(t, err)
+
+			newNodeScanned := false
+			nodesScanned := 0
 			s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				req := dripservices_registry.ScanRequest{}
 				require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
-				assert.Equal(t, *res.(drip.GetNodeVersion200JSONResponse).DownloadUrl, req.URL)
+				if *res.(drip.GetNodeVersion200JSONResponse).DownloadUrl == req.URL {
+					newNodeScanned = true
+				}
+				nodesScanned++
 
-				handled = true
 				w.WriteHeader(http.StatusOK)
 			}))
 			t.Cleanup(s.Close)
@@ -854,7 +862,8 @@ func TestRegistry(t *testing.T) {
 			})
 			require.NoError(t, err)
 			require.IsType(t, drip.SecurityScan200Response{}, scanres)
-			assert.True(t, handled)
+			assert.True(t, newNodeScanned)
+			assert.Equal(t, nodesToScans, nodesScanned)
 		})
 	})
 }
