@@ -21,4 +21,3 @@ services:
       ALGOLIA_APP_ID: 
       ALGOLIA_API_KEY: 
       SECRET_SCANNER_URL: ""
-      REINDEX_NODES_CRONTAB: "0 3 * * *"

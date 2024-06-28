@@ -1152,7 +1152,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
+  /nodes/reindex:
+    post:
+      summary: Reindex all nodes for searching.
+      operationId: reindexNodes
+      tags:
+        - Nodes
+      responses:
+        '200':
+          description: Reindex completed successfully.
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /nodes:
     get:
       summary: Retrieves a list of nodes

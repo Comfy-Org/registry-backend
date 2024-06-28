@@ -25,11 +25,7 @@ require (
 	google.golang.org/protobuf v1.32.0
 )
 
-require (
-	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
-	github.com/jonboulle/clockwork v0.4.0 // indirect
-	github.com/robfig/cron/v3 v3.0.1 // indirect
-)
+require github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 
 require (
 	ariga.io/atlas v0.19.1-0.20240203083654-5948b60a8e43 // indirect
@@ -56,7 +52,6 @@ require (
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/go-co-op/gocron/v2 v2.6.0
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
