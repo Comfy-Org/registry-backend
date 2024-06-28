@@ -484,6 +484,12 @@ func TestRegistry(t *testing.T) {
 			require.NoError(t, err, "should not return error")
 			assert.IsType(t, drip.DeleteNode204Response{}, res)
 		})
+
+		t.Run("Index Nodes", func(t *testing.T) {
+			res, err := withMiddleware(authz, impl.ReindexNodes)(ctx, drip.ReindexNodesRequestObject{})
+			require.NoError(t, err, "should not return error")
+			assert.IsType(t, drip.ReindexNodes200Response{}, res)
+		})
 	})
 
 	t.Run("Node Version", func(t *testing.T) {

@@ -12,7 +12,6 @@ import (
 	"registry-backend/gateways/storage"
 	handler "registry-backend/server/handlers"
 	"registry-backend/server/implementation"
-	drip_jobs "registry-backend/server/jobs"
 	drip_middleware "registry-backend/server/middleware"
 	drip_authentication "registry-backend/server/middleware/authentication"
 	drip_authorization "registry-backend/server/middleware/authorization"
@@ -103,9 +102,6 @@ func (s *Server) Start() error {
 
 	// Attach implementation of generated oapi strict server.
 	impl := implementation.NewStrictServerImplementation(s.Client, s.Config, storageService, slackService, discordService, algoliaService)
-
-	// start jobs
-	go drip_jobs.ReindexAllNodes(context.Background(), s.Client, *impl.RegistryService, s.Config.ReindexNodesCrontab)
 
 	// Define middlewares in the order of operations
 	authorizationManager := drip_authorization.NewAuthorizationManager(s.Client, impl.RegistryService)
