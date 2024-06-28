@@ -990,3 +990,15 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 		TotalPages: &nodeVersionResults.TotalPages,
 	}, nil
 }
+
+func (s *DripStrictServerImplementation) ReindexNodes(ctx context.Context, request drip.ReindexNodesRequestObject) (res drip.ReindexNodesResponseObject, err error) {
+	log.Ctx(ctx).Info().Msg("ReindexNodes request received")
+	err = s.RegistryService.ReindexAllNodes(ctx, s.Client)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to list node versions w/ err: %v", err)
+		return drip.ReindexNodes500JSONResponse{Message: "Failed to reindex nodes", Error: err.Error()}, nil
+	}
+
+	log.Ctx(ctx).Info().Msgf("Reindex nodes successful")
+	return drip.ReindexNodes200Response{}, nil
+}

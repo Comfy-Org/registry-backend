@@ -27,7 +27,6 @@ func main() {
 		JWTSecret:                     os.Getenv("JWT_SECRET"),
 		SecretScannerURL:              os.Getenv("SECRET_SCANNER_URL"),
 		DiscordSecurityChannelWebhook: os.Getenv("SECURITY_COUNCIL_DISCORD_WEBHOOK"),
-		ReindexNodesCrontab:           os.Getenv("REINDEX_NODES_CRONTAB"),
 	}
 
 	var dsn string
