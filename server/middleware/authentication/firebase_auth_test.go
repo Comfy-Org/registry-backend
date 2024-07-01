@@ -39,6 +39,7 @@ func TestAllowlist(t *testing.T) {
 		{"Node Version Path POST", "/publishers/pub123/nodes/node456/versions", "POST", true},
 		{"Publisher POST", "/publishers", "POST", false},
 		{"Unauthorized Path", "/nonexistent", "GET", false},
+		{"Reindex Nodes", "/nodes/reindex", "POST", true},
 		{"Get All Nodes", "/nodes", "GET", true},
 		{"Install Nodes", "/nodes/node-id/install", "GET", true},
 	}
