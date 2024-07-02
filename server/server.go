@@ -89,7 +89,7 @@ func (s *Server) Start() error {
 	}
 
 	slackService := gateway.NewSlackService(s.Config)
-	algoliaService, err := algolia.NewFromEnv()
+	algoliaService, err := algolia.NewFromEnvOrNoop()
 	if err != nil {
 		return err
 	}
