@@ -23,8 +23,9 @@ import (
 // PublisherUpdate is the builder for updating Publisher entities.
 type PublisherUpdate struct {
 	config
-	hooks    []Hook
-	mutation *PublisherMutation
+	hooks     []Hook
+	mutation  *PublisherMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the PublisherUpdate builder.
@@ -326,6 +327,12 @@ func (pu *PublisherUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (pu *PublisherUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *PublisherUpdate {
+	pu.modifiers = append(pu.modifiers, modifiers...)
+	return pu
+}
+
 func (pu *PublisherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := pu.check(); err != nil {
 		return n, err
@@ -512,6 +519,7 @@ func (pu *PublisherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(pu.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, pu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{publisher.Label}
@@ -527,9 +535,10 @@ func (pu *PublisherUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // PublisherUpdateOne is the builder for updating a single Publisher entity.
 type PublisherUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *PublisherMutation
+	fields    []string
+	hooks     []Hook
+	mutation  *PublisherMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdateTime sets the "update_time" field.
@@ -838,6 +847,12 @@ func (puo *PublisherUpdateOne) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (puo *PublisherUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *PublisherUpdateOne {
+	puo.modifiers = append(puo.modifiers, modifiers...)
+	return puo
+}
+
 func (puo *PublisherUpdateOne) sqlSave(ctx context.Context) (_node *Publisher, err error) {
 	if err := puo.check(); err != nil {
 		return _node, err
@@ -1041,6 +1056,7 @@ func (puo *PublisherUpdateOne) sqlSave(ctx context.Context) (_node *Publisher, e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(puo.modifiers...)
 	_node = &Publisher{config: puo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

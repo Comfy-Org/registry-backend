@@ -635,6 +635,12 @@ func (nvq *NodeVersionQuery) ForShare(opts ...sql.LockOption) *NodeVersionQuery 
 	return nvq
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (nvq *NodeVersionQuery) Modify(modifiers ...func(s *sql.Selector)) *NodeVersionSelect {
+	nvq.modifiers = append(nvq.modifiers, modifiers...)
+	return nvq.Select()
+}
+
 // NodeVersionGroupBy is the group-by builder for NodeVersion entities.
 type NodeVersionGroupBy struct {
 	selector
@@ -723,4 +729,10 @@ func (nvs *NodeVersionSelect) sqlScan(ctx context.Context, root *NodeVersionQuer
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (nvs *NodeVersionSelect) Modify(modifiers ...func(s *sql.Selector)) *NodeVersionSelect {
+	nvs.modifiers = append(nvs.modifiers, modifiers...)
+	return nvs
 }
