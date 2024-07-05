@@ -23,8 +23,9 @@ import (
 // NodeVersionUpdate is the builder for updating NodeVersion entities.
 type NodeVersionUpdate struct {
 	config
-	hooks    []Hook
-	mutation *NodeVersionMutation
+	hooks     []Hook
+	mutation  *NodeVersionMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the NodeVersionUpdate builder.
@@ -231,6 +232,12 @@ func (nvu *NodeVersionUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (nvu *NodeVersionUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *NodeVersionUpdate {
+	nvu.modifiers = append(nvu.modifiers, modifiers...)
+	return nvu
+}
+
 func (nvu *NodeVersionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := nvu.check(); err != nil {
 		return n, err
@@ -330,6 +337,7 @@ func (nvu *NodeVersionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(nvu.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, nvu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{nodeversion.Label}
@@ -345,9 +353,10 @@ func (nvu *NodeVersionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // NodeVersionUpdateOne is the builder for updating a single NodeVersion entity.
 type NodeVersionUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *NodeVersionMutation
+	fields    []string
+	hooks     []Hook
+	mutation  *NodeVersionMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdateTime sets the "update_time" field.
@@ -561,6 +570,12 @@ func (nvuo *NodeVersionUpdateOne) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (nvuo *NodeVersionUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *NodeVersionUpdateOne {
+	nvuo.modifiers = append(nvuo.modifiers, modifiers...)
+	return nvuo
+}
+
 func (nvuo *NodeVersionUpdateOne) sqlSave(ctx context.Context) (_node *NodeVersion, err error) {
 	if err := nvuo.check(); err != nil {
 		return _node, err
@@ -677,6 +692,7 @@ func (nvuo *NodeVersionUpdateOne) sqlSave(ctx context.Context) (_node *NodeVersi
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(nvuo.modifiers...)
 	_node = &NodeVersion{config: nvuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

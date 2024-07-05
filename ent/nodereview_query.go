@@ -627,6 +627,12 @@ func (nrq *NodeReviewQuery) ForShare(opts ...sql.LockOption) *NodeReviewQuery {
 	return nrq
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (nrq *NodeReviewQuery) Modify(modifiers ...func(s *sql.Selector)) *NodeReviewSelect {
+	nrq.modifiers = append(nrq.modifiers, modifiers...)
+	return nrq.Select()
+}
+
 // NodeReviewGroupBy is the group-by builder for NodeReview entities.
 type NodeReviewGroupBy struct {
 	selector
@@ -715,4 +721,10 @@ func (nrs *NodeReviewSelect) sqlScan(ctx context.Context, root *NodeReviewQuery,
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (nrs *NodeReviewSelect) Modify(modifiers ...func(s *sql.Selector)) *NodeReviewSelect {
+	nrs.modifiers = append(nrs.modifiers, modifiers...)
+	return nrs
 }

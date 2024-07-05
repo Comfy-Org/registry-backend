@@ -3,11 +3,14 @@ package integration
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"registry-backend/config"
 	"registry-backend/drip"
 	"registry-backend/ent"
+	"registry-backend/ent/nodeversion"
+	"registry-backend/ent/schema"
 	"registry-backend/mock/gateways"
 	"registry-backend/server/implementation"
 	drip_authorization "registry-backend/server/middleware/authorization"
@@ -701,35 +704,75 @@ func TestRegistry(t *testing.T) {
 		})
 
 		t.Run("List Nodes", func(t *testing.T) {
+			nodeIDs := map[string]*drip.NodeVersion{
+				nodeId + "-1": nil,
+				nodeId + "-2": nil,
+			}
+			nodeVersionBase := "2.0"
+			for nodeId := range nodeIDs {
+				for i := 0; i < 2; i++ {
+					version := fmt.Sprintf("%s.%d", nodeVersionBase, i)
+					res, err := withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
+						PublisherId: publisherId,
+						NodeId:      nodeId,
+						Body: &drip.PublishNodeVersionJSONRequestBody{
+							Node: drip.Node{
+								Id:          &nodeId,
+								Description: &nodeDescription,
+								Author:      &nodeAuthor,
+								License:     &nodeLicense,
+								Name:        &nodeName,
+								Tags:        &nodeTags,
+								Repository:  &source_code_repo,
+							},
+							NodeVersion: drip.NodeVersion{
+								Version:      &version,
+								Changelog:    createdNodeVersion.Changelog,
+								Dependencies: &dependencies,
+							},
+							PersonalAccessToken: *createPersonalAccessTokenResponse.(drip.CreatePersonalAccessToken201JSONResponse).Token,
+						},
+					})
+					require.NoError(t, err, "should return created node version")
+					require.IsType(t, drip.PublishNodeVersion201JSONResponse{}, res)
+					res200 := res.(drip.PublishNodeVersion201JSONResponse)
+					nodeIDs[nodeId] = res200.NodeVersion
+				}
+			}
+			nodeIDs[nodeId] = &createdNodeVersion
+
 			resNodes, err := withMiddleware(authz, impl.ListAllNodes)(ctx, drip.ListAllNodesRequestObject{})
 			require.NoError(t, err, "should not return error")
 			require.IsType(t, drip.ListAllNodes200JSONResponse{}, resNodes, "should return 200 server response")
 			resNodes200 := resNodes.(drip.ListAllNodes200JSONResponse)
-			assert.Len(t, *resNodes200.Nodes, 1, "should only contain 1 node")
+			assert.Len(t, *resNodes200.Nodes, len(nodeIDs), "should only contain 1 node")
 
-			expDl, expRate := 0, float32(0)
-			nodeStatus := drip.NodeStatusActive
-			expectedNode := drip.Node{
-				Id:            &nodeId,
-				Name:          &nodeName,
-				Repository:    &source_code_repo,
-				Description:   &nodeDescription,
-				Author:        &nodeAuthor,
-				License:       &nodeLicense,
-				Tags:          &nodeTags,
-				LatestVersion: &createdNodeVersion,
-				Icon:          proto.String(""),
-				Publisher:     (*drip.Publisher)(&createdPublisher),
-				Downloads:     &expDl,
-				Rating:        &expRate,
-				Status:        &nodeStatus,
-				StatusDetail:  proto.String(""),
-				Category:      proto.String(""),
+			for _, node := range *resNodes200.Nodes {
+				expDl, expRate := 0, float32(0)
+				nodeStatus := drip.NodeStatusActive
+				expectedNode := drip.Node{
+					Id:            node.Id,
+					Name:          &nodeName,
+					Repository:    &source_code_repo,
+					Description:   &nodeDescription,
+					Author:        &nodeAuthor,
+					License:       &nodeLicense,
+					Tags:          &nodeTags,
+					LatestVersion: nodeIDs[*node.Id],
+					Icon:          proto.String(""),
+					Publisher:     (*drip.Publisher)(&createdPublisher),
+					Downloads:     &expDl,
+					Rating:        &expRate,
+					Status:        &nodeStatus,
+					StatusDetail:  proto.String(""),
+					Category:      proto.String(""),
+				}
+				expectedNode.LatestVersion.DownloadUrl = node.LatestVersion.DownloadUrl // generated
+				expectedNode.LatestVersion.Deprecated = node.LatestVersion.Deprecated   // generated
+				expectedNode.LatestVersion.CreatedAt = node.LatestVersion.CreatedAt     // generated
+				expectedNode.Publisher.CreatedAt = node.Publisher.CreatedAt
+				assert.Equal(t, expectedNode, node)
 			}
-			expectedNode.LatestVersion.DownloadUrl = (*resNodes200.Nodes)[0].LatestVersion.DownloadUrl // generated
-			expectedNode.LatestVersion.Deprecated = (*resNodes200.Nodes)[0].LatestVersion.Deprecated   // generated
-			expectedNode.Publisher.CreatedAt = (*resNodes200.Nodes)[0].Publisher.CreatedAt
-			assert.Equal(t, expectedNode, (*resNodes200.Nodes)[0])
 		})
 
 		t.Run("Install Node", func(t *testing.T) {
@@ -805,13 +848,19 @@ func TestRegistry(t *testing.T) {
 			require.NoError(t, err)
 			require.IsType(t, drip.GetNodeVersion200JSONResponse{}, res)
 
-			handled := true
+			nodesToScans, err := client.NodeVersion.Query().Where(nodeversion.StatusEQ(schema.NodeVersionStatusPending)).Count(ctx)
+			require.NoError(t, err)
+
+			newNodeScanned := false
+			nodesScanned := 0
 			s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				req := dripservices_registry.ScanRequest{}
 				require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
-				assert.Equal(t, *res.(drip.GetNodeVersion200JSONResponse).DownloadUrl, req.URL)
+				if *res.(drip.GetNodeVersion200JSONResponse).DownloadUrl == req.URL {
+					newNodeScanned = true
+				}
+				nodesScanned++
 
-				handled = true
 				w.WriteHeader(http.StatusOK)
 			}))
 			t.Cleanup(s.Close)
@@ -827,7 +876,8 @@ func TestRegistry(t *testing.T) {
 			})
 			require.NoError(t, err)
 			require.IsType(t, drip.SecurityScan200Response{}, scanres)
-			assert.True(t, handled)
+			assert.True(t, newNodeScanned)
+			assert.Equal(t, nodesToScans, nodesScanned)
 		})
 	})
 }

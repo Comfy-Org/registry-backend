@@ -288,14 +288,9 @@ func (s *DripStrictServerImplementation) ListAllNodes(
 	for _, dbNode := range nodeResults.Nodes {
 		apiNode := mapper.DbNodeToApiNode(dbNode)
 
-		// Fetch the latest version if available
-		if dbNode.Edges.Versions != nil && len(dbNode.Edges.Versions) > 0 {
-			latestVersion, err := s.RegistryService.GetLatestNodeVersion(ctx, s.Client, dbNode.ID)
-			if err == nil {
-				apiNode.LatestVersion = mapper.DbNodeVersionToApiNodeVersion(latestVersion)
-			} else {
-				log.Ctx(ctx).Error().Msgf("Failed to get latest version for node %s w/ err: %v", dbNode.ID, err)
-			}
+		// attach information of latest version if available
+		if len(dbNode.Edges.Versions) > 0 {
+			apiNode.LatestVersion = mapper.DbNodeVersionToApiNodeVersion(dbNode.Edges.Versions[0])
 		}
 
 		// Map publisher information

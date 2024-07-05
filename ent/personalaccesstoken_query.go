@@ -552,6 +552,12 @@ func (patq *PersonalAccessTokenQuery) ForShare(opts ...sql.LockOption) *Personal
 	return patq
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (patq *PersonalAccessTokenQuery) Modify(modifiers ...func(s *sql.Selector)) *PersonalAccessTokenSelect {
+	patq.modifiers = append(patq.modifiers, modifiers...)
+	return patq.Select()
+}
+
 // PersonalAccessTokenGroupBy is the group-by builder for PersonalAccessToken entities.
 type PersonalAccessTokenGroupBy struct {
 	selector
@@ -640,4 +646,10 @@ func (pats *PersonalAccessTokenSelect) sqlScan(ctx context.Context, root *Person
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (pats *PersonalAccessTokenSelect) Modify(modifiers ...func(s *sql.Selector)) *PersonalAccessTokenSelect {
+	pats.modifiers = append(pats.modifiers, modifiers...)
+	return pats
 }

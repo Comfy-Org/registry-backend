@@ -635,6 +635,12 @@ func (cwrq *CIWorkflowResultQuery) ForShare(opts ...sql.LockOption) *CIWorkflowR
 	return cwrq
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (cwrq *CIWorkflowResultQuery) Modify(modifiers ...func(s *sql.Selector)) *CIWorkflowResultSelect {
+	cwrq.modifiers = append(cwrq.modifiers, modifiers...)
+	return cwrq.Select()
+}
+
 // CIWorkflowResultGroupBy is the group-by builder for CIWorkflowResult entities.
 type CIWorkflowResultGroupBy struct {
 	selector
@@ -723,4 +729,10 @@ func (cwrs *CIWorkflowResultSelect) sqlScan(ctx context.Context, root *CIWorkflo
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (cwrs *CIWorkflowResultSelect) Modify(modifiers ...func(s *sql.Selector)) *CIWorkflowResultSelect {
+	cwrs.modifiers = append(cwrs.modifiers, modifiers...)
+	return cwrs
 }

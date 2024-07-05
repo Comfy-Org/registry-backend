@@ -703,6 +703,12 @@ func (pq *PublisherQuery) ForShare(opts ...sql.LockOption) *PublisherQuery {
 	return pq
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (pq *PublisherQuery) Modify(modifiers ...func(s *sql.Selector)) *PublisherSelect {
+	pq.modifiers = append(pq.modifiers, modifiers...)
+	return pq.Select()
+}
+
 // PublisherGroupBy is the group-by builder for Publisher entities.
 type PublisherGroupBy struct {
 	selector
@@ -791,4 +797,10 @@ func (ps *PublisherSelect) sqlScan(ctx context.Context, root *PublisherQuery, v 
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (ps *PublisherSelect) Modify(modifiers ...func(s *sql.Selector)) *PublisherSelect {
+	ps.modifiers = append(ps.modifiers, modifiers...)
+	return ps
 }

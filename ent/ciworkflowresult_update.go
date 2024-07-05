@@ -21,8 +21,9 @@ import (
 // CIWorkflowResultUpdate is the builder for updating CIWorkflowResult entities.
 type CIWorkflowResultUpdate struct {
 	config
-	hooks    []Hook
-	mutation *CIWorkflowResultMutation
+	hooks     []Hook
+	mutation  *CIWorkflowResultMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the CIWorkflowResultUpdate builder.
@@ -296,6 +297,12 @@ func (cwru *CIWorkflowResultUpdate) defaults() {
 	}
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (cwru *CIWorkflowResultUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *CIWorkflowResultUpdate {
+	cwru.modifiers = append(cwru.modifiers, modifiers...)
+	return cwru
+}
+
 func (cwru *CIWorkflowResultUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := sqlgraph.NewUpdateSpec(ciworkflowresult.Table, ciworkflowresult.Columns, sqlgraph.NewFieldSpec(ciworkflowresult.FieldID, field.TypeUUID))
 	if ps := cwru.mutation.predicates; len(ps) > 0 {
@@ -417,6 +424,7 @@ func (cwru *CIWorkflowResultUpdate) sqlSave(ctx context.Context) (n int, err err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(cwru.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, cwru.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{ciworkflowresult.Label}
@@ -432,9 +440,10 @@ func (cwru *CIWorkflowResultUpdate) sqlSave(ctx context.Context) (n int, err err
 // CIWorkflowResultUpdateOne is the builder for updating a single CIWorkflowResult entity.
 type CIWorkflowResultUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *CIWorkflowResultMutation
+	fields    []string
+	hooks     []Hook
+	mutation  *CIWorkflowResultMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdateTime sets the "update_time" field.
@@ -715,6 +724,12 @@ func (cwruo *CIWorkflowResultUpdateOne) defaults() {
 	}
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (cwruo *CIWorkflowResultUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *CIWorkflowResultUpdateOne {
+	cwruo.modifiers = append(cwruo.modifiers, modifiers...)
+	return cwruo
+}
+
 func (cwruo *CIWorkflowResultUpdateOne) sqlSave(ctx context.Context) (_node *CIWorkflowResult, err error) {
 	_spec := sqlgraph.NewUpdateSpec(ciworkflowresult.Table, ciworkflowresult.Columns, sqlgraph.NewFieldSpec(ciworkflowresult.FieldID, field.TypeUUID))
 	id, ok := cwruo.mutation.ID()
@@ -853,6 +868,7 @@ func (cwruo *CIWorkflowResultUpdateOne) sqlSave(ctx context.Context) (_node *CIW
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(cwruo.modifiers...)
 	_node = &CIWorkflowResult{config: cwruo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

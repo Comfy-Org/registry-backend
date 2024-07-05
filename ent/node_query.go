@@ -701,6 +701,12 @@ func (nq *NodeQuery) ForShare(opts ...sql.LockOption) *NodeQuery {
 	return nq
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (nq *NodeQuery) Modify(modifiers ...func(s *sql.Selector)) *NodeSelect {
+	nq.modifiers = append(nq.modifiers, modifiers...)
+	return nq.Select()
+}
+
 // NodeGroupBy is the group-by builder for Node entities.
 type NodeGroupBy struct {
 	selector
@@ -789,4 +795,10 @@ func (ns *NodeSelect) sqlScan(ctx context.Context, root *NodeQuery, v any) error
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (ns *NodeSelect) Modify(modifiers ...func(s *sql.Selector)) *NodeSelect {
+	ns.modifiers = append(ns.modifiers, modifiers...)
+	return ns
 }

@@ -19,8 +19,9 @@ import (
 // NodeReviewUpdate is the builder for updating NodeReview entities.
 type NodeReviewUpdate struct {
 	config
-	hooks    []Hook
-	mutation *NodeReviewMutation
+	hooks     []Hook
+	mutation  *NodeReviewMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the NodeReviewUpdate builder.
@@ -143,6 +144,12 @@ func (nru *NodeReviewUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (nru *NodeReviewUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *NodeReviewUpdate {
+	nru.modifiers = append(nru.modifiers, modifiers...)
+	return nru
+}
+
 func (nru *NodeReviewUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := nru.check(); err != nil {
 		return n, err
@@ -219,6 +226,7 @@ func (nru *NodeReviewUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(nru.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, nru.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{nodereview.Label}
@@ -234,9 +242,10 @@ func (nru *NodeReviewUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // NodeReviewUpdateOne is the builder for updating a single NodeReview entity.
 type NodeReviewUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *NodeReviewMutation
+	fields    []string
+	hooks     []Hook
+	mutation  *NodeReviewMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetNodeID sets the "node_id" field.
@@ -366,6 +375,12 @@ func (nruo *NodeReviewUpdateOne) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (nruo *NodeReviewUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *NodeReviewUpdateOne {
+	nruo.modifiers = append(nruo.modifiers, modifiers...)
+	return nruo
+}
+
 func (nruo *NodeReviewUpdateOne) sqlSave(ctx context.Context) (_node *NodeReview, err error) {
 	if err := nruo.check(); err != nil {
 		return _node, err
@@ -459,6 +474,7 @@ func (nruo *NodeReviewUpdateOne) sqlSave(ctx context.Context) (_node *NodeReview
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(nruo.modifiers...)
 	_node = &NodeReview{config: nruo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

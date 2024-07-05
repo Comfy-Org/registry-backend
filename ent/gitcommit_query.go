@@ -553,6 +553,12 @@ func (gcq *GitCommitQuery) ForShare(opts ...sql.LockOption) *GitCommitQuery {
 	return gcq
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (gcq *GitCommitQuery) Modify(modifiers ...func(s *sql.Selector)) *GitCommitSelect {
+	gcq.modifiers = append(gcq.modifiers, modifiers...)
+	return gcq.Select()
+}
+
 // GitCommitGroupBy is the group-by builder for GitCommit entities.
 type GitCommitGroupBy struct {
 	selector
@@ -641,4 +647,10 @@ func (gcs *GitCommitSelect) sqlScan(ctx context.Context, root *GitCommitQuery, v
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (gcs *GitCommitSelect) Modify(modifiers ...func(s *sql.Selector)) *GitCommitSelect {
+	gcs.modifiers = append(gcs.modifiers, modifiers...)
+	return gcs
 }

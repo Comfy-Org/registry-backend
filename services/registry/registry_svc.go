@@ -29,6 +29,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/Masterminds/semver/v3"
 	"google.golang.org/protobuf/proto"
 
@@ -107,11 +108,7 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 	}
 
 	// Initialize the query with relationships
-	query := client.Node.Query().
-		WithPublisher().
-		WithVersions(func(q *ent.NodeVersionQuery) {
-			q.Order(ent.Desc(nodeversion.FieldCreateTime))
-		})
+	query := client.Node.Query().WithPublisher()
 
 	// Apply filters if provided
 	if filter != nil {
@@ -156,6 +153,17 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 
 	// Fetch nodes with pagination
 	nodes, err := query.
+		WithVersions(func(q *ent.NodeVersionQuery) {
+			q.Modify(func(s *sql.Selector) {
+				s.Where(sql.ExprP(
+					`(node_id, create_time) IN (
+						SELECT node_id, MAX(create_time)
+						FROM node_versions
+						GROUP BY node_id
+					)`,
+				))
+			})
+		}).
 		Offset(offset).
 		Limit(limit).
 		All(ctx)
@@ -817,20 +825,16 @@ func (s *RegistryService) AssertPublisherBanned(ctx context.Context, client *ent
 }
 
 func (s *RegistryService) ReindexAllNodes(ctx context.Context, client *ent.Client) error {
-	log.Ctx(ctx).Info().Msgf("reindexing nodes")
 	nodes, err := client.Node.Query().All(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch all nodes: %w", err)
 	}
-
-	log.Ctx(ctx).Info().Msgf("reindexing %d number of nodes", len(nodes))
 	err = s.algolia.IndexNodes(ctx, nodes...)
 	if err != nil {
 		return fmt.Errorf("failed to reindex all nodes: %w", err)
 	}
 	return nil
 }
-
 func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.Client, nodeVersion *ent.NodeVersion) error {
 	log.Ctx(ctx).Info().Msgf("scanning node %s@%s", nodeVersion.NodeID, nodeVersion.Version)
 
@@ -841,6 +845,7 @@ func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.
 	issues, err := sendScanRequest(s.config.SecretScannerURL, nodeVersion.Edges.StorageFile.FileURL)
 	if err != nil {
 		if strings.Contains(err.Error(), "404") {
+			log.Ctx(ctx).Info().Msgf("Node zip file doesn’t exist %s@%s. Updating to deleted.", nodeVersion.NodeID, nodeVersion.Version)
 			err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusDeleted).SetStatusReason("Node zip file doesn’t exist").Exec(ctx)
 			if err != nil {
 				log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to active")

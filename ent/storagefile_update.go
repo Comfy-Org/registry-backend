@@ -18,8 +18,9 @@ import (
 // StorageFileUpdate is the builder for updating StorageFile entities.
 type StorageFileUpdate struct {
 	config
-	hooks    []Hook
-	mutation *StorageFileMutation
+	hooks     []Hook
+	mutation  *StorageFileMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the StorageFileUpdate builder.
@@ -182,6 +183,12 @@ func (sfu *StorageFileUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (sfu *StorageFileUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *StorageFileUpdate {
+	sfu.modifiers = append(sfu.modifiers, modifiers...)
+	return sfu
+}
+
 func (sfu *StorageFileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := sfu.check(); err != nil {
 		return n, err
@@ -218,6 +225,7 @@ func (sfu *StorageFileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if sfu.mutation.FileURLCleared() {
 		_spec.ClearField(storagefile.FieldFileURL, field.TypeString)
 	}
+	_spec.AddModifiers(sfu.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, sfu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{storagefile.Label}
@@ -233,9 +241,10 @@ func (sfu *StorageFileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // StorageFileUpdateOne is the builder for updating a single StorageFile entity.
 type StorageFileUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *StorageFileMutation
+	fields    []string
+	hooks     []Hook
+	mutation  *StorageFileMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdateTime sets the "update_time" field.
@@ -405,6 +414,12 @@ func (sfuo *StorageFileUpdateOne) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (sfuo *StorageFileUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *StorageFileUpdateOne {
+	sfuo.modifiers = append(sfuo.modifiers, modifiers...)
+	return sfuo
+}
+
 func (sfuo *StorageFileUpdateOne) sqlSave(ctx context.Context) (_node *StorageFile, err error) {
 	if err := sfuo.check(); err != nil {
 		return _node, err
@@ -458,6 +473,7 @@ func (sfuo *StorageFileUpdateOne) sqlSave(ctx context.Context) (_node *StorageFi
 	if sfuo.mutation.FileURLCleared() {
 		_spec.ClearField(storagefile.FieldFileURL, field.TypeString)
 	}
+	_spec.AddModifiers(sfuo.modifiers...)
 	_node = &StorageFile{config: sfuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

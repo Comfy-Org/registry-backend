@@ -626,6 +626,12 @@ func (ppq *PublisherPermissionQuery) ForShare(opts ...sql.LockOption) *Publisher
 	return ppq
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (ppq *PublisherPermissionQuery) Modify(modifiers ...func(s *sql.Selector)) *PublisherPermissionSelect {
+	ppq.modifiers = append(ppq.modifiers, modifiers...)
+	return ppq.Select()
+}
+
 // PublisherPermissionGroupBy is the group-by builder for PublisherPermission entities.
 type PublisherPermissionGroupBy struct {
 	selector
@@ -714,4 +720,10 @@ func (pps *PublisherPermissionSelect) sqlScan(ctx context.Context, root *Publish
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (pps *PublisherPermissionSelect) Modify(modifiers ...func(s *sql.Selector)) *PublisherPermissionSelect {
+	pps.modifiers = append(pps.modifiers, modifiers...)
+	return pps
 }

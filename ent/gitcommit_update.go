@@ -20,8 +20,9 @@ import (
 // GitCommitUpdate is the builder for updating GitCommit entities.
 type GitCommitUpdate struct {
 	config
-	hooks    []Hook
-	mutation *GitCommitMutation
+	hooks     []Hook
+	mutation  *GitCommitMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the GitCommitUpdate builder.
@@ -223,6 +224,12 @@ func (gcu *GitCommitUpdate) defaults() {
 	}
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (gcu *GitCommitUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *GitCommitUpdate {
+	gcu.modifiers = append(gcu.modifiers, modifiers...)
+	return gcu
+}
+
 func (gcu *GitCommitUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := sqlgraph.NewUpdateSpec(gitcommit.Table, gitcommit.Columns, sqlgraph.NewFieldSpec(gitcommit.FieldID, field.TypeUUID))
 	if ps := gcu.mutation.predicates; len(ps) > 0 {
@@ -307,6 +314,7 @@ func (gcu *GitCommitUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(gcu.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, gcu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{gitcommit.Label}
@@ -322,9 +330,10 @@ func (gcu *GitCommitUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // GitCommitUpdateOne is the builder for updating a single GitCommit entity.
 type GitCommitUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *GitCommitMutation
+	fields    []string
+	hooks     []Hook
+	mutation  *GitCommitMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdateTime sets the "update_time" field.
@@ -533,6 +542,12 @@ func (gcuo *GitCommitUpdateOne) defaults() {
 	}
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (gcuo *GitCommitUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *GitCommitUpdateOne {
+	gcuo.modifiers = append(gcuo.modifiers, modifiers...)
+	return gcuo
+}
+
 func (gcuo *GitCommitUpdateOne) sqlSave(ctx context.Context) (_node *GitCommit, err error) {
 	_spec := sqlgraph.NewUpdateSpec(gitcommit.Table, gitcommit.Columns, sqlgraph.NewFieldSpec(gitcommit.FieldID, field.TypeUUID))
 	id, ok := gcuo.mutation.ID()
@@ -634,6 +649,7 @@ func (gcuo *GitCommitUpdateOne) sqlSave(ctx context.Context) (_node *GitCommit, 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(gcuo.modifiers...)
 	_node = &GitCommit{config: gcuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

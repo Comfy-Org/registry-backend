@@ -20,8 +20,9 @@ import (
 // PublisherPermissionUpdate is the builder for updating PublisherPermission entities.
 type PublisherPermissionUpdate struct {
 	config
-	hooks    []Hook
-	mutation *PublisherPermissionMutation
+	hooks     []Hook
+	mutation  *PublisherPermissionMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the PublisherPermissionUpdate builder.
@@ -142,6 +143,12 @@ func (ppu *PublisherPermissionUpdate) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (ppu *PublisherPermissionUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *PublisherPermissionUpdate {
+	ppu.modifiers = append(ppu.modifiers, modifiers...)
+	return ppu
+}
+
 func (ppu *PublisherPermissionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := ppu.check(); err != nil {
 		return n, err
@@ -215,6 +222,7 @@ func (ppu *PublisherPermissionUpdate) sqlSave(ctx context.Context) (n int, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(ppu.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, ppu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{publisherpermission.Label}
@@ -230,9 +238,10 @@ func (ppu *PublisherPermissionUpdate) sqlSave(ctx context.Context) (n int, err e
 // PublisherPermissionUpdateOne is the builder for updating a single PublisherPermission entity.
 type PublisherPermissionUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *PublisherPermissionMutation
+	fields    []string
+	hooks     []Hook
+	mutation  *PublisherPermissionMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetPermission sets the "permission" field.
@@ -360,6 +369,12 @@ func (ppuo *PublisherPermissionUpdateOne) check() error {
 	return nil
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (ppuo *PublisherPermissionUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *PublisherPermissionUpdateOne {
+	ppuo.modifiers = append(ppuo.modifiers, modifiers...)
+	return ppuo
+}
+
 func (ppuo *PublisherPermissionUpdateOne) sqlSave(ctx context.Context) (_node *PublisherPermission, err error) {
 	if err := ppuo.check(); err != nil {
 		return _node, err
@@ -450,6 +465,7 @@ func (ppuo *PublisherPermissionUpdateOne) sqlSave(ctx context.Context) (_node *P
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(ppuo.modifiers...)
 	_node = &PublisherPermission{config: ppuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
