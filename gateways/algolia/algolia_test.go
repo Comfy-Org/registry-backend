@@ -13,16 +13,16 @@ import (
 )
 
 func TestIndex(t *testing.T) {
-	appid, ok := os.LookupEnv("ALGOLIA_APP_ID")
+	_, ok := os.LookupEnv("ALGOLIA_APP_ID")
 	if !ok {
 		t.Skip("Required env variables `ALGOLIA_APP_ID` is not set")
 	}
-	apikey, ok := os.LookupEnv("ALGOLIA_API_KEY")
+	_, ok = os.LookupEnv("ALGOLIA_API_KEY")
 	if !ok {
 		t.Skip("Required env variables `ALGOLIA_API_KEY` is not set")
 	}
 
-	algolia, err := New(appid, apikey)
+	algolia, err := NewFromEnv()
 	require.NoError(t, err)
 
 	ctx := context.Background()
@@ -43,4 +43,13 @@ func TestIndex(t *testing.T) {
 	require.Len(t, nodes, 1)
 	assert.Equal(t, node, nodes[0])
 
+}
+
+func TestNoop(t *testing.T) {
+	t.Setenv("ALGOLIA_APP_ID", "")
+	t.Setenv("ALGOLIA_API_KEY", "")
+	a, err := NewFromEnvOrNoop()
+	require.NoError(t, err)
+	require.NoError(t, a.IndexNodes(context.Background(), &ent.Node{}))
+	require.NoError(t, a.DeleteNode(context.Background(), &ent.Node{}))
 }

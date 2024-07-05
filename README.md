@@ -13,7 +13,7 @@ Registry CLI [Github](https://github.com/yoland68/comfy-cli)
 
 Install Golang:
 
-https://go.dev/doc/install
+<https://go.dev/doc/install>
 
 Install go packages
 
@@ -68,7 +68,7 @@ This should search all directories and run go generate. This will run all the co
 
 Or manually run:
 
-`go run -mod=mod entgo.io/ent/cmd/ent generate --feature sql/upsert --feature sql/lock ./ent/schema`
+`go run -mod=mod entgo.io/ent/cmd/ent generate --feature sql/upsert --feature sql/lock --feature sql/modifier ./ent/schema`
 
 ### Generate Migration Files
 
@@ -93,7 +93,7 @@ Or manually run:
 
 `export PATH="$PATH:$HOME/bin:$HOME/go/bin"`
 
-https://github.com/deepmap/oapi-codegen/issues/795
+<https://github.com/deepmap/oapi-codegen/issues/795>
 
 `oapi-codegen --config drip/codegen.yaml openapi.yml`
 
@@ -113,7 +113,7 @@ For non Comfy-Org contributors, you can use your own hosted function or just avo
 
 Usually in localdev, we use dreamboothy-dev Firebase project for authentication. This conflicts with our machine creation logic because all of those machine images are in dreamboothy. TODO(robinhuang): Figure out a solution for this. Either we replicate things in dreamboothy-dev, or we pass project information separately when creating machine images.
 
-### Creating VM instance error:
+### Creating VM instance error
 
 **Example:**
 
@@ -158,23 +158,23 @@ In order to bypass authentication error, you can add make the following changes 
 package drip_middleware
 
 func FirebaseMiddleware(entClient *ent.Client) echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(ctx echo.Context) error {
-			userDetails := &UserDetails{
-				ID:    "test-james-token-id",
-				Email: "test-james-email@gmail.com",
-				Name:  "James",
-			}
+ return func(next echo.HandlerFunc) echo.HandlerFunc {
+  return func(ctx echo.Context) error {
+   userDetails := &UserDetails{
+    ID:    "test-james-token-id",
+    Email: "test-james-email@gmail.com",
+    Name:  "James",
+   }
 
-			authdCtx := context.WithValue(ctx.Request().Context(), UserContextKey, userDetails)
-			ctx.SetRequest(ctx.Request().WithContext(authdCtx))
-			newUserError := db.UpsertUser(ctx.Request().Context(), entClient, userDetails.ID, userDetails.Email, userDetails.Name)
-			if newUserError != nil {
-				log.Ctx(ctx).Info().Ctx(ctx.Request().Context()).Err(newUserError).Msg("error User upserted successfully.")
-			}
-			return next(ctx)
-		}
-	}
+   authdCtx := context.WithValue(ctx.Request().Context(), UserContextKey, userDetails)
+   ctx.SetRequest(ctx.Request().WithContext(authdCtx))
+   newUserError := db.UpsertUser(ctx.Request().Context(), entClient, userDetails.ID, userDetails.Email, userDetails.Name)
+   if newUserError != nil {
+    log.Ctx(ctx).Info().Ctx(ctx.Request().Context()).Err(newUserError).Msg("error User upserted successfully.")
+   }
+   return next(ctx)
+  }
+ }
 }
 
 ```

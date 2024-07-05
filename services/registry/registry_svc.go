@@ -825,16 +825,20 @@ func (s *RegistryService) AssertPublisherBanned(ctx context.Context, client *ent
 }
 
 func (s *RegistryService) ReindexAllNodes(ctx context.Context, client *ent.Client) error {
+	log.Ctx(ctx).Info().Msgf("reindexing nodes")
 	nodes, err := client.Node.Query().All(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch all nodes: %w", err)
 	}
+
+	log.Ctx(ctx).Info().Msgf("reindexing %d number of nodes", len(nodes))
 	err = s.algolia.IndexNodes(ctx, nodes...)
 	if err != nil {
 		return fmt.Errorf("failed to reindex all nodes: %w", err)
 	}
 	return nil
 }
+
 func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.Client, nodeVersion *ent.NodeVersion) error {
 	log.Ctx(ctx).Info().Msgf("scanning node %s@%s", nodeVersion.NodeID, nodeVersion.Version)
 
