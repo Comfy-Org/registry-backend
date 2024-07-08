@@ -1,7 +1,6 @@
 package mapper
 
 import (
-	"fmt"
 	"regexp"
 	"registry-backend/drip"
 	"registry-backend/ent"
@@ -77,16 +76,16 @@ func ApiUpdateNodeToUpdateFields(nodeID string, node *drip.Node, client *ent.Cli
 func ValidateNode(node *drip.Node) error {
 	if node.Id != nil {
 		if len(*node.Id) > 100 {
-			return fmt.Errorf("node id is too long")
+			return NewErrorBadRequest("node id is too long")
 		}
-		isValid, err := IsValidNodeID(*node.Id)
+		isValid, msg := IsValidNodeID(*node.Id)
 		if !isValid {
-			return fmt.Errorf(err)
+			return NewErrorBadRequest(msg)
 		}
 	}
 	if node.Description != nil {
 		if len(*node.Description) > 1000 {
-			return fmt.Errorf("description is too long")
+			return NewErrorBadRequest("description is too long")
 		}
 	}
 	return nil

@@ -350,7 +350,6 @@ func TestRegistry(t *testing.T) {
 			assert.Equal(t, githubUrl, *createNodeResponse.(drip.CreateNode201JSONResponse).Repository)
 			assert.Equal(t, drip.NodeStatusActive, *createNodeResponse.(drip.CreateNode201JSONResponse).Status)
 			real_node_id = createNodeResponse.(drip.CreateNode201JSONResponse).Id
-
 		})
 
 		t.Run("Get Node", func(t *testing.T) {
@@ -575,6 +574,35 @@ func TestRegistry(t *testing.T) {
 			})
 			require.Error(t, err)
 			assert.Equal(t, http.StatusBadRequest, err.(*echo.HTTPError).Code, "should return 400 bad request")
+		})
+
+		t.Run("Create Node Version with invalid node id", func(t *testing.T) {
+			for _, suffix := range []string{"LOWERCASEONLY", "invalidCharacter&"} {
+				nodeId := nodeId + suffix
+				res, err := withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
+					PublisherId: publisherId,
+					NodeId:      nodeId,
+					Body: &drip.PublishNodeVersionJSONRequestBody{
+						Node: drip.Node{
+							Id:          &nodeId,
+							Description: &nodeDescription,
+							Author:      &nodeAuthor,
+							License:     &nodeLicense,
+							Name:        &nodeName,
+							Tags:        &nodeTags,
+							Repository:  &source_code_repo,
+						},
+						NodeVersion: drip.NodeVersion{
+							Version:      &nodeVersionLiteral,
+							Changelog:    &changelog,
+							Dependencies: &dependencies,
+						},
+						PersonalAccessToken: *createPersonalAccessTokenResponse.(drip.CreatePersonalAccessToken201JSONResponse).Token,
+					},
+				})
+				require.NoError(t, err)
+				require.IsType(t, drip.PublishNodeVersion400JSONResponse{}, res)
+			}
 		})
 
 		t.Run("Create Node Version", func(t *testing.T) {
