@@ -200,7 +200,7 @@ func (s *DripStrictServerImplementation) CreateNode(
 	log.Ctx(ctx).Info().Msgf("CreateNode called with publisher ID: %s", request.PublisherId)
 
 	node, err := s.RegistryService.CreateNode(ctx, s.Client, request.PublisherId, request.Body)
-	if ent.IsConstraintError(err) {
+	if mapper.IsErrorBadRequest(err) || ent.IsConstraintError(err) {
 		log.Ctx(ctx).Error().Msgf(
 			"Failed to create node for publisher ID %s w/ err: %v", request.PublisherId, err)
 		return drip.CreateNode400JSONResponse{Message: "The node already exists", Error: err.Error()}, err
@@ -473,6 +473,10 @@ func (s *DripStrictServerImplementation) PublishNodeVersion(
 		return drip.PublishNodeVersion500JSONResponse{}, err
 	} else if err != nil {
 		node, err = s.RegistryService.CreateNode(ctx, s.Client, request.PublisherId, &request.Body.Node)
+		if mapper.IsErrorBadRequest(err) || ent.IsConstraintError(err) {
+			log.Ctx(ctx).Error().Msgf("Node creation failed w/ err: %v", err)
+			return drip.PublishNodeVersion400JSONResponse{Message: "Failed to create node", Error: err.Error()}, nil
+		}
 		if err != nil {
 			log.Ctx(ctx).Error().Msgf("Node creation failed w/ err: %v", err)
 			return drip.PublishNodeVersion500JSONResponse{Message: "Failed to create node", Error: err.Error()}, nil
