@@ -54,7 +54,7 @@ func decorateUserInContext(ctx context.Context, user *ent.User) context.Context 
 	})
 }
 
-func setupDB(t *testing.T, ctx context.Context) (*ent.Client, *postgres.PostgresContainer) {
+func setupDB(t *testing.T, ctx context.Context) (client *ent.Client, cleanup func()) {
 	// Define Postgres container request
 	postgresContainer, err := postgres.RunContainer(ctx,
 		testcontainers.WithImage("docker.io/postgres:15.2-alpine"),
@@ -86,7 +86,7 @@ func setupDB(t *testing.T, ctx context.Context) (*ent.Client, *postgres.Postgres
 		t.Fatalf("Failed to start container: %s", err)
 	}
 
-	client, err := ent.Open("postgres", databaseURL)
+	client, err = ent.Open("postgres", databaseURL)
 	if err != nil {
 		log.Ctx(ctx).Fatal().Err(err).Msg("failed opening connection to postgres")
 	}
@@ -98,7 +98,13 @@ func setupDB(t *testing.T, ctx context.Context) (*ent.Client, *postgres.Postgres
 
 	}
 	println("Schema created")
-	return client, postgresContainer
+
+	cleanup = func() {
+		if err := postgresContainer.Terminate(ctx); err != nil {
+			log.Ctx(ctx).Error().Msgf("failed to terminate container: %s", err)
+		}
+	}
+	return
 }
 
 func waitPortOpen(t *testing.T, host string, port string, timeout time.Duration) {
