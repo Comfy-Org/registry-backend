@@ -14,7 +14,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -22,13 +21,8 @@ import (
 
 func TestBan(t *testing.T) {
 	clientCtx := context.Background()
-	client, postgresContainer := setupDB(t, clientCtx)
-	// Cleanup
-	defer func() {
-		if err := postgresContainer.Terminate(clientCtx); err != nil {
-			log.Ctx(clientCtx).Error().Msgf("failed to terminate container: %s", err)
-		}
-	}()
+	client, cleanup := setupDB(t, clientCtx)
+	defer cleanup()
 
 	// Initialize the Service
 	mockStorageService := new(gateways.MockStorageService)
