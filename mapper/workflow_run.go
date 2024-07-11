@@ -101,7 +101,7 @@ func MapToMachineStats(data map[string]interface{}) (*drip.MachineStats, error) 
 	var ms drip.MachineStats
 
 	if data == nil {
-		return nil, fmt.Errorf("input data map is nil")
+		return nil, nil
 	}
 
 	// Helper function to get string pointers from the map
