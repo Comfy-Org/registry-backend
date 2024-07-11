@@ -21,8 +21,13 @@ func CiWorkflowResultsToActionJobResults(results []*ent.CIWorkflowResult) ([]dri
 }
 
 func CiWorkflowResultToActionJobResult(result *ent.CIWorkflowResult) (*drip.ActionJobResult, error) {
-	storageFileData := drip.StorageFile{
-		PublicUrl: &result.Edges.StorageFile[0].FileURL,
+	var storageFileData *drip.StorageFile
+
+	// Check if the StorageFile slice is not empty before accessing
+	if len(result.Edges.StorageFile) > 0 {
+		storageFileData = &drip.StorageFile{
+			PublicUrl: &result.Edges.StorageFile[0].FileURL,
+		}
 	}
 	commitId := result.Edges.Gitcommit.ID.String()
 	commitUnixTime := result.Edges.Gitcommit.CommitTimestamp.Unix()
