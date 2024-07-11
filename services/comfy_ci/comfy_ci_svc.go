@@ -64,6 +64,25 @@ func (s *ComfyCIService) ProcessCIRequest(ctx context.Context, client *ent.Clien
 			return err
 		}
 		gitcommit := tx.Client().GitCommit.GetX(ctx, id)
+
+		// Create the CI Workflow Result first. Then add files to it (if there are any).
+		cudaVersion := ""
+		if req.Body.CudaVersion != nil {
+			cudaVersion = *req.Body.CudaVersion
+		}
+		avgVram := 0
+		if req.Body.AvgVram != nil {
+			avgVram = *req.Body.AvgVram
+		}
+		peakVram := 0
+		if req.Body.PeakVram != nil {
+			peakVram = *req.Body.PeakVram
+		}
+		workflowResultId, err := s.UpsertRunResult(ctx, tx.Client(), gitcommit, req.Body.Os, cudaVersion, req.Body.WorkflowName, req.Body.RunId, req.Body.StartTime, req.Body.EndTime, avgVram, peakVram, req.Body.PythonVersion, req.Body.JobTriggerUser, req.Body.Status)
+		if err != nil {
+			return err
+		}
+
 		if req.Body.OutputFilesGcsPaths != nil && req.Body.BucketName != nil {
 			files, err := GetPublicUrlForOutputFiles(ctx, *req.Body.BucketName, *req.Body.OutputFilesGcsPaths)
 			if err != nil {
@@ -85,25 +104,7 @@ func (s *ComfyCIService) ProcessCIRequest(ctx context.Context, client *ent.Clien
 					})
 					continue
 				}
-
-				cudaVersion := ""
-				if req.Body.CudaVersion != nil {
-					cudaVersion = *req.Body.CudaVersion
-				}
-
-				avgVram := 0
-				if req.Body.AvgVram != nil {
-					avgVram = *req.Body.AvgVram
-				}
-				peakVram := 0
-				if req.Body.PeakVram != nil {
-					peakVram = *req.Body.PeakVram
-				}
-
-				_, err = s.UpsertRunResult(ctx, tx.Client(), file, gitcommit, req.Body.Os, cudaVersion, req.Body.WorkflowName, req.Body.RunId, req.Body.StartTime, req.Body.EndTime, avgVram, peakVram, req.Body.PythonVersion, req.Body.JobTriggerUser, req.Body.Status)
-				if err != nil {
-					return err
-				}
+				tx.Client().CIWorkflowResult.UpdateOneID(workflowResultId).AddStorageFile(file).Exec(ctx)
 			}
 		}
 		return nil
@@ -141,7 +142,7 @@ func (s *ComfyCIService) UpsertCommit(ctx context.Context, client *ent.Client, h
 }
 
 // UpsertRunResult creates or updates a ActionRunResult entity.
-func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client, file *ent.StorageFile, gitcommit *ent.GitCommit, os, gpuType, workflowName, runId string, startTime, endTime int64, avgVram, peakVram int, pythonVersion, jobTriggerUser string, status drip.WorkflowRunStatus) (uuid.UUID, error) {
+func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client, gitcommit *ent.GitCommit, os, gpuType, workflowName, runId string, startTime, endTime int64, avgVram, peakVram int, pythonVersion, jobTriggerUser string, status drip.WorkflowRunStatus) (uuid.UUID, error) {
 	log.Ctx(ctx).Info().Msgf("Upserting workflow result for commit %s", gitcommit.CommitHash)
 	dbWorkflowRunStatus, err := mapper.ApiWorkflowRunStatusToDb(status)
 	if err != nil {
@@ -150,7 +151,6 @@ func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client
 	return client.CIWorkflowResult.
 		Create().
 		SetGitcommit(gitcommit).
-		SetStorageFile(file).
 		SetOperatingSystem(os).
 		SetWorkflowName(workflowName).
 		SetRunID(runId).
@@ -166,6 +166,24 @@ func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client
 		).
 		UpdateNewValues().
 		ID(ctx)
+}
+
+func (s *ComfyCIService) UpdateWorkflowResult(ctx context.Context, client *ent.Client, id uuid.UUID, status drip.WorkflowRunStatus, files []*drip.StorageFile) error {
+	dbWorkflowRunStatus, err := mapper.ApiWorkflowRunStatusToDb(status)
+	if err != nil {
+		return err
+	}
+
+	fileIds := make([]uuid.UUID, 0, len(files))
+	for _, file := range files {
+		fileIds = append(fileIds, *file.Id)
+	}
+
+	return client.CIWorkflowResult.
+		UpdateOneID(id).
+		AddStorageFileIDs(fileIds...).
+		SetStatus(dbWorkflowRunStatus).
+		Exec(ctx)
 }
 
 // UpsertStorageFile creates or updates a RunFile entity.

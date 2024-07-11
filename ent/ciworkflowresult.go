@@ -7,7 +7,6 @@ import (
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/schema"
-	"registry-backend/ent/storagefile"
 	"strings"
 	"time"
 
@@ -51,10 +50,9 @@ type CIWorkflowResult struct {
 	JobTriggerUser string `json:"job_trigger_user,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CIWorkflowResultQuery when eager-loading is set.
-	Edges                           CIWorkflowResultEdges `json:"edges"`
-	ci_workflow_result_storage_file *uuid.UUID
-	git_commit_results              *uuid.UUID
-	selectValues                    sql.SelectValues
+	Edges              CIWorkflowResultEdges `json:"edges"`
+	git_commit_results *uuid.UUID
+	selectValues       sql.SelectValues
 }
 
 // CIWorkflowResultEdges holds the relations/edges for other nodes in the graph.
@@ -62,7 +60,7 @@ type CIWorkflowResultEdges struct {
 	// Gitcommit holds the value of the gitcommit edge.
 	Gitcommit *GitCommit `json:"gitcommit,omitempty"`
 	// StorageFile holds the value of the storage_file edge.
-	StorageFile *StorageFile `json:"storage_file,omitempty"`
+	StorageFile []*StorageFile `json:"storage_file,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
@@ -80,12 +78,10 @@ func (e CIWorkflowResultEdges) GitcommitOrErr() (*GitCommit, error) {
 }
 
 // StorageFileOrErr returns the StorageFile value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e CIWorkflowResultEdges) StorageFileOrErr() (*StorageFile, error) {
-	if e.StorageFile != nil {
+// was not loaded in eager-loading.
+func (e CIWorkflowResultEdges) StorageFileOrErr() ([]*StorageFile, error) {
+	if e.loadedTypes[1] {
 		return e.StorageFile, nil
-	} else if e.loadedTypes[1] {
-		return nil, &NotFoundError{label: storagefile.Label}
 	}
 	return nil, &NotLoadedError{edge: "storage_file"}
 }
@@ -103,9 +99,7 @@ func (*CIWorkflowResult) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullTime)
 		case ciworkflowresult.FieldID:
 			values[i] = new(uuid.UUID)
-		case ciworkflowresult.ForeignKeys[0]: // ci_workflow_result_storage_file
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case ciworkflowresult.ForeignKeys[1]: // git_commit_results
+		case ciworkflowresult.ForeignKeys[0]: // git_commit_results
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
@@ -213,13 +207,6 @@ func (cwr *CIWorkflowResult) assignValues(columns []string, values []any) error 
 				cwr.JobTriggerUser = value.String
 			}
 		case ciworkflowresult.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field ci_workflow_result_storage_file", values[i])
-			} else if value.Valid {
-				cwr.ci_workflow_result_storage_file = new(uuid.UUID)
-				*cwr.ci_workflow_result_storage_file = *value.S.(*uuid.UUID)
-			}
-		case ciworkflowresult.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field git_commit_results", values[i])
 			} else if value.Valid {

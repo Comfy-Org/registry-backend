@@ -59,7 +59,7 @@ const (
 func (CIWorkflowResult) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("gitcommit", GitCommit.Type).Ref("results").Unique(),
-		edge.To("storage_file", StorageFile.Type).Unique(),
+		edge.To("storage_file", StorageFile.Type),
 	}
 }
 

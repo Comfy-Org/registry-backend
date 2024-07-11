@@ -58,7 +58,7 @@ const (
 	// GitcommitColumn is the table column denoting the gitcommit relation/edge.
 	GitcommitColumn = "git_commit_results"
 	// StorageFileTable is the table that holds the storage_file relation/edge.
-	StorageFileTable = "ci_workflow_results"
+	StorageFileTable = "storage_files"
 	// StorageFileInverseTable is the table name for the StorageFile entity.
 	// It exists in this package in order to avoid circular dependency with the "storagefile" package.
 	StorageFileInverseTable = "storage_files"
@@ -88,7 +88,6 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "ci_workflow_results"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"ci_workflow_result_storage_file",
 	"git_commit_results",
 }
 
@@ -205,10 +204,17 @@ func ByGitcommitField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
-// ByStorageFileField orders the results by storage_file field.
-func ByStorageFileField(field string, opts ...sql.OrderTermOption) OrderOption {
+// ByStorageFileCount orders the results by storage_file count.
+func ByStorageFileCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newStorageFileStep(), sql.OrderByField(field, opts...))
+		sqlgraph.OrderByNeighborsCount(s, newStorageFileStep(), opts...)
+	}
+}
+
+// ByStorageFile orders the results by storage_file terms.
+func ByStorageFile(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newStorageFileStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 func newGitcommitStep() *sqlgraph.Step {
@@ -222,6 +228,6 @@ func newStorageFileStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(StorageFileInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, false, StorageFileTable, StorageFileColumn),
+		sqlgraph.Edge(sqlgraph.O2M, false, StorageFileTable, StorageFileColumn),
 	)
 }

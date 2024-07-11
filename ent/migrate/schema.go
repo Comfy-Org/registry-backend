@@ -25,7 +25,6 @@ var (
 		{Name: "avg_vram", Type: field.TypeInt, Nullable: true},
 		{Name: "peak_vram", Type: field.TypeInt, Nullable: true},
 		{Name: "job_trigger_user", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
-		{Name: "ci_workflow_result_storage_file", Type: field.TypeUUID, Nullable: true},
 		{Name: "git_commit_results", Type: field.TypeUUID, Nullable: true},
 	}
 	// CiWorkflowResultsTable holds the schema information for the "ci_workflow_results" table.
@@ -35,14 +34,8 @@ var (
 		PrimaryKey: []*schema.Column{CiWorkflowResultsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "ci_workflow_results_storage_files_storage_file",
-				Columns:    []*schema.Column{CiWorkflowResultsColumns[15]},
-				RefColumns: []*schema.Column{StorageFilesColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
 				Symbol:     "ci_workflow_results_git_commits_results",
-				Columns:    []*schema.Column{CiWorkflowResultsColumns[16]},
+				Columns:    []*schema.Column{CiWorkflowResultsColumns[15]},
 				RefColumns: []*schema.Column{GitCommitsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -271,12 +264,21 @@ var (
 		{Name: "file_path", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "file_type", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "file_url", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "ci_workflow_result_storage_file", Type: field.TypeUUID, Nullable: true},
 	}
 	// StorageFilesTable holds the schema information for the "storage_files" table.
 	StorageFilesTable = &schema.Table{
 		Name:       "storage_files",
 		Columns:    StorageFilesColumns,
 		PrimaryKey: []*schema.Column{StorageFilesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "storage_files_ci_workflow_results_storage_file",
+				Columns:    []*schema.Column{StorageFilesColumns[8]},
+				RefColumns: []*schema.Column{CiWorkflowResultsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
@@ -311,8 +313,7 @@ var (
 )
 
 func init() {
-	CiWorkflowResultsTable.ForeignKeys[0].RefTable = StorageFilesTable
-	CiWorkflowResultsTable.ForeignKeys[1].RefTable = GitCommitsTable
+	CiWorkflowResultsTable.ForeignKeys[0].RefTable = GitCommitsTable
 	NodesTable.ForeignKeys[0].RefTable = PublishersTable
 	NodeReviewsTable.ForeignKeys[0].RefTable = NodesTable
 	NodeReviewsTable.ForeignKeys[1].RefTable = UsersTable
@@ -321,4 +322,5 @@ func init() {
 	PersonalAccessTokensTable.ForeignKeys[0].RefTable = PublishersTable
 	PublisherPermissionsTable.ForeignKeys[0].RefTable = PublishersTable
 	PublisherPermissionsTable.ForeignKeys[1].RefTable = UsersTable
+	StorageFilesTable.ForeignKeys[0].RefTable = CiWorkflowResultsTable
 }

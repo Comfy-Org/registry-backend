@@ -31,8 +31,9 @@ type StorageFile struct {
 	// e.g., image, video
 	FileType string `json:"file_type,omitempty"`
 	// Publicly accessible URL of the file, if available
-	FileURL      string `json:"file_url,omitempty"`
-	selectValues sql.SelectValues
+	FileURL                         string `json:"file_url,omitempty"`
+	ci_workflow_result_storage_file *uuid.UUID
+	selectValues                    sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -46,6 +47,8 @@ func (*StorageFile) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullTime)
 		case storagefile.FieldID:
 			values[i] = new(uuid.UUID)
+		case storagefile.ForeignKeys[0]: // ci_workflow_result_storage_file
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -108,6 +111,13 @@ func (sf *StorageFile) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field file_url", values[i])
 			} else if value.Valid {
 				sf.FileURL = value.String
+			}
+		case storagefile.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field ci_workflow_result_storage_file", values[i])
+			} else if value.Valid {
+				sf.ci_workflow_result_storage_file = new(uuid.UUID)
+				*sf.ci_workflow_result_storage_file = *value.S.(*uuid.UUID)
 			}
 		default:
 			sf.selectValues.Set(columns[i], values[i])

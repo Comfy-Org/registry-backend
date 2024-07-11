@@ -74,7 +74,8 @@ type CIWorkflowResultMutation struct {
 	clearedFields       map[string]struct{}
 	gitcommit           *uuid.UUID
 	clearedgitcommit    bool
-	storage_file        *uuid.UUID
+	storage_file        map[uuid.UUID]struct{}
+	removedstorage_file map[uuid.UUID]struct{}
 	clearedstorage_file bool
 	done                bool
 	oldValue            func(context.Context) (*CIWorkflowResult, error)
@@ -942,9 +943,14 @@ func (m *CIWorkflowResultMutation) ResetGitcommit() {
 	m.clearedgitcommit = false
 }
 
-// SetStorageFileID sets the "storage_file" edge to the StorageFile entity by id.
-func (m *CIWorkflowResultMutation) SetStorageFileID(id uuid.UUID) {
-	m.storage_file = &id
+// AddStorageFileIDs adds the "storage_file" edge to the StorageFile entity by ids.
+func (m *CIWorkflowResultMutation) AddStorageFileIDs(ids ...uuid.UUID) {
+	if m.storage_file == nil {
+		m.storage_file = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.storage_file[ids[i]] = struct{}{}
+	}
 }
 
 // ClearStorageFile clears the "storage_file" edge to the StorageFile entity.
@@ -957,20 +963,29 @@ func (m *CIWorkflowResultMutation) StorageFileCleared() bool {
 	return m.clearedstorage_file
 }
 
-// StorageFileID returns the "storage_file" edge ID in the mutation.
-func (m *CIWorkflowResultMutation) StorageFileID() (id uuid.UUID, exists bool) {
-	if m.storage_file != nil {
-		return *m.storage_file, true
+// RemoveStorageFileIDs removes the "storage_file" edge to the StorageFile entity by IDs.
+func (m *CIWorkflowResultMutation) RemoveStorageFileIDs(ids ...uuid.UUID) {
+	if m.removedstorage_file == nil {
+		m.removedstorage_file = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.storage_file, ids[i])
+		m.removedstorage_file[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedStorageFile returns the removed IDs of the "storage_file" edge to the StorageFile entity.
+func (m *CIWorkflowResultMutation) RemovedStorageFileIDs() (ids []uuid.UUID) {
+	for id := range m.removedstorage_file {
+		ids = append(ids, id)
 	}
 	return
 }
 
 // StorageFileIDs returns the "storage_file" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// StorageFileID instead. It exists only for internal usage by the builders.
 func (m *CIWorkflowResultMutation) StorageFileIDs() (ids []uuid.UUID) {
-	if id := m.storage_file; id != nil {
-		ids = append(ids, *id)
+	for id := range m.storage_file {
+		ids = append(ids, id)
 	}
 	return
 }
@@ -979,6 +994,7 @@ func (m *CIWorkflowResultMutation) StorageFileIDs() (ids []uuid.UUID) {
 func (m *CIWorkflowResultMutation) ResetStorageFile() {
 	m.storage_file = nil
 	m.clearedstorage_file = false
+	m.removedstorage_file = nil
 }
 
 // Where appends a list predicates to the CIWorkflowResultMutation builder.
@@ -1468,9 +1484,11 @@ func (m *CIWorkflowResultMutation) AddedIDs(name string) []ent.Value {
 			return []ent.Value{*id}
 		}
 	case ciworkflowresult.EdgeStorageFile:
-		if id := m.storage_file; id != nil {
-			return []ent.Value{*id}
+		ids := make([]ent.Value, 0, len(m.storage_file))
+		for id := range m.storage_file {
+			ids = append(ids, id)
 		}
+		return ids
 	}
 	return nil
 }
@@ -1478,12 +1496,23 @@ func (m *CIWorkflowResultMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *CIWorkflowResultMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 2)
+	if m.removedstorage_file != nil {
+		edges = append(edges, ciworkflowresult.EdgeStorageFile)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *CIWorkflowResultMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case ciworkflowresult.EdgeStorageFile:
+		ids := make([]ent.Value, 0, len(m.removedstorage_file))
+		for id := range m.removedstorage_file {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
@@ -1517,9 +1546,6 @@ func (m *CIWorkflowResultMutation) ClearEdge(name string) error {
 	switch name {
 	case ciworkflowresult.EdgeGitcommit:
 		m.ClearGitcommit()
-		return nil
-	case ciworkflowresult.EdgeStorageFile:
-		m.ClearStorageFile()
 		return nil
 	}
 	return fmt.Errorf("unknown CIWorkflowResult unique edge %s", name)
