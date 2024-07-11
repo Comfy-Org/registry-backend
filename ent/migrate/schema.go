@@ -18,9 +18,13 @@ var (
 		{Name: "pytorch_version", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "workflow_name", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "run_id", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
-		{Name: "status", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "status", Type: field.TypeString, Default: "STARTED"},
 		{Name: "start_time", Type: field.TypeInt64, Nullable: true},
 		{Name: "end_time", Type: field.TypeInt64, Nullable: true},
+		{Name: "python_version", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "avg_vram", Type: field.TypeInt, Nullable: true},
+		{Name: "peak_vram", Type: field.TypeInt, Nullable: true},
+		{Name: "job_trigger_user", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "ci_workflow_result_storage_file", Type: field.TypeUUID, Nullable: true},
 		{Name: "git_commit_results", Type: field.TypeUUID, Nullable: true},
 	}
@@ -32,13 +36,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "ci_workflow_results_storage_files_storage_file",
-				Columns:    []*schema.Column{CiWorkflowResultsColumns[11]},
+				Columns:    []*schema.Column{CiWorkflowResultsColumns[15]},
 				RefColumns: []*schema.Column{StorageFilesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "ci_workflow_results_git_commits_results",
-				Columns:    []*schema.Column{CiWorkflowResultsColumns[12]},
+				Columns:    []*schema.Column{CiWorkflowResultsColumns[16]},
 				RefColumns: []*schema.Column{GitCommitsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -56,6 +60,7 @@ var (
 		{Name: "commit_timestamp", Type: field.TypeTime},
 		{Name: "author", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "timestamp", Type: field.TypeTime, Nullable: true},
+		{Name: "pr_number", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 	}
 	// GitCommitsTable holds the schema information for the "git_commits" table.
 	GitCommitsTable = &schema.Table{

@@ -147,6 +147,26 @@ func (gcu *GitCommitUpdate) ClearTimestamp() *GitCommitUpdate {
 	return gcu
 }
 
+// SetPrNumber sets the "pr_number" field.
+func (gcu *GitCommitUpdate) SetPrNumber(s string) *GitCommitUpdate {
+	gcu.mutation.SetPrNumber(s)
+	return gcu
+}
+
+// SetNillablePrNumber sets the "pr_number" field if the given value is not nil.
+func (gcu *GitCommitUpdate) SetNillablePrNumber(s *string) *GitCommitUpdate {
+	if s != nil {
+		gcu.SetPrNumber(*s)
+	}
+	return gcu
+}
+
+// ClearPrNumber clears the value of the "pr_number" field.
+func (gcu *GitCommitUpdate) ClearPrNumber() *GitCommitUpdate {
+	gcu.mutation.ClearPrNumber()
+	return gcu
+}
+
 // AddResultIDs adds the "results" edge to the CIWorkflowResult entity by IDs.
 func (gcu *GitCommitUpdate) AddResultIDs(ids ...uuid.UUID) *GitCommitUpdate {
 	gcu.mutation.AddResultIDs(ids...)
@@ -268,6 +288,12 @@ func (gcu *GitCommitUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if gcu.mutation.TimestampCleared() {
 		_spec.ClearField(gitcommit.FieldTimestamp, field.TypeTime)
+	}
+	if value, ok := gcu.mutation.PrNumber(); ok {
+		_spec.SetField(gitcommit.FieldPrNumber, field.TypeString, value)
+	}
+	if gcu.mutation.PrNumberCleared() {
+		_spec.ClearField(gitcommit.FieldPrNumber, field.TypeString)
 	}
 	if gcu.mutation.ResultsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -452,6 +478,26 @@ func (gcuo *GitCommitUpdateOne) ClearTimestamp() *GitCommitUpdateOne {
 	return gcuo
 }
 
+// SetPrNumber sets the "pr_number" field.
+func (gcuo *GitCommitUpdateOne) SetPrNumber(s string) *GitCommitUpdateOne {
+	gcuo.mutation.SetPrNumber(s)
+	return gcuo
+}
+
+// SetNillablePrNumber sets the "pr_number" field if the given value is not nil.
+func (gcuo *GitCommitUpdateOne) SetNillablePrNumber(s *string) *GitCommitUpdateOne {
+	if s != nil {
+		gcuo.SetPrNumber(*s)
+	}
+	return gcuo
+}
+
+// ClearPrNumber clears the value of the "pr_number" field.
+func (gcuo *GitCommitUpdateOne) ClearPrNumber() *GitCommitUpdateOne {
+	gcuo.mutation.ClearPrNumber()
+	return gcuo
+}
+
 // AddResultIDs adds the "results" edge to the CIWorkflowResult entity by IDs.
 func (gcuo *GitCommitUpdateOne) AddResultIDs(ids ...uuid.UUID) *GitCommitUpdateOne {
 	gcuo.mutation.AddResultIDs(ids...)
@@ -603,6 +649,12 @@ func (gcuo *GitCommitUpdateOne) sqlSave(ctx context.Context) (_node *GitCommit, 
 	}
 	if gcuo.mutation.TimestampCleared() {
 		_spec.ClearField(gitcommit.FieldTimestamp, field.TypeTime)
+	}
+	if value, ok := gcuo.mutation.PrNumber(); ok {
+		_spec.SetField(gitcommit.FieldPrNumber, field.TypeString, value)
+	}
+	if gcuo.mutation.PrNumberCleared() {
+		_spec.ClearField(gitcommit.FieldPrNumber, field.TypeString)
 	}
 	if gcuo.mutation.ResultsCleared() {
 		edge := &sqlgraph.EdgeSpec{

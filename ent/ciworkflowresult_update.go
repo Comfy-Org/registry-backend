@@ -9,6 +9,7 @@ import (
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/predicate"
+	"registry-backend/ent/schema"
 	"registry-backend/ent/storagefile"
 	"time"
 
@@ -133,22 +134,16 @@ func (cwru *CIWorkflowResultUpdate) ClearRunID() *CIWorkflowResultUpdate {
 }
 
 // SetStatus sets the "status" field.
-func (cwru *CIWorkflowResultUpdate) SetStatus(s string) *CIWorkflowResultUpdate {
-	cwru.mutation.SetStatus(s)
+func (cwru *CIWorkflowResultUpdate) SetStatus(srst schema.WorkflowRunStatusType) *CIWorkflowResultUpdate {
+	cwru.mutation.SetStatus(srst)
 	return cwru
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (cwru *CIWorkflowResultUpdate) SetNillableStatus(s *string) *CIWorkflowResultUpdate {
-	if s != nil {
-		cwru.SetStatus(*s)
+func (cwru *CIWorkflowResultUpdate) SetNillableStatus(srst *schema.WorkflowRunStatusType) *CIWorkflowResultUpdate {
+	if srst != nil {
+		cwru.SetStatus(*srst)
 	}
-	return cwru
-}
-
-// ClearStatus clears the value of the "status" field.
-func (cwru *CIWorkflowResultUpdate) ClearStatus() *CIWorkflowResultUpdate {
-	cwru.mutation.ClearStatus()
 	return cwru
 }
 
@@ -203,6 +198,100 @@ func (cwru *CIWorkflowResultUpdate) AddEndTime(i int64) *CIWorkflowResultUpdate 
 // ClearEndTime clears the value of the "end_time" field.
 func (cwru *CIWorkflowResultUpdate) ClearEndTime() *CIWorkflowResultUpdate {
 	cwru.mutation.ClearEndTime()
+	return cwru
+}
+
+// SetPythonVersion sets the "python_version" field.
+func (cwru *CIWorkflowResultUpdate) SetPythonVersion(s string) *CIWorkflowResultUpdate {
+	cwru.mutation.SetPythonVersion(s)
+	return cwru
+}
+
+// SetNillablePythonVersion sets the "python_version" field if the given value is not nil.
+func (cwru *CIWorkflowResultUpdate) SetNillablePythonVersion(s *string) *CIWorkflowResultUpdate {
+	if s != nil {
+		cwru.SetPythonVersion(*s)
+	}
+	return cwru
+}
+
+// ClearPythonVersion clears the value of the "python_version" field.
+func (cwru *CIWorkflowResultUpdate) ClearPythonVersion() *CIWorkflowResultUpdate {
+	cwru.mutation.ClearPythonVersion()
+	return cwru
+}
+
+// SetAvgVram sets the "avg_vram" field.
+func (cwru *CIWorkflowResultUpdate) SetAvgVram(i int) *CIWorkflowResultUpdate {
+	cwru.mutation.ResetAvgVram()
+	cwru.mutation.SetAvgVram(i)
+	return cwru
+}
+
+// SetNillableAvgVram sets the "avg_vram" field if the given value is not nil.
+func (cwru *CIWorkflowResultUpdate) SetNillableAvgVram(i *int) *CIWorkflowResultUpdate {
+	if i != nil {
+		cwru.SetAvgVram(*i)
+	}
+	return cwru
+}
+
+// AddAvgVram adds i to the "avg_vram" field.
+func (cwru *CIWorkflowResultUpdate) AddAvgVram(i int) *CIWorkflowResultUpdate {
+	cwru.mutation.AddAvgVram(i)
+	return cwru
+}
+
+// ClearAvgVram clears the value of the "avg_vram" field.
+func (cwru *CIWorkflowResultUpdate) ClearAvgVram() *CIWorkflowResultUpdate {
+	cwru.mutation.ClearAvgVram()
+	return cwru
+}
+
+// SetPeakVram sets the "peak_vram" field.
+func (cwru *CIWorkflowResultUpdate) SetPeakVram(i int) *CIWorkflowResultUpdate {
+	cwru.mutation.ResetPeakVram()
+	cwru.mutation.SetPeakVram(i)
+	return cwru
+}
+
+// SetNillablePeakVram sets the "peak_vram" field if the given value is not nil.
+func (cwru *CIWorkflowResultUpdate) SetNillablePeakVram(i *int) *CIWorkflowResultUpdate {
+	if i != nil {
+		cwru.SetPeakVram(*i)
+	}
+	return cwru
+}
+
+// AddPeakVram adds i to the "peak_vram" field.
+func (cwru *CIWorkflowResultUpdate) AddPeakVram(i int) *CIWorkflowResultUpdate {
+	cwru.mutation.AddPeakVram(i)
+	return cwru
+}
+
+// ClearPeakVram clears the value of the "peak_vram" field.
+func (cwru *CIWorkflowResultUpdate) ClearPeakVram() *CIWorkflowResultUpdate {
+	cwru.mutation.ClearPeakVram()
+	return cwru
+}
+
+// SetJobTriggerUser sets the "job_trigger_user" field.
+func (cwru *CIWorkflowResultUpdate) SetJobTriggerUser(s string) *CIWorkflowResultUpdate {
+	cwru.mutation.SetJobTriggerUser(s)
+	return cwru
+}
+
+// SetNillableJobTriggerUser sets the "job_trigger_user" field if the given value is not nil.
+func (cwru *CIWorkflowResultUpdate) SetNillableJobTriggerUser(s *string) *CIWorkflowResultUpdate {
+	if s != nil {
+		cwru.SetJobTriggerUser(*s)
+	}
+	return cwru
+}
+
+// ClearJobTriggerUser clears the value of the "job_trigger_user" field.
+func (cwru *CIWorkflowResultUpdate) ClearJobTriggerUser() *CIWorkflowResultUpdate {
+	cwru.mutation.ClearJobTriggerUser()
 	return cwru
 }
 
@@ -345,9 +434,6 @@ func (cwru *CIWorkflowResultUpdate) sqlSave(ctx context.Context) (n int, err err
 	if value, ok := cwru.mutation.Status(); ok {
 		_spec.SetField(ciworkflowresult.FieldStatus, field.TypeString, value)
 	}
-	if cwru.mutation.StatusCleared() {
-		_spec.ClearField(ciworkflowresult.FieldStatus, field.TypeString)
-	}
 	if value, ok := cwru.mutation.StartTime(); ok {
 		_spec.SetField(ciworkflowresult.FieldStartTime, field.TypeInt64, value)
 	}
@@ -365,6 +451,36 @@ func (cwru *CIWorkflowResultUpdate) sqlSave(ctx context.Context) (n int, err err
 	}
 	if cwru.mutation.EndTimeCleared() {
 		_spec.ClearField(ciworkflowresult.FieldEndTime, field.TypeInt64)
+	}
+	if value, ok := cwru.mutation.PythonVersion(); ok {
+		_spec.SetField(ciworkflowresult.FieldPythonVersion, field.TypeString, value)
+	}
+	if cwru.mutation.PythonVersionCleared() {
+		_spec.ClearField(ciworkflowresult.FieldPythonVersion, field.TypeString)
+	}
+	if value, ok := cwru.mutation.AvgVram(); ok {
+		_spec.SetField(ciworkflowresult.FieldAvgVram, field.TypeInt, value)
+	}
+	if value, ok := cwru.mutation.AddedAvgVram(); ok {
+		_spec.AddField(ciworkflowresult.FieldAvgVram, field.TypeInt, value)
+	}
+	if cwru.mutation.AvgVramCleared() {
+		_spec.ClearField(ciworkflowresult.FieldAvgVram, field.TypeInt)
+	}
+	if value, ok := cwru.mutation.PeakVram(); ok {
+		_spec.SetField(ciworkflowresult.FieldPeakVram, field.TypeInt, value)
+	}
+	if value, ok := cwru.mutation.AddedPeakVram(); ok {
+		_spec.AddField(ciworkflowresult.FieldPeakVram, field.TypeInt, value)
+	}
+	if cwru.mutation.PeakVramCleared() {
+		_spec.ClearField(ciworkflowresult.FieldPeakVram, field.TypeInt)
+	}
+	if value, ok := cwru.mutation.JobTriggerUser(); ok {
+		_spec.SetField(ciworkflowresult.FieldJobTriggerUser, field.TypeString, value)
+	}
+	if cwru.mutation.JobTriggerUserCleared() {
+		_spec.ClearField(ciworkflowresult.FieldJobTriggerUser, field.TypeString)
 	}
 	if cwru.mutation.GitcommitCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -547,22 +663,16 @@ func (cwruo *CIWorkflowResultUpdateOne) ClearRunID() *CIWorkflowResultUpdateOne 
 }
 
 // SetStatus sets the "status" field.
-func (cwruo *CIWorkflowResultUpdateOne) SetStatus(s string) *CIWorkflowResultUpdateOne {
-	cwruo.mutation.SetStatus(s)
+func (cwruo *CIWorkflowResultUpdateOne) SetStatus(srst schema.WorkflowRunStatusType) *CIWorkflowResultUpdateOne {
+	cwruo.mutation.SetStatus(srst)
 	return cwruo
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (cwruo *CIWorkflowResultUpdateOne) SetNillableStatus(s *string) *CIWorkflowResultUpdateOne {
-	if s != nil {
-		cwruo.SetStatus(*s)
+func (cwruo *CIWorkflowResultUpdateOne) SetNillableStatus(srst *schema.WorkflowRunStatusType) *CIWorkflowResultUpdateOne {
+	if srst != nil {
+		cwruo.SetStatus(*srst)
 	}
-	return cwruo
-}
-
-// ClearStatus clears the value of the "status" field.
-func (cwruo *CIWorkflowResultUpdateOne) ClearStatus() *CIWorkflowResultUpdateOne {
-	cwruo.mutation.ClearStatus()
 	return cwruo
 }
 
@@ -617,6 +727,100 @@ func (cwruo *CIWorkflowResultUpdateOne) AddEndTime(i int64) *CIWorkflowResultUpd
 // ClearEndTime clears the value of the "end_time" field.
 func (cwruo *CIWorkflowResultUpdateOne) ClearEndTime() *CIWorkflowResultUpdateOne {
 	cwruo.mutation.ClearEndTime()
+	return cwruo
+}
+
+// SetPythonVersion sets the "python_version" field.
+func (cwruo *CIWorkflowResultUpdateOne) SetPythonVersion(s string) *CIWorkflowResultUpdateOne {
+	cwruo.mutation.SetPythonVersion(s)
+	return cwruo
+}
+
+// SetNillablePythonVersion sets the "python_version" field if the given value is not nil.
+func (cwruo *CIWorkflowResultUpdateOne) SetNillablePythonVersion(s *string) *CIWorkflowResultUpdateOne {
+	if s != nil {
+		cwruo.SetPythonVersion(*s)
+	}
+	return cwruo
+}
+
+// ClearPythonVersion clears the value of the "python_version" field.
+func (cwruo *CIWorkflowResultUpdateOne) ClearPythonVersion() *CIWorkflowResultUpdateOne {
+	cwruo.mutation.ClearPythonVersion()
+	return cwruo
+}
+
+// SetAvgVram sets the "avg_vram" field.
+func (cwruo *CIWorkflowResultUpdateOne) SetAvgVram(i int) *CIWorkflowResultUpdateOne {
+	cwruo.mutation.ResetAvgVram()
+	cwruo.mutation.SetAvgVram(i)
+	return cwruo
+}
+
+// SetNillableAvgVram sets the "avg_vram" field if the given value is not nil.
+func (cwruo *CIWorkflowResultUpdateOne) SetNillableAvgVram(i *int) *CIWorkflowResultUpdateOne {
+	if i != nil {
+		cwruo.SetAvgVram(*i)
+	}
+	return cwruo
+}
+
+// AddAvgVram adds i to the "avg_vram" field.
+func (cwruo *CIWorkflowResultUpdateOne) AddAvgVram(i int) *CIWorkflowResultUpdateOne {
+	cwruo.mutation.AddAvgVram(i)
+	return cwruo
+}
+
+// ClearAvgVram clears the value of the "avg_vram" field.
+func (cwruo *CIWorkflowResultUpdateOne) ClearAvgVram() *CIWorkflowResultUpdateOne {
+	cwruo.mutation.ClearAvgVram()
+	return cwruo
+}
+
+// SetPeakVram sets the "peak_vram" field.
+func (cwruo *CIWorkflowResultUpdateOne) SetPeakVram(i int) *CIWorkflowResultUpdateOne {
+	cwruo.mutation.ResetPeakVram()
+	cwruo.mutation.SetPeakVram(i)
+	return cwruo
+}
+
+// SetNillablePeakVram sets the "peak_vram" field if the given value is not nil.
+func (cwruo *CIWorkflowResultUpdateOne) SetNillablePeakVram(i *int) *CIWorkflowResultUpdateOne {
+	if i != nil {
+		cwruo.SetPeakVram(*i)
+	}
+	return cwruo
+}
+
+// AddPeakVram adds i to the "peak_vram" field.
+func (cwruo *CIWorkflowResultUpdateOne) AddPeakVram(i int) *CIWorkflowResultUpdateOne {
+	cwruo.mutation.AddPeakVram(i)
+	return cwruo
+}
+
+// ClearPeakVram clears the value of the "peak_vram" field.
+func (cwruo *CIWorkflowResultUpdateOne) ClearPeakVram() *CIWorkflowResultUpdateOne {
+	cwruo.mutation.ClearPeakVram()
+	return cwruo
+}
+
+// SetJobTriggerUser sets the "job_trigger_user" field.
+func (cwruo *CIWorkflowResultUpdateOne) SetJobTriggerUser(s string) *CIWorkflowResultUpdateOne {
+	cwruo.mutation.SetJobTriggerUser(s)
+	return cwruo
+}
+
+// SetNillableJobTriggerUser sets the "job_trigger_user" field if the given value is not nil.
+func (cwruo *CIWorkflowResultUpdateOne) SetNillableJobTriggerUser(s *string) *CIWorkflowResultUpdateOne {
+	if s != nil {
+		cwruo.SetJobTriggerUser(*s)
+	}
+	return cwruo
+}
+
+// ClearJobTriggerUser clears the value of the "job_trigger_user" field.
+func (cwruo *CIWorkflowResultUpdateOne) ClearJobTriggerUser() *CIWorkflowResultUpdateOne {
+	cwruo.mutation.ClearJobTriggerUser()
 	return cwruo
 }
 
@@ -789,9 +993,6 @@ func (cwruo *CIWorkflowResultUpdateOne) sqlSave(ctx context.Context) (_node *CIW
 	if value, ok := cwruo.mutation.Status(); ok {
 		_spec.SetField(ciworkflowresult.FieldStatus, field.TypeString, value)
 	}
-	if cwruo.mutation.StatusCleared() {
-		_spec.ClearField(ciworkflowresult.FieldStatus, field.TypeString)
-	}
 	if value, ok := cwruo.mutation.StartTime(); ok {
 		_spec.SetField(ciworkflowresult.FieldStartTime, field.TypeInt64, value)
 	}
@@ -809,6 +1010,36 @@ func (cwruo *CIWorkflowResultUpdateOne) sqlSave(ctx context.Context) (_node *CIW
 	}
 	if cwruo.mutation.EndTimeCleared() {
 		_spec.ClearField(ciworkflowresult.FieldEndTime, field.TypeInt64)
+	}
+	if value, ok := cwruo.mutation.PythonVersion(); ok {
+		_spec.SetField(ciworkflowresult.FieldPythonVersion, field.TypeString, value)
+	}
+	if cwruo.mutation.PythonVersionCleared() {
+		_spec.ClearField(ciworkflowresult.FieldPythonVersion, field.TypeString)
+	}
+	if value, ok := cwruo.mutation.AvgVram(); ok {
+		_spec.SetField(ciworkflowresult.FieldAvgVram, field.TypeInt, value)
+	}
+	if value, ok := cwruo.mutation.AddedAvgVram(); ok {
+		_spec.AddField(ciworkflowresult.FieldAvgVram, field.TypeInt, value)
+	}
+	if cwruo.mutation.AvgVramCleared() {
+		_spec.ClearField(ciworkflowresult.FieldAvgVram, field.TypeInt)
+	}
+	if value, ok := cwruo.mutation.PeakVram(); ok {
+		_spec.SetField(ciworkflowresult.FieldPeakVram, field.TypeInt, value)
+	}
+	if value, ok := cwruo.mutation.AddedPeakVram(); ok {
+		_spec.AddField(ciworkflowresult.FieldPeakVram, field.TypeInt, value)
+	}
+	if cwruo.mutation.PeakVramCleared() {
+		_spec.ClearField(ciworkflowresult.FieldPeakVram, field.TypeInt)
+	}
+	if value, ok := cwruo.mutation.JobTriggerUser(); ok {
+		_spec.SetField(ciworkflowresult.FieldJobTriggerUser, field.TypeString, value)
+	}
+	if cwruo.mutation.JobTriggerUserCleared() {
+		_spec.ClearField(ciworkflowresult.FieldJobTriggerUser, field.TypeString)
 	}
 	if cwruo.mutation.GitcommitCleared() {
 		edge := &sqlgraph.EdgeSpec{

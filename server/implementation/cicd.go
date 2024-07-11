@@ -3,9 +3,9 @@ package implementation
 import (
 	"context"
 	"registry-backend/drip"
-	"registry-backend/ent"
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/gitcommit"
+	"registry-backend/mapper"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -61,7 +61,7 @@ func (impl *DripStrictServerImplementation) GetGitcommit(ctx context.Context, re
 
 	// Conditionally add the commitId filter
 	if commitId != uuid.Nil {
-		log.Ctx(ctx).Info().Msgf("Filtering git commit by commit hash %s", commitId)
+		log.Ctx(ctx).Info().Msgf("Filtering git commit by db commit id %s", commitId)
 		query.Where(ciworkflowresult.HasGitcommitWith(gitcommit.IDEQ(commitId)))
 	}
 
@@ -108,41 +108,16 @@ func (impl *DripStrictServerImplementation) GetGitcommit(ctx context.Context, re
 		return drip.GetGitcommit500Response{}, err
 	}
 
-	results := mapRunsToResponse(runs)
+	results, err := mapper.CiWorkflowResultToActionJobResult(runs)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Error mapping git commits to action job results w/ err: %v", err)
+		return drip.GetGitcommit500Response{}, err
+	}
 	log.Ctx(ctx).Info().Msgf("Git commits retrieved successfully")
 	return drip.GetGitcommit200JSONResponse{
 		JobResults:         &results,
 		TotalNumberOfPages: &numberOfPages,
 	}, nil
-}
-
-func mapRunsToResponse(results []*ent.CIWorkflowResult) []drip.ActionJobResult {
-	var jobResultsData []drip.ActionJobResult
-
-	for _, result := range results {
-		storageFileData := drip.StorageFile{
-			PublicUrl: &result.Edges.StorageFile.FileURL,
-		}
-		commitId := result.Edges.Gitcommit.ID.String()
-		commitUnixTime := result.Edges.Gitcommit.CommitTimestamp.Unix()
-		jobResultData := drip.ActionJobResult{
-			WorkflowName:    &result.WorkflowName,
-			OperatingSystem: &result.OperatingSystem,
-			GpuType:         &result.GpuType,
-			PytorchVersion:  &result.PytorchVersion,
-			StorageFile:     &storageFileData,
-			CommitHash:      &result.Edges.Gitcommit.CommitHash,
-			CommitId:        &commitId,
-			CommitTime:      &commitUnixTime,
-			CommitMessage:   &result.Edges.Gitcommit.CommitMessage,
-			GitRepo:         &result.Edges.Gitcommit.RepoName,
-			ActionRunId:     &result.RunID,
-			StartTime:       &result.StartTime,
-			EndTime:         &result.EndTime,
-		}
-		jobResultsData = append(jobResultsData, jobResultData)
-	}
-	return jobResultsData
 }
 
 func (impl *DripStrictServerImplementation) GetBranch(ctx context.Context, request drip.GetBranchRequestObject) (drip.GetBranchResponseObject, error) {

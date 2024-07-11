@@ -33,6 +33,8 @@ const (
 	FieldAuthor = "author"
 	// FieldTimestamp holds the string denoting the timestamp field in the database.
 	FieldTimestamp = "timestamp"
+	// FieldPrNumber holds the string denoting the pr_number field in the database.
+	FieldPrNumber = "pr_number"
 	// EdgeResults holds the string denoting the results edge name in mutations.
 	EdgeResults = "results"
 	// Table holds the table name of the gitcommit in the database.
@@ -58,6 +60,7 @@ var Columns = []string{
 	FieldCommitTimestamp,
 	FieldAuthor,
 	FieldTimestamp,
+	FieldPrNumber,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -132,6 +135,11 @@ func ByAuthor(opts ...sql.OrderTermOption) OrderOption {
 // ByTimestamp orders the results by the timestamp field.
 func ByTimestamp(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTimestamp, opts...).ToFunc()
+}
+
+// ByPrNumber orders the results by the pr_number field.
+func ByPrNumber(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPrNumber, opts...).ToFunc()
 }
 
 // ByResultsCount orders the results by results count.

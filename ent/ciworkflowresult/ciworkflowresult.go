@@ -3,6 +3,7 @@
 package ciworkflowresult
 
 import (
+	"registry-backend/ent/schema"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -35,6 +36,14 @@ const (
 	FieldStartTime = "start_time"
 	// FieldEndTime holds the string denoting the end_time field in the database.
 	FieldEndTime = "end_time"
+	// FieldPythonVersion holds the string denoting the python_version field in the database.
+	FieldPythonVersion = "python_version"
+	// FieldAvgVram holds the string denoting the avg_vram field in the database.
+	FieldAvgVram = "avg_vram"
+	// FieldPeakVram holds the string denoting the peak_vram field in the database.
+	FieldPeakVram = "peak_vram"
+	// FieldJobTriggerUser holds the string denoting the job_trigger_user field in the database.
+	FieldJobTriggerUser = "job_trigger_user"
 	// EdgeGitcommit holds the string denoting the gitcommit edge name in mutations.
 	EdgeGitcommit = "gitcommit"
 	// EdgeStorageFile holds the string denoting the storage_file edge name in mutations.
@@ -70,6 +79,10 @@ var Columns = []string{
 	FieldStatus,
 	FieldStartTime,
 	FieldEndTime,
+	FieldPythonVersion,
+	FieldAvgVram,
+	FieldPeakVram,
+	FieldJobTriggerUser,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "ci_workflow_results"
@@ -101,6 +114,8 @@ var (
 	DefaultUpdateTime func() time.Time
 	// UpdateDefaultUpdateTime holds the default value on update for the "update_time" field.
 	UpdateDefaultUpdateTime func() time.Time
+	// DefaultStatus holds the default value on creation for the "status" field.
+	DefaultStatus schema.WorkflowRunStatusType
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -161,6 +176,26 @@ func ByStartTime(opts ...sql.OrderTermOption) OrderOption {
 // ByEndTime orders the results by the end_time field.
 func ByEndTime(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEndTime, opts...).ToFunc()
+}
+
+// ByPythonVersion orders the results by the python_version field.
+func ByPythonVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPythonVersion, opts...).ToFunc()
+}
+
+// ByAvgVram orders the results by the avg_vram field.
+func ByAvgVram(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAvgVram, opts...).ToFunc()
+}
+
+// ByPeakVram orders the results by the peak_vram field.
+func ByPeakVram(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPeakVram, opts...).ToFunc()
+}
+
+// ByJobTriggerUser orders the results by the job_trigger_user field.
+func ByJobTriggerUser(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldJobTriggerUser, opts...).ToFunc()
 }
 
 // ByGitcommitField orders the results by gitcommit field.

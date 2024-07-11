@@ -36,6 +36,9 @@ func (GitCommit) Fields() []ent.Field {
 			dialect.Postgres: "text",
 		}).Optional(),
 		field.Time("timestamp").Optional(),
+		field.String("pr_number").SchemaType(map[string]string{
+			dialect.Postgres: "text",
+		}).Optional(),
 	}
 }
 

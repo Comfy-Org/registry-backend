@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/gitcommit"
+	"registry-backend/ent/schema"
 	"registry-backend/ent/storagefile"
 	"strings"
 	"time"
@@ -35,11 +36,19 @@ type CIWorkflowResult struct {
 	// RunID holds the value of the "run_id" field.
 	RunID string `json:"run_id,omitempty"`
 	// Status holds the value of the "status" field.
-	Status string `json:"status,omitempty"`
+	Status schema.WorkflowRunStatusType `json:"status,omitempty"`
 	// StartTime holds the value of the "start_time" field.
 	StartTime int64 `json:"start_time,omitempty"`
 	// EndTime holds the value of the "end_time" field.
 	EndTime int64 `json:"end_time,omitempty"`
+	// PythonVersion holds the value of the "python_version" field.
+	PythonVersion string `json:"python_version,omitempty"`
+	// Average amount of VRAM used by the workflow in Megabytes
+	AvgVram int `json:"avg_vram,omitempty"`
+	// Peak amount of VRAM used by the workflow in Megabytes
+	PeakVram int `json:"peak_vram,omitempty"`
+	// User who triggered the job
+	JobTriggerUser string `json:"job_trigger_user,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CIWorkflowResultQuery when eager-loading is set.
 	Edges                           CIWorkflowResultEdges `json:"edges"`
@@ -86,9 +95,9 @@ func (*CIWorkflowResult) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case ciworkflowresult.FieldStartTime, ciworkflowresult.FieldEndTime:
+		case ciworkflowresult.FieldStartTime, ciworkflowresult.FieldEndTime, ciworkflowresult.FieldAvgVram, ciworkflowresult.FieldPeakVram:
 			values[i] = new(sql.NullInt64)
-		case ciworkflowresult.FieldOperatingSystem, ciworkflowresult.FieldGpuType, ciworkflowresult.FieldPytorchVersion, ciworkflowresult.FieldWorkflowName, ciworkflowresult.FieldRunID, ciworkflowresult.FieldStatus:
+		case ciworkflowresult.FieldOperatingSystem, ciworkflowresult.FieldGpuType, ciworkflowresult.FieldPytorchVersion, ciworkflowresult.FieldWorkflowName, ciworkflowresult.FieldRunID, ciworkflowresult.FieldStatus, ciworkflowresult.FieldPythonVersion, ciworkflowresult.FieldJobTriggerUser:
 			values[i] = new(sql.NullString)
 		case ciworkflowresult.FieldCreateTime, ciworkflowresult.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
@@ -165,7 +174,7 @@ func (cwr *CIWorkflowResult) assignValues(columns []string, values []any) error 
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
-				cwr.Status = value.String
+				cwr.Status = schema.WorkflowRunStatusType(value.String)
 			}
 		case ciworkflowresult.FieldStartTime:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -178,6 +187,30 @@ func (cwr *CIWorkflowResult) assignValues(columns []string, values []any) error 
 				return fmt.Errorf("unexpected type %T for field end_time", values[i])
 			} else if value.Valid {
 				cwr.EndTime = value.Int64
+			}
+		case ciworkflowresult.FieldPythonVersion:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field python_version", values[i])
+			} else if value.Valid {
+				cwr.PythonVersion = value.String
+			}
+		case ciworkflowresult.FieldAvgVram:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field avg_vram", values[i])
+			} else if value.Valid {
+				cwr.AvgVram = int(value.Int64)
+			}
+		case ciworkflowresult.FieldPeakVram:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field peak_vram", values[i])
+			} else if value.Valid {
+				cwr.PeakVram = int(value.Int64)
+			}
+		case ciworkflowresult.FieldJobTriggerUser:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field job_trigger_user", values[i])
+			} else if value.Valid {
+				cwr.JobTriggerUser = value.String
 			}
 		case ciworkflowresult.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -261,13 +294,25 @@ func (cwr *CIWorkflowResult) String() string {
 	builder.WriteString(cwr.RunID)
 	builder.WriteString(", ")
 	builder.WriteString("status=")
-	builder.WriteString(cwr.Status)
+	builder.WriteString(fmt.Sprintf("%v", cwr.Status))
 	builder.WriteString(", ")
 	builder.WriteString("start_time=")
 	builder.WriteString(fmt.Sprintf("%v", cwr.StartTime))
 	builder.WriteString(", ")
 	builder.WriteString("end_time=")
 	builder.WriteString(fmt.Sprintf("%v", cwr.EndTime))
+	builder.WriteString(", ")
+	builder.WriteString("python_version=")
+	builder.WriteString(cwr.PythonVersion)
+	builder.WriteString(", ")
+	builder.WriteString("avg_vram=")
+	builder.WriteString(fmt.Sprintf("%v", cwr.AvgVram))
+	builder.WriteString(", ")
+	builder.WriteString("peak_vram=")
+	builder.WriteString(fmt.Sprintf("%v", cwr.PeakVram))
+	builder.WriteString(", ")
+	builder.WriteString("job_trigger_user=")
+	builder.WriteString(cwr.JobTriggerUser)
 	builder.WriteByte(')')
 	return builder.String()
 }

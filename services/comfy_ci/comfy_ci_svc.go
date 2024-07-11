@@ -8,7 +8,8 @@ import (
 	"registry-backend/ent"
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/gitcommit"
-	"registry-backend/server/middleware/metric"
+	"registry-backend/mapper"
+	drip_metric "registry-backend/server/middleware/metric"
 	"strings"
 	"time"
 
@@ -53,7 +54,7 @@ func (s *ComfyCIService) ProcessCIRequest(ctx context.Context, client *ent.Clien
 	}
 
 	return db.WithTx(ctx, client, func(tx *ent.Tx) error {
-		id, err := s.UpsertCommit(ctx, tx.Client(), req.Body.CommitHash, req.Body.BranchName, req.Body.Repo, req.Body.CommitTime, req.Body.CommitMessage)
+		id, err := s.UpsertCommit(ctx, tx.Client(), req.Body.CommitHash, req.Body.BranchName, req.Body.Repo, req.Body.CommitTime, req.Body.CommitMessage, req.Body.PrNumber, req.Body.Author)
 		if err != nil {
 			return err
 		}
@@ -85,7 +86,16 @@ func (s *ComfyCIService) ProcessCIRequest(ctx context.Context, client *ent.Clien
 					cudaVersion = *req.Body.CudaVersion
 				}
 
-				_, err = s.UpsertRunResult(ctx, tx.Client(), file, gitcommit, req.Body.Os, cudaVersion, req.Body.WorkflowName, req.Body.RunId, req.Body.StartTime, req.Body.EndTime)
+				avgVram := 0
+				if req.Body.AvgVram != nil {
+					avgVram = *req.Body.AvgVram
+				}
+				peakVram := 0
+				if req.Body.PeakVram != nil {
+					peakVram = *req.Body.PeakVram
+				}
+
+				_, err = s.UpsertRunResult(ctx, tx.Client(), file, gitcommit, req.Body.Os, cudaVersion, req.Body.WorkflowName, req.Body.RunId, req.Body.StartTime, req.Body.EndTime, avgVram, peakVram, req.Body.PythonVersion, req.Body.JobTriggerUser, req.Body.Status)
 				if err != nil {
 					return err
 				}
@@ -96,7 +106,7 @@ func (s *ComfyCIService) ProcessCIRequest(ctx context.Context, client *ent.Clien
 }
 
 // UpsertCommit creates or updates a GitCommit entity.
-func (s *ComfyCIService) UpsertCommit(ctx context.Context, client *ent.Client, hash, branchName, repoName string, commitIsoTime string, commitMessage string) (uuid.UUID, error) {
+func (s *ComfyCIService) UpsertCommit(ctx context.Context, client *ent.Client, hash, branchName, repoName, commitIsoTime, commitMessage, prNumber, author string) (uuid.UUID, error) {
 	log.Ctx(ctx).Info().Msgf("Upserting commit %s", hash)
 	commitTime, err := time.Parse(time.RFC3339, commitIsoTime)
 	if err != nil {
@@ -110,6 +120,8 @@ func (s *ComfyCIService) UpsertCommit(ctx context.Context, client *ent.Client, h
 		SetRepoName(strings.ToLower(repoName)). // TODO(robinhuang): Write test for this.
 		SetCommitTimestamp(commitTime).
 		SetCommitMessage(commitMessage).
+		SetPrNumber(prNumber).
+		SetAuthor(author).
 		OnConflict(
 			// Careful, the order matters here.
 			sql.ConflictColumns(gitcommit.FieldRepoName, gitcommit.FieldCommitHash),
@@ -124,8 +136,12 @@ func (s *ComfyCIService) UpsertCommit(ctx context.Context, client *ent.Client, h
 }
 
 // UpsertRunResult creates or updates a ActionRunResult entity.
-func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client, file *ent.StorageFile, gitcommit *ent.GitCommit, os, gpuType, workflowName, runId string, startTime, endTime int64) (uuid.UUID, error) {
+func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client, file *ent.StorageFile, gitcommit *ent.GitCommit, os, gpuType, workflowName, runId string, startTime, endTime int64, avgVram, peakVram int, pythonVersion, jobTriggerUser string, status drip.WorkflowRunStatus) (uuid.UUID, error) {
 	log.Ctx(ctx).Info().Msgf("Upserting workflow result for commit %s", gitcommit.CommitHash)
+	dbWorkflowRunStatus, err := mapper.ApiWorkflowRunStatusToDb(status)
+	if err != nil {
+		return uuid.Nil, err
+	}
 	return client.CIWorkflowResult.
 		Create().
 		SetGitcommit(gitcommit).
@@ -135,6 +151,11 @@ func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client
 		SetRunID(runId).
 		SetStartTime(startTime).
 		SetEndTime(endTime).
+		SetPythonVersion(pythonVersion).
+		SetAvgVram(avgVram).
+		SetPeakVram(peakVram).
+		SetStatus(dbWorkflowRunStatus).
+		SetJobTriggerUser(jobTriggerUser).
 		OnConflict(
 			sql.ConflictColumns(ciworkflowresult.FieldID),
 		).

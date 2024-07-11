@@ -34,8 +34,6 @@ spec:
           # TODO(robinhuang): Switch to a list of strings
         - name: CORS_ORIGIN
           value: https://staging.comfyregistry.org
-        - name: REINDEX_NODES_CRONTAB
-          value: "0 3 * * *" # run every 3am
         - name: SECRET_SCANNER_URL
           valueFrom:
               secretKeyRef:

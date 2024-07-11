@@ -60,11 +60,17 @@ type CIWorkflowResultMutation struct {
 	pytorch_version     *string
 	workflow_name       *string
 	run_id              *string
-	status              *string
+	status              *schema.WorkflowRunStatusType
 	start_time          *int64
 	addstart_time       *int64
 	end_time            *int64
 	addend_time         *int64
+	python_version      *string
+	avg_vram            *int
+	addavg_vram         *int
+	peak_vram           *int
+	addpeak_vram        *int
+	job_trigger_user    *string
 	clearedFields       map[string]struct{}
 	gitcommit           *uuid.UUID
 	clearedgitcommit    bool
@@ -484,12 +490,12 @@ func (m *CIWorkflowResultMutation) ResetRunID() {
 }
 
 // SetStatus sets the "status" field.
-func (m *CIWorkflowResultMutation) SetStatus(s string) {
-	m.status = &s
+func (m *CIWorkflowResultMutation) SetStatus(srst schema.WorkflowRunStatusType) {
+	m.status = &srst
 }
 
 // Status returns the value of the "status" field in the mutation.
-func (m *CIWorkflowResultMutation) Status() (r string, exists bool) {
+func (m *CIWorkflowResultMutation) Status() (r schema.WorkflowRunStatusType, exists bool) {
 	v := m.status
 	if v == nil {
 		return
@@ -500,7 +506,7 @@ func (m *CIWorkflowResultMutation) Status() (r string, exists bool) {
 // OldStatus returns the old "status" field's value of the CIWorkflowResult entity.
 // If the CIWorkflowResult object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *CIWorkflowResultMutation) OldStatus(ctx context.Context) (v string, err error) {
+func (m *CIWorkflowResultMutation) OldStatus(ctx context.Context) (v schema.WorkflowRunStatusType, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
 	}
@@ -514,22 +520,9 @@ func (m *CIWorkflowResultMutation) OldStatus(ctx context.Context) (v string, err
 	return oldValue.Status, nil
 }
 
-// ClearStatus clears the value of the "status" field.
-func (m *CIWorkflowResultMutation) ClearStatus() {
-	m.status = nil
-	m.clearedFields[ciworkflowresult.FieldStatus] = struct{}{}
-}
-
-// StatusCleared returns if the "status" field was cleared in this mutation.
-func (m *CIWorkflowResultMutation) StatusCleared() bool {
-	_, ok := m.clearedFields[ciworkflowresult.FieldStatus]
-	return ok
-}
-
 // ResetStatus resets all changes to the "status" field.
 func (m *CIWorkflowResultMutation) ResetStatus() {
 	m.status = nil
-	delete(m.clearedFields, ciworkflowresult.FieldStatus)
 }
 
 // SetStartTime sets the "start_time" field.
@@ -672,6 +665,244 @@ func (m *CIWorkflowResultMutation) ResetEndTime() {
 	delete(m.clearedFields, ciworkflowresult.FieldEndTime)
 }
 
+// SetPythonVersion sets the "python_version" field.
+func (m *CIWorkflowResultMutation) SetPythonVersion(s string) {
+	m.python_version = &s
+}
+
+// PythonVersion returns the value of the "python_version" field in the mutation.
+func (m *CIWorkflowResultMutation) PythonVersion() (r string, exists bool) {
+	v := m.python_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPythonVersion returns the old "python_version" field's value of the CIWorkflowResult entity.
+// If the CIWorkflowResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CIWorkflowResultMutation) OldPythonVersion(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPythonVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPythonVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPythonVersion: %w", err)
+	}
+	return oldValue.PythonVersion, nil
+}
+
+// ClearPythonVersion clears the value of the "python_version" field.
+func (m *CIWorkflowResultMutation) ClearPythonVersion() {
+	m.python_version = nil
+	m.clearedFields[ciworkflowresult.FieldPythonVersion] = struct{}{}
+}
+
+// PythonVersionCleared returns if the "python_version" field was cleared in this mutation.
+func (m *CIWorkflowResultMutation) PythonVersionCleared() bool {
+	_, ok := m.clearedFields[ciworkflowresult.FieldPythonVersion]
+	return ok
+}
+
+// ResetPythonVersion resets all changes to the "python_version" field.
+func (m *CIWorkflowResultMutation) ResetPythonVersion() {
+	m.python_version = nil
+	delete(m.clearedFields, ciworkflowresult.FieldPythonVersion)
+}
+
+// SetAvgVram sets the "avg_vram" field.
+func (m *CIWorkflowResultMutation) SetAvgVram(i int) {
+	m.avg_vram = &i
+	m.addavg_vram = nil
+}
+
+// AvgVram returns the value of the "avg_vram" field in the mutation.
+func (m *CIWorkflowResultMutation) AvgVram() (r int, exists bool) {
+	v := m.avg_vram
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAvgVram returns the old "avg_vram" field's value of the CIWorkflowResult entity.
+// If the CIWorkflowResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CIWorkflowResultMutation) OldAvgVram(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAvgVram is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAvgVram requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAvgVram: %w", err)
+	}
+	return oldValue.AvgVram, nil
+}
+
+// AddAvgVram adds i to the "avg_vram" field.
+func (m *CIWorkflowResultMutation) AddAvgVram(i int) {
+	if m.addavg_vram != nil {
+		*m.addavg_vram += i
+	} else {
+		m.addavg_vram = &i
+	}
+}
+
+// AddedAvgVram returns the value that was added to the "avg_vram" field in this mutation.
+func (m *CIWorkflowResultMutation) AddedAvgVram() (r int, exists bool) {
+	v := m.addavg_vram
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearAvgVram clears the value of the "avg_vram" field.
+func (m *CIWorkflowResultMutation) ClearAvgVram() {
+	m.avg_vram = nil
+	m.addavg_vram = nil
+	m.clearedFields[ciworkflowresult.FieldAvgVram] = struct{}{}
+}
+
+// AvgVramCleared returns if the "avg_vram" field was cleared in this mutation.
+func (m *CIWorkflowResultMutation) AvgVramCleared() bool {
+	_, ok := m.clearedFields[ciworkflowresult.FieldAvgVram]
+	return ok
+}
+
+// ResetAvgVram resets all changes to the "avg_vram" field.
+func (m *CIWorkflowResultMutation) ResetAvgVram() {
+	m.avg_vram = nil
+	m.addavg_vram = nil
+	delete(m.clearedFields, ciworkflowresult.FieldAvgVram)
+}
+
+// SetPeakVram sets the "peak_vram" field.
+func (m *CIWorkflowResultMutation) SetPeakVram(i int) {
+	m.peak_vram = &i
+	m.addpeak_vram = nil
+}
+
+// PeakVram returns the value of the "peak_vram" field in the mutation.
+func (m *CIWorkflowResultMutation) PeakVram() (r int, exists bool) {
+	v := m.peak_vram
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPeakVram returns the old "peak_vram" field's value of the CIWorkflowResult entity.
+// If the CIWorkflowResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CIWorkflowResultMutation) OldPeakVram(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPeakVram is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPeakVram requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPeakVram: %w", err)
+	}
+	return oldValue.PeakVram, nil
+}
+
+// AddPeakVram adds i to the "peak_vram" field.
+func (m *CIWorkflowResultMutation) AddPeakVram(i int) {
+	if m.addpeak_vram != nil {
+		*m.addpeak_vram += i
+	} else {
+		m.addpeak_vram = &i
+	}
+}
+
+// AddedPeakVram returns the value that was added to the "peak_vram" field in this mutation.
+func (m *CIWorkflowResultMutation) AddedPeakVram() (r int, exists bool) {
+	v := m.addpeak_vram
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearPeakVram clears the value of the "peak_vram" field.
+func (m *CIWorkflowResultMutation) ClearPeakVram() {
+	m.peak_vram = nil
+	m.addpeak_vram = nil
+	m.clearedFields[ciworkflowresult.FieldPeakVram] = struct{}{}
+}
+
+// PeakVramCleared returns if the "peak_vram" field was cleared in this mutation.
+func (m *CIWorkflowResultMutation) PeakVramCleared() bool {
+	_, ok := m.clearedFields[ciworkflowresult.FieldPeakVram]
+	return ok
+}
+
+// ResetPeakVram resets all changes to the "peak_vram" field.
+func (m *CIWorkflowResultMutation) ResetPeakVram() {
+	m.peak_vram = nil
+	m.addpeak_vram = nil
+	delete(m.clearedFields, ciworkflowresult.FieldPeakVram)
+}
+
+// SetJobTriggerUser sets the "job_trigger_user" field.
+func (m *CIWorkflowResultMutation) SetJobTriggerUser(s string) {
+	m.job_trigger_user = &s
+}
+
+// JobTriggerUser returns the value of the "job_trigger_user" field in the mutation.
+func (m *CIWorkflowResultMutation) JobTriggerUser() (r string, exists bool) {
+	v := m.job_trigger_user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldJobTriggerUser returns the old "job_trigger_user" field's value of the CIWorkflowResult entity.
+// If the CIWorkflowResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CIWorkflowResultMutation) OldJobTriggerUser(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldJobTriggerUser is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldJobTriggerUser requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldJobTriggerUser: %w", err)
+	}
+	return oldValue.JobTriggerUser, nil
+}
+
+// ClearJobTriggerUser clears the value of the "job_trigger_user" field.
+func (m *CIWorkflowResultMutation) ClearJobTriggerUser() {
+	m.job_trigger_user = nil
+	m.clearedFields[ciworkflowresult.FieldJobTriggerUser] = struct{}{}
+}
+
+// JobTriggerUserCleared returns if the "job_trigger_user" field was cleared in this mutation.
+func (m *CIWorkflowResultMutation) JobTriggerUserCleared() bool {
+	_, ok := m.clearedFields[ciworkflowresult.FieldJobTriggerUser]
+	return ok
+}
+
+// ResetJobTriggerUser resets all changes to the "job_trigger_user" field.
+func (m *CIWorkflowResultMutation) ResetJobTriggerUser() {
+	m.job_trigger_user = nil
+	delete(m.clearedFields, ciworkflowresult.FieldJobTriggerUser)
+}
+
 // SetGitcommitID sets the "gitcommit" edge to the GitCommit entity by id.
 func (m *CIWorkflowResultMutation) SetGitcommitID(id uuid.UUID) {
 	m.gitcommit = &id
@@ -784,7 +1015,7 @@ func (m *CIWorkflowResultMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CIWorkflowResultMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 14)
 	if m.create_time != nil {
 		fields = append(fields, ciworkflowresult.FieldCreateTime)
 	}
@@ -815,6 +1046,18 @@ func (m *CIWorkflowResultMutation) Fields() []string {
 	if m.end_time != nil {
 		fields = append(fields, ciworkflowresult.FieldEndTime)
 	}
+	if m.python_version != nil {
+		fields = append(fields, ciworkflowresult.FieldPythonVersion)
+	}
+	if m.avg_vram != nil {
+		fields = append(fields, ciworkflowresult.FieldAvgVram)
+	}
+	if m.peak_vram != nil {
+		fields = append(fields, ciworkflowresult.FieldPeakVram)
+	}
+	if m.job_trigger_user != nil {
+		fields = append(fields, ciworkflowresult.FieldJobTriggerUser)
+	}
 	return fields
 }
 
@@ -843,6 +1086,14 @@ func (m *CIWorkflowResultMutation) Field(name string) (ent.Value, bool) {
 		return m.StartTime()
 	case ciworkflowresult.FieldEndTime:
 		return m.EndTime()
+	case ciworkflowresult.FieldPythonVersion:
+		return m.PythonVersion()
+	case ciworkflowresult.FieldAvgVram:
+		return m.AvgVram()
+	case ciworkflowresult.FieldPeakVram:
+		return m.PeakVram()
+	case ciworkflowresult.FieldJobTriggerUser:
+		return m.JobTriggerUser()
 	}
 	return nil, false
 }
@@ -872,6 +1123,14 @@ func (m *CIWorkflowResultMutation) OldField(ctx context.Context, name string) (e
 		return m.OldStartTime(ctx)
 	case ciworkflowresult.FieldEndTime:
 		return m.OldEndTime(ctx)
+	case ciworkflowresult.FieldPythonVersion:
+		return m.OldPythonVersion(ctx)
+	case ciworkflowresult.FieldAvgVram:
+		return m.OldAvgVram(ctx)
+	case ciworkflowresult.FieldPeakVram:
+		return m.OldPeakVram(ctx)
+	case ciworkflowresult.FieldJobTriggerUser:
+		return m.OldJobTriggerUser(ctx)
 	}
 	return nil, fmt.Errorf("unknown CIWorkflowResult field %s", name)
 }
@@ -931,7 +1190,7 @@ func (m *CIWorkflowResultMutation) SetField(name string, value ent.Value) error 
 		m.SetRunID(v)
 		return nil
 	case ciworkflowresult.FieldStatus:
-		v, ok := value.(string)
+		v, ok := value.(schema.WorkflowRunStatusType)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -951,6 +1210,34 @@ func (m *CIWorkflowResultMutation) SetField(name string, value ent.Value) error 
 		}
 		m.SetEndTime(v)
 		return nil
+	case ciworkflowresult.FieldPythonVersion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPythonVersion(v)
+		return nil
+	case ciworkflowresult.FieldAvgVram:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAvgVram(v)
+		return nil
+	case ciworkflowresult.FieldPeakVram:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPeakVram(v)
+		return nil
+	case ciworkflowresult.FieldJobTriggerUser:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetJobTriggerUser(v)
+		return nil
 	}
 	return fmt.Errorf("unknown CIWorkflowResult field %s", name)
 }
@@ -965,6 +1252,12 @@ func (m *CIWorkflowResultMutation) AddedFields() []string {
 	if m.addend_time != nil {
 		fields = append(fields, ciworkflowresult.FieldEndTime)
 	}
+	if m.addavg_vram != nil {
+		fields = append(fields, ciworkflowresult.FieldAvgVram)
+	}
+	if m.addpeak_vram != nil {
+		fields = append(fields, ciworkflowresult.FieldPeakVram)
+	}
 	return fields
 }
 
@@ -977,6 +1270,10 @@ func (m *CIWorkflowResultMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedStartTime()
 	case ciworkflowresult.FieldEndTime:
 		return m.AddedEndTime()
+	case ciworkflowresult.FieldAvgVram:
+		return m.AddedAvgVram()
+	case ciworkflowresult.FieldPeakVram:
+		return m.AddedPeakVram()
 	}
 	return nil, false
 }
@@ -1000,6 +1297,20 @@ func (m *CIWorkflowResultMutation) AddField(name string, value ent.Value) error 
 		}
 		m.AddEndTime(v)
 		return nil
+	case ciworkflowresult.FieldAvgVram:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAvgVram(v)
+		return nil
+	case ciworkflowresult.FieldPeakVram:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPeakVram(v)
+		return nil
 	}
 	return fmt.Errorf("unknown CIWorkflowResult numeric field %s", name)
 }
@@ -1020,14 +1331,23 @@ func (m *CIWorkflowResultMutation) ClearedFields() []string {
 	if m.FieldCleared(ciworkflowresult.FieldRunID) {
 		fields = append(fields, ciworkflowresult.FieldRunID)
 	}
-	if m.FieldCleared(ciworkflowresult.FieldStatus) {
-		fields = append(fields, ciworkflowresult.FieldStatus)
-	}
 	if m.FieldCleared(ciworkflowresult.FieldStartTime) {
 		fields = append(fields, ciworkflowresult.FieldStartTime)
 	}
 	if m.FieldCleared(ciworkflowresult.FieldEndTime) {
 		fields = append(fields, ciworkflowresult.FieldEndTime)
+	}
+	if m.FieldCleared(ciworkflowresult.FieldPythonVersion) {
+		fields = append(fields, ciworkflowresult.FieldPythonVersion)
+	}
+	if m.FieldCleared(ciworkflowresult.FieldAvgVram) {
+		fields = append(fields, ciworkflowresult.FieldAvgVram)
+	}
+	if m.FieldCleared(ciworkflowresult.FieldPeakVram) {
+		fields = append(fields, ciworkflowresult.FieldPeakVram)
+	}
+	if m.FieldCleared(ciworkflowresult.FieldJobTriggerUser) {
+		fields = append(fields, ciworkflowresult.FieldJobTriggerUser)
 	}
 	return fields
 }
@@ -1055,14 +1375,23 @@ func (m *CIWorkflowResultMutation) ClearField(name string) error {
 	case ciworkflowresult.FieldRunID:
 		m.ClearRunID()
 		return nil
-	case ciworkflowresult.FieldStatus:
-		m.ClearStatus()
-		return nil
 	case ciworkflowresult.FieldStartTime:
 		m.ClearStartTime()
 		return nil
 	case ciworkflowresult.FieldEndTime:
 		m.ClearEndTime()
+		return nil
+	case ciworkflowresult.FieldPythonVersion:
+		m.ClearPythonVersion()
+		return nil
+	case ciworkflowresult.FieldAvgVram:
+		m.ClearAvgVram()
+		return nil
+	case ciworkflowresult.FieldPeakVram:
+		m.ClearPeakVram()
+		return nil
+	case ciworkflowresult.FieldJobTriggerUser:
+		m.ClearJobTriggerUser()
 		return nil
 	}
 	return fmt.Errorf("unknown CIWorkflowResult nullable field %s", name)
@@ -1101,6 +1430,18 @@ func (m *CIWorkflowResultMutation) ResetField(name string) error {
 		return nil
 	case ciworkflowresult.FieldEndTime:
 		m.ResetEndTime()
+		return nil
+	case ciworkflowresult.FieldPythonVersion:
+		m.ResetPythonVersion()
+		return nil
+	case ciworkflowresult.FieldAvgVram:
+		m.ResetAvgVram()
+		return nil
+	case ciworkflowresult.FieldPeakVram:
+		m.ResetPeakVram()
+		return nil
+	case ciworkflowresult.FieldJobTriggerUser:
+		m.ResetJobTriggerUser()
 		return nil
 	}
 	return fmt.Errorf("unknown CIWorkflowResult field %s", name)
@@ -1213,6 +1554,7 @@ type GitCommitMutation struct {
 	commit_timestamp *time.Time
 	author           *string
 	timestamp        *time.Time
+	pr_number        *string
 	clearedFields    map[string]struct{}
 	results          map[uuid.UUID]struct{}
 	removedresults   map[uuid.UUID]struct{}
@@ -1676,6 +2018,55 @@ func (m *GitCommitMutation) ResetTimestamp() {
 	delete(m.clearedFields, gitcommit.FieldTimestamp)
 }
 
+// SetPrNumber sets the "pr_number" field.
+func (m *GitCommitMutation) SetPrNumber(s string) {
+	m.pr_number = &s
+}
+
+// PrNumber returns the value of the "pr_number" field in the mutation.
+func (m *GitCommitMutation) PrNumber() (r string, exists bool) {
+	v := m.pr_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPrNumber returns the old "pr_number" field's value of the GitCommit entity.
+// If the GitCommit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GitCommitMutation) OldPrNumber(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPrNumber is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPrNumber requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPrNumber: %w", err)
+	}
+	return oldValue.PrNumber, nil
+}
+
+// ClearPrNumber clears the value of the "pr_number" field.
+func (m *GitCommitMutation) ClearPrNumber() {
+	m.pr_number = nil
+	m.clearedFields[gitcommit.FieldPrNumber] = struct{}{}
+}
+
+// PrNumberCleared returns if the "pr_number" field was cleared in this mutation.
+func (m *GitCommitMutation) PrNumberCleared() bool {
+	_, ok := m.clearedFields[gitcommit.FieldPrNumber]
+	return ok
+}
+
+// ResetPrNumber resets all changes to the "pr_number" field.
+func (m *GitCommitMutation) ResetPrNumber() {
+	m.pr_number = nil
+	delete(m.clearedFields, gitcommit.FieldPrNumber)
+}
+
 // AddResultIDs adds the "results" edge to the CIWorkflowResult entity by ids.
 func (m *GitCommitMutation) AddResultIDs(ids ...uuid.UUID) {
 	if m.results == nil {
@@ -1764,7 +2155,7 @@ func (m *GitCommitMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GitCommitMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.create_time != nil {
 		fields = append(fields, gitcommit.FieldCreateTime)
 	}
@@ -1792,6 +2183,9 @@ func (m *GitCommitMutation) Fields() []string {
 	if m.timestamp != nil {
 		fields = append(fields, gitcommit.FieldTimestamp)
 	}
+	if m.pr_number != nil {
+		fields = append(fields, gitcommit.FieldPrNumber)
+	}
 	return fields
 }
 
@@ -1818,6 +2212,8 @@ func (m *GitCommitMutation) Field(name string) (ent.Value, bool) {
 		return m.Author()
 	case gitcommit.FieldTimestamp:
 		return m.Timestamp()
+	case gitcommit.FieldPrNumber:
+		return m.PrNumber()
 	}
 	return nil, false
 }
@@ -1845,6 +2241,8 @@ func (m *GitCommitMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldAuthor(ctx)
 	case gitcommit.FieldTimestamp:
 		return m.OldTimestamp(ctx)
+	case gitcommit.FieldPrNumber:
+		return m.OldPrNumber(ctx)
 	}
 	return nil, fmt.Errorf("unknown GitCommit field %s", name)
 }
@@ -1917,6 +2315,13 @@ func (m *GitCommitMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTimestamp(v)
 		return nil
+	case gitcommit.FieldPrNumber:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPrNumber(v)
+		return nil
 	}
 	return fmt.Errorf("unknown GitCommit field %s", name)
 }
@@ -1953,6 +2358,9 @@ func (m *GitCommitMutation) ClearedFields() []string {
 	if m.FieldCleared(gitcommit.FieldTimestamp) {
 		fields = append(fields, gitcommit.FieldTimestamp)
 	}
+	if m.FieldCleared(gitcommit.FieldPrNumber) {
+		fields = append(fields, gitcommit.FieldPrNumber)
+	}
 	return fields
 }
 
@@ -1972,6 +2380,9 @@ func (m *GitCommitMutation) ClearField(name string) error {
 		return nil
 	case gitcommit.FieldTimestamp:
 		m.ClearTimestamp()
+		return nil
+	case gitcommit.FieldPrNumber:
+		m.ClearPrNumber()
 		return nil
 	}
 	return fmt.Errorf("unknown GitCommit nullable field %s", name)
@@ -2007,6 +2418,9 @@ func (m *GitCommitMutation) ResetField(name string) error {
 		return nil
 	case gitcommit.FieldTimestamp:
 		m.ResetTimestamp()
+		return nil
+	case gitcommit.FieldPrNumber:
+		m.ResetPrNumber()
 		return nil
 	}
 	return fmt.Errorf("unknown GitCommit field %s", name)

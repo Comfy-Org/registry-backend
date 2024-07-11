@@ -40,6 +40,8 @@ func TestCICD(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now()
 	anHourAgo := now.Add(-1 * time.Hour)
+	avgVram := 2132
+
 	body := &drip.PostUploadArtifactJSONRequestBody{
 		Repo:                "github.com/comfy/service",
 		BranchName:          "develop",
@@ -56,6 +58,12 @@ func TestCICD(t *testing.T) {
 		ComfyLogsGcsPath:    proto.String("comfy-dev-log"),
 		StartTime:           anHourAgo.Unix(),
 		EndTime:             now.Unix(),
+		PrNumber:            "123",
+		PythonVersion:       "3.8",
+		JobTriggerUser:      "comfy",
+		Author:              "robin",
+		AvgVram:             &avgVram,
+		Status:              drip.WorkflowRunStatusStarted,
 	}
 
 	t.Run("Post Upload Artifact", func(t *testing.T) {
@@ -74,6 +82,8 @@ func TestCICD(t *testing.T) {
 	})
 
 	t.Run("Get Git Commit", func(t *testing.T) {
+		expectedAvgVram := 2132
+		expectedPeakVram := 0
 		git, err := client.GitCommit.Query().Where(gitcommit.CommitHashEQ(body.CommitHash)).First(ctx)
 		require.NoError(t, err)
 
@@ -100,9 +110,15 @@ func TestCICD(t *testing.T) {
 			OperatingSystem: &body.Os,
 			StartTime:       proto.Int64(anHourAgo.Unix()),
 			WorkflowName:    &body.WorkflowName,
-
-			GpuType:        proto.String(""),
-			PytorchVersion: proto.String(""),
+			JobTriggerUser:  &body.JobTriggerUser,
+			AvgVram:         &expectedAvgVram,
+			PeakVram:        &expectedPeakVram,
+			PythonVersion:   &body.PythonVersion,
+			Status:          &body.Status,
+			PrNumber:        &body.PrNumber,
+			GpuType:         proto.String(""),
+			PytorchVersion:  proto.String(""),
+			Author:          &body.Author,
 			StorageFile: &drip.StorageFile{
 				PublicUrl: proto.String(fmt.Sprintf("https://storage.googleapis.com/%s/%s", *body.BucketName, *body.OutputFilesGcsPaths)),
 			},
