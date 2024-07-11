@@ -47,7 +47,7 @@ func CiWorkflowResultToActionJobResult(result *ent.CIWorkflowResult) (*drip.Acti
 		OperatingSystem: &result.OperatingSystem,
 		GpuType:         &result.GpuType,
 		PytorchVersion:  &result.PytorchVersion,
-		StorageFile:     &storageFileData,
+		StorageFile:     storageFileData,
 		CommitHash:      &result.Edges.Gitcommit.CommitHash,
 		CommitId:        &commitId,
 		CommitTime:      &commitUnixTime,
