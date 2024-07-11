@@ -12,7 +12,7 @@ func CiWorkflowResultToActionJobResult(results []*ent.CIWorkflowResult) ([]drip.
 
 	for _, result := range results {
 		storageFileData := drip.StorageFile{
-			PublicUrl: &result.Edges.StorageFile.FileURL,
+			PublicUrl: &result.Edges.StorageFile[0].FileURL,
 		}
 		commitId := result.Edges.Gitcommit.ID.String()
 		commitUnixTime := result.Edges.Gitcommit.CommitTimestamp.Unix()

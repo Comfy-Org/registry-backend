@@ -314,23 +314,19 @@ func (cwru *CIWorkflowResultUpdate) SetGitcommit(g *GitCommit) *CIWorkflowResult
 	return cwru.SetGitcommitID(g.ID)
 }
 
-// SetStorageFileID sets the "storage_file" edge to the StorageFile entity by ID.
-func (cwru *CIWorkflowResultUpdate) SetStorageFileID(id uuid.UUID) *CIWorkflowResultUpdate {
-	cwru.mutation.SetStorageFileID(id)
+// AddStorageFileIDs adds the "storage_file" edge to the StorageFile entity by IDs.
+func (cwru *CIWorkflowResultUpdate) AddStorageFileIDs(ids ...uuid.UUID) *CIWorkflowResultUpdate {
+	cwru.mutation.AddStorageFileIDs(ids...)
 	return cwru
 }
 
-// SetNillableStorageFileID sets the "storage_file" edge to the StorageFile entity by ID if the given value is not nil.
-func (cwru *CIWorkflowResultUpdate) SetNillableStorageFileID(id *uuid.UUID) *CIWorkflowResultUpdate {
-	if id != nil {
-		cwru = cwru.SetStorageFileID(*id)
+// AddStorageFile adds the "storage_file" edges to the StorageFile entity.
+func (cwru *CIWorkflowResultUpdate) AddStorageFile(s ...*StorageFile) *CIWorkflowResultUpdate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
 	}
-	return cwru
-}
-
-// SetStorageFile sets the "storage_file" edge to the StorageFile entity.
-func (cwru *CIWorkflowResultUpdate) SetStorageFile(s *StorageFile) *CIWorkflowResultUpdate {
-	return cwru.SetStorageFileID(s.ID)
+	return cwru.AddStorageFileIDs(ids...)
 }
 
 // Mutation returns the CIWorkflowResultMutation object of the builder.
@@ -344,10 +340,25 @@ func (cwru *CIWorkflowResultUpdate) ClearGitcommit() *CIWorkflowResultUpdate {
 	return cwru
 }
 
-// ClearStorageFile clears the "storage_file" edge to the StorageFile entity.
+// ClearStorageFile clears all "storage_file" edges to the StorageFile entity.
 func (cwru *CIWorkflowResultUpdate) ClearStorageFile() *CIWorkflowResultUpdate {
 	cwru.mutation.ClearStorageFile()
 	return cwru
+}
+
+// RemoveStorageFileIDs removes the "storage_file" edge to StorageFile entities by IDs.
+func (cwru *CIWorkflowResultUpdate) RemoveStorageFileIDs(ids ...uuid.UUID) *CIWorkflowResultUpdate {
+	cwru.mutation.RemoveStorageFileIDs(ids...)
+	return cwru
+}
+
+// RemoveStorageFile removes "storage_file" edges to StorageFile entities.
+func (cwru *CIWorkflowResultUpdate) RemoveStorageFile(s ...*StorageFile) *CIWorkflowResultUpdate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return cwru.RemoveStorageFileIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -513,7 +524,7 @@ func (cwru *CIWorkflowResultUpdate) sqlSave(ctx context.Context) (n int, err err
 	}
 	if cwru.mutation.StorageFileCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   ciworkflowresult.StorageFileTable,
 			Columns: []string{ciworkflowresult.StorageFileColumn},
@@ -524,9 +535,25 @@ func (cwru *CIWorkflowResultUpdate) sqlSave(ctx context.Context) (n int, err err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
+	if nodes := cwru.mutation.RemovedStorageFileIDs(); len(nodes) > 0 && !cwru.mutation.StorageFileCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   ciworkflowresult.StorageFileTable,
+			Columns: []string{ciworkflowresult.StorageFileColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(storagefile.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
 	if nodes := cwru.mutation.StorageFileIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   ciworkflowresult.StorageFileTable,
 			Columns: []string{ciworkflowresult.StorageFileColumn},
@@ -843,23 +870,19 @@ func (cwruo *CIWorkflowResultUpdateOne) SetGitcommit(g *GitCommit) *CIWorkflowRe
 	return cwruo.SetGitcommitID(g.ID)
 }
 
-// SetStorageFileID sets the "storage_file" edge to the StorageFile entity by ID.
-func (cwruo *CIWorkflowResultUpdateOne) SetStorageFileID(id uuid.UUID) *CIWorkflowResultUpdateOne {
-	cwruo.mutation.SetStorageFileID(id)
+// AddStorageFileIDs adds the "storage_file" edge to the StorageFile entity by IDs.
+func (cwruo *CIWorkflowResultUpdateOne) AddStorageFileIDs(ids ...uuid.UUID) *CIWorkflowResultUpdateOne {
+	cwruo.mutation.AddStorageFileIDs(ids...)
 	return cwruo
 }
 
-// SetNillableStorageFileID sets the "storage_file" edge to the StorageFile entity by ID if the given value is not nil.
-func (cwruo *CIWorkflowResultUpdateOne) SetNillableStorageFileID(id *uuid.UUID) *CIWorkflowResultUpdateOne {
-	if id != nil {
-		cwruo = cwruo.SetStorageFileID(*id)
+// AddStorageFile adds the "storage_file" edges to the StorageFile entity.
+func (cwruo *CIWorkflowResultUpdateOne) AddStorageFile(s ...*StorageFile) *CIWorkflowResultUpdateOne {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
 	}
-	return cwruo
-}
-
-// SetStorageFile sets the "storage_file" edge to the StorageFile entity.
-func (cwruo *CIWorkflowResultUpdateOne) SetStorageFile(s *StorageFile) *CIWorkflowResultUpdateOne {
-	return cwruo.SetStorageFileID(s.ID)
+	return cwruo.AddStorageFileIDs(ids...)
 }
 
 // Mutation returns the CIWorkflowResultMutation object of the builder.
@@ -873,10 +896,25 @@ func (cwruo *CIWorkflowResultUpdateOne) ClearGitcommit() *CIWorkflowResultUpdate
 	return cwruo
 }
 
-// ClearStorageFile clears the "storage_file" edge to the StorageFile entity.
+// ClearStorageFile clears all "storage_file" edges to the StorageFile entity.
 func (cwruo *CIWorkflowResultUpdateOne) ClearStorageFile() *CIWorkflowResultUpdateOne {
 	cwruo.mutation.ClearStorageFile()
 	return cwruo
+}
+
+// RemoveStorageFileIDs removes the "storage_file" edge to StorageFile entities by IDs.
+func (cwruo *CIWorkflowResultUpdateOne) RemoveStorageFileIDs(ids ...uuid.UUID) *CIWorkflowResultUpdateOne {
+	cwruo.mutation.RemoveStorageFileIDs(ids...)
+	return cwruo
+}
+
+// RemoveStorageFile removes "storage_file" edges to StorageFile entities.
+func (cwruo *CIWorkflowResultUpdateOne) RemoveStorageFile(s ...*StorageFile) *CIWorkflowResultUpdateOne {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return cwruo.RemoveStorageFileIDs(ids...)
 }
 
 // Where appends a list predicates to the CIWorkflowResultUpdate builder.
@@ -1072,7 +1110,7 @@ func (cwruo *CIWorkflowResultUpdateOne) sqlSave(ctx context.Context) (_node *CIW
 	}
 	if cwruo.mutation.StorageFileCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   ciworkflowresult.StorageFileTable,
 			Columns: []string{ciworkflowresult.StorageFileColumn},
@@ -1083,9 +1121,25 @@ func (cwruo *CIWorkflowResultUpdateOne) sqlSave(ctx context.Context) (_node *CIW
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
+	if nodes := cwruo.mutation.RemovedStorageFileIDs(); len(nodes) > 0 && !cwruo.mutation.StorageFileCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   ciworkflowresult.StorageFileTable,
+			Columns: []string{ciworkflowresult.StorageFileColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(storagefile.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
 	if nodes := cwruo.mutation.StorageFileIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   ciworkflowresult.StorageFileTable,
 			Columns: []string{ciworkflowresult.StorageFileColumn},

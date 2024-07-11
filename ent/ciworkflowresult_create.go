@@ -248,23 +248,19 @@ func (cwrc *CIWorkflowResultCreate) SetGitcommit(g *GitCommit) *CIWorkflowResult
 	return cwrc.SetGitcommitID(g.ID)
 }
 
-// SetStorageFileID sets the "storage_file" edge to the StorageFile entity by ID.
-func (cwrc *CIWorkflowResultCreate) SetStorageFileID(id uuid.UUID) *CIWorkflowResultCreate {
-	cwrc.mutation.SetStorageFileID(id)
+// AddStorageFileIDs adds the "storage_file" edge to the StorageFile entity by IDs.
+func (cwrc *CIWorkflowResultCreate) AddStorageFileIDs(ids ...uuid.UUID) *CIWorkflowResultCreate {
+	cwrc.mutation.AddStorageFileIDs(ids...)
 	return cwrc
 }
 
-// SetNillableStorageFileID sets the "storage_file" edge to the StorageFile entity by ID if the given value is not nil.
-func (cwrc *CIWorkflowResultCreate) SetNillableStorageFileID(id *uuid.UUID) *CIWorkflowResultCreate {
-	if id != nil {
-		cwrc = cwrc.SetStorageFileID(*id)
+// AddStorageFile adds the "storage_file" edges to the StorageFile entity.
+func (cwrc *CIWorkflowResultCreate) AddStorageFile(s ...*StorageFile) *CIWorkflowResultCreate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
 	}
-	return cwrc
-}
-
-// SetStorageFile sets the "storage_file" edge to the StorageFile entity.
-func (cwrc *CIWorkflowResultCreate) SetStorageFile(s *StorageFile) *CIWorkflowResultCreate {
-	return cwrc.SetStorageFileID(s.ID)
+	return cwrc.AddStorageFileIDs(ids...)
 }
 
 // Mutation returns the CIWorkflowResultMutation object of the builder.
@@ -445,7 +441,7 @@ func (cwrc *CIWorkflowResultCreate) createSpec() (*CIWorkflowResult, *sqlgraph.C
 	}
 	if nodes := cwrc.mutation.StorageFileIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   ciworkflowresult.StorageFileTable,
 			Columns: []string{ciworkflowresult.StorageFileColumn},
@@ -457,7 +453,6 @@ func (cwrc *CIWorkflowResultCreate) createSpec() (*CIWorkflowResult, *sqlgraph.C
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.ci_workflow_result_storage_file = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

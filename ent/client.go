@@ -415,7 +415,7 @@ func (c *CIWorkflowResultClient) QueryStorageFile(cwr *CIWorkflowResult) *Storag
 		step := sqlgraph.NewStep(
 			sqlgraph.From(ciworkflowresult.Table, ciworkflowresult.FieldID, id),
 			sqlgraph.To(storagefile.Table, storagefile.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, ciworkflowresult.StorageFileTable, ciworkflowresult.StorageFileColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, ciworkflowresult.StorageFileTable, ciworkflowresult.StorageFileColumn),
 		)
 		fromV = sqlgraph.Neighbors(cwr.driver.Dialect(), step)
 		return fromV, nil

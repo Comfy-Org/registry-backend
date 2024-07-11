@@ -1035,7 +1035,7 @@ func HasStorageFile() predicate.CIWorkflowResult {
 	return predicate.CIWorkflowResult(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, StorageFileTable, StorageFileColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, StorageFileTable, StorageFileColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})

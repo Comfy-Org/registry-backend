@@ -23,6 +23,7 @@ type StorageFileQuery struct {
 	order      []storagefile.OrderOption
 	inters     []Interceptor
 	predicates []predicate.StorageFile
+	withFKs    bool
 	modifiers  []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -334,9 +335,13 @@ func (sfq *StorageFileQuery) prepareQuery(ctx context.Context) error {
 
 func (sfq *StorageFileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*StorageFile, error) {
 	var (
-		nodes = []*StorageFile{}
-		_spec = sfq.querySpec()
+		nodes   = []*StorageFile{}
+		withFKs = sfq.withFKs
+		_spec   = sfq.querySpec()
 	)
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, storagefile.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*StorageFile).scanValues(nil, columns)
 	}
