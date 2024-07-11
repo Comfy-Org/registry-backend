@@ -101,6 +101,11 @@ func Timestamp(v time.Time) predicate.GitCommit {
 	return predicate.GitCommit(sql.FieldEQ(FieldTimestamp, v))
 }
 
+// PrNumber applies equality check predicate on the "pr_number" field. It's identical to PrNumberEQ.
+func PrNumber(v string) predicate.GitCommit {
+	return predicate.GitCommit(sql.FieldEQ(FieldPrNumber, v))
+}
+
 // CreateTimeEQ applies the EQ predicate on the "create_time" field.
 func CreateTimeEQ(v time.Time) predicate.GitCommit {
 	return predicate.GitCommit(sql.FieldEQ(FieldCreateTime, v))
@@ -604,6 +609,81 @@ func TimestampIsNil() predicate.GitCommit {
 // TimestampNotNil applies the NotNil predicate on the "timestamp" field.
 func TimestampNotNil() predicate.GitCommit {
 	return predicate.GitCommit(sql.FieldNotNull(FieldTimestamp))
+}
+
+// PrNumberEQ applies the EQ predicate on the "pr_number" field.
+func PrNumberEQ(v string) predicate.GitCommit {
+	return predicate.GitCommit(sql.FieldEQ(FieldPrNumber, v))
+}
+
+// PrNumberNEQ applies the NEQ predicate on the "pr_number" field.
+func PrNumberNEQ(v string) predicate.GitCommit {
+	return predicate.GitCommit(sql.FieldNEQ(FieldPrNumber, v))
+}
+
+// PrNumberIn applies the In predicate on the "pr_number" field.
+func PrNumberIn(vs ...string) predicate.GitCommit {
+	return predicate.GitCommit(sql.FieldIn(FieldPrNumber, vs...))
+}
+
+// PrNumberNotIn applies the NotIn predicate on the "pr_number" field.
+func PrNumberNotIn(vs ...string) predicate.GitCommit {
+	return predicate.GitCommit(sql.FieldNotIn(FieldPrNumber, vs...))
+}
+
+// PrNumberGT applies the GT predicate on the "pr_number" field.
+func PrNumberGT(v string) predicate.GitCommit {
+	return predicate.GitCommit(sql.FieldGT(FieldPrNumber, v))
+}
+
+// PrNumberGTE applies the GTE predicate on the "pr_number" field.
+func PrNumberGTE(v string) predicate.GitCommit {
+	return predicate.GitCommit(sql.FieldGTE(FieldPrNumber, v))
+}
+
+// PrNumberLT applies the LT predicate on the "pr_number" field.
+func PrNumberLT(v string) predicate.GitCommit {
+	return predicate.GitCommit(sql.FieldLT(FieldPrNumber, v))
+}
+
+// PrNumberLTE applies the LTE predicate on the "pr_number" field.
+func PrNumberLTE(v string) predicate.GitCommit {
+	return predicate.GitCommit(sql.FieldLTE(FieldPrNumber, v))
+}
+
+// PrNumberContains applies the Contains predicate on the "pr_number" field.
+func PrNumberContains(v string) predicate.GitCommit {
+	return predicate.GitCommit(sql.FieldContains(FieldPrNumber, v))
+}
+
+// PrNumberHasPrefix applies the HasPrefix predicate on the "pr_number" field.
+func PrNumberHasPrefix(v string) predicate.GitCommit {
+	return predicate.GitCommit(sql.FieldHasPrefix(FieldPrNumber, v))
+}
+
+// PrNumberHasSuffix applies the HasSuffix predicate on the "pr_number" field.
+func PrNumberHasSuffix(v string) predicate.GitCommit {
+	return predicate.GitCommit(sql.FieldHasSuffix(FieldPrNumber, v))
+}
+
+// PrNumberIsNil applies the IsNil predicate on the "pr_number" field.
+func PrNumberIsNil() predicate.GitCommit {
+	return predicate.GitCommit(sql.FieldIsNull(FieldPrNumber))
+}
+
+// PrNumberNotNil applies the NotNil predicate on the "pr_number" field.
+func PrNumberNotNil() predicate.GitCommit {
+	return predicate.GitCommit(sql.FieldNotNull(FieldPrNumber))
+}
+
+// PrNumberEqualFold applies the EqualFold predicate on the "pr_number" field.
+func PrNumberEqualFold(v string) predicate.GitCommit {
+	return predicate.GitCommit(sql.FieldEqualFold(FieldPrNumber, v))
+}
+
+// PrNumberContainsFold applies the ContainsFold predicate on the "pr_number" field.
+func PrNumberContainsFold(v string) predicate.GitCommit {
+	return predicate.GitCommit(sql.FieldContainsFold(FieldPrNumber, v))
 }
 
 // HasResults applies the HasEdge predicate on the "results" edge.

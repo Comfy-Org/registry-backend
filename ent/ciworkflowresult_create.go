@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/gitcommit"
+	"registry-backend/ent/schema"
 	"registry-backend/ent/storagefile"
 	"time"
 
@@ -117,15 +118,15 @@ func (cwrc *CIWorkflowResultCreate) SetNillableRunID(s *string) *CIWorkflowResul
 }
 
 // SetStatus sets the "status" field.
-func (cwrc *CIWorkflowResultCreate) SetStatus(s string) *CIWorkflowResultCreate {
-	cwrc.mutation.SetStatus(s)
+func (cwrc *CIWorkflowResultCreate) SetStatus(srst schema.WorkflowRunStatusType) *CIWorkflowResultCreate {
+	cwrc.mutation.SetStatus(srst)
 	return cwrc
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (cwrc *CIWorkflowResultCreate) SetNillableStatus(s *string) *CIWorkflowResultCreate {
-	if s != nil {
-		cwrc.SetStatus(*s)
+func (cwrc *CIWorkflowResultCreate) SetNillableStatus(srst *schema.WorkflowRunStatusType) *CIWorkflowResultCreate {
+	if srst != nil {
+		cwrc.SetStatus(*srst)
 	}
 	return cwrc
 }
@@ -154,6 +155,62 @@ func (cwrc *CIWorkflowResultCreate) SetEndTime(i int64) *CIWorkflowResultCreate 
 func (cwrc *CIWorkflowResultCreate) SetNillableEndTime(i *int64) *CIWorkflowResultCreate {
 	if i != nil {
 		cwrc.SetEndTime(*i)
+	}
+	return cwrc
+}
+
+// SetPythonVersion sets the "python_version" field.
+func (cwrc *CIWorkflowResultCreate) SetPythonVersion(s string) *CIWorkflowResultCreate {
+	cwrc.mutation.SetPythonVersion(s)
+	return cwrc
+}
+
+// SetNillablePythonVersion sets the "python_version" field if the given value is not nil.
+func (cwrc *CIWorkflowResultCreate) SetNillablePythonVersion(s *string) *CIWorkflowResultCreate {
+	if s != nil {
+		cwrc.SetPythonVersion(*s)
+	}
+	return cwrc
+}
+
+// SetAvgVram sets the "avg_vram" field.
+func (cwrc *CIWorkflowResultCreate) SetAvgVram(i int) *CIWorkflowResultCreate {
+	cwrc.mutation.SetAvgVram(i)
+	return cwrc
+}
+
+// SetNillableAvgVram sets the "avg_vram" field if the given value is not nil.
+func (cwrc *CIWorkflowResultCreate) SetNillableAvgVram(i *int) *CIWorkflowResultCreate {
+	if i != nil {
+		cwrc.SetAvgVram(*i)
+	}
+	return cwrc
+}
+
+// SetPeakVram sets the "peak_vram" field.
+func (cwrc *CIWorkflowResultCreate) SetPeakVram(i int) *CIWorkflowResultCreate {
+	cwrc.mutation.SetPeakVram(i)
+	return cwrc
+}
+
+// SetNillablePeakVram sets the "peak_vram" field if the given value is not nil.
+func (cwrc *CIWorkflowResultCreate) SetNillablePeakVram(i *int) *CIWorkflowResultCreate {
+	if i != nil {
+		cwrc.SetPeakVram(*i)
+	}
+	return cwrc
+}
+
+// SetJobTriggerUser sets the "job_trigger_user" field.
+func (cwrc *CIWorkflowResultCreate) SetJobTriggerUser(s string) *CIWorkflowResultCreate {
+	cwrc.mutation.SetJobTriggerUser(s)
+	return cwrc
+}
+
+// SetNillableJobTriggerUser sets the "job_trigger_user" field if the given value is not nil.
+func (cwrc *CIWorkflowResultCreate) SetNillableJobTriggerUser(s *string) *CIWorkflowResultCreate {
+	if s != nil {
+		cwrc.SetJobTriggerUser(*s)
 	}
 	return cwrc
 }
@@ -253,6 +310,10 @@ func (cwrc *CIWorkflowResultCreate) defaults() {
 		v := ciworkflowresult.DefaultUpdateTime()
 		cwrc.mutation.SetUpdateTime(v)
 	}
+	if _, ok := cwrc.mutation.Status(); !ok {
+		v := ciworkflowresult.DefaultStatus
+		cwrc.mutation.SetStatus(v)
+	}
 	if _, ok := cwrc.mutation.ID(); !ok {
 		v := ciworkflowresult.DefaultID()
 		cwrc.mutation.SetID(v)
@@ -269,6 +330,9 @@ func (cwrc *CIWorkflowResultCreate) check() error {
 	}
 	if _, ok := cwrc.mutation.OperatingSystem(); !ok {
 		return &ValidationError{Name: "operating_system", err: errors.New(`ent: missing required field "CIWorkflowResult.operating_system"`)}
+	}
+	if _, ok := cwrc.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "CIWorkflowResult.status"`)}
 	}
 	return nil
 }
@@ -345,6 +409,22 @@ func (cwrc *CIWorkflowResultCreate) createSpec() (*CIWorkflowResult, *sqlgraph.C
 	if value, ok := cwrc.mutation.EndTime(); ok {
 		_spec.SetField(ciworkflowresult.FieldEndTime, field.TypeInt64, value)
 		_node.EndTime = value
+	}
+	if value, ok := cwrc.mutation.PythonVersion(); ok {
+		_spec.SetField(ciworkflowresult.FieldPythonVersion, field.TypeString, value)
+		_node.PythonVersion = value
+	}
+	if value, ok := cwrc.mutation.AvgVram(); ok {
+		_spec.SetField(ciworkflowresult.FieldAvgVram, field.TypeInt, value)
+		_node.AvgVram = value
+	}
+	if value, ok := cwrc.mutation.PeakVram(); ok {
+		_spec.SetField(ciworkflowresult.FieldPeakVram, field.TypeInt, value)
+		_node.PeakVram = value
+	}
+	if value, ok := cwrc.mutation.JobTriggerUser(); ok {
+		_spec.SetField(ciworkflowresult.FieldJobTriggerUser, field.TypeString, value)
+		_node.JobTriggerUser = value
 	}
 	if nodes := cwrc.mutation.GitcommitIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -529,7 +609,7 @@ func (u *CIWorkflowResultUpsert) ClearRunID() *CIWorkflowResultUpsert {
 }
 
 // SetStatus sets the "status" field.
-func (u *CIWorkflowResultUpsert) SetStatus(v string) *CIWorkflowResultUpsert {
+func (u *CIWorkflowResultUpsert) SetStatus(v schema.WorkflowRunStatusType) *CIWorkflowResultUpsert {
 	u.Set(ciworkflowresult.FieldStatus, v)
 	return u
 }
@@ -537,12 +617,6 @@ func (u *CIWorkflowResultUpsert) SetStatus(v string) *CIWorkflowResultUpsert {
 // UpdateStatus sets the "status" field to the value that was provided on create.
 func (u *CIWorkflowResultUpsert) UpdateStatus() *CIWorkflowResultUpsert {
 	u.SetExcluded(ciworkflowresult.FieldStatus)
-	return u
-}
-
-// ClearStatus clears the value of the "status" field.
-func (u *CIWorkflowResultUpsert) ClearStatus() *CIWorkflowResultUpsert {
-	u.SetNull(ciworkflowresult.FieldStatus)
 	return u
 }
 
@@ -591,6 +665,90 @@ func (u *CIWorkflowResultUpsert) AddEndTime(v int64) *CIWorkflowResultUpsert {
 // ClearEndTime clears the value of the "end_time" field.
 func (u *CIWorkflowResultUpsert) ClearEndTime() *CIWorkflowResultUpsert {
 	u.SetNull(ciworkflowresult.FieldEndTime)
+	return u
+}
+
+// SetPythonVersion sets the "python_version" field.
+func (u *CIWorkflowResultUpsert) SetPythonVersion(v string) *CIWorkflowResultUpsert {
+	u.Set(ciworkflowresult.FieldPythonVersion, v)
+	return u
+}
+
+// UpdatePythonVersion sets the "python_version" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsert) UpdatePythonVersion() *CIWorkflowResultUpsert {
+	u.SetExcluded(ciworkflowresult.FieldPythonVersion)
+	return u
+}
+
+// ClearPythonVersion clears the value of the "python_version" field.
+func (u *CIWorkflowResultUpsert) ClearPythonVersion() *CIWorkflowResultUpsert {
+	u.SetNull(ciworkflowresult.FieldPythonVersion)
+	return u
+}
+
+// SetAvgVram sets the "avg_vram" field.
+func (u *CIWorkflowResultUpsert) SetAvgVram(v int) *CIWorkflowResultUpsert {
+	u.Set(ciworkflowresult.FieldAvgVram, v)
+	return u
+}
+
+// UpdateAvgVram sets the "avg_vram" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsert) UpdateAvgVram() *CIWorkflowResultUpsert {
+	u.SetExcluded(ciworkflowresult.FieldAvgVram)
+	return u
+}
+
+// AddAvgVram adds v to the "avg_vram" field.
+func (u *CIWorkflowResultUpsert) AddAvgVram(v int) *CIWorkflowResultUpsert {
+	u.Add(ciworkflowresult.FieldAvgVram, v)
+	return u
+}
+
+// ClearAvgVram clears the value of the "avg_vram" field.
+func (u *CIWorkflowResultUpsert) ClearAvgVram() *CIWorkflowResultUpsert {
+	u.SetNull(ciworkflowresult.FieldAvgVram)
+	return u
+}
+
+// SetPeakVram sets the "peak_vram" field.
+func (u *CIWorkflowResultUpsert) SetPeakVram(v int) *CIWorkflowResultUpsert {
+	u.Set(ciworkflowresult.FieldPeakVram, v)
+	return u
+}
+
+// UpdatePeakVram sets the "peak_vram" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsert) UpdatePeakVram() *CIWorkflowResultUpsert {
+	u.SetExcluded(ciworkflowresult.FieldPeakVram)
+	return u
+}
+
+// AddPeakVram adds v to the "peak_vram" field.
+func (u *CIWorkflowResultUpsert) AddPeakVram(v int) *CIWorkflowResultUpsert {
+	u.Add(ciworkflowresult.FieldPeakVram, v)
+	return u
+}
+
+// ClearPeakVram clears the value of the "peak_vram" field.
+func (u *CIWorkflowResultUpsert) ClearPeakVram() *CIWorkflowResultUpsert {
+	u.SetNull(ciworkflowresult.FieldPeakVram)
+	return u
+}
+
+// SetJobTriggerUser sets the "job_trigger_user" field.
+func (u *CIWorkflowResultUpsert) SetJobTriggerUser(v string) *CIWorkflowResultUpsert {
+	u.Set(ciworkflowresult.FieldJobTriggerUser, v)
+	return u
+}
+
+// UpdateJobTriggerUser sets the "job_trigger_user" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsert) UpdateJobTriggerUser() *CIWorkflowResultUpsert {
+	u.SetExcluded(ciworkflowresult.FieldJobTriggerUser)
+	return u
+}
+
+// ClearJobTriggerUser clears the value of the "job_trigger_user" field.
+func (u *CIWorkflowResultUpsert) ClearJobTriggerUser() *CIWorkflowResultUpsert {
+	u.SetNull(ciworkflowresult.FieldJobTriggerUser)
 	return u
 }
 
@@ -758,7 +916,7 @@ func (u *CIWorkflowResultUpsertOne) ClearRunID() *CIWorkflowResultUpsertOne {
 }
 
 // SetStatus sets the "status" field.
-func (u *CIWorkflowResultUpsertOne) SetStatus(v string) *CIWorkflowResultUpsertOne {
+func (u *CIWorkflowResultUpsertOne) SetStatus(v schema.WorkflowRunStatusType) *CIWorkflowResultUpsertOne {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
 		s.SetStatus(v)
 	})
@@ -768,13 +926,6 @@ func (u *CIWorkflowResultUpsertOne) SetStatus(v string) *CIWorkflowResultUpsertO
 func (u *CIWorkflowResultUpsertOne) UpdateStatus() *CIWorkflowResultUpsertOne {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
 		s.UpdateStatus()
-	})
-}
-
-// ClearStatus clears the value of the "status" field.
-func (u *CIWorkflowResultUpsertOne) ClearStatus() *CIWorkflowResultUpsertOne {
-	return u.Update(func(s *CIWorkflowResultUpsert) {
-		s.ClearStatus()
 	})
 }
 
@@ -831,6 +982,104 @@ func (u *CIWorkflowResultUpsertOne) UpdateEndTime() *CIWorkflowResultUpsertOne {
 func (u *CIWorkflowResultUpsertOne) ClearEndTime() *CIWorkflowResultUpsertOne {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
 		s.ClearEndTime()
+	})
+}
+
+// SetPythonVersion sets the "python_version" field.
+func (u *CIWorkflowResultUpsertOne) SetPythonVersion(v string) *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetPythonVersion(v)
+	})
+}
+
+// UpdatePythonVersion sets the "python_version" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertOne) UpdatePythonVersion() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdatePythonVersion()
+	})
+}
+
+// ClearPythonVersion clears the value of the "python_version" field.
+func (u *CIWorkflowResultUpsertOne) ClearPythonVersion() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearPythonVersion()
+	})
+}
+
+// SetAvgVram sets the "avg_vram" field.
+func (u *CIWorkflowResultUpsertOne) SetAvgVram(v int) *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetAvgVram(v)
+	})
+}
+
+// AddAvgVram adds v to the "avg_vram" field.
+func (u *CIWorkflowResultUpsertOne) AddAvgVram(v int) *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.AddAvgVram(v)
+	})
+}
+
+// UpdateAvgVram sets the "avg_vram" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertOne) UpdateAvgVram() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdateAvgVram()
+	})
+}
+
+// ClearAvgVram clears the value of the "avg_vram" field.
+func (u *CIWorkflowResultUpsertOne) ClearAvgVram() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearAvgVram()
+	})
+}
+
+// SetPeakVram sets the "peak_vram" field.
+func (u *CIWorkflowResultUpsertOne) SetPeakVram(v int) *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetPeakVram(v)
+	})
+}
+
+// AddPeakVram adds v to the "peak_vram" field.
+func (u *CIWorkflowResultUpsertOne) AddPeakVram(v int) *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.AddPeakVram(v)
+	})
+}
+
+// UpdatePeakVram sets the "peak_vram" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertOne) UpdatePeakVram() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdatePeakVram()
+	})
+}
+
+// ClearPeakVram clears the value of the "peak_vram" field.
+func (u *CIWorkflowResultUpsertOne) ClearPeakVram() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearPeakVram()
+	})
+}
+
+// SetJobTriggerUser sets the "job_trigger_user" field.
+func (u *CIWorkflowResultUpsertOne) SetJobTriggerUser(v string) *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetJobTriggerUser(v)
+	})
+}
+
+// UpdateJobTriggerUser sets the "job_trigger_user" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertOne) UpdateJobTriggerUser() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdateJobTriggerUser()
+	})
+}
+
+// ClearJobTriggerUser clears the value of the "job_trigger_user" field.
+func (u *CIWorkflowResultUpsertOne) ClearJobTriggerUser() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearJobTriggerUser()
 	})
 }
 
@@ -1165,7 +1414,7 @@ func (u *CIWorkflowResultUpsertBulk) ClearRunID() *CIWorkflowResultUpsertBulk {
 }
 
 // SetStatus sets the "status" field.
-func (u *CIWorkflowResultUpsertBulk) SetStatus(v string) *CIWorkflowResultUpsertBulk {
+func (u *CIWorkflowResultUpsertBulk) SetStatus(v schema.WorkflowRunStatusType) *CIWorkflowResultUpsertBulk {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
 		s.SetStatus(v)
 	})
@@ -1175,13 +1424,6 @@ func (u *CIWorkflowResultUpsertBulk) SetStatus(v string) *CIWorkflowResultUpsert
 func (u *CIWorkflowResultUpsertBulk) UpdateStatus() *CIWorkflowResultUpsertBulk {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
 		s.UpdateStatus()
-	})
-}
-
-// ClearStatus clears the value of the "status" field.
-func (u *CIWorkflowResultUpsertBulk) ClearStatus() *CIWorkflowResultUpsertBulk {
-	return u.Update(func(s *CIWorkflowResultUpsert) {
-		s.ClearStatus()
 	})
 }
 
@@ -1238,6 +1480,104 @@ func (u *CIWorkflowResultUpsertBulk) UpdateEndTime() *CIWorkflowResultUpsertBulk
 func (u *CIWorkflowResultUpsertBulk) ClearEndTime() *CIWorkflowResultUpsertBulk {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
 		s.ClearEndTime()
+	})
+}
+
+// SetPythonVersion sets the "python_version" field.
+func (u *CIWorkflowResultUpsertBulk) SetPythonVersion(v string) *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetPythonVersion(v)
+	})
+}
+
+// UpdatePythonVersion sets the "python_version" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertBulk) UpdatePythonVersion() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdatePythonVersion()
+	})
+}
+
+// ClearPythonVersion clears the value of the "python_version" field.
+func (u *CIWorkflowResultUpsertBulk) ClearPythonVersion() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearPythonVersion()
+	})
+}
+
+// SetAvgVram sets the "avg_vram" field.
+func (u *CIWorkflowResultUpsertBulk) SetAvgVram(v int) *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetAvgVram(v)
+	})
+}
+
+// AddAvgVram adds v to the "avg_vram" field.
+func (u *CIWorkflowResultUpsertBulk) AddAvgVram(v int) *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.AddAvgVram(v)
+	})
+}
+
+// UpdateAvgVram sets the "avg_vram" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertBulk) UpdateAvgVram() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdateAvgVram()
+	})
+}
+
+// ClearAvgVram clears the value of the "avg_vram" field.
+func (u *CIWorkflowResultUpsertBulk) ClearAvgVram() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearAvgVram()
+	})
+}
+
+// SetPeakVram sets the "peak_vram" field.
+func (u *CIWorkflowResultUpsertBulk) SetPeakVram(v int) *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetPeakVram(v)
+	})
+}
+
+// AddPeakVram adds v to the "peak_vram" field.
+func (u *CIWorkflowResultUpsertBulk) AddPeakVram(v int) *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.AddPeakVram(v)
+	})
+}
+
+// UpdatePeakVram sets the "peak_vram" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertBulk) UpdatePeakVram() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdatePeakVram()
+	})
+}
+
+// ClearPeakVram clears the value of the "peak_vram" field.
+func (u *CIWorkflowResultUpsertBulk) ClearPeakVram() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearPeakVram()
+	})
+}
+
+// SetJobTriggerUser sets the "job_trigger_user" field.
+func (u *CIWorkflowResultUpsertBulk) SetJobTriggerUser(v string) *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetJobTriggerUser(v)
+	})
+}
+
+// UpdateJobTriggerUser sets the "job_trigger_user" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertBulk) UpdateJobTriggerUser() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdateJobTriggerUser()
+	})
+}
+
+// ClearJobTriggerUser clears the value of the "job_trigger_user" field.
+func (u *CIWorkflowResultUpsertBulk) ClearJobTriggerUser() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearJobTriggerUser()
 	})
 }
 

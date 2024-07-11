@@ -36,6 +36,8 @@ type GitCommit struct {
 	Author string `json:"author,omitempty"`
 	// Timestamp holds the value of the "timestamp" field.
 	Timestamp time.Time `json:"timestamp,omitempty"`
+	// PrNumber holds the value of the "pr_number" field.
+	PrNumber string `json:"pr_number,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GitCommitQuery when eager-loading is set.
 	Edges        GitCommitEdges `json:"edges"`
@@ -65,7 +67,7 @@ func (*GitCommit) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case gitcommit.FieldCommitHash, gitcommit.FieldBranchName, gitcommit.FieldRepoName, gitcommit.FieldCommitMessage, gitcommit.FieldAuthor:
+		case gitcommit.FieldCommitHash, gitcommit.FieldBranchName, gitcommit.FieldRepoName, gitcommit.FieldCommitMessage, gitcommit.FieldAuthor, gitcommit.FieldPrNumber:
 			values[i] = new(sql.NullString)
 		case gitcommit.FieldCreateTime, gitcommit.FieldUpdateTime, gitcommit.FieldCommitTimestamp, gitcommit.FieldTimestamp:
 			values[i] = new(sql.NullTime)
@@ -146,6 +148,12 @@ func (gc *GitCommit) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				gc.Timestamp = value.Time
 			}
+		case gitcommit.FieldPrNumber:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field pr_number", values[i])
+			} else if value.Valid {
+				gc.PrNumber = value.String
+			}
 		default:
 			gc.selectValues.Set(columns[i], values[i])
 		}
@@ -213,6 +221,9 @@ func (gc *GitCommit) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("timestamp=")
 	builder.WriteString(gc.Timestamp.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("pr_number=")
+	builder.WriteString(gc.PrNumber)
 	builder.WriteByte(')')
 	return builder.String()
 }

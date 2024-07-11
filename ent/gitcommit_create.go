@@ -111,6 +111,20 @@ func (gcc *GitCommitCreate) SetNillableTimestamp(t *time.Time) *GitCommitCreate 
 	return gcc
 }
 
+// SetPrNumber sets the "pr_number" field.
+func (gcc *GitCommitCreate) SetPrNumber(s string) *GitCommitCreate {
+	gcc.mutation.SetPrNumber(s)
+	return gcc
+}
+
+// SetNillablePrNumber sets the "pr_number" field if the given value is not nil.
+func (gcc *GitCommitCreate) SetNillablePrNumber(s *string) *GitCommitCreate {
+	if s != nil {
+		gcc.SetPrNumber(*s)
+	}
+	return gcc
+}
+
 // SetID sets the "id" field.
 func (gcc *GitCommitCreate) SetID(u uuid.UUID) *GitCommitCreate {
 	gcc.mutation.SetID(u)
@@ -283,6 +297,10 @@ func (gcc *GitCommitCreate) createSpec() (*GitCommit, *sqlgraph.CreateSpec) {
 	if value, ok := gcc.mutation.Timestamp(); ok {
 		_spec.SetField(gitcommit.FieldTimestamp, field.TypeTime, value)
 		_node.Timestamp = value
+	}
+	if value, ok := gcc.mutation.PrNumber(); ok {
+		_spec.SetField(gitcommit.FieldPrNumber, field.TypeString, value)
+		_node.PrNumber = value
 	}
 	if nodes := gcc.mutation.ResultsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -460,6 +478,24 @@ func (u *GitCommitUpsert) ClearTimestamp() *GitCommitUpsert {
 	return u
 }
 
+// SetPrNumber sets the "pr_number" field.
+func (u *GitCommitUpsert) SetPrNumber(v string) *GitCommitUpsert {
+	u.Set(gitcommit.FieldPrNumber, v)
+	return u
+}
+
+// UpdatePrNumber sets the "pr_number" field to the value that was provided on create.
+func (u *GitCommitUpsert) UpdatePrNumber() *GitCommitUpsert {
+	u.SetExcluded(gitcommit.FieldPrNumber)
+	return u
+}
+
+// ClearPrNumber clears the value of the "pr_number" field.
+func (u *GitCommitUpsert) ClearPrNumber() *GitCommitUpsert {
+	u.SetNull(gitcommit.FieldPrNumber)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -634,6 +670,27 @@ func (u *GitCommitUpsertOne) UpdateTimestamp() *GitCommitUpsertOne {
 func (u *GitCommitUpsertOne) ClearTimestamp() *GitCommitUpsertOne {
 	return u.Update(func(s *GitCommitUpsert) {
 		s.ClearTimestamp()
+	})
+}
+
+// SetPrNumber sets the "pr_number" field.
+func (u *GitCommitUpsertOne) SetPrNumber(v string) *GitCommitUpsertOne {
+	return u.Update(func(s *GitCommitUpsert) {
+		s.SetPrNumber(v)
+	})
+}
+
+// UpdatePrNumber sets the "pr_number" field to the value that was provided on create.
+func (u *GitCommitUpsertOne) UpdatePrNumber() *GitCommitUpsertOne {
+	return u.Update(func(s *GitCommitUpsert) {
+		s.UpdatePrNumber()
+	})
+}
+
+// ClearPrNumber clears the value of the "pr_number" field.
+func (u *GitCommitUpsertOne) ClearPrNumber() *GitCommitUpsertOne {
+	return u.Update(func(s *GitCommitUpsert) {
+		s.ClearPrNumber()
 	})
 }
 
@@ -978,6 +1035,27 @@ func (u *GitCommitUpsertBulk) UpdateTimestamp() *GitCommitUpsertBulk {
 func (u *GitCommitUpsertBulk) ClearTimestamp() *GitCommitUpsertBulk {
 	return u.Update(func(s *GitCommitUpsert) {
 		s.ClearTimestamp()
+	})
+}
+
+// SetPrNumber sets the "pr_number" field.
+func (u *GitCommitUpsertBulk) SetPrNumber(v string) *GitCommitUpsertBulk {
+	return u.Update(func(s *GitCommitUpsert) {
+		s.SetPrNumber(v)
+	})
+}
+
+// UpdatePrNumber sets the "pr_number" field to the value that was provided on create.
+func (u *GitCommitUpsertBulk) UpdatePrNumber() *GitCommitUpsertBulk {
+	return u.Update(func(s *GitCommitUpsert) {
+		s.UpdatePrNumber()
+	})
+}
+
+// ClearPrNumber clears the value of the "pr_number" field.
+func (u *GitCommitUpsertBulk) ClearPrNumber() *GitCommitUpsertBulk {
+	return u.Update(func(s *GitCommitUpsert) {
+		s.ClearPrNumber()
 	})
 }
 

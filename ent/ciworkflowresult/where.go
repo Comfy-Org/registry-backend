@@ -4,6 +4,7 @@ package ciworkflowresult
 
 import (
 	"registry-backend/ent/predicate"
+	"registry-backend/ent/schema"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -92,8 +93,9 @@ func RunID(v string) predicate.CIWorkflowResult {
 }
 
 // Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
-func Status(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldEQ(FieldStatus, v))
+func Status(v schema.WorkflowRunStatusType) predicate.CIWorkflowResult {
+	vc := string(v)
+	return predicate.CIWorkflowResult(sql.FieldEQ(FieldStatus, vc))
 }
 
 // StartTime applies equality check predicate on the "start_time" field. It's identical to StartTimeEQ.
@@ -104,6 +106,26 @@ func StartTime(v int64) predicate.CIWorkflowResult {
 // EndTime applies equality check predicate on the "end_time" field. It's identical to EndTimeEQ.
 func EndTime(v int64) predicate.CIWorkflowResult {
 	return predicate.CIWorkflowResult(sql.FieldEQ(FieldEndTime, v))
+}
+
+// PythonVersion applies equality check predicate on the "python_version" field. It's identical to PythonVersionEQ.
+func PythonVersion(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldEQ(FieldPythonVersion, v))
+}
+
+// AvgVram applies equality check predicate on the "avg_vram" field. It's identical to AvgVramEQ.
+func AvgVram(v int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldEQ(FieldAvgVram, v))
+}
+
+// PeakVram applies equality check predicate on the "peak_vram" field. It's identical to PeakVramEQ.
+func PeakVram(v int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldEQ(FieldPeakVram, v))
+}
+
+// JobTriggerUser applies equality check predicate on the "job_trigger_user" field. It's identical to JobTriggerUserEQ.
+func JobTriggerUser(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldEQ(FieldJobTriggerUser, v))
 }
 
 // CreateTimeEQ applies the EQ predicate on the "create_time" field.
@@ -552,78 +574,87 @@ func RunIDContainsFold(v string) predicate.CIWorkflowResult {
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.
-func StatusEQ(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldEQ(FieldStatus, v))
+func StatusEQ(v schema.WorkflowRunStatusType) predicate.CIWorkflowResult {
+	vc := string(v)
+	return predicate.CIWorkflowResult(sql.FieldEQ(FieldStatus, vc))
 }
 
 // StatusNEQ applies the NEQ predicate on the "status" field.
-func StatusNEQ(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldNEQ(FieldStatus, v))
+func StatusNEQ(v schema.WorkflowRunStatusType) predicate.CIWorkflowResult {
+	vc := string(v)
+	return predicate.CIWorkflowResult(sql.FieldNEQ(FieldStatus, vc))
 }
 
 // StatusIn applies the In predicate on the "status" field.
-func StatusIn(vs ...string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldIn(FieldStatus, vs...))
+func StatusIn(vs ...schema.WorkflowRunStatusType) predicate.CIWorkflowResult {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = string(vs[i])
+	}
+	return predicate.CIWorkflowResult(sql.FieldIn(FieldStatus, v...))
 }
 
 // StatusNotIn applies the NotIn predicate on the "status" field.
-func StatusNotIn(vs ...string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldNotIn(FieldStatus, vs...))
+func StatusNotIn(vs ...schema.WorkflowRunStatusType) predicate.CIWorkflowResult {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = string(vs[i])
+	}
+	return predicate.CIWorkflowResult(sql.FieldNotIn(FieldStatus, v...))
 }
 
 // StatusGT applies the GT predicate on the "status" field.
-func StatusGT(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldGT(FieldStatus, v))
+func StatusGT(v schema.WorkflowRunStatusType) predicate.CIWorkflowResult {
+	vc := string(v)
+	return predicate.CIWorkflowResult(sql.FieldGT(FieldStatus, vc))
 }
 
 // StatusGTE applies the GTE predicate on the "status" field.
-func StatusGTE(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldGTE(FieldStatus, v))
+func StatusGTE(v schema.WorkflowRunStatusType) predicate.CIWorkflowResult {
+	vc := string(v)
+	return predicate.CIWorkflowResult(sql.FieldGTE(FieldStatus, vc))
 }
 
 // StatusLT applies the LT predicate on the "status" field.
-func StatusLT(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldLT(FieldStatus, v))
+func StatusLT(v schema.WorkflowRunStatusType) predicate.CIWorkflowResult {
+	vc := string(v)
+	return predicate.CIWorkflowResult(sql.FieldLT(FieldStatus, vc))
 }
 
 // StatusLTE applies the LTE predicate on the "status" field.
-func StatusLTE(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldLTE(FieldStatus, v))
+func StatusLTE(v schema.WorkflowRunStatusType) predicate.CIWorkflowResult {
+	vc := string(v)
+	return predicate.CIWorkflowResult(sql.FieldLTE(FieldStatus, vc))
 }
 
 // StatusContains applies the Contains predicate on the "status" field.
-func StatusContains(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldContains(FieldStatus, v))
+func StatusContains(v schema.WorkflowRunStatusType) predicate.CIWorkflowResult {
+	vc := string(v)
+	return predicate.CIWorkflowResult(sql.FieldContains(FieldStatus, vc))
 }
 
 // StatusHasPrefix applies the HasPrefix predicate on the "status" field.
-func StatusHasPrefix(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldHasPrefix(FieldStatus, v))
+func StatusHasPrefix(v schema.WorkflowRunStatusType) predicate.CIWorkflowResult {
+	vc := string(v)
+	return predicate.CIWorkflowResult(sql.FieldHasPrefix(FieldStatus, vc))
 }
 
 // StatusHasSuffix applies the HasSuffix predicate on the "status" field.
-func StatusHasSuffix(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldHasSuffix(FieldStatus, v))
-}
-
-// StatusIsNil applies the IsNil predicate on the "status" field.
-func StatusIsNil() predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldIsNull(FieldStatus))
-}
-
-// StatusNotNil applies the NotNil predicate on the "status" field.
-func StatusNotNil() predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldNotNull(FieldStatus))
+func StatusHasSuffix(v schema.WorkflowRunStatusType) predicate.CIWorkflowResult {
+	vc := string(v)
+	return predicate.CIWorkflowResult(sql.FieldHasSuffix(FieldStatus, vc))
 }
 
 // StatusEqualFold applies the EqualFold predicate on the "status" field.
-func StatusEqualFold(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldEqualFold(FieldStatus, v))
+func StatusEqualFold(v schema.WorkflowRunStatusType) predicate.CIWorkflowResult {
+	vc := string(v)
+	return predicate.CIWorkflowResult(sql.FieldEqualFold(FieldStatus, vc))
 }
 
 // StatusContainsFold applies the ContainsFold predicate on the "status" field.
-func StatusContainsFold(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldContainsFold(FieldStatus, v))
+func StatusContainsFold(v schema.WorkflowRunStatusType) predicate.CIWorkflowResult {
+	vc := string(v)
+	return predicate.CIWorkflowResult(sql.FieldContainsFold(FieldStatus, vc))
 }
 
 // StartTimeEQ applies the EQ predicate on the "start_time" field.
@@ -724,6 +755,256 @@ func EndTimeIsNil() predicate.CIWorkflowResult {
 // EndTimeNotNil applies the NotNil predicate on the "end_time" field.
 func EndTimeNotNil() predicate.CIWorkflowResult {
 	return predicate.CIWorkflowResult(sql.FieldNotNull(FieldEndTime))
+}
+
+// PythonVersionEQ applies the EQ predicate on the "python_version" field.
+func PythonVersionEQ(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldEQ(FieldPythonVersion, v))
+}
+
+// PythonVersionNEQ applies the NEQ predicate on the "python_version" field.
+func PythonVersionNEQ(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldNEQ(FieldPythonVersion, v))
+}
+
+// PythonVersionIn applies the In predicate on the "python_version" field.
+func PythonVersionIn(vs ...string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldIn(FieldPythonVersion, vs...))
+}
+
+// PythonVersionNotIn applies the NotIn predicate on the "python_version" field.
+func PythonVersionNotIn(vs ...string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldNotIn(FieldPythonVersion, vs...))
+}
+
+// PythonVersionGT applies the GT predicate on the "python_version" field.
+func PythonVersionGT(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldGT(FieldPythonVersion, v))
+}
+
+// PythonVersionGTE applies the GTE predicate on the "python_version" field.
+func PythonVersionGTE(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldGTE(FieldPythonVersion, v))
+}
+
+// PythonVersionLT applies the LT predicate on the "python_version" field.
+func PythonVersionLT(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldLT(FieldPythonVersion, v))
+}
+
+// PythonVersionLTE applies the LTE predicate on the "python_version" field.
+func PythonVersionLTE(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldLTE(FieldPythonVersion, v))
+}
+
+// PythonVersionContains applies the Contains predicate on the "python_version" field.
+func PythonVersionContains(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldContains(FieldPythonVersion, v))
+}
+
+// PythonVersionHasPrefix applies the HasPrefix predicate on the "python_version" field.
+func PythonVersionHasPrefix(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldHasPrefix(FieldPythonVersion, v))
+}
+
+// PythonVersionHasSuffix applies the HasSuffix predicate on the "python_version" field.
+func PythonVersionHasSuffix(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldHasSuffix(FieldPythonVersion, v))
+}
+
+// PythonVersionIsNil applies the IsNil predicate on the "python_version" field.
+func PythonVersionIsNil() predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldIsNull(FieldPythonVersion))
+}
+
+// PythonVersionNotNil applies the NotNil predicate on the "python_version" field.
+func PythonVersionNotNil() predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldNotNull(FieldPythonVersion))
+}
+
+// PythonVersionEqualFold applies the EqualFold predicate on the "python_version" field.
+func PythonVersionEqualFold(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldEqualFold(FieldPythonVersion, v))
+}
+
+// PythonVersionContainsFold applies the ContainsFold predicate on the "python_version" field.
+func PythonVersionContainsFold(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldContainsFold(FieldPythonVersion, v))
+}
+
+// AvgVramEQ applies the EQ predicate on the "avg_vram" field.
+func AvgVramEQ(v int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldEQ(FieldAvgVram, v))
+}
+
+// AvgVramNEQ applies the NEQ predicate on the "avg_vram" field.
+func AvgVramNEQ(v int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldNEQ(FieldAvgVram, v))
+}
+
+// AvgVramIn applies the In predicate on the "avg_vram" field.
+func AvgVramIn(vs ...int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldIn(FieldAvgVram, vs...))
+}
+
+// AvgVramNotIn applies the NotIn predicate on the "avg_vram" field.
+func AvgVramNotIn(vs ...int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldNotIn(FieldAvgVram, vs...))
+}
+
+// AvgVramGT applies the GT predicate on the "avg_vram" field.
+func AvgVramGT(v int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldGT(FieldAvgVram, v))
+}
+
+// AvgVramGTE applies the GTE predicate on the "avg_vram" field.
+func AvgVramGTE(v int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldGTE(FieldAvgVram, v))
+}
+
+// AvgVramLT applies the LT predicate on the "avg_vram" field.
+func AvgVramLT(v int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldLT(FieldAvgVram, v))
+}
+
+// AvgVramLTE applies the LTE predicate on the "avg_vram" field.
+func AvgVramLTE(v int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldLTE(FieldAvgVram, v))
+}
+
+// AvgVramIsNil applies the IsNil predicate on the "avg_vram" field.
+func AvgVramIsNil() predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldIsNull(FieldAvgVram))
+}
+
+// AvgVramNotNil applies the NotNil predicate on the "avg_vram" field.
+func AvgVramNotNil() predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldNotNull(FieldAvgVram))
+}
+
+// PeakVramEQ applies the EQ predicate on the "peak_vram" field.
+func PeakVramEQ(v int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldEQ(FieldPeakVram, v))
+}
+
+// PeakVramNEQ applies the NEQ predicate on the "peak_vram" field.
+func PeakVramNEQ(v int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldNEQ(FieldPeakVram, v))
+}
+
+// PeakVramIn applies the In predicate on the "peak_vram" field.
+func PeakVramIn(vs ...int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldIn(FieldPeakVram, vs...))
+}
+
+// PeakVramNotIn applies the NotIn predicate on the "peak_vram" field.
+func PeakVramNotIn(vs ...int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldNotIn(FieldPeakVram, vs...))
+}
+
+// PeakVramGT applies the GT predicate on the "peak_vram" field.
+func PeakVramGT(v int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldGT(FieldPeakVram, v))
+}
+
+// PeakVramGTE applies the GTE predicate on the "peak_vram" field.
+func PeakVramGTE(v int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldGTE(FieldPeakVram, v))
+}
+
+// PeakVramLT applies the LT predicate on the "peak_vram" field.
+func PeakVramLT(v int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldLT(FieldPeakVram, v))
+}
+
+// PeakVramLTE applies the LTE predicate on the "peak_vram" field.
+func PeakVramLTE(v int) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldLTE(FieldPeakVram, v))
+}
+
+// PeakVramIsNil applies the IsNil predicate on the "peak_vram" field.
+func PeakVramIsNil() predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldIsNull(FieldPeakVram))
+}
+
+// PeakVramNotNil applies the NotNil predicate on the "peak_vram" field.
+func PeakVramNotNil() predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldNotNull(FieldPeakVram))
+}
+
+// JobTriggerUserEQ applies the EQ predicate on the "job_trigger_user" field.
+func JobTriggerUserEQ(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldEQ(FieldJobTriggerUser, v))
+}
+
+// JobTriggerUserNEQ applies the NEQ predicate on the "job_trigger_user" field.
+func JobTriggerUserNEQ(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldNEQ(FieldJobTriggerUser, v))
+}
+
+// JobTriggerUserIn applies the In predicate on the "job_trigger_user" field.
+func JobTriggerUserIn(vs ...string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldIn(FieldJobTriggerUser, vs...))
+}
+
+// JobTriggerUserNotIn applies the NotIn predicate on the "job_trigger_user" field.
+func JobTriggerUserNotIn(vs ...string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldNotIn(FieldJobTriggerUser, vs...))
+}
+
+// JobTriggerUserGT applies the GT predicate on the "job_trigger_user" field.
+func JobTriggerUserGT(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldGT(FieldJobTriggerUser, v))
+}
+
+// JobTriggerUserGTE applies the GTE predicate on the "job_trigger_user" field.
+func JobTriggerUserGTE(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldGTE(FieldJobTriggerUser, v))
+}
+
+// JobTriggerUserLT applies the LT predicate on the "job_trigger_user" field.
+func JobTriggerUserLT(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldLT(FieldJobTriggerUser, v))
+}
+
+// JobTriggerUserLTE applies the LTE predicate on the "job_trigger_user" field.
+func JobTriggerUserLTE(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldLTE(FieldJobTriggerUser, v))
+}
+
+// JobTriggerUserContains applies the Contains predicate on the "job_trigger_user" field.
+func JobTriggerUserContains(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldContains(FieldJobTriggerUser, v))
+}
+
+// JobTriggerUserHasPrefix applies the HasPrefix predicate on the "job_trigger_user" field.
+func JobTriggerUserHasPrefix(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldHasPrefix(FieldJobTriggerUser, v))
+}
+
+// JobTriggerUserHasSuffix applies the HasSuffix predicate on the "job_trigger_user" field.
+func JobTriggerUserHasSuffix(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldHasSuffix(FieldJobTriggerUser, v))
+}
+
+// JobTriggerUserIsNil applies the IsNil predicate on the "job_trigger_user" field.
+func JobTriggerUserIsNil() predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldIsNull(FieldJobTriggerUser))
+}
+
+// JobTriggerUserNotNil applies the NotNil predicate on the "job_trigger_user" field.
+func JobTriggerUserNotNil() predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldNotNull(FieldJobTriggerUser))
+}
+
+// JobTriggerUserEqualFold applies the EqualFold predicate on the "job_trigger_user" field.
+func JobTriggerUserEqualFold(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldEqualFold(FieldJobTriggerUser, v))
+}
+
+// JobTriggerUserContainsFold applies the ContainsFold predicate on the "job_trigger_user" field.
+func JobTriggerUserContainsFold(v string) predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldContainsFold(FieldJobTriggerUser, v))
 }
 
 // HasGitcommit applies the HasEdge predicate on the "gitcommit" edge.
