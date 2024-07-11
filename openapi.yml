@@ -57,6 +57,9 @@ paths:
                 comfy_logs_gcs_path:
                   type: string
                   description: The path to ComfyUI logs. eg. gs://bucket-name/logs
+                comfy_run_flags:
+                  type: string
+                  description: The flags used in the comfy run
                 commit_hash:
                   type: string
                 commit_time:
@@ -1813,6 +1816,9 @@ components:
         commit_message:
           type: string
           description: The message of the commit
+        comfy_run_flags:
+          type: string
+          description: The comfy run flags. E.g. `--low-vram`
         git_repo:
           type: string
           description: The repository name

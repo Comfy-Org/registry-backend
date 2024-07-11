@@ -89,6 +89,7 @@ func (cwrc *CIWorkflowResultCreate) SetNillableRunID(s *string) *CIWorkflowResul
 	return cwrc
 }
 
+<<<<<<< HEAD
 // SetJobID sets the "job_id" field.
 func (cwrc *CIWorkflowResultCreate) SetJobID(s string) *CIWorkflowResultCreate {
 	cwrc.mutation.SetJobID(s)
@@ -99,6 +100,18 @@ func (cwrc *CIWorkflowResultCreate) SetJobID(s string) *CIWorkflowResultCreate {
 func (cwrc *CIWorkflowResultCreate) SetNillableJobID(s *string) *CIWorkflowResultCreate {
 	if s != nil {
 		cwrc.SetJobID(*s)
+=======
+// SetComfyRunFlags sets the "comfy_run_flags" field.
+func (cwrc *CIWorkflowResultCreate) SetComfyRunFlags(s string) *CIWorkflowResultCreate {
+	cwrc.mutation.SetComfyRunFlags(s)
+	return cwrc
+}
+
+// SetNillableComfyRunFlags sets the "comfy_run_flags" field if the given value is not nil.
+func (cwrc *CIWorkflowResultCreate) SetNillableComfyRunFlags(s *string) *CIWorkflowResultCreate {
+	if s != nil {
+		cwrc.SetComfyRunFlags(*s)
+>>>>>>> c1afb53 (Add comfy run flags field)
 	}
 	return cwrc
 }
@@ -406,9 +419,15 @@ func (cwrc *CIWorkflowResultCreate) createSpec() (*CIWorkflowResult, *sqlgraph.C
 		_spec.SetField(ciworkflowresult.FieldRunID, field.TypeString, value)
 		_node.RunID = value
 	}
+<<<<<<< HEAD
 	if value, ok := cwrc.mutation.JobID(); ok {
 		_spec.SetField(ciworkflowresult.FieldJobID, field.TypeString, value)
 		_node.JobID = value
+=======
+	if value, ok := cwrc.mutation.ComfyRunFlags(); ok {
+		_spec.SetField(ciworkflowresult.FieldComfyRunFlags, field.TypeString, value)
+		_node.ComfyRunFlags = value
+>>>>>>> c1afb53 (Add comfy run flags field)
 	}
 	if value, ok := cwrc.mutation.Status(); ok {
 		_spec.SetField(ciworkflowresult.FieldStatus, field.TypeString, value)
@@ -426,6 +445,7 @@ func (cwrc *CIWorkflowResultCreate) createSpec() (*CIWorkflowResult, *sqlgraph.C
 		_spec.SetField(ciworkflowresult.FieldPythonVersion, field.TypeString, value)
 		_node.PythonVersion = value
 	}
+<<<<<<< HEAD
 	if value, ok := cwrc.mutation.PytorchVersion(); ok {
 		_spec.SetField(ciworkflowresult.FieldPytorchVersion, field.TypeString, value)
 		_node.PytorchVersion = value
@@ -433,6 +453,11 @@ func (cwrc *CIWorkflowResultCreate) createSpec() (*CIWorkflowResult, *sqlgraph.C
 	if value, ok := cwrc.mutation.CudaVersion(); ok {
 		_spec.SetField(ciworkflowresult.FieldCudaVersion, field.TypeString, value)
 		_node.CudaVersion = value
+=======
+	if value, ok := cwrc.mutation.ComfyRunFlags(); ok {
+		_spec.SetField(ciworkflowresult.FieldComfyRunFlags, field.TypeString, value)
+		_node.ComfyRunFlags = value
+>>>>>>> c1afb53 (Add comfy run flags field)
 	}
 	if value, ok := cwrc.mutation.AvgVram(); ok {
 		_spec.SetField(ciworkflowresult.FieldAvgVram, field.TypeInt, value)
@@ -595,6 +620,7 @@ func (u *CIWorkflowResultUpsert) ClearRunID() *CIWorkflowResultUpsert {
 	return u
 }
 
+<<<<<<< HEAD
 // SetJobID sets the "job_id" field.
 func (u *CIWorkflowResultUpsert) SetJobID(v string) *CIWorkflowResultUpsert {
 	u.Set(ciworkflowresult.FieldJobID, v)
@@ -610,6 +636,23 @@ func (u *CIWorkflowResultUpsert) UpdateJobID() *CIWorkflowResultUpsert {
 // ClearJobID clears the value of the "job_id" field.
 func (u *CIWorkflowResultUpsert) ClearJobID() *CIWorkflowResultUpsert {
 	u.SetNull(ciworkflowresult.FieldJobID)
+=======
+// SetComfyRunFlags sets the "comfy_run_flags" field.
+func (u *CIWorkflowResultUpsert) SetComfyRunFlags(v string) *CIWorkflowResultUpsert {
+	u.Set(ciworkflowresult.FieldComfyRunFlags, v)
+	return u
+}
+
+// UpdateComfyRunFlags sets the "comfy_run_flags" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsert) UpdateComfyRunFlags() *CIWorkflowResultUpsert {
+	u.SetExcluded(ciworkflowresult.FieldComfyRunFlags)
+	return u
+}
+
+// ClearComfyRunFlags clears the value of the "comfy_run_flags" field.
+func (u *CIWorkflowResultUpsert) ClearComfyRunFlags() *CIWorkflowResultUpsert {
+	u.SetNull(ciworkflowresult.FieldComfyRunFlags)
+>>>>>>> c1afb53 (Add comfy run flags field)
 	return u
 }
 
@@ -932,6 +975,7 @@ func (u *CIWorkflowResultUpsertOne) ClearRunID() *CIWorkflowResultUpsertOne {
 	})
 }
 
+<<<<<<< HEAD
 // SetJobID sets the "job_id" field.
 func (u *CIWorkflowResultUpsertOne) SetJobID(v string) *CIWorkflowResultUpsertOne {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
@@ -950,6 +994,26 @@ func (u *CIWorkflowResultUpsertOne) UpdateJobID() *CIWorkflowResultUpsertOne {
 func (u *CIWorkflowResultUpsertOne) ClearJobID() *CIWorkflowResultUpsertOne {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
 		s.ClearJobID()
+=======
+// SetComfyRunFlags sets the "comfy_run_flags" field.
+func (u *CIWorkflowResultUpsertOne) SetComfyRunFlags(v string) *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetComfyRunFlags(v)
+	})
+}
+
+// UpdateComfyRunFlags sets the "comfy_run_flags" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertOne) UpdateComfyRunFlags() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdateComfyRunFlags()
+	})
+}
+
+// ClearComfyRunFlags clears the value of the "comfy_run_flags" field.
+func (u *CIWorkflowResultUpsertOne) ClearComfyRunFlags() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearComfyRunFlags()
+>>>>>>> c1afb53 (Add comfy run flags field)
 	})
 }
 
@@ -1472,6 +1536,7 @@ func (u *CIWorkflowResultUpsertBulk) ClearRunID() *CIWorkflowResultUpsertBulk {
 	})
 }
 
+<<<<<<< HEAD
 // SetJobID sets the "job_id" field.
 func (u *CIWorkflowResultUpsertBulk) SetJobID(v string) *CIWorkflowResultUpsertBulk {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
@@ -1490,6 +1555,26 @@ func (u *CIWorkflowResultUpsertBulk) UpdateJobID() *CIWorkflowResultUpsertBulk {
 func (u *CIWorkflowResultUpsertBulk) ClearJobID() *CIWorkflowResultUpsertBulk {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
 		s.ClearJobID()
+=======
+// SetComfyRunFlags sets the "comfy_run_flags" field.
+func (u *CIWorkflowResultUpsertBulk) SetComfyRunFlags(v string) *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetComfyRunFlags(v)
+	})
+}
+
+// UpdateComfyRunFlags sets the "comfy_run_flags" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertBulk) UpdateComfyRunFlags() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdateComfyRunFlags()
+	})
+}
+
+// ClearComfyRunFlags clears the value of the "comfy_run_flags" field.
+func (u *CIWorkflowResultUpsertBulk) ClearComfyRunFlags() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearComfyRunFlags()
+>>>>>>> c1afb53 (Add comfy run flags field)
 	})
 }
 

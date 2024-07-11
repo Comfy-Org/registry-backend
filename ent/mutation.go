@@ -58,7 +58,11 @@ type CIWorkflowResultMutation struct {
 	operating_system    *string
 	workflow_name       *string
 	run_id              *string
+<<<<<<< HEAD
 	job_id              *string
+=======
+	comfy_run_flags     *string
+>>>>>>> c1afb53 (Add comfy run flags field)
 	status              *schema.WorkflowRunStatusType
 	start_time          *int64
 	addstart_time       *int64
@@ -394,6 +398,7 @@ func (m *CIWorkflowResultMutation) ResetRunID() {
 	delete(m.clearedFields, ciworkflowresult.FieldRunID)
 }
 
+<<<<<<< HEAD
 // SetJobID sets the "job_id" field.
 func (m *CIWorkflowResultMutation) SetJobID(s string) {
 	m.job_id = &s
@@ -402,12 +407,23 @@ func (m *CIWorkflowResultMutation) SetJobID(s string) {
 // JobID returns the value of the "job_id" field in the mutation.
 func (m *CIWorkflowResultMutation) JobID() (r string, exists bool) {
 	v := m.job_id
+=======
+// SetComfyRunFlags sets the "comfy_run_flags" field.
+func (m *CIWorkflowResultMutation) SetComfyRunFlags(s string) {
+	m.comfy_run_flags = &s
+}
+
+// ComfyRunFlags returns the value of the "comfy_run_flags" field in the mutation.
+func (m *CIWorkflowResultMutation) ComfyRunFlags() (r string, exists bool) {
+	v := m.comfy_run_flags
+>>>>>>> c1afb53 (Add comfy run flags field)
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
+<<<<<<< HEAD
 // OldJobID returns the old "job_id" field's value of the CIWorkflowResult entity.
 // If the CIWorkflowResult object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
@@ -441,6 +457,41 @@ func (m *CIWorkflowResultMutation) JobIDCleared() bool {
 func (m *CIWorkflowResultMutation) ResetJobID() {
 	m.job_id = nil
 	delete(m.clearedFields, ciworkflowresult.FieldJobID)
+=======
+// OldComfyRunFlags returns the old "comfy_run_flags" field's value of the CIWorkflowResult entity.
+// If the CIWorkflowResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CIWorkflowResultMutation) OldComfyRunFlags(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldComfyRunFlags is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldComfyRunFlags requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldComfyRunFlags: %w", err)
+	}
+	return oldValue.ComfyRunFlags, nil
+}
+
+// ClearComfyRunFlags clears the value of the "comfy_run_flags" field.
+func (m *CIWorkflowResultMutation) ClearComfyRunFlags() {
+	m.comfy_run_flags = nil
+	m.clearedFields[ciworkflowresult.FieldComfyRunFlags] = struct{}{}
+}
+
+// ComfyRunFlagsCleared returns if the "comfy_run_flags" field was cleared in this mutation.
+func (m *CIWorkflowResultMutation) ComfyRunFlagsCleared() bool {
+	_, ok := m.clearedFields[ciworkflowresult.FieldComfyRunFlags]
+	return ok
+}
+
+// ResetComfyRunFlags resets all changes to the "comfy_run_flags" field.
+func (m *CIWorkflowResultMutation) ResetComfyRunFlags() {
+	m.comfy_run_flags = nil
+	delete(m.clearedFields, ciworkflowresult.FieldComfyRunFlags)
+>>>>>>> c1afb53 (Add comfy run flags field)
 }
 
 // SetStatus sets the "status" field.
@@ -1147,8 +1198,13 @@ func (m *CIWorkflowResultMutation) Fields() []string {
 	if m.run_id != nil {
 		fields = append(fields, ciworkflowresult.FieldRunID)
 	}
+<<<<<<< HEAD
 	if m.job_id != nil {
 		fields = append(fields, ciworkflowresult.FieldJobID)
+=======
+	if m.comfy_run_flags != nil {
+		fields = append(fields, ciworkflowresult.FieldComfyRunFlags)
+>>>>>>> c1afb53 (Add comfy run flags field)
 	}
 	if m.status != nil {
 		fields = append(fields, ciworkflowresult.FieldStatus)
@@ -1198,8 +1254,13 @@ func (m *CIWorkflowResultMutation) Field(name string) (ent.Value, bool) {
 		return m.WorkflowName()
 	case ciworkflowresult.FieldRunID:
 		return m.RunID()
+<<<<<<< HEAD
 	case ciworkflowresult.FieldJobID:
 		return m.JobID()
+=======
+	case ciworkflowresult.FieldComfyRunFlags:
+		return m.ComfyRunFlags()
+>>>>>>> c1afb53 (Add comfy run flags field)
 	case ciworkflowresult.FieldStatus:
 		return m.Status()
 	case ciworkflowresult.FieldStartTime:
@@ -1239,8 +1300,13 @@ func (m *CIWorkflowResultMutation) OldField(ctx context.Context, name string) (e
 		return m.OldWorkflowName(ctx)
 	case ciworkflowresult.FieldRunID:
 		return m.OldRunID(ctx)
+<<<<<<< HEAD
 	case ciworkflowresult.FieldJobID:
 		return m.OldJobID(ctx)
+=======
+	case ciworkflowresult.FieldComfyRunFlags:
+		return m.OldComfyRunFlags(ctx)
+>>>>>>> c1afb53 (Add comfy run flags field)
 	case ciworkflowresult.FieldStatus:
 		return m.OldStatus(ctx)
 	case ciworkflowresult.FieldStartTime:
@@ -1305,12 +1371,20 @@ func (m *CIWorkflowResultMutation) SetField(name string, value ent.Value) error 
 		}
 		m.SetRunID(v)
 		return nil
+<<<<<<< HEAD
 	case ciworkflowresult.FieldJobID:
+=======
+	case ciworkflowresult.FieldComfyRunFlags:
+>>>>>>> c1afb53 (Add comfy run flags field)
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
+<<<<<<< HEAD
 		m.SetJobID(v)
+=======
+		m.SetComfyRunFlags(v)
+>>>>>>> c1afb53 (Add comfy run flags field)
 		return nil
 	case ciworkflowresult.FieldStatus:
 		v, ok := value.(schema.WorkflowRunStatusType)
@@ -1469,8 +1543,13 @@ func (m *CIWorkflowResultMutation) ClearedFields() []string {
 	if m.FieldCleared(ciworkflowresult.FieldRunID) {
 		fields = append(fields, ciworkflowresult.FieldRunID)
 	}
+<<<<<<< HEAD
 	if m.FieldCleared(ciworkflowresult.FieldJobID) {
 		fields = append(fields, ciworkflowresult.FieldJobID)
+=======
+	if m.FieldCleared(ciworkflowresult.FieldComfyRunFlags) {
+		fields = append(fields, ciworkflowresult.FieldComfyRunFlags)
+>>>>>>> c1afb53 (Add comfy run flags field)
 	}
 	if m.FieldCleared(ciworkflowresult.FieldStartTime) {
 		fields = append(fields, ciworkflowresult.FieldStartTime)
@@ -1519,8 +1598,13 @@ func (m *CIWorkflowResultMutation) ClearField(name string) error {
 	case ciworkflowresult.FieldRunID:
 		m.ClearRunID()
 		return nil
+<<<<<<< HEAD
 	case ciworkflowresult.FieldJobID:
 		m.ClearJobID()
+=======
+	case ciworkflowresult.FieldComfyRunFlags:
+		m.ClearComfyRunFlags()
+>>>>>>> c1afb53 (Add comfy run flags field)
 		return nil
 	case ciworkflowresult.FieldStartTime:
 		m.ClearStartTime()
@@ -1572,8 +1656,13 @@ func (m *CIWorkflowResultMutation) ResetField(name string) error {
 	case ciworkflowresult.FieldRunID:
 		m.ResetRunID()
 		return nil
+<<<<<<< HEAD
 	case ciworkflowresult.FieldJobID:
 		m.ResetJobID()
+=======
+	case ciworkflowresult.FieldComfyRunFlags:
+		m.ResetComfyRunFlags()
+>>>>>>> c1afb53 (Add comfy run flags field)
 		return nil
 	case ciworkflowresult.FieldStatus:
 		m.ResetStatus()

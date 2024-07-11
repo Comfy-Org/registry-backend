@@ -16,7 +16,11 @@ var (
 		{Name: "operating_system", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "workflow_name", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "run_id", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+<<<<<<< HEAD
 		{Name: "job_id", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+=======
+		{Name: "comfy_run_flags", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+>>>>>>> c1afb53 (Add comfy run flags field)
 		{Name: "status", Type: field.TypeString, Default: "STARTED"},
 		{Name: "start_time", Type: field.TypeInt64, Nullable: true},
 		{Name: "end_time", Type: field.TypeInt64, Nullable: true},

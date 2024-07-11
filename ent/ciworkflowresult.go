@@ -31,8 +31,13 @@ type CIWorkflowResult struct {
 	WorkflowName string `json:"workflow_name,omitempty"`
 	// RunID holds the value of the "run_id" field.
 	RunID string `json:"run_id,omitempty"`
+<<<<<<< HEAD
 	// JobID holds the value of the "job_id" field.
 	JobID string `json:"job_id,omitempty"`
+=======
+	// ComfyRunFlags holds the value of the "comfy_run_flags" field.
+	ComfyRunFlags string `json:"comfy_run_flags,omitempty"`
+>>>>>>> c1afb53 (Add comfy run flags field)
 	// Status holds the value of the "status" field.
 	Status schema.WorkflowRunStatusType `json:"status,omitempty"`
 	// StartTime holds the value of the "start_time" field.
@@ -100,7 +105,11 @@ func (*CIWorkflowResult) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case ciworkflowresult.FieldStartTime, ciworkflowresult.FieldEndTime, ciworkflowresult.FieldAvgVram, ciworkflowresult.FieldPeakVram:
 			values[i] = new(sql.NullInt64)
+<<<<<<< HEAD
 		case ciworkflowresult.FieldOperatingSystem, ciworkflowresult.FieldWorkflowName, ciworkflowresult.FieldRunID, ciworkflowresult.FieldJobID, ciworkflowresult.FieldStatus, ciworkflowresult.FieldPythonVersion, ciworkflowresult.FieldPytorchVersion, ciworkflowresult.FieldCudaVersion, ciworkflowresult.FieldJobTriggerUser:
+=======
+		case ciworkflowresult.FieldOperatingSystem, ciworkflowresult.FieldGpuType, ciworkflowresult.FieldPytorchVersion, ciworkflowresult.FieldWorkflowName, ciworkflowresult.FieldRunID, ciworkflowresult.FieldComfyRunFlags, ciworkflowresult.FieldStatus, ciworkflowresult.FieldPythonVersion, ciworkflowresult.FieldJobTriggerUser:
+>>>>>>> c1afb53 (Add comfy run flags field)
 			values[i] = new(sql.NullString)
 		case ciworkflowresult.FieldCreateTime, ciworkflowresult.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
@@ -159,11 +168,19 @@ func (cwr *CIWorkflowResult) assignValues(columns []string, values []any) error 
 			} else if value.Valid {
 				cwr.RunID = value.String
 			}
+<<<<<<< HEAD
 		case ciworkflowresult.FieldJobID:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field job_id", values[i])
 			} else if value.Valid {
 				cwr.JobID = value.String
+=======
+		case ciworkflowresult.FieldComfyRunFlags:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field comfy_run_flags", values[i])
+			} else if value.Valid {
+				cwr.ComfyRunFlags = value.String
+>>>>>>> c1afb53 (Add comfy run flags field)
 			}
 		case ciworkflowresult.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -295,8 +312,13 @@ func (cwr *CIWorkflowResult) String() string {
 	builder.WriteString("run_id=")
 	builder.WriteString(cwr.RunID)
 	builder.WriteString(", ")
+<<<<<<< HEAD
 	builder.WriteString("job_id=")
 	builder.WriteString(cwr.JobID)
+=======
+	builder.WriteString("comfy_run_flags=")
+	builder.WriteString(cwr.ComfyRunFlags)
+>>>>>>> c1afb53 (Add comfy run flags field)
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", cwr.Status))
