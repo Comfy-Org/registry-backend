@@ -7,51 +7,59 @@ import (
 	"registry-backend/ent/schema"
 )
 
-func CiWorkflowResultToActionJobResult(results []*ent.CIWorkflowResult) ([]drip.ActionJobResult, error) {
+func CiWorkflowResultsToActionJobResults(results []*ent.CIWorkflowResult) ([]drip.ActionJobResult, error) {
 	var jobResultsData []drip.ActionJobResult
 
 	for _, result := range results {
-		storageFileData := drip.StorageFile{
-			PublicUrl: &result.Edges.StorageFile[0].FileURL,
-		}
-		commitId := result.Edges.Gitcommit.ID.String()
-		commitUnixTime := result.Edges.Gitcommit.CommitTimestamp.Unix()
-		apiStatus, err := DbWorkflowRunStatusToApi(result.Status)
+		jobResultData, err := CiWorkflowResultToActionJobResult(result)
 		if err != nil {
-			return jobResultsData, err
+			return nil, err
 		}
-
-		machineStats, err := MapToMachineStats(result.Metadata)
-		if err != nil {
-			return jobResultsData, err
-		}
-
-		jobResultData := drip.ActionJobResult{
-			WorkflowName:    &result.WorkflowName,
-			OperatingSystem: &result.OperatingSystem,
-			GpuType:         &result.GpuType,
-			PytorchVersion:  &result.PytorchVersion,
-			StorageFile:     &storageFileData,
-			CommitHash:      &result.Edges.Gitcommit.CommitHash,
-			CommitId:        &commitId,
-			CommitTime:      &commitUnixTime,
-			CommitMessage:   &result.Edges.Gitcommit.CommitMessage,
-			GitRepo:         &result.Edges.Gitcommit.RepoName,
-			ActionRunId:     &result.RunID,
-			StartTime:       &result.StartTime,
-			EndTime:         &result.EndTime,
-			JobTriggerUser:  &result.JobTriggerUser,
-			AvgVram:         &result.AvgVram,
-			PeakVram:        &result.PeakVram,
-			PythonVersion:   &result.PythonVersion,
-			Status:          &apiStatus,
-			PrNumber:        &result.Edges.Gitcommit.PrNumber,
-			Author:          &result.Edges.Gitcommit.Author,
-			MachineStats:    machineStats,
-		}
-		jobResultsData = append(jobResultsData, jobResultData)
+		jobResultsData = append(jobResultsData, *jobResultData)
 	}
 	return jobResultsData, nil
+}
+
+func CiWorkflowResultToActionJobResult(result *ent.CIWorkflowResult) (*drip.ActionJobResult, error) {
+	storageFileData := drip.StorageFile{
+		PublicUrl: &result.Edges.StorageFile[0].FileURL,
+	}
+	commitId := result.Edges.Gitcommit.ID.String()
+	commitUnixTime := result.Edges.Gitcommit.CommitTimestamp.Unix()
+	apiStatus, err := DbWorkflowRunStatusToApi(result.Status)
+	if err != nil {
+		return nil, err
+	}
+
+	machineStats, err := MapToMachineStats(result.Metadata)
+	if err != nil {
+		return nil, err
+	}
+
+	return &drip.ActionJobResult{
+		Id:              &result.ID,
+		WorkflowName:    &result.WorkflowName,
+		OperatingSystem: &result.OperatingSystem,
+		GpuType:         &result.GpuType,
+		PytorchVersion:  &result.PytorchVersion,
+		StorageFile:     &storageFileData,
+		CommitHash:      &result.Edges.Gitcommit.CommitHash,
+		CommitId:        &commitId,
+		CommitTime:      &commitUnixTime,
+		CommitMessage:   &result.Edges.Gitcommit.CommitMessage,
+		GitRepo:         &result.Edges.Gitcommit.RepoName,
+		ActionRunId:     &result.RunID,
+		StartTime:       &result.StartTime,
+		EndTime:         &result.EndTime,
+		JobTriggerUser:  &result.JobTriggerUser,
+		AvgVram:         &result.AvgVram,
+		PeakVram:        &result.PeakVram,
+		PythonVersion:   &result.PythonVersion,
+		Status:          &apiStatus,
+		PrNumber:        &result.Edges.Gitcommit.PrNumber,
+		Author:          &result.Edges.Gitcommit.Author,
+		MachineStats:    machineStats,
+	}, nil
 }
 
 func ApiWorkflowRunStatusToDb(status drip.WorkflowRunStatus) (schema.WorkflowRunStatusType, error) {
