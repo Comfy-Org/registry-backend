@@ -201,6 +201,35 @@ paths:
           description: Commit not found
         '500':
           description: Internal server error
+  /workflowresult/{workflowResultId}:
+    get:
+      summary: Retrieve a specific commit by ID
+      operationId: getWorkflowResult
+      parameters:
+        - in: path
+          name: workflowResultId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Commit details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionJobResult'
+        '404':
+          description: Commit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /branch:
     get:
       summary: Retrieve all distinct branches for a given repo

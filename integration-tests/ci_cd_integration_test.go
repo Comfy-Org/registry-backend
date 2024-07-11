@@ -110,6 +110,7 @@ func TestCICD(t *testing.T) {
 		require.Len(t, *res200.JobResults, 1)
 		assert.Equal(t, *res200.TotalNumberOfPages, 1)
 		assert.Equal(t, drip.ActionJobResult{
+			Id:              (*res200.JobResults)[0].Id,
 			ActionRunId:     &body.RunId,
 			CommitHash:      &body.CommitHash,
 			CommitId:        proto.String(git.ID.String()),

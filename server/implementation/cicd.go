@@ -108,7 +108,7 @@ func (impl *DripStrictServerImplementation) GetGitcommit(ctx context.Context, re
 		return drip.GetGitcommit500Response{}, err
 	}
 
-	results, err := mapper.CiWorkflowResultToActionJobResult(runs)
+	results, err := mapper.CiWorkflowResultsToActionJobResults(runs)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Error mapping git commits to action job results w/ err: %v", err)
 		return drip.GetGitcommit500Response{}, err
@@ -118,6 +118,30 @@ func (impl *DripStrictServerImplementation) GetGitcommit(ctx context.Context, re
 		JobResults:         &results,
 		TotalNumberOfPages: &numberOfPages,
 	}, nil
+}
+
+func (impl *DripStrictServerImplementation) GetWorkflowResult(ctx context.Context, request drip.GetWorkflowResultRequestObject) (drip.GetWorkflowResultResponseObject, error) {
+	log.Ctx(ctx).Info().Msgf("Getting workflow result with ID %s", request.WorkflowResultId)
+	workflowId := uuid.MustParse(request.WorkflowResultId)
+	workflow, err := impl.Client.CIWorkflowResult.Query().WithGitcommit().WithStorageFile().Where(ciworkflowresult.IDEQ(workflowId)).First(ctx)
+
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Error retrieving workflow result w/ err: %v", err)
+		return drip.GetWorkflowResult500JSONResponse{
+			Message: err.Error(),
+		}, nil
+	}
+
+	result, err := mapper.CiWorkflowResultToActionJobResult(workflow)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Error mapping workflow result to action job result w/ err: %v", err)
+		return drip.GetWorkflowResult500JSONResponse{
+			Message: err.Error(),
+		}, nil
+	}
+
+	log.Ctx(ctx).Info().Msgf("Workflow result retrieved successfully")
+	return drip.GetWorkflowResult200JSONResponse(*result), nil
 }
 
 func (impl *DripStrictServerImplementation) GetBranch(ctx context.Context, request drip.GetBranchRequestObject) (drip.GetBranchResponseObject, error) {
