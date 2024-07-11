@@ -20,6 +20,12 @@ func CiWorkflowResultToActionJobResult(results []*ent.CIWorkflowResult) ([]drip.
 		if err != nil {
 			return jobResultsData, err
 		}
+
+		machineStats, err := MapToMachineStats(result.Metadata)
+		if err != nil {
+			return jobResultsData, err
+		}
+
 		jobResultData := drip.ActionJobResult{
 			WorkflowName:    &result.WorkflowName,
 			OperatingSystem: &result.OperatingSystem,
@@ -41,6 +47,7 @@ func CiWorkflowResultToActionJobResult(results []*ent.CIWorkflowResult) ([]drip.
 			Status:          &apiStatus,
 			PrNumber:        &result.Edges.Gitcommit.PrNumber,
 			Author:          &result.Edges.Gitcommit.Author,
+			MachineStats:    machineStats,
 		}
 		jobResultsData = append(jobResultsData, jobResultData)
 	}
@@ -74,4 +81,53 @@ func DbWorkflowRunStatusToApi(status schema.WorkflowRunStatusType) (drip.Workflo
 		// Throw an error
 		return "", fmt.Errorf("unsupported workflow status: %v", status)
 	}
+}
+
+func MachineStatsToMap(ms *drip.MachineStats) map[string]interface{} {
+	return map[string]interface{}{
+		"CpuCapacity":    ms.CpuCapacity,
+		"DiskCapacity":   ms.DiskCapacity,
+		"InitialCpu":     ms.InitialCpu,
+		"InitialDisk":    ms.InitialDisk,
+		"InitialRam":     ms.InitialRam,
+		"MemoryCapacity": ms.MemoryCapacity,
+		"OsVersion":      ms.OsVersion,
+		"PipFreeze":      ms.PipFreeze,
+		"VramTimeSeries": ms.VramTimeSeries,
+	}
+}
+
+func MapToMachineStats(data map[string]interface{}) (*drip.MachineStats, error) {
+	var ms drip.MachineStats
+
+	if data == nil {
+		return nil, fmt.Errorf("input data map is nil")
+	}
+
+	// Helper function to get string pointers from the map
+	getStringPtr := func(key string) *string {
+		if val, exists := data[key]; exists {
+			if strVal, ok := val.(string); ok {
+				return &strVal
+			}
+		}
+		return nil // Return nil if the key does not exist or type assertion fails
+	}
+
+	ms.CpuCapacity = getStringPtr("CpuCapacity")
+	ms.DiskCapacity = getStringPtr("DiskCapacity")
+	ms.InitialCpu = getStringPtr("InitialCpu")
+	ms.InitialDisk = getStringPtr("InitialDisk")
+	ms.InitialRam = getStringPtr("InitialRam")
+	ms.MemoryCapacity = getStringPtr("MemoryCapacity")
+	ms.OsVersion = getStringPtr("OsVersion")
+	ms.PipFreeze = getStringPtr("PipFreeze")
+
+	if val, exists := data["VramTimeSeries"]; exists {
+		if vram, ok := val.(map[string]interface{}); ok {
+			ms.VramTimeSeries = &vram
+		}
+	}
+
+	return &ms, nil
 }

@@ -44,6 +44,9 @@ func (CIWorkflowResult) Fields() []ent.Field {
 		field.String("job_trigger_user").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}).Optional().Comment("User who triggered the job"),
+		field.JSON("metadata", map[string]interface{}{}).SchemaType(map[string]string{
+			dialect.Postgres: "jsonb",
+		}).Optional().Comment("Stores miscellaneous metadata for each workflow run."),
 	}
 }
 

@@ -1007,6 +1007,16 @@ func JobTriggerUserContainsFold(v string) predicate.CIWorkflowResult {
 	return predicate.CIWorkflowResult(sql.FieldContainsFold(FieldJobTriggerUser, v))
 }
 
+// MetadataIsNil applies the IsNil predicate on the "metadata" field.
+func MetadataIsNil() predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldIsNull(FieldMetadata))
+}
+
+// MetadataNotNil applies the NotNil predicate on the "metadata" field.
+func MetadataNotNil() predicate.CIWorkflowResult {
+	return predicate.CIWorkflowResult(sql.FieldNotNull(FieldMetadata))
+}
+
 // HasGitcommit applies the HasEdge predicate on the "gitcommit" edge.
 func HasGitcommit() predicate.CIWorkflowResult {
 	return predicate.CIWorkflowResult(func(s *sql.Selector) {
