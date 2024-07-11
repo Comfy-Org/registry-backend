@@ -46,7 +46,12 @@ func (s *ComfyCIService) ProcessCIRequest(ctx context.Context, client *ent.Clien
 		})
 	}
 	if existingCommit != nil {
-		_, err := client.CIWorkflowResult.Delete().Where(ciworkflowresult.HasGitcommitWith(gitcommit.IDEQ(existingCommit.ID))).Exec(ctx)
+		log.Ctx(ctx).Info().Msgf("Deleting existing run results for git commit %s, operating system %s, and workflow name %s", req.Body.CommitHash, req.Body.Os, req.Body.WorkflowName)
+		_, err := client.CIWorkflowResult.Delete().Where(
+			ciworkflowresult.HasGitcommitWith(gitcommit.IDEQ(existingCommit.ID)),
+			ciworkflowresult.WorkflowName(req.Body.WorkflowName),
+			ciworkflowresult.OperatingSystem(req.Body.Os),
+		).Exec(ctx)
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("Failed to delete existing run results for git commit %s", req.Body.CommitHash)
 			return err
