@@ -96,6 +96,9 @@ paths:
                 python_version:
                   type: string
                   description: The python version used in the run
+                pytorch_version:
+                  type: string
+                  description: The pytorch version used in the run
                 machine_stats:
                   $ref: "#/components/schemas/MachineStats"
                 status:
@@ -105,7 +108,6 @@ paths:
                 - job_id
                 - run_id
                 - os
-                - gpu_type
                 - commit_hash
                 - commit_time
                 - commit_message
@@ -1783,9 +1785,6 @@ components:
         operating_system:
           type: string
           description: Operating system used
-        gpu_type:
-          type: string
-          description: GPU type used
         python_version:
           type: string
           description: PyTorch version used
@@ -1795,6 +1794,12 @@ components:
         action_run_id:
           type: string
           description: Identifier of the run this result belongs to
+        action_job_id:
+          type: string
+          description: Identifier of the job this result belongs to
+        cuda_version:
+          type: string
+          description: CUDA version used
         commit_hash:
           type: string
           description: The hash of the commit
@@ -2032,6 +2037,9 @@ components:
         os_version:
           type: string
           description: The operating system version. eg. Ubuntu Linux 20.04
+        gpu_type:
+          type: string
+          description: The GPU type. eg. NVIDIA Tesla K80
         cpu_capacity:
           type: string
           description: Total CPU on the machine.

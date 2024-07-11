@@ -56,16 +56,17 @@ type CIWorkflowResultMutation struct {
 	create_time         *time.Time
 	update_time         *time.Time
 	operating_system    *string
-	gpu_type            *string
-	pytorch_version     *string
 	workflow_name       *string
 	run_id              *string
+	job_id              *string
 	status              *schema.WorkflowRunStatusType
 	start_time          *int64
 	addstart_time       *int64
 	end_time            *int64
 	addend_time         *int64
 	python_version      *string
+	pytorch_version     *string
+	cuda_version        *string
 	avg_vram            *int
 	addavg_vram         *int
 	peak_vram           *int
@@ -295,104 +296,6 @@ func (m *CIWorkflowResultMutation) ResetOperatingSystem() {
 	m.operating_system = nil
 }
 
-// SetGpuType sets the "gpu_type" field.
-func (m *CIWorkflowResultMutation) SetGpuType(s string) {
-	m.gpu_type = &s
-}
-
-// GpuType returns the value of the "gpu_type" field in the mutation.
-func (m *CIWorkflowResultMutation) GpuType() (r string, exists bool) {
-	v := m.gpu_type
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldGpuType returns the old "gpu_type" field's value of the CIWorkflowResult entity.
-// If the CIWorkflowResult object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *CIWorkflowResultMutation) OldGpuType(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldGpuType is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldGpuType requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldGpuType: %w", err)
-	}
-	return oldValue.GpuType, nil
-}
-
-// ClearGpuType clears the value of the "gpu_type" field.
-func (m *CIWorkflowResultMutation) ClearGpuType() {
-	m.gpu_type = nil
-	m.clearedFields[ciworkflowresult.FieldGpuType] = struct{}{}
-}
-
-// GpuTypeCleared returns if the "gpu_type" field was cleared in this mutation.
-func (m *CIWorkflowResultMutation) GpuTypeCleared() bool {
-	_, ok := m.clearedFields[ciworkflowresult.FieldGpuType]
-	return ok
-}
-
-// ResetGpuType resets all changes to the "gpu_type" field.
-func (m *CIWorkflowResultMutation) ResetGpuType() {
-	m.gpu_type = nil
-	delete(m.clearedFields, ciworkflowresult.FieldGpuType)
-}
-
-// SetPytorchVersion sets the "pytorch_version" field.
-func (m *CIWorkflowResultMutation) SetPytorchVersion(s string) {
-	m.pytorch_version = &s
-}
-
-// PytorchVersion returns the value of the "pytorch_version" field in the mutation.
-func (m *CIWorkflowResultMutation) PytorchVersion() (r string, exists bool) {
-	v := m.pytorch_version
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPytorchVersion returns the old "pytorch_version" field's value of the CIWorkflowResult entity.
-// If the CIWorkflowResult object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *CIWorkflowResultMutation) OldPytorchVersion(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPytorchVersion is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPytorchVersion requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPytorchVersion: %w", err)
-	}
-	return oldValue.PytorchVersion, nil
-}
-
-// ClearPytorchVersion clears the value of the "pytorch_version" field.
-func (m *CIWorkflowResultMutation) ClearPytorchVersion() {
-	m.pytorch_version = nil
-	m.clearedFields[ciworkflowresult.FieldPytorchVersion] = struct{}{}
-}
-
-// PytorchVersionCleared returns if the "pytorch_version" field was cleared in this mutation.
-func (m *CIWorkflowResultMutation) PytorchVersionCleared() bool {
-	_, ok := m.clearedFields[ciworkflowresult.FieldPytorchVersion]
-	return ok
-}
-
-// ResetPytorchVersion resets all changes to the "pytorch_version" field.
-func (m *CIWorkflowResultMutation) ResetPytorchVersion() {
-	m.pytorch_version = nil
-	delete(m.clearedFields, ciworkflowresult.FieldPytorchVersion)
-}
-
 // SetWorkflowName sets the "workflow_name" field.
 func (m *CIWorkflowResultMutation) SetWorkflowName(s string) {
 	m.workflow_name = &s
@@ -489,6 +392,55 @@ func (m *CIWorkflowResultMutation) RunIDCleared() bool {
 func (m *CIWorkflowResultMutation) ResetRunID() {
 	m.run_id = nil
 	delete(m.clearedFields, ciworkflowresult.FieldRunID)
+}
+
+// SetJobID sets the "job_id" field.
+func (m *CIWorkflowResultMutation) SetJobID(s string) {
+	m.job_id = &s
+}
+
+// JobID returns the value of the "job_id" field in the mutation.
+func (m *CIWorkflowResultMutation) JobID() (r string, exists bool) {
+	v := m.job_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldJobID returns the old "job_id" field's value of the CIWorkflowResult entity.
+// If the CIWorkflowResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CIWorkflowResultMutation) OldJobID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldJobID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldJobID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldJobID: %w", err)
+	}
+	return oldValue.JobID, nil
+}
+
+// ClearJobID clears the value of the "job_id" field.
+func (m *CIWorkflowResultMutation) ClearJobID() {
+	m.job_id = nil
+	m.clearedFields[ciworkflowresult.FieldJobID] = struct{}{}
+}
+
+// JobIDCleared returns if the "job_id" field was cleared in this mutation.
+func (m *CIWorkflowResultMutation) JobIDCleared() bool {
+	_, ok := m.clearedFields[ciworkflowresult.FieldJobID]
+	return ok
+}
+
+// ResetJobID resets all changes to the "job_id" field.
+func (m *CIWorkflowResultMutation) ResetJobID() {
+	m.job_id = nil
+	delete(m.clearedFields, ciworkflowresult.FieldJobID)
 }
 
 // SetStatus sets the "status" field.
@@ -714,6 +666,104 @@ func (m *CIWorkflowResultMutation) PythonVersionCleared() bool {
 func (m *CIWorkflowResultMutation) ResetPythonVersion() {
 	m.python_version = nil
 	delete(m.clearedFields, ciworkflowresult.FieldPythonVersion)
+}
+
+// SetPytorchVersion sets the "pytorch_version" field.
+func (m *CIWorkflowResultMutation) SetPytorchVersion(s string) {
+	m.pytorch_version = &s
+}
+
+// PytorchVersion returns the value of the "pytorch_version" field in the mutation.
+func (m *CIWorkflowResultMutation) PytorchVersion() (r string, exists bool) {
+	v := m.pytorch_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPytorchVersion returns the old "pytorch_version" field's value of the CIWorkflowResult entity.
+// If the CIWorkflowResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CIWorkflowResultMutation) OldPytorchVersion(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPytorchVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPytorchVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPytorchVersion: %w", err)
+	}
+	return oldValue.PytorchVersion, nil
+}
+
+// ClearPytorchVersion clears the value of the "pytorch_version" field.
+func (m *CIWorkflowResultMutation) ClearPytorchVersion() {
+	m.pytorch_version = nil
+	m.clearedFields[ciworkflowresult.FieldPytorchVersion] = struct{}{}
+}
+
+// PytorchVersionCleared returns if the "pytorch_version" field was cleared in this mutation.
+func (m *CIWorkflowResultMutation) PytorchVersionCleared() bool {
+	_, ok := m.clearedFields[ciworkflowresult.FieldPytorchVersion]
+	return ok
+}
+
+// ResetPytorchVersion resets all changes to the "pytorch_version" field.
+func (m *CIWorkflowResultMutation) ResetPytorchVersion() {
+	m.pytorch_version = nil
+	delete(m.clearedFields, ciworkflowresult.FieldPytorchVersion)
+}
+
+// SetCudaVersion sets the "cuda_version" field.
+func (m *CIWorkflowResultMutation) SetCudaVersion(s string) {
+	m.cuda_version = &s
+}
+
+// CudaVersion returns the value of the "cuda_version" field in the mutation.
+func (m *CIWorkflowResultMutation) CudaVersion() (r string, exists bool) {
+	v := m.cuda_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCudaVersion returns the old "cuda_version" field's value of the CIWorkflowResult entity.
+// If the CIWorkflowResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CIWorkflowResultMutation) OldCudaVersion(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCudaVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCudaVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCudaVersion: %w", err)
+	}
+	return oldValue.CudaVersion, nil
+}
+
+// ClearCudaVersion clears the value of the "cuda_version" field.
+func (m *CIWorkflowResultMutation) ClearCudaVersion() {
+	m.cuda_version = nil
+	m.clearedFields[ciworkflowresult.FieldCudaVersion] = struct{}{}
+}
+
+// CudaVersionCleared returns if the "cuda_version" field was cleared in this mutation.
+func (m *CIWorkflowResultMutation) CudaVersionCleared() bool {
+	_, ok := m.clearedFields[ciworkflowresult.FieldCudaVersion]
+	return ok
+}
+
+// ResetCudaVersion resets all changes to the "cuda_version" field.
+func (m *CIWorkflowResultMutation) ResetCudaVersion() {
+	m.cuda_version = nil
+	delete(m.clearedFields, ciworkflowresult.FieldCudaVersion)
 }
 
 // SetAvgVram sets the "avg_vram" field.
@@ -1081,7 +1131,7 @@ func (m *CIWorkflowResultMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CIWorkflowResultMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 16)
 	if m.create_time != nil {
 		fields = append(fields, ciworkflowresult.FieldCreateTime)
 	}
@@ -1091,17 +1141,14 @@ func (m *CIWorkflowResultMutation) Fields() []string {
 	if m.operating_system != nil {
 		fields = append(fields, ciworkflowresult.FieldOperatingSystem)
 	}
-	if m.gpu_type != nil {
-		fields = append(fields, ciworkflowresult.FieldGpuType)
-	}
-	if m.pytorch_version != nil {
-		fields = append(fields, ciworkflowresult.FieldPytorchVersion)
-	}
 	if m.workflow_name != nil {
 		fields = append(fields, ciworkflowresult.FieldWorkflowName)
 	}
 	if m.run_id != nil {
 		fields = append(fields, ciworkflowresult.FieldRunID)
+	}
+	if m.job_id != nil {
+		fields = append(fields, ciworkflowresult.FieldJobID)
 	}
 	if m.status != nil {
 		fields = append(fields, ciworkflowresult.FieldStatus)
@@ -1114,6 +1161,12 @@ func (m *CIWorkflowResultMutation) Fields() []string {
 	}
 	if m.python_version != nil {
 		fields = append(fields, ciworkflowresult.FieldPythonVersion)
+	}
+	if m.pytorch_version != nil {
+		fields = append(fields, ciworkflowresult.FieldPytorchVersion)
+	}
+	if m.cuda_version != nil {
+		fields = append(fields, ciworkflowresult.FieldCudaVersion)
 	}
 	if m.avg_vram != nil {
 		fields = append(fields, ciworkflowresult.FieldAvgVram)
@@ -1141,14 +1194,12 @@ func (m *CIWorkflowResultMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdateTime()
 	case ciworkflowresult.FieldOperatingSystem:
 		return m.OperatingSystem()
-	case ciworkflowresult.FieldGpuType:
-		return m.GpuType()
-	case ciworkflowresult.FieldPytorchVersion:
-		return m.PytorchVersion()
 	case ciworkflowresult.FieldWorkflowName:
 		return m.WorkflowName()
 	case ciworkflowresult.FieldRunID:
 		return m.RunID()
+	case ciworkflowresult.FieldJobID:
+		return m.JobID()
 	case ciworkflowresult.FieldStatus:
 		return m.Status()
 	case ciworkflowresult.FieldStartTime:
@@ -1157,6 +1208,10 @@ func (m *CIWorkflowResultMutation) Field(name string) (ent.Value, bool) {
 		return m.EndTime()
 	case ciworkflowresult.FieldPythonVersion:
 		return m.PythonVersion()
+	case ciworkflowresult.FieldPytorchVersion:
+		return m.PytorchVersion()
+	case ciworkflowresult.FieldCudaVersion:
+		return m.CudaVersion()
 	case ciworkflowresult.FieldAvgVram:
 		return m.AvgVram()
 	case ciworkflowresult.FieldPeakVram:
@@ -1180,14 +1235,12 @@ func (m *CIWorkflowResultMutation) OldField(ctx context.Context, name string) (e
 		return m.OldUpdateTime(ctx)
 	case ciworkflowresult.FieldOperatingSystem:
 		return m.OldOperatingSystem(ctx)
-	case ciworkflowresult.FieldGpuType:
-		return m.OldGpuType(ctx)
-	case ciworkflowresult.FieldPytorchVersion:
-		return m.OldPytorchVersion(ctx)
 	case ciworkflowresult.FieldWorkflowName:
 		return m.OldWorkflowName(ctx)
 	case ciworkflowresult.FieldRunID:
 		return m.OldRunID(ctx)
+	case ciworkflowresult.FieldJobID:
+		return m.OldJobID(ctx)
 	case ciworkflowresult.FieldStatus:
 		return m.OldStatus(ctx)
 	case ciworkflowresult.FieldStartTime:
@@ -1196,6 +1249,10 @@ func (m *CIWorkflowResultMutation) OldField(ctx context.Context, name string) (e
 		return m.OldEndTime(ctx)
 	case ciworkflowresult.FieldPythonVersion:
 		return m.OldPythonVersion(ctx)
+	case ciworkflowresult.FieldPytorchVersion:
+		return m.OldPytorchVersion(ctx)
+	case ciworkflowresult.FieldCudaVersion:
+		return m.OldCudaVersion(ctx)
 	case ciworkflowresult.FieldAvgVram:
 		return m.OldAvgVram(ctx)
 	case ciworkflowresult.FieldPeakVram:
@@ -1234,20 +1291,6 @@ func (m *CIWorkflowResultMutation) SetField(name string, value ent.Value) error 
 		}
 		m.SetOperatingSystem(v)
 		return nil
-	case ciworkflowresult.FieldGpuType:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetGpuType(v)
-		return nil
-	case ciworkflowresult.FieldPytorchVersion:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPytorchVersion(v)
-		return nil
 	case ciworkflowresult.FieldWorkflowName:
 		v, ok := value.(string)
 		if !ok {
@@ -1261,6 +1304,13 @@ func (m *CIWorkflowResultMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRunID(v)
+		return nil
+	case ciworkflowresult.FieldJobID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetJobID(v)
 		return nil
 	case ciworkflowresult.FieldStatus:
 		v, ok := value.(schema.WorkflowRunStatusType)
@@ -1289,6 +1339,20 @@ func (m *CIWorkflowResultMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPythonVersion(v)
+		return nil
+	case ciworkflowresult.FieldPytorchVersion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPytorchVersion(v)
+		return nil
+	case ciworkflowresult.FieldCudaVersion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCudaVersion(v)
 		return nil
 	case ciworkflowresult.FieldAvgVram:
 		v, ok := value.(int)
@@ -1399,17 +1463,14 @@ func (m *CIWorkflowResultMutation) AddField(name string, value ent.Value) error 
 // mutation.
 func (m *CIWorkflowResultMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(ciworkflowresult.FieldGpuType) {
-		fields = append(fields, ciworkflowresult.FieldGpuType)
-	}
-	if m.FieldCleared(ciworkflowresult.FieldPytorchVersion) {
-		fields = append(fields, ciworkflowresult.FieldPytorchVersion)
-	}
 	if m.FieldCleared(ciworkflowresult.FieldWorkflowName) {
 		fields = append(fields, ciworkflowresult.FieldWorkflowName)
 	}
 	if m.FieldCleared(ciworkflowresult.FieldRunID) {
 		fields = append(fields, ciworkflowresult.FieldRunID)
+	}
+	if m.FieldCleared(ciworkflowresult.FieldJobID) {
+		fields = append(fields, ciworkflowresult.FieldJobID)
 	}
 	if m.FieldCleared(ciworkflowresult.FieldStartTime) {
 		fields = append(fields, ciworkflowresult.FieldStartTime)
@@ -1419,6 +1480,12 @@ func (m *CIWorkflowResultMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(ciworkflowresult.FieldPythonVersion) {
 		fields = append(fields, ciworkflowresult.FieldPythonVersion)
+	}
+	if m.FieldCleared(ciworkflowresult.FieldPytorchVersion) {
+		fields = append(fields, ciworkflowresult.FieldPytorchVersion)
+	}
+	if m.FieldCleared(ciworkflowresult.FieldCudaVersion) {
+		fields = append(fields, ciworkflowresult.FieldCudaVersion)
 	}
 	if m.FieldCleared(ciworkflowresult.FieldAvgVram) {
 		fields = append(fields, ciworkflowresult.FieldAvgVram)
@@ -1446,17 +1513,14 @@ func (m *CIWorkflowResultMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *CIWorkflowResultMutation) ClearField(name string) error {
 	switch name {
-	case ciworkflowresult.FieldGpuType:
-		m.ClearGpuType()
-		return nil
-	case ciworkflowresult.FieldPytorchVersion:
-		m.ClearPytorchVersion()
-		return nil
 	case ciworkflowresult.FieldWorkflowName:
 		m.ClearWorkflowName()
 		return nil
 	case ciworkflowresult.FieldRunID:
 		m.ClearRunID()
+		return nil
+	case ciworkflowresult.FieldJobID:
+		m.ClearJobID()
 		return nil
 	case ciworkflowresult.FieldStartTime:
 		m.ClearStartTime()
@@ -1466,6 +1530,12 @@ func (m *CIWorkflowResultMutation) ClearField(name string) error {
 		return nil
 	case ciworkflowresult.FieldPythonVersion:
 		m.ClearPythonVersion()
+		return nil
+	case ciworkflowresult.FieldPytorchVersion:
+		m.ClearPytorchVersion()
+		return nil
+	case ciworkflowresult.FieldCudaVersion:
+		m.ClearCudaVersion()
 		return nil
 	case ciworkflowresult.FieldAvgVram:
 		m.ClearAvgVram()
@@ -1496,17 +1566,14 @@ func (m *CIWorkflowResultMutation) ResetField(name string) error {
 	case ciworkflowresult.FieldOperatingSystem:
 		m.ResetOperatingSystem()
 		return nil
-	case ciworkflowresult.FieldGpuType:
-		m.ResetGpuType()
-		return nil
-	case ciworkflowresult.FieldPytorchVersion:
-		m.ResetPytorchVersion()
-		return nil
 	case ciworkflowresult.FieldWorkflowName:
 		m.ResetWorkflowName()
 		return nil
 	case ciworkflowresult.FieldRunID:
 		m.ResetRunID()
+		return nil
+	case ciworkflowresult.FieldJobID:
+		m.ResetJobID()
 		return nil
 	case ciworkflowresult.FieldStatus:
 		m.ResetStatus()
@@ -1519,6 +1586,12 @@ func (m *CIWorkflowResultMutation) ResetField(name string) error {
 		return nil
 	case ciworkflowresult.FieldPythonVersion:
 		m.ResetPythonVersion()
+		return nil
+	case ciworkflowresult.FieldPytorchVersion:
+		m.ResetPytorchVersion()
+		return nil
+	case ciworkflowresult.FieldCudaVersion:
+		m.ResetCudaVersion()
 		return nil
 	case ciworkflowresult.FieldAvgVram:
 		m.ResetAvgVram()

@@ -53,46 +53,6 @@ func (cwru *CIWorkflowResultUpdate) SetNillableOperatingSystem(s *string) *CIWor
 	return cwru
 }
 
-// SetGpuType sets the "gpu_type" field.
-func (cwru *CIWorkflowResultUpdate) SetGpuType(s string) *CIWorkflowResultUpdate {
-	cwru.mutation.SetGpuType(s)
-	return cwru
-}
-
-// SetNillableGpuType sets the "gpu_type" field if the given value is not nil.
-func (cwru *CIWorkflowResultUpdate) SetNillableGpuType(s *string) *CIWorkflowResultUpdate {
-	if s != nil {
-		cwru.SetGpuType(*s)
-	}
-	return cwru
-}
-
-// ClearGpuType clears the value of the "gpu_type" field.
-func (cwru *CIWorkflowResultUpdate) ClearGpuType() *CIWorkflowResultUpdate {
-	cwru.mutation.ClearGpuType()
-	return cwru
-}
-
-// SetPytorchVersion sets the "pytorch_version" field.
-func (cwru *CIWorkflowResultUpdate) SetPytorchVersion(s string) *CIWorkflowResultUpdate {
-	cwru.mutation.SetPytorchVersion(s)
-	return cwru
-}
-
-// SetNillablePytorchVersion sets the "pytorch_version" field if the given value is not nil.
-func (cwru *CIWorkflowResultUpdate) SetNillablePytorchVersion(s *string) *CIWorkflowResultUpdate {
-	if s != nil {
-		cwru.SetPytorchVersion(*s)
-	}
-	return cwru
-}
-
-// ClearPytorchVersion clears the value of the "pytorch_version" field.
-func (cwru *CIWorkflowResultUpdate) ClearPytorchVersion() *CIWorkflowResultUpdate {
-	cwru.mutation.ClearPytorchVersion()
-	return cwru
-}
-
 // SetWorkflowName sets the "workflow_name" field.
 func (cwru *CIWorkflowResultUpdate) SetWorkflowName(s string) *CIWorkflowResultUpdate {
 	cwru.mutation.SetWorkflowName(s)
@@ -130,6 +90,26 @@ func (cwru *CIWorkflowResultUpdate) SetNillableRunID(s *string) *CIWorkflowResul
 // ClearRunID clears the value of the "run_id" field.
 func (cwru *CIWorkflowResultUpdate) ClearRunID() *CIWorkflowResultUpdate {
 	cwru.mutation.ClearRunID()
+	return cwru
+}
+
+// SetJobID sets the "job_id" field.
+func (cwru *CIWorkflowResultUpdate) SetJobID(s string) *CIWorkflowResultUpdate {
+	cwru.mutation.SetJobID(s)
+	return cwru
+}
+
+// SetNillableJobID sets the "job_id" field if the given value is not nil.
+func (cwru *CIWorkflowResultUpdate) SetNillableJobID(s *string) *CIWorkflowResultUpdate {
+	if s != nil {
+		cwru.SetJobID(*s)
+	}
+	return cwru
+}
+
+// ClearJobID clears the value of the "job_id" field.
+func (cwru *CIWorkflowResultUpdate) ClearJobID() *CIWorkflowResultUpdate {
+	cwru.mutation.ClearJobID()
 	return cwru
 }
 
@@ -218,6 +198,46 @@ func (cwru *CIWorkflowResultUpdate) SetNillablePythonVersion(s *string) *CIWorkf
 // ClearPythonVersion clears the value of the "python_version" field.
 func (cwru *CIWorkflowResultUpdate) ClearPythonVersion() *CIWorkflowResultUpdate {
 	cwru.mutation.ClearPythonVersion()
+	return cwru
+}
+
+// SetPytorchVersion sets the "pytorch_version" field.
+func (cwru *CIWorkflowResultUpdate) SetPytorchVersion(s string) *CIWorkflowResultUpdate {
+	cwru.mutation.SetPytorchVersion(s)
+	return cwru
+}
+
+// SetNillablePytorchVersion sets the "pytorch_version" field if the given value is not nil.
+func (cwru *CIWorkflowResultUpdate) SetNillablePytorchVersion(s *string) *CIWorkflowResultUpdate {
+	if s != nil {
+		cwru.SetPytorchVersion(*s)
+	}
+	return cwru
+}
+
+// ClearPytorchVersion clears the value of the "pytorch_version" field.
+func (cwru *CIWorkflowResultUpdate) ClearPytorchVersion() *CIWorkflowResultUpdate {
+	cwru.mutation.ClearPytorchVersion()
+	return cwru
+}
+
+// SetCudaVersion sets the "cuda_version" field.
+func (cwru *CIWorkflowResultUpdate) SetCudaVersion(s string) *CIWorkflowResultUpdate {
+	cwru.mutation.SetCudaVersion(s)
+	return cwru
+}
+
+// SetNillableCudaVersion sets the "cuda_version" field if the given value is not nil.
+func (cwru *CIWorkflowResultUpdate) SetNillableCudaVersion(s *string) *CIWorkflowResultUpdate {
+	if s != nil {
+		cwru.SetCudaVersion(*s)
+	}
+	return cwru
+}
+
+// ClearCudaVersion clears the value of the "cuda_version" field.
+func (cwru *CIWorkflowResultUpdate) ClearCudaVersion() *CIWorkflowResultUpdate {
+	cwru.mutation.ClearCudaVersion()
 	return cwru
 }
 
@@ -430,18 +450,6 @@ func (cwru *CIWorkflowResultUpdate) sqlSave(ctx context.Context) (n int, err err
 	if value, ok := cwru.mutation.OperatingSystem(); ok {
 		_spec.SetField(ciworkflowresult.FieldOperatingSystem, field.TypeString, value)
 	}
-	if value, ok := cwru.mutation.GpuType(); ok {
-		_spec.SetField(ciworkflowresult.FieldGpuType, field.TypeString, value)
-	}
-	if cwru.mutation.GpuTypeCleared() {
-		_spec.ClearField(ciworkflowresult.FieldGpuType, field.TypeString)
-	}
-	if value, ok := cwru.mutation.PytorchVersion(); ok {
-		_spec.SetField(ciworkflowresult.FieldPytorchVersion, field.TypeString, value)
-	}
-	if cwru.mutation.PytorchVersionCleared() {
-		_spec.ClearField(ciworkflowresult.FieldPytorchVersion, field.TypeString)
-	}
 	if value, ok := cwru.mutation.WorkflowName(); ok {
 		_spec.SetField(ciworkflowresult.FieldWorkflowName, field.TypeString, value)
 	}
@@ -453,6 +461,12 @@ func (cwru *CIWorkflowResultUpdate) sqlSave(ctx context.Context) (n int, err err
 	}
 	if cwru.mutation.RunIDCleared() {
 		_spec.ClearField(ciworkflowresult.FieldRunID, field.TypeString)
+	}
+	if value, ok := cwru.mutation.JobID(); ok {
+		_spec.SetField(ciworkflowresult.FieldJobID, field.TypeString, value)
+	}
+	if cwru.mutation.JobIDCleared() {
+		_spec.ClearField(ciworkflowresult.FieldJobID, field.TypeString)
 	}
 	if value, ok := cwru.mutation.Status(); ok {
 		_spec.SetField(ciworkflowresult.FieldStatus, field.TypeString, value)
@@ -480,6 +494,18 @@ func (cwru *CIWorkflowResultUpdate) sqlSave(ctx context.Context) (n int, err err
 	}
 	if cwru.mutation.PythonVersionCleared() {
 		_spec.ClearField(ciworkflowresult.FieldPythonVersion, field.TypeString)
+	}
+	if value, ok := cwru.mutation.PytorchVersion(); ok {
+		_spec.SetField(ciworkflowresult.FieldPytorchVersion, field.TypeString, value)
+	}
+	if cwru.mutation.PytorchVersionCleared() {
+		_spec.ClearField(ciworkflowresult.FieldPytorchVersion, field.TypeString)
+	}
+	if value, ok := cwru.mutation.CudaVersion(); ok {
+		_spec.SetField(ciworkflowresult.FieldCudaVersion, field.TypeString, value)
+	}
+	if cwru.mutation.CudaVersionCleared() {
+		_spec.ClearField(ciworkflowresult.FieldCudaVersion, field.TypeString)
 	}
 	if value, ok := cwru.mutation.AvgVram(); ok {
 		_spec.SetField(ciworkflowresult.FieldAvgVram, field.TypeInt, value)
@@ -627,46 +653,6 @@ func (cwruo *CIWorkflowResultUpdateOne) SetNillableOperatingSystem(s *string) *C
 	return cwruo
 }
 
-// SetGpuType sets the "gpu_type" field.
-func (cwruo *CIWorkflowResultUpdateOne) SetGpuType(s string) *CIWorkflowResultUpdateOne {
-	cwruo.mutation.SetGpuType(s)
-	return cwruo
-}
-
-// SetNillableGpuType sets the "gpu_type" field if the given value is not nil.
-func (cwruo *CIWorkflowResultUpdateOne) SetNillableGpuType(s *string) *CIWorkflowResultUpdateOne {
-	if s != nil {
-		cwruo.SetGpuType(*s)
-	}
-	return cwruo
-}
-
-// ClearGpuType clears the value of the "gpu_type" field.
-func (cwruo *CIWorkflowResultUpdateOne) ClearGpuType() *CIWorkflowResultUpdateOne {
-	cwruo.mutation.ClearGpuType()
-	return cwruo
-}
-
-// SetPytorchVersion sets the "pytorch_version" field.
-func (cwruo *CIWorkflowResultUpdateOne) SetPytorchVersion(s string) *CIWorkflowResultUpdateOne {
-	cwruo.mutation.SetPytorchVersion(s)
-	return cwruo
-}
-
-// SetNillablePytorchVersion sets the "pytorch_version" field if the given value is not nil.
-func (cwruo *CIWorkflowResultUpdateOne) SetNillablePytorchVersion(s *string) *CIWorkflowResultUpdateOne {
-	if s != nil {
-		cwruo.SetPytorchVersion(*s)
-	}
-	return cwruo
-}
-
-// ClearPytorchVersion clears the value of the "pytorch_version" field.
-func (cwruo *CIWorkflowResultUpdateOne) ClearPytorchVersion() *CIWorkflowResultUpdateOne {
-	cwruo.mutation.ClearPytorchVersion()
-	return cwruo
-}
-
 // SetWorkflowName sets the "workflow_name" field.
 func (cwruo *CIWorkflowResultUpdateOne) SetWorkflowName(s string) *CIWorkflowResultUpdateOne {
 	cwruo.mutation.SetWorkflowName(s)
@@ -704,6 +690,26 @@ func (cwruo *CIWorkflowResultUpdateOne) SetNillableRunID(s *string) *CIWorkflowR
 // ClearRunID clears the value of the "run_id" field.
 func (cwruo *CIWorkflowResultUpdateOne) ClearRunID() *CIWorkflowResultUpdateOne {
 	cwruo.mutation.ClearRunID()
+	return cwruo
+}
+
+// SetJobID sets the "job_id" field.
+func (cwruo *CIWorkflowResultUpdateOne) SetJobID(s string) *CIWorkflowResultUpdateOne {
+	cwruo.mutation.SetJobID(s)
+	return cwruo
+}
+
+// SetNillableJobID sets the "job_id" field if the given value is not nil.
+func (cwruo *CIWorkflowResultUpdateOne) SetNillableJobID(s *string) *CIWorkflowResultUpdateOne {
+	if s != nil {
+		cwruo.SetJobID(*s)
+	}
+	return cwruo
+}
+
+// ClearJobID clears the value of the "job_id" field.
+func (cwruo *CIWorkflowResultUpdateOne) ClearJobID() *CIWorkflowResultUpdateOne {
+	cwruo.mutation.ClearJobID()
 	return cwruo
 }
 
@@ -792,6 +798,46 @@ func (cwruo *CIWorkflowResultUpdateOne) SetNillablePythonVersion(s *string) *CIW
 // ClearPythonVersion clears the value of the "python_version" field.
 func (cwruo *CIWorkflowResultUpdateOne) ClearPythonVersion() *CIWorkflowResultUpdateOne {
 	cwruo.mutation.ClearPythonVersion()
+	return cwruo
+}
+
+// SetPytorchVersion sets the "pytorch_version" field.
+func (cwruo *CIWorkflowResultUpdateOne) SetPytorchVersion(s string) *CIWorkflowResultUpdateOne {
+	cwruo.mutation.SetPytorchVersion(s)
+	return cwruo
+}
+
+// SetNillablePytorchVersion sets the "pytorch_version" field if the given value is not nil.
+func (cwruo *CIWorkflowResultUpdateOne) SetNillablePytorchVersion(s *string) *CIWorkflowResultUpdateOne {
+	if s != nil {
+		cwruo.SetPytorchVersion(*s)
+	}
+	return cwruo
+}
+
+// ClearPytorchVersion clears the value of the "pytorch_version" field.
+func (cwruo *CIWorkflowResultUpdateOne) ClearPytorchVersion() *CIWorkflowResultUpdateOne {
+	cwruo.mutation.ClearPytorchVersion()
+	return cwruo
+}
+
+// SetCudaVersion sets the "cuda_version" field.
+func (cwruo *CIWorkflowResultUpdateOne) SetCudaVersion(s string) *CIWorkflowResultUpdateOne {
+	cwruo.mutation.SetCudaVersion(s)
+	return cwruo
+}
+
+// SetNillableCudaVersion sets the "cuda_version" field if the given value is not nil.
+func (cwruo *CIWorkflowResultUpdateOne) SetNillableCudaVersion(s *string) *CIWorkflowResultUpdateOne {
+	if s != nil {
+		cwruo.SetCudaVersion(*s)
+	}
+	return cwruo
+}
+
+// ClearCudaVersion clears the value of the "cuda_version" field.
+func (cwruo *CIWorkflowResultUpdateOne) ClearCudaVersion() *CIWorkflowResultUpdateOne {
+	cwruo.mutation.ClearCudaVersion()
 	return cwruo
 }
 
@@ -1034,18 +1080,6 @@ func (cwruo *CIWorkflowResultUpdateOne) sqlSave(ctx context.Context) (_node *CIW
 	if value, ok := cwruo.mutation.OperatingSystem(); ok {
 		_spec.SetField(ciworkflowresult.FieldOperatingSystem, field.TypeString, value)
 	}
-	if value, ok := cwruo.mutation.GpuType(); ok {
-		_spec.SetField(ciworkflowresult.FieldGpuType, field.TypeString, value)
-	}
-	if cwruo.mutation.GpuTypeCleared() {
-		_spec.ClearField(ciworkflowresult.FieldGpuType, field.TypeString)
-	}
-	if value, ok := cwruo.mutation.PytorchVersion(); ok {
-		_spec.SetField(ciworkflowresult.FieldPytorchVersion, field.TypeString, value)
-	}
-	if cwruo.mutation.PytorchVersionCleared() {
-		_spec.ClearField(ciworkflowresult.FieldPytorchVersion, field.TypeString)
-	}
 	if value, ok := cwruo.mutation.WorkflowName(); ok {
 		_spec.SetField(ciworkflowresult.FieldWorkflowName, field.TypeString, value)
 	}
@@ -1057,6 +1091,12 @@ func (cwruo *CIWorkflowResultUpdateOne) sqlSave(ctx context.Context) (_node *CIW
 	}
 	if cwruo.mutation.RunIDCleared() {
 		_spec.ClearField(ciworkflowresult.FieldRunID, field.TypeString)
+	}
+	if value, ok := cwruo.mutation.JobID(); ok {
+		_spec.SetField(ciworkflowresult.FieldJobID, field.TypeString, value)
+	}
+	if cwruo.mutation.JobIDCleared() {
+		_spec.ClearField(ciworkflowresult.FieldJobID, field.TypeString)
 	}
 	if value, ok := cwruo.mutation.Status(); ok {
 		_spec.SetField(ciworkflowresult.FieldStatus, field.TypeString, value)
@@ -1084,6 +1124,18 @@ func (cwruo *CIWorkflowResultUpdateOne) sqlSave(ctx context.Context) (_node *CIW
 	}
 	if cwruo.mutation.PythonVersionCleared() {
 		_spec.ClearField(ciworkflowresult.FieldPythonVersion, field.TypeString)
+	}
+	if value, ok := cwruo.mutation.PytorchVersion(); ok {
+		_spec.SetField(ciworkflowresult.FieldPytorchVersion, field.TypeString, value)
+	}
+	if cwruo.mutation.PytorchVersionCleared() {
+		_spec.ClearField(ciworkflowresult.FieldPytorchVersion, field.TypeString)
+	}
+	if value, ok := cwruo.mutation.CudaVersion(); ok {
+		_spec.SetField(ciworkflowresult.FieldCudaVersion, field.TypeString, value)
+	}
+	if cwruo.mutation.CudaVersionCleared() {
+		_spec.ClearField(ciworkflowresult.FieldCudaVersion, field.TypeString)
 	}
 	if value, ok := cwruo.mutation.AvgVram(); ok {
 		_spec.SetField(ciworkflowresult.FieldAvgVram, field.TypeInt, value)
