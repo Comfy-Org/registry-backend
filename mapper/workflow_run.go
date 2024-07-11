@@ -107,6 +107,7 @@ func MachineStatsToMap(ms *drip.MachineStats) map[string]interface{} {
 		"OsVersion":      ms.OsVersion,
 		"PipFreeze":      ms.PipFreeze,
 		"VramTimeSeries": ms.VramTimeSeries,
+		"MachineName":    ms.MachineName,
 	}
 }
 
@@ -135,6 +136,7 @@ func MapToMachineStats(data map[string]interface{}) (*drip.MachineStats, error) 
 	ms.MemoryCapacity = getStringPtr("MemoryCapacity")
 	ms.OsVersion = getStringPtr("OsVersion")
 	ms.PipFreeze = getStringPtr("PipFreeze")
+	ms.MachineName = getStringPtr("MachineName")
 
 	if val, exists := data["VramTimeSeries"]; exists {
 		if vram, ok := val.(map[string]interface{}); ok {

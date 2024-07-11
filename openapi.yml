@@ -2026,6 +2026,9 @@ components:
     MachineStats:
       type: object
       properties:
+        machine_name:
+          type: string
+          description: Name of the machine.
         os_version:
           type: string
           description: The operating system version. eg. Ubuntu Linux 20.04

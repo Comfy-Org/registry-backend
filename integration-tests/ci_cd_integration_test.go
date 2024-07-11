@@ -73,6 +73,7 @@ func TestCICD(t *testing.T) {
 			MemoryCapacity: proto.String("2.0"),
 			OsVersion:      proto.String("Ubuntu 24.10"),
 			PipFreeze:      proto.String("requests==1.0.0"),
+			MachineName:    proto.String("comfy-dev"),
 		},
 	}
 
