@@ -44,6 +44,8 @@ const (
 	FieldPeakVram = "peak_vram"
 	// FieldJobTriggerUser holds the string denoting the job_trigger_user field in the database.
 	FieldJobTriggerUser = "job_trigger_user"
+	// FieldMetadata holds the string denoting the metadata field in the database.
+	FieldMetadata = "metadata"
 	// EdgeGitcommit holds the string denoting the gitcommit edge name in mutations.
 	EdgeGitcommit = "gitcommit"
 	// EdgeStorageFile holds the string denoting the storage_file edge name in mutations.
@@ -83,6 +85,7 @@ var Columns = []string{
 	FieldAvgVram,
 	FieldPeakVram,
 	FieldJobTriggerUser,
+	FieldMetadata,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "ci_workflow_results"

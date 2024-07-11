@@ -96,6 +96,8 @@ paths:
                 python_version:
                   type: string
                   description: The python version used in the run
+                machine_stats:
+                  $ref: "#/components/schemas/MachineStats"
                 status:
                   $ref: "#/components/schemas/WorkflowRunStatus"
               required:
@@ -1803,6 +1805,8 @@ components:
         author: 
           type: string
           description: The author of the commit
+        machine_stats:
+          $ref: "#/components/schemas/MachineStats"
         status: 
           $ref: "#/components/schemas/WorkflowRunStatus"
         storage_file:
@@ -1990,7 +1994,36 @@ components:
         - WorkflowRunStatusStarted
         - WorkflowRunStatusFailed
         - WorkflowRunStatusCompleted
-
+    MachineStats:
+      type: object
+      properties:
+        os_version:
+          type: string
+          description: The operating system version. eg. Ubuntu Linux 20.04
+        cpu_capacity:
+          type: string
+          description: Total CPU on the machine.
+        initial_cpu:
+          type: string
+          description: Initial CPU available before the job starts.
+        memory_capacity:
+          type: string
+          description: Total memory on the machine.
+        initial_ram:
+          type: string
+          description: Initial RAM available before the job starts.
+        vram_time_series:
+          type: object
+          description: Time series of VRAM usage.
+        disk_capacity:
+          type: string
+          description: Total disk capacity on the machine.
+        initial_disk:
+          type: string
+          description: Initial disk available before the job starts.
+        pip_freeze:
+          type: string
+          description: The pip freeze output
   securitySchemes:
     BearerAuth:
       type: http

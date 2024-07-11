@@ -25,6 +25,7 @@ var (
 		{Name: "avg_vram", Type: field.TypeInt, Nullable: true},
 		{Name: "peak_vram", Type: field.TypeInt, Nullable: true},
 		{Name: "job_trigger_user", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true, SchemaType: map[string]string{"postgres": "jsonb"}},
 		{Name: "git_commit_results", Type: field.TypeUUID, Nullable: true},
 	}
 	// CiWorkflowResultsTable holds the schema information for the "ci_workflow_results" table.
@@ -35,7 +36,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "ci_workflow_results_git_commits_results",
-				Columns:    []*schema.Column{CiWorkflowResultsColumns[15]},
+				Columns:    []*schema.Column{CiWorkflowResultsColumns[16]},
 				RefColumns: []*schema.Column{GitCommitsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

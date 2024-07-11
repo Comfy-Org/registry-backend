@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/gitcommit"
@@ -48,6 +49,8 @@ type CIWorkflowResult struct {
 	PeakVram int `json:"peak_vram,omitempty"`
 	// User who triggered the job
 	JobTriggerUser string `json:"job_trigger_user,omitempty"`
+	// Stores miscellaneous metadata for each workflow run.
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CIWorkflowResultQuery when eager-loading is set.
 	Edges              CIWorkflowResultEdges `json:"edges"`
@@ -91,6 +94,8 @@ func (*CIWorkflowResult) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case ciworkflowresult.FieldMetadata:
+			values[i] = new([]byte)
 		case ciworkflowresult.FieldStartTime, ciworkflowresult.FieldEndTime, ciworkflowresult.FieldAvgVram, ciworkflowresult.FieldPeakVram:
 			values[i] = new(sql.NullInt64)
 		case ciworkflowresult.FieldOperatingSystem, ciworkflowresult.FieldGpuType, ciworkflowresult.FieldPytorchVersion, ciworkflowresult.FieldWorkflowName, ciworkflowresult.FieldRunID, ciworkflowresult.FieldStatus, ciworkflowresult.FieldPythonVersion, ciworkflowresult.FieldJobTriggerUser:
@@ -206,6 +211,14 @@ func (cwr *CIWorkflowResult) assignValues(columns []string, values []any) error 
 			} else if value.Valid {
 				cwr.JobTriggerUser = value.String
 			}
+		case ciworkflowresult.FieldMetadata:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field metadata", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &cwr.Metadata); err != nil {
+					return fmt.Errorf("unmarshal field metadata: %w", err)
+				}
+			}
 		case ciworkflowresult.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field git_commit_results", values[i])
@@ -300,6 +313,9 @@ func (cwr *CIWorkflowResult) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("job_trigger_user=")
 	builder.WriteString(cwr.JobTriggerUser)
+	builder.WriteString(", ")
+	builder.WriteString("metadata=")
+	builder.WriteString(fmt.Sprintf("%v", cwr.Metadata))
 	builder.WriteByte(')')
 	return builder.String()
 }

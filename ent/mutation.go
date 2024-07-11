@@ -71,6 +71,7 @@ type CIWorkflowResultMutation struct {
 	peak_vram           *int
 	addpeak_vram        *int
 	job_trigger_user    *string
+	metadata            *map[string]interface{}
 	clearedFields       map[string]struct{}
 	gitcommit           *uuid.UUID
 	clearedgitcommit    bool
@@ -904,6 +905,55 @@ func (m *CIWorkflowResultMutation) ResetJobTriggerUser() {
 	delete(m.clearedFields, ciworkflowresult.FieldJobTriggerUser)
 }
 
+// SetMetadata sets the "metadata" field.
+func (m *CIWorkflowResultMutation) SetMetadata(value map[string]interface{}) {
+	m.metadata = &value
+}
+
+// Metadata returns the value of the "metadata" field in the mutation.
+func (m *CIWorkflowResultMutation) Metadata() (r map[string]interface{}, exists bool) {
+	v := m.metadata
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMetadata returns the old "metadata" field's value of the CIWorkflowResult entity.
+// If the CIWorkflowResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CIWorkflowResultMutation) OldMetadata(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMetadata is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMetadata requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMetadata: %w", err)
+	}
+	return oldValue.Metadata, nil
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (m *CIWorkflowResultMutation) ClearMetadata() {
+	m.metadata = nil
+	m.clearedFields[ciworkflowresult.FieldMetadata] = struct{}{}
+}
+
+// MetadataCleared returns if the "metadata" field was cleared in this mutation.
+func (m *CIWorkflowResultMutation) MetadataCleared() bool {
+	_, ok := m.clearedFields[ciworkflowresult.FieldMetadata]
+	return ok
+}
+
+// ResetMetadata resets all changes to the "metadata" field.
+func (m *CIWorkflowResultMutation) ResetMetadata() {
+	m.metadata = nil
+	delete(m.clearedFields, ciworkflowresult.FieldMetadata)
+}
+
 // SetGitcommitID sets the "gitcommit" edge to the GitCommit entity by id.
 func (m *CIWorkflowResultMutation) SetGitcommitID(id uuid.UUID) {
 	m.gitcommit = &id
@@ -1031,7 +1081,7 @@ func (m *CIWorkflowResultMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CIWorkflowResultMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 15)
 	if m.create_time != nil {
 		fields = append(fields, ciworkflowresult.FieldCreateTime)
 	}
@@ -1074,6 +1124,9 @@ func (m *CIWorkflowResultMutation) Fields() []string {
 	if m.job_trigger_user != nil {
 		fields = append(fields, ciworkflowresult.FieldJobTriggerUser)
 	}
+	if m.metadata != nil {
+		fields = append(fields, ciworkflowresult.FieldMetadata)
+	}
 	return fields
 }
 
@@ -1110,6 +1163,8 @@ func (m *CIWorkflowResultMutation) Field(name string) (ent.Value, bool) {
 		return m.PeakVram()
 	case ciworkflowresult.FieldJobTriggerUser:
 		return m.JobTriggerUser()
+	case ciworkflowresult.FieldMetadata:
+		return m.Metadata()
 	}
 	return nil, false
 }
@@ -1147,6 +1202,8 @@ func (m *CIWorkflowResultMutation) OldField(ctx context.Context, name string) (e
 		return m.OldPeakVram(ctx)
 	case ciworkflowresult.FieldJobTriggerUser:
 		return m.OldJobTriggerUser(ctx)
+	case ciworkflowresult.FieldMetadata:
+		return m.OldMetadata(ctx)
 	}
 	return nil, fmt.Errorf("unknown CIWorkflowResult field %s", name)
 }
@@ -1253,6 +1310,13 @@ func (m *CIWorkflowResultMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetJobTriggerUser(v)
+		return nil
+	case ciworkflowresult.FieldMetadata:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMetadata(v)
 		return nil
 	}
 	return fmt.Errorf("unknown CIWorkflowResult field %s", name)
@@ -1365,6 +1429,9 @@ func (m *CIWorkflowResultMutation) ClearedFields() []string {
 	if m.FieldCleared(ciworkflowresult.FieldJobTriggerUser) {
 		fields = append(fields, ciworkflowresult.FieldJobTriggerUser)
 	}
+	if m.FieldCleared(ciworkflowresult.FieldMetadata) {
+		fields = append(fields, ciworkflowresult.FieldMetadata)
+	}
 	return fields
 }
 
@@ -1408,6 +1475,9 @@ func (m *CIWorkflowResultMutation) ClearField(name string) error {
 		return nil
 	case ciworkflowresult.FieldJobTriggerUser:
 		m.ClearJobTriggerUser()
+		return nil
+	case ciworkflowresult.FieldMetadata:
+		m.ClearMetadata()
 		return nil
 	}
 	return fmt.Errorf("unknown CIWorkflowResult nullable field %s", name)
@@ -1458,6 +1528,9 @@ func (m *CIWorkflowResultMutation) ResetField(name string) error {
 		return nil
 	case ciworkflowresult.FieldJobTriggerUser:
 		m.ResetJobTriggerUser()
+		return nil
+	case ciworkflowresult.FieldMetadata:
+		m.ResetMetadata()
 		return nil
 	}
 	return fmt.Errorf("unknown CIWorkflowResult field %s", name)

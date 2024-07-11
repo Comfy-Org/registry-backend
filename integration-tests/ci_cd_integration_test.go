@@ -64,6 +64,16 @@ func TestCICD(t *testing.T) {
 		Author:              "robin",
 		AvgVram:             &avgVram,
 		Status:              drip.WorkflowRunStatusStarted,
+		MachineStats: &drip.MachineStats{
+			CpuCapacity:    proto.String("2.0"),
+			InitialCpu:     proto.String("1.0"),
+			InitialDisk:    proto.String("1.0"),
+			DiskCapacity:   proto.String("2.0"),
+			InitialRam:     proto.String("1.0"),
+			MemoryCapacity: proto.String("2.0"),
+			OsVersion:      proto.String("Ubuntu 24.10"),
+			PipFreeze:      proto.String("requests==1.0.0"),
+		},
 	}
 
 	t.Run("Post Upload Artifact", func(t *testing.T) {
@@ -122,6 +132,7 @@ func TestCICD(t *testing.T) {
 			StorageFile: &drip.StorageFile{
 				PublicUrl: proto.String(fmt.Sprintf("https://storage.googleapis.com/%s/%s", *body.BucketName, *body.OutputFilesGcsPaths)),
 			},
+			MachineStats: body.MachineStats,
 		}, (*res200.JobResults)[0])
 	})
 

@@ -215,6 +215,12 @@ func (cwrc *CIWorkflowResultCreate) SetNillableJobTriggerUser(s *string) *CIWork
 	return cwrc
 }
 
+// SetMetadata sets the "metadata" field.
+func (cwrc *CIWorkflowResultCreate) SetMetadata(m map[string]interface{}) *CIWorkflowResultCreate {
+	cwrc.mutation.SetMetadata(m)
+	return cwrc
+}
+
 // SetID sets the "id" field.
 func (cwrc *CIWorkflowResultCreate) SetID(u uuid.UUID) *CIWorkflowResultCreate {
 	cwrc.mutation.SetID(u)
@@ -421,6 +427,10 @@ func (cwrc *CIWorkflowResultCreate) createSpec() (*CIWorkflowResult, *sqlgraph.C
 	if value, ok := cwrc.mutation.JobTriggerUser(); ok {
 		_spec.SetField(ciworkflowresult.FieldJobTriggerUser, field.TypeString, value)
 		_node.JobTriggerUser = value
+	}
+	if value, ok := cwrc.mutation.Metadata(); ok {
+		_spec.SetField(ciworkflowresult.FieldMetadata, field.TypeJSON, value)
+		_node.Metadata = value
 	}
 	if nodes := cwrc.mutation.GitcommitIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -744,6 +754,24 @@ func (u *CIWorkflowResultUpsert) UpdateJobTriggerUser() *CIWorkflowResultUpsert 
 // ClearJobTriggerUser clears the value of the "job_trigger_user" field.
 func (u *CIWorkflowResultUpsert) ClearJobTriggerUser() *CIWorkflowResultUpsert {
 	u.SetNull(ciworkflowresult.FieldJobTriggerUser)
+	return u
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *CIWorkflowResultUpsert) SetMetadata(v map[string]interface{}) *CIWorkflowResultUpsert {
+	u.Set(ciworkflowresult.FieldMetadata, v)
+	return u
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsert) UpdateMetadata() *CIWorkflowResultUpsert {
+	u.SetExcluded(ciworkflowresult.FieldMetadata)
+	return u
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *CIWorkflowResultUpsert) ClearMetadata() *CIWorkflowResultUpsert {
+	u.SetNull(ciworkflowresult.FieldMetadata)
 	return u
 }
 
@@ -1075,6 +1103,27 @@ func (u *CIWorkflowResultUpsertOne) UpdateJobTriggerUser() *CIWorkflowResultUpse
 func (u *CIWorkflowResultUpsertOne) ClearJobTriggerUser() *CIWorkflowResultUpsertOne {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
 		s.ClearJobTriggerUser()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *CIWorkflowResultUpsertOne) SetMetadata(v map[string]interface{}) *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertOne) UpdateMetadata() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *CIWorkflowResultUpsertOne) ClearMetadata() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearMetadata()
 	})
 }
 
@@ -1573,6 +1622,27 @@ func (u *CIWorkflowResultUpsertBulk) UpdateJobTriggerUser() *CIWorkflowResultUps
 func (u *CIWorkflowResultUpsertBulk) ClearJobTriggerUser() *CIWorkflowResultUpsertBulk {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
 		s.ClearJobTriggerUser()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *CIWorkflowResultUpsertBulk) SetMetadata(v map[string]interface{}) *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertBulk) UpdateMetadata() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *CIWorkflowResultUpsertBulk) ClearMetadata() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearMetadata()
 	})
 }
 

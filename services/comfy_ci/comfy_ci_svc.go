@@ -78,7 +78,7 @@ func (s *ComfyCIService) ProcessCIRequest(ctx context.Context, client *ent.Clien
 		if req.Body.PeakVram != nil {
 			peakVram = *req.Body.PeakVram
 		}
-		workflowResultId, err := s.UpsertRunResult(ctx, tx.Client(), gitcommit, req.Body.Os, cudaVersion, req.Body.WorkflowName, req.Body.RunId, req.Body.StartTime, req.Body.EndTime, avgVram, peakVram, req.Body.PythonVersion, req.Body.JobTriggerUser, req.Body.Status)
+		workflowResultId, err := s.UpsertRunResult(ctx, tx.Client(), gitcommit, req.Body.Os, cudaVersion, req.Body.WorkflowName, req.Body.RunId, req.Body.StartTime, req.Body.EndTime, avgVram, peakVram, req.Body.PythonVersion, req.Body.JobTriggerUser, req.Body.Status, req.Body.MachineStats)
 		if err != nil {
 			return err
 		}
@@ -142,7 +142,7 @@ func (s *ComfyCIService) UpsertCommit(ctx context.Context, client *ent.Client, h
 }
 
 // UpsertRunResult creates or updates a ActionRunResult entity.
-func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client, gitcommit *ent.GitCommit, os, gpuType, workflowName, runId string, startTime, endTime int64, avgVram, peakVram int, pythonVersion, jobTriggerUser string, status drip.WorkflowRunStatus) (uuid.UUID, error) {
+func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client, gitcommit *ent.GitCommit, os, gpuType, workflowName, runId string, startTime, endTime int64, avgVram, peakVram int, pythonVersion, jobTriggerUser string, status drip.WorkflowRunStatus, machineStats *drip.MachineStats) (uuid.UUID, error) {
 	log.Ctx(ctx).Info().Msgf("Upserting workflow result for commit %s", gitcommit.CommitHash)
 	dbWorkflowRunStatus, err := mapper.ApiWorkflowRunStatusToDb(status)
 	if err != nil {
@@ -161,6 +161,7 @@ func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client
 		SetPeakVram(peakVram).
 		SetStatus(dbWorkflowRunStatus).
 		SetJobTriggerUser(jobTriggerUser).
+		SetMetadata(mapper.MachineStatsToMap(machineStats)).
 		OnConflict(
 			sql.ConflictColumns(ciworkflowresult.FieldID),
 		).

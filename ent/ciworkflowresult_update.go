@@ -295,6 +295,18 @@ func (cwru *CIWorkflowResultUpdate) ClearJobTriggerUser() *CIWorkflowResultUpdat
 	return cwru
 }
 
+// SetMetadata sets the "metadata" field.
+func (cwru *CIWorkflowResultUpdate) SetMetadata(m map[string]interface{}) *CIWorkflowResultUpdate {
+	cwru.mutation.SetMetadata(m)
+	return cwru
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (cwru *CIWorkflowResultUpdate) ClearMetadata() *CIWorkflowResultUpdate {
+	cwru.mutation.ClearMetadata()
+	return cwru
+}
+
 // SetGitcommitID sets the "gitcommit" edge to the GitCommit entity by ID.
 func (cwru *CIWorkflowResultUpdate) SetGitcommitID(id uuid.UUID) *CIWorkflowResultUpdate {
 	cwru.mutation.SetGitcommitID(id)
@@ -492,6 +504,12 @@ func (cwru *CIWorkflowResultUpdate) sqlSave(ctx context.Context) (n int, err err
 	}
 	if cwru.mutation.JobTriggerUserCleared() {
 		_spec.ClearField(ciworkflowresult.FieldJobTriggerUser, field.TypeString)
+	}
+	if value, ok := cwru.mutation.Metadata(); ok {
+		_spec.SetField(ciworkflowresult.FieldMetadata, field.TypeJSON, value)
+	}
+	if cwru.mutation.MetadataCleared() {
+		_spec.ClearField(ciworkflowresult.FieldMetadata, field.TypeJSON)
 	}
 	if cwru.mutation.GitcommitCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -851,6 +869,18 @@ func (cwruo *CIWorkflowResultUpdateOne) ClearJobTriggerUser() *CIWorkflowResultU
 	return cwruo
 }
 
+// SetMetadata sets the "metadata" field.
+func (cwruo *CIWorkflowResultUpdateOne) SetMetadata(m map[string]interface{}) *CIWorkflowResultUpdateOne {
+	cwruo.mutation.SetMetadata(m)
+	return cwruo
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (cwruo *CIWorkflowResultUpdateOne) ClearMetadata() *CIWorkflowResultUpdateOne {
+	cwruo.mutation.ClearMetadata()
+	return cwruo
+}
+
 // SetGitcommitID sets the "gitcommit" edge to the GitCommit entity by ID.
 func (cwruo *CIWorkflowResultUpdateOne) SetGitcommitID(id uuid.UUID) *CIWorkflowResultUpdateOne {
 	cwruo.mutation.SetGitcommitID(id)
@@ -1078,6 +1108,12 @@ func (cwruo *CIWorkflowResultUpdateOne) sqlSave(ctx context.Context) (_node *CIW
 	}
 	if cwruo.mutation.JobTriggerUserCleared() {
 		_spec.ClearField(ciworkflowresult.FieldJobTriggerUser, field.TypeString)
+	}
+	if value, ok := cwruo.mutation.Metadata(); ok {
+		_spec.SetField(ciworkflowresult.FieldMetadata, field.TypeJSON, value)
+	}
+	if cwruo.mutation.MetadataCleared() {
+		_spec.ClearField(ciworkflowresult.FieldMetadata, field.TypeJSON)
 	}
 	if cwruo.mutation.GitcommitCleared() {
 		edge := &sqlgraph.EdgeSpec{
