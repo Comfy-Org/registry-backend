@@ -27,14 +27,12 @@ type CIWorkflowResult struct {
 	UpdateTime time.Time `json:"update_time,omitempty"`
 	// OperatingSystem holds the value of the "operating_system" field.
 	OperatingSystem string `json:"operating_system,omitempty"`
-	// GpuType holds the value of the "gpu_type" field.
-	GpuType string `json:"gpu_type,omitempty"`
-	// PytorchVersion holds the value of the "pytorch_version" field.
-	PytorchVersion string `json:"pytorch_version,omitempty"`
 	// WorkflowName holds the value of the "workflow_name" field.
 	WorkflowName string `json:"workflow_name,omitempty"`
 	// RunID holds the value of the "run_id" field.
 	RunID string `json:"run_id,omitempty"`
+	// JobID holds the value of the "job_id" field.
+	JobID string `json:"job_id,omitempty"`
 	// Status holds the value of the "status" field.
 	Status schema.WorkflowRunStatusType `json:"status,omitempty"`
 	// StartTime holds the value of the "start_time" field.
@@ -43,6 +41,10 @@ type CIWorkflowResult struct {
 	EndTime int64 `json:"end_time,omitempty"`
 	// PythonVersion holds the value of the "python_version" field.
 	PythonVersion string `json:"python_version,omitempty"`
+	// PytorchVersion holds the value of the "pytorch_version" field.
+	PytorchVersion string `json:"pytorch_version,omitempty"`
+	// CudaVersion holds the value of the "cuda_version" field.
+	CudaVersion string `json:"cuda_version,omitempty"`
 	// Average amount of VRAM used by the workflow in Megabytes
 	AvgVram int `json:"avg_vram,omitempty"`
 	// Peak amount of VRAM used by the workflow in Megabytes
@@ -98,7 +100,7 @@ func (*CIWorkflowResult) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case ciworkflowresult.FieldStartTime, ciworkflowresult.FieldEndTime, ciworkflowresult.FieldAvgVram, ciworkflowresult.FieldPeakVram:
 			values[i] = new(sql.NullInt64)
-		case ciworkflowresult.FieldOperatingSystem, ciworkflowresult.FieldGpuType, ciworkflowresult.FieldPytorchVersion, ciworkflowresult.FieldWorkflowName, ciworkflowresult.FieldRunID, ciworkflowresult.FieldStatus, ciworkflowresult.FieldPythonVersion, ciworkflowresult.FieldJobTriggerUser:
+		case ciworkflowresult.FieldOperatingSystem, ciworkflowresult.FieldWorkflowName, ciworkflowresult.FieldRunID, ciworkflowresult.FieldJobID, ciworkflowresult.FieldStatus, ciworkflowresult.FieldPythonVersion, ciworkflowresult.FieldPytorchVersion, ciworkflowresult.FieldCudaVersion, ciworkflowresult.FieldJobTriggerUser:
 			values[i] = new(sql.NullString)
 		case ciworkflowresult.FieldCreateTime, ciworkflowresult.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
@@ -145,18 +147,6 @@ func (cwr *CIWorkflowResult) assignValues(columns []string, values []any) error 
 			} else if value.Valid {
 				cwr.OperatingSystem = value.String
 			}
-		case ciworkflowresult.FieldGpuType:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field gpu_type", values[i])
-			} else if value.Valid {
-				cwr.GpuType = value.String
-			}
-		case ciworkflowresult.FieldPytorchVersion:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field pytorch_version", values[i])
-			} else if value.Valid {
-				cwr.PytorchVersion = value.String
-			}
 		case ciworkflowresult.FieldWorkflowName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field workflow_name", values[i])
@@ -168,6 +158,12 @@ func (cwr *CIWorkflowResult) assignValues(columns []string, values []any) error 
 				return fmt.Errorf("unexpected type %T for field run_id", values[i])
 			} else if value.Valid {
 				cwr.RunID = value.String
+			}
+		case ciworkflowresult.FieldJobID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field job_id", values[i])
+			} else if value.Valid {
+				cwr.JobID = value.String
 			}
 		case ciworkflowresult.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -192,6 +188,18 @@ func (cwr *CIWorkflowResult) assignValues(columns []string, values []any) error 
 				return fmt.Errorf("unexpected type %T for field python_version", values[i])
 			} else if value.Valid {
 				cwr.PythonVersion = value.String
+			}
+		case ciworkflowresult.FieldPytorchVersion:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field pytorch_version", values[i])
+			} else if value.Valid {
+				cwr.PytorchVersion = value.String
+			}
+		case ciworkflowresult.FieldCudaVersion:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field cuda_version", values[i])
+			} else if value.Valid {
+				cwr.CudaVersion = value.String
 			}
 		case ciworkflowresult.FieldAvgVram:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -281,17 +289,14 @@ func (cwr *CIWorkflowResult) String() string {
 	builder.WriteString("operating_system=")
 	builder.WriteString(cwr.OperatingSystem)
 	builder.WriteString(", ")
-	builder.WriteString("gpu_type=")
-	builder.WriteString(cwr.GpuType)
-	builder.WriteString(", ")
-	builder.WriteString("pytorch_version=")
-	builder.WriteString(cwr.PytorchVersion)
-	builder.WriteString(", ")
 	builder.WriteString("workflow_name=")
 	builder.WriteString(cwr.WorkflowName)
 	builder.WriteString(", ")
 	builder.WriteString("run_id=")
 	builder.WriteString(cwr.RunID)
+	builder.WriteString(", ")
+	builder.WriteString("job_id=")
+	builder.WriteString(cwr.JobID)
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", cwr.Status))
@@ -304,6 +309,12 @@ func (cwr *CIWorkflowResult) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("python_version=")
 	builder.WriteString(cwr.PythonVersion)
+	builder.WriteString(", ")
+	builder.WriteString("pytorch_version=")
+	builder.WriteString(cwr.PytorchVersion)
+	builder.WriteString(", ")
+	builder.WriteString("cuda_version=")
+	builder.WriteString(cwr.CudaVersion)
 	builder.WriteString(", ")
 	builder.WriteString("avg_vram=")
 	builder.WriteString(fmt.Sprintf("%v", cwr.AvgVram))

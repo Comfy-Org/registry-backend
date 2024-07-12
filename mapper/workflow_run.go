@@ -45,8 +45,9 @@ func CiWorkflowResultToActionJobResult(result *ent.CIWorkflowResult) (*drip.Acti
 		Id:              &result.ID,
 		WorkflowName:    &result.WorkflowName,
 		OperatingSystem: &result.OperatingSystem,
-		GpuType:         &result.GpuType,
+		PythonVersion:   &result.PythonVersion,
 		PytorchVersion:  &result.PytorchVersion,
+		CudaVersion:     &result.CudaVersion,
 		StorageFile:     storageFileData,
 		CommitHash:      &result.Edges.Gitcommit.CommitHash,
 		CommitId:        &commitId,
@@ -54,16 +55,17 @@ func CiWorkflowResultToActionJobResult(result *ent.CIWorkflowResult) (*drip.Acti
 		CommitMessage:   &result.Edges.Gitcommit.CommitMessage,
 		GitRepo:         &result.Edges.Gitcommit.RepoName,
 		ActionRunId:     &result.RunID,
+		ActionJobId:     &result.JobID,
 		StartTime:       &result.StartTime,
 		EndTime:         &result.EndTime,
 		JobTriggerUser:  &result.JobTriggerUser,
 		AvgVram:         &result.AvgVram,
 		PeakVram:        &result.PeakVram,
-		PythonVersion:   &result.PythonVersion,
-		Status:          &apiStatus,
-		PrNumber:        &result.Edges.Gitcommit.PrNumber,
-		Author:          &result.Edges.Gitcommit.Author,
-		MachineStats:    machineStats,
+
+		Status:       &apiStatus,
+		PrNumber:     &result.Edges.Gitcommit.PrNumber,
+		Author:       &result.Edges.Gitcommit.Author,
+		MachineStats: machineStats,
 	}, nil
 }
 
@@ -107,6 +109,8 @@ func MachineStatsToMap(ms *drip.MachineStats) map[string]interface{} {
 		"OsVersion":      ms.OsVersion,
 		"PipFreeze":      ms.PipFreeze,
 		"VramTimeSeries": ms.VramTimeSeries,
+		"MachineName":    ms.MachineName,
+		"GpuType":        ms.GpuType,
 	}
 }
 
@@ -135,6 +139,8 @@ func MapToMachineStats(data map[string]interface{}) (*drip.MachineStats, error) 
 	ms.MemoryCapacity = getStringPtr("MemoryCapacity")
 	ms.OsVersion = getStringPtr("OsVersion")
 	ms.PipFreeze = getStringPtr("PipFreeze")
+	ms.MachineName = getStringPtr("MachineName")
+	ms.GpuType = getStringPtr("GpuType")
 
 	if val, exists := data["VramTimeSeries"]; exists {
 		if vram, ok := val.(map[string]interface{}); ok {

@@ -22,14 +22,12 @@ const (
 	FieldUpdateTime = "update_time"
 	// FieldOperatingSystem holds the string denoting the operating_system field in the database.
 	FieldOperatingSystem = "operating_system"
-	// FieldGpuType holds the string denoting the gpu_type field in the database.
-	FieldGpuType = "gpu_type"
-	// FieldPytorchVersion holds the string denoting the pytorch_version field in the database.
-	FieldPytorchVersion = "pytorch_version"
 	// FieldWorkflowName holds the string denoting the workflow_name field in the database.
 	FieldWorkflowName = "workflow_name"
 	// FieldRunID holds the string denoting the run_id field in the database.
 	FieldRunID = "run_id"
+	// FieldJobID holds the string denoting the job_id field in the database.
+	FieldJobID = "job_id"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldStartTime holds the string denoting the start_time field in the database.
@@ -38,6 +36,10 @@ const (
 	FieldEndTime = "end_time"
 	// FieldPythonVersion holds the string denoting the python_version field in the database.
 	FieldPythonVersion = "python_version"
+	// FieldPytorchVersion holds the string denoting the pytorch_version field in the database.
+	FieldPytorchVersion = "pytorch_version"
+	// FieldCudaVersion holds the string denoting the cuda_version field in the database.
+	FieldCudaVersion = "cuda_version"
 	// FieldAvgVram holds the string denoting the avg_vram field in the database.
 	FieldAvgVram = "avg_vram"
 	// FieldPeakVram holds the string denoting the peak_vram field in the database.
@@ -74,14 +76,15 @@ var Columns = []string{
 	FieldCreateTime,
 	FieldUpdateTime,
 	FieldOperatingSystem,
-	FieldGpuType,
-	FieldPytorchVersion,
 	FieldWorkflowName,
 	FieldRunID,
+	FieldJobID,
 	FieldStatus,
 	FieldStartTime,
 	FieldEndTime,
 	FieldPythonVersion,
+	FieldPytorchVersion,
+	FieldCudaVersion,
 	FieldAvgVram,
 	FieldPeakVram,
 	FieldJobTriggerUser,
@@ -145,16 +148,6 @@ func ByOperatingSystem(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOperatingSystem, opts...).ToFunc()
 }
 
-// ByGpuType orders the results by the gpu_type field.
-func ByGpuType(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldGpuType, opts...).ToFunc()
-}
-
-// ByPytorchVersion orders the results by the pytorch_version field.
-func ByPytorchVersion(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPytorchVersion, opts...).ToFunc()
-}
-
 // ByWorkflowName orders the results by the workflow_name field.
 func ByWorkflowName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldWorkflowName, opts...).ToFunc()
@@ -163,6 +156,11 @@ func ByWorkflowName(opts ...sql.OrderTermOption) OrderOption {
 // ByRunID orders the results by the run_id field.
 func ByRunID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRunID, opts...).ToFunc()
+}
+
+// ByJobID orders the results by the job_id field.
+func ByJobID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldJobID, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.
@@ -183,6 +181,16 @@ func ByEndTime(opts ...sql.OrderTermOption) OrderOption {
 // ByPythonVersion orders the results by the python_version field.
 func ByPythonVersion(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPythonVersion, opts...).ToFunc()
+}
+
+// ByPytorchVersion orders the results by the pytorch_version field.
+func ByPytorchVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPytorchVersion, opts...).ToFunc()
+}
+
+// ByCudaVersion orders the results by the cuda_version field.
+func ByCudaVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCudaVersion, opts...).ToFunc()
 }
 
 // ByAvgVram orders the results by the avg_vram field.

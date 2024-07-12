@@ -78,7 +78,12 @@ func (s *ComfyCIService) ProcessCIRequest(ctx context.Context, client *ent.Clien
 		if req.Body.PeakVram != nil {
 			peakVram = *req.Body.PeakVram
 		}
-		workflowResultId, err := s.UpsertRunResult(ctx, tx.Client(), gitcommit, req.Body.Os, cudaVersion, req.Body.WorkflowName, req.Body.RunId, req.Body.StartTime, req.Body.EndTime, avgVram, peakVram, req.Body.PythonVersion, req.Body.JobTriggerUser, req.Body.Status, req.Body.MachineStats)
+		pytorchVersion := ""
+		if req.Body.PytorchVersion != nil {
+			pytorchVersion = *req.Body.PytorchVersion
+		}
+
+		workflowResultId, err := s.UpsertRunResult(ctx, tx.Client(), gitcommit, req.Body.Os, cudaVersion, req.Body.WorkflowName, req.Body.RunId, req.Body.JobId, req.Body.StartTime, req.Body.EndTime, avgVram, peakVram, req.Body.PythonVersion, pytorchVersion, req.Body.JobTriggerUser, req.Body.Status, req.Body.MachineStats)
 		if err != nil {
 			return err
 		}
@@ -142,7 +147,7 @@ func (s *ComfyCIService) UpsertCommit(ctx context.Context, client *ent.Client, h
 }
 
 // UpsertRunResult creates or updates a ActionRunResult entity.
-func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client, gitcommit *ent.GitCommit, os, gpuType, workflowName, runId string, startTime, endTime int64, avgVram, peakVram int, pythonVersion, jobTriggerUser string, status drip.WorkflowRunStatus, machineStats *drip.MachineStats) (uuid.UUID, error) {
+func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client, gitcommit *ent.GitCommit, os, cudaVersion, workflowName, runId, jobId string, startTime, endTime int64, avgVram, peakVram int, pythonVersion, pytorchVersion, jobTriggerUser string, status drip.WorkflowRunStatus, machineStats *drip.MachineStats) (uuid.UUID, error) {
 	log.Ctx(ctx).Info().Msgf("Upserting workflow result for commit %s", gitcommit.CommitHash)
 	dbWorkflowRunStatus, err := mapper.ApiWorkflowRunStatusToDb(status)
 	if err != nil {
@@ -154,9 +159,12 @@ func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client
 		SetOperatingSystem(os).
 		SetWorkflowName(workflowName).
 		SetRunID(runId).
+		SetJobID(jobId).
 		SetStartTime(startTime).
 		SetEndTime(endTime).
 		SetPythonVersion(pythonVersion).
+		SetPytorchVersion(pytorchVersion).
+		SetCudaVersion(cudaVersion).
 		SetAvgVram(avgVram).
 		SetPeakVram(peakVram).
 		SetStatus(dbWorkflowRunStatus).

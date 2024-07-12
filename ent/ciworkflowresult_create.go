@@ -61,34 +61,6 @@ func (cwrc *CIWorkflowResultCreate) SetOperatingSystem(s string) *CIWorkflowResu
 	return cwrc
 }
 
-// SetGpuType sets the "gpu_type" field.
-func (cwrc *CIWorkflowResultCreate) SetGpuType(s string) *CIWorkflowResultCreate {
-	cwrc.mutation.SetGpuType(s)
-	return cwrc
-}
-
-// SetNillableGpuType sets the "gpu_type" field if the given value is not nil.
-func (cwrc *CIWorkflowResultCreate) SetNillableGpuType(s *string) *CIWorkflowResultCreate {
-	if s != nil {
-		cwrc.SetGpuType(*s)
-	}
-	return cwrc
-}
-
-// SetPytorchVersion sets the "pytorch_version" field.
-func (cwrc *CIWorkflowResultCreate) SetPytorchVersion(s string) *CIWorkflowResultCreate {
-	cwrc.mutation.SetPytorchVersion(s)
-	return cwrc
-}
-
-// SetNillablePytorchVersion sets the "pytorch_version" field if the given value is not nil.
-func (cwrc *CIWorkflowResultCreate) SetNillablePytorchVersion(s *string) *CIWorkflowResultCreate {
-	if s != nil {
-		cwrc.SetPytorchVersion(*s)
-	}
-	return cwrc
-}
-
 // SetWorkflowName sets the "workflow_name" field.
 func (cwrc *CIWorkflowResultCreate) SetWorkflowName(s string) *CIWorkflowResultCreate {
 	cwrc.mutation.SetWorkflowName(s)
@@ -113,6 +85,20 @@ func (cwrc *CIWorkflowResultCreate) SetRunID(s string) *CIWorkflowResultCreate {
 func (cwrc *CIWorkflowResultCreate) SetNillableRunID(s *string) *CIWorkflowResultCreate {
 	if s != nil {
 		cwrc.SetRunID(*s)
+	}
+	return cwrc
+}
+
+// SetJobID sets the "job_id" field.
+func (cwrc *CIWorkflowResultCreate) SetJobID(s string) *CIWorkflowResultCreate {
+	cwrc.mutation.SetJobID(s)
+	return cwrc
+}
+
+// SetNillableJobID sets the "job_id" field if the given value is not nil.
+func (cwrc *CIWorkflowResultCreate) SetNillableJobID(s *string) *CIWorkflowResultCreate {
+	if s != nil {
+		cwrc.SetJobID(*s)
 	}
 	return cwrc
 }
@@ -169,6 +155,34 @@ func (cwrc *CIWorkflowResultCreate) SetPythonVersion(s string) *CIWorkflowResult
 func (cwrc *CIWorkflowResultCreate) SetNillablePythonVersion(s *string) *CIWorkflowResultCreate {
 	if s != nil {
 		cwrc.SetPythonVersion(*s)
+	}
+	return cwrc
+}
+
+// SetPytorchVersion sets the "pytorch_version" field.
+func (cwrc *CIWorkflowResultCreate) SetPytorchVersion(s string) *CIWorkflowResultCreate {
+	cwrc.mutation.SetPytorchVersion(s)
+	return cwrc
+}
+
+// SetNillablePytorchVersion sets the "pytorch_version" field if the given value is not nil.
+func (cwrc *CIWorkflowResultCreate) SetNillablePytorchVersion(s *string) *CIWorkflowResultCreate {
+	if s != nil {
+		cwrc.SetPytorchVersion(*s)
+	}
+	return cwrc
+}
+
+// SetCudaVersion sets the "cuda_version" field.
+func (cwrc *CIWorkflowResultCreate) SetCudaVersion(s string) *CIWorkflowResultCreate {
+	cwrc.mutation.SetCudaVersion(s)
+	return cwrc
+}
+
+// SetNillableCudaVersion sets the "cuda_version" field if the given value is not nil.
+func (cwrc *CIWorkflowResultCreate) SetNillableCudaVersion(s *string) *CIWorkflowResultCreate {
+	if s != nil {
+		cwrc.SetCudaVersion(*s)
 	}
 	return cwrc
 }
@@ -384,14 +398,6 @@ func (cwrc *CIWorkflowResultCreate) createSpec() (*CIWorkflowResult, *sqlgraph.C
 		_spec.SetField(ciworkflowresult.FieldOperatingSystem, field.TypeString, value)
 		_node.OperatingSystem = value
 	}
-	if value, ok := cwrc.mutation.GpuType(); ok {
-		_spec.SetField(ciworkflowresult.FieldGpuType, field.TypeString, value)
-		_node.GpuType = value
-	}
-	if value, ok := cwrc.mutation.PytorchVersion(); ok {
-		_spec.SetField(ciworkflowresult.FieldPytorchVersion, field.TypeString, value)
-		_node.PytorchVersion = value
-	}
 	if value, ok := cwrc.mutation.WorkflowName(); ok {
 		_spec.SetField(ciworkflowresult.FieldWorkflowName, field.TypeString, value)
 		_node.WorkflowName = value
@@ -399,6 +405,10 @@ func (cwrc *CIWorkflowResultCreate) createSpec() (*CIWorkflowResult, *sqlgraph.C
 	if value, ok := cwrc.mutation.RunID(); ok {
 		_spec.SetField(ciworkflowresult.FieldRunID, field.TypeString, value)
 		_node.RunID = value
+	}
+	if value, ok := cwrc.mutation.JobID(); ok {
+		_spec.SetField(ciworkflowresult.FieldJobID, field.TypeString, value)
+		_node.JobID = value
 	}
 	if value, ok := cwrc.mutation.Status(); ok {
 		_spec.SetField(ciworkflowresult.FieldStatus, field.TypeString, value)
@@ -415,6 +425,14 @@ func (cwrc *CIWorkflowResultCreate) createSpec() (*CIWorkflowResult, *sqlgraph.C
 	if value, ok := cwrc.mutation.PythonVersion(); ok {
 		_spec.SetField(ciworkflowresult.FieldPythonVersion, field.TypeString, value)
 		_node.PythonVersion = value
+	}
+	if value, ok := cwrc.mutation.PytorchVersion(); ok {
+		_spec.SetField(ciworkflowresult.FieldPytorchVersion, field.TypeString, value)
+		_node.PytorchVersion = value
+	}
+	if value, ok := cwrc.mutation.CudaVersion(); ok {
+		_spec.SetField(ciworkflowresult.FieldCudaVersion, field.TypeString, value)
+		_node.CudaVersion = value
 	}
 	if value, ok := cwrc.mutation.AvgVram(); ok {
 		_spec.SetField(ciworkflowresult.FieldAvgVram, field.TypeInt, value)
@@ -541,42 +559,6 @@ func (u *CIWorkflowResultUpsert) UpdateOperatingSystem() *CIWorkflowResultUpsert
 	return u
 }
 
-// SetGpuType sets the "gpu_type" field.
-func (u *CIWorkflowResultUpsert) SetGpuType(v string) *CIWorkflowResultUpsert {
-	u.Set(ciworkflowresult.FieldGpuType, v)
-	return u
-}
-
-// UpdateGpuType sets the "gpu_type" field to the value that was provided on create.
-func (u *CIWorkflowResultUpsert) UpdateGpuType() *CIWorkflowResultUpsert {
-	u.SetExcluded(ciworkflowresult.FieldGpuType)
-	return u
-}
-
-// ClearGpuType clears the value of the "gpu_type" field.
-func (u *CIWorkflowResultUpsert) ClearGpuType() *CIWorkflowResultUpsert {
-	u.SetNull(ciworkflowresult.FieldGpuType)
-	return u
-}
-
-// SetPytorchVersion sets the "pytorch_version" field.
-func (u *CIWorkflowResultUpsert) SetPytorchVersion(v string) *CIWorkflowResultUpsert {
-	u.Set(ciworkflowresult.FieldPytorchVersion, v)
-	return u
-}
-
-// UpdatePytorchVersion sets the "pytorch_version" field to the value that was provided on create.
-func (u *CIWorkflowResultUpsert) UpdatePytorchVersion() *CIWorkflowResultUpsert {
-	u.SetExcluded(ciworkflowresult.FieldPytorchVersion)
-	return u
-}
-
-// ClearPytorchVersion clears the value of the "pytorch_version" field.
-func (u *CIWorkflowResultUpsert) ClearPytorchVersion() *CIWorkflowResultUpsert {
-	u.SetNull(ciworkflowresult.FieldPytorchVersion)
-	return u
-}
-
 // SetWorkflowName sets the "workflow_name" field.
 func (u *CIWorkflowResultUpsert) SetWorkflowName(v string) *CIWorkflowResultUpsert {
 	u.Set(ciworkflowresult.FieldWorkflowName, v)
@@ -610,6 +592,24 @@ func (u *CIWorkflowResultUpsert) UpdateRunID() *CIWorkflowResultUpsert {
 // ClearRunID clears the value of the "run_id" field.
 func (u *CIWorkflowResultUpsert) ClearRunID() *CIWorkflowResultUpsert {
 	u.SetNull(ciworkflowresult.FieldRunID)
+	return u
+}
+
+// SetJobID sets the "job_id" field.
+func (u *CIWorkflowResultUpsert) SetJobID(v string) *CIWorkflowResultUpsert {
+	u.Set(ciworkflowresult.FieldJobID, v)
+	return u
+}
+
+// UpdateJobID sets the "job_id" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsert) UpdateJobID() *CIWorkflowResultUpsert {
+	u.SetExcluded(ciworkflowresult.FieldJobID)
+	return u
+}
+
+// ClearJobID clears the value of the "job_id" field.
+func (u *CIWorkflowResultUpsert) ClearJobID() *CIWorkflowResultUpsert {
+	u.SetNull(ciworkflowresult.FieldJobID)
 	return u
 }
 
@@ -688,6 +688,42 @@ func (u *CIWorkflowResultUpsert) UpdatePythonVersion() *CIWorkflowResultUpsert {
 // ClearPythonVersion clears the value of the "python_version" field.
 func (u *CIWorkflowResultUpsert) ClearPythonVersion() *CIWorkflowResultUpsert {
 	u.SetNull(ciworkflowresult.FieldPythonVersion)
+	return u
+}
+
+// SetPytorchVersion sets the "pytorch_version" field.
+func (u *CIWorkflowResultUpsert) SetPytorchVersion(v string) *CIWorkflowResultUpsert {
+	u.Set(ciworkflowresult.FieldPytorchVersion, v)
+	return u
+}
+
+// UpdatePytorchVersion sets the "pytorch_version" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsert) UpdatePytorchVersion() *CIWorkflowResultUpsert {
+	u.SetExcluded(ciworkflowresult.FieldPytorchVersion)
+	return u
+}
+
+// ClearPytorchVersion clears the value of the "pytorch_version" field.
+func (u *CIWorkflowResultUpsert) ClearPytorchVersion() *CIWorkflowResultUpsert {
+	u.SetNull(ciworkflowresult.FieldPytorchVersion)
+	return u
+}
+
+// SetCudaVersion sets the "cuda_version" field.
+func (u *CIWorkflowResultUpsert) SetCudaVersion(v string) *CIWorkflowResultUpsert {
+	u.Set(ciworkflowresult.FieldCudaVersion, v)
+	return u
+}
+
+// UpdateCudaVersion sets the "cuda_version" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsert) UpdateCudaVersion() *CIWorkflowResultUpsert {
+	u.SetExcluded(ciworkflowresult.FieldCudaVersion)
+	return u
+}
+
+// ClearCudaVersion clears the value of the "cuda_version" field.
+func (u *CIWorkflowResultUpsert) ClearCudaVersion() *CIWorkflowResultUpsert {
+	u.SetNull(ciworkflowresult.FieldCudaVersion)
 	return u
 }
 
@@ -854,48 +890,6 @@ func (u *CIWorkflowResultUpsertOne) UpdateOperatingSystem() *CIWorkflowResultUps
 	})
 }
 
-// SetGpuType sets the "gpu_type" field.
-func (u *CIWorkflowResultUpsertOne) SetGpuType(v string) *CIWorkflowResultUpsertOne {
-	return u.Update(func(s *CIWorkflowResultUpsert) {
-		s.SetGpuType(v)
-	})
-}
-
-// UpdateGpuType sets the "gpu_type" field to the value that was provided on create.
-func (u *CIWorkflowResultUpsertOne) UpdateGpuType() *CIWorkflowResultUpsertOne {
-	return u.Update(func(s *CIWorkflowResultUpsert) {
-		s.UpdateGpuType()
-	})
-}
-
-// ClearGpuType clears the value of the "gpu_type" field.
-func (u *CIWorkflowResultUpsertOne) ClearGpuType() *CIWorkflowResultUpsertOne {
-	return u.Update(func(s *CIWorkflowResultUpsert) {
-		s.ClearGpuType()
-	})
-}
-
-// SetPytorchVersion sets the "pytorch_version" field.
-func (u *CIWorkflowResultUpsertOne) SetPytorchVersion(v string) *CIWorkflowResultUpsertOne {
-	return u.Update(func(s *CIWorkflowResultUpsert) {
-		s.SetPytorchVersion(v)
-	})
-}
-
-// UpdatePytorchVersion sets the "pytorch_version" field to the value that was provided on create.
-func (u *CIWorkflowResultUpsertOne) UpdatePytorchVersion() *CIWorkflowResultUpsertOne {
-	return u.Update(func(s *CIWorkflowResultUpsert) {
-		s.UpdatePytorchVersion()
-	})
-}
-
-// ClearPytorchVersion clears the value of the "pytorch_version" field.
-func (u *CIWorkflowResultUpsertOne) ClearPytorchVersion() *CIWorkflowResultUpsertOne {
-	return u.Update(func(s *CIWorkflowResultUpsert) {
-		s.ClearPytorchVersion()
-	})
-}
-
 // SetWorkflowName sets the "workflow_name" field.
 func (u *CIWorkflowResultUpsertOne) SetWorkflowName(v string) *CIWorkflowResultUpsertOne {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
@@ -935,6 +929,27 @@ func (u *CIWorkflowResultUpsertOne) UpdateRunID() *CIWorkflowResultUpsertOne {
 func (u *CIWorkflowResultUpsertOne) ClearRunID() *CIWorkflowResultUpsertOne {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
 		s.ClearRunID()
+	})
+}
+
+// SetJobID sets the "job_id" field.
+func (u *CIWorkflowResultUpsertOne) SetJobID(v string) *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetJobID(v)
+	})
+}
+
+// UpdateJobID sets the "job_id" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertOne) UpdateJobID() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdateJobID()
+	})
+}
+
+// ClearJobID clears the value of the "job_id" field.
+func (u *CIWorkflowResultUpsertOne) ClearJobID() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearJobID()
 	})
 }
 
@@ -1026,6 +1041,48 @@ func (u *CIWorkflowResultUpsertOne) UpdatePythonVersion() *CIWorkflowResultUpser
 func (u *CIWorkflowResultUpsertOne) ClearPythonVersion() *CIWorkflowResultUpsertOne {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
 		s.ClearPythonVersion()
+	})
+}
+
+// SetPytorchVersion sets the "pytorch_version" field.
+func (u *CIWorkflowResultUpsertOne) SetPytorchVersion(v string) *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetPytorchVersion(v)
+	})
+}
+
+// UpdatePytorchVersion sets the "pytorch_version" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertOne) UpdatePytorchVersion() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdatePytorchVersion()
+	})
+}
+
+// ClearPytorchVersion clears the value of the "pytorch_version" field.
+func (u *CIWorkflowResultUpsertOne) ClearPytorchVersion() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearPytorchVersion()
+	})
+}
+
+// SetCudaVersion sets the "cuda_version" field.
+func (u *CIWorkflowResultUpsertOne) SetCudaVersion(v string) *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetCudaVersion(v)
+	})
+}
+
+// UpdateCudaVersion sets the "cuda_version" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertOne) UpdateCudaVersion() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdateCudaVersion()
+	})
+}
+
+// ClearCudaVersion clears the value of the "cuda_version" field.
+func (u *CIWorkflowResultUpsertOne) ClearCudaVersion() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearCudaVersion()
 	})
 }
 
@@ -1373,48 +1430,6 @@ func (u *CIWorkflowResultUpsertBulk) UpdateOperatingSystem() *CIWorkflowResultUp
 	})
 }
 
-// SetGpuType sets the "gpu_type" field.
-func (u *CIWorkflowResultUpsertBulk) SetGpuType(v string) *CIWorkflowResultUpsertBulk {
-	return u.Update(func(s *CIWorkflowResultUpsert) {
-		s.SetGpuType(v)
-	})
-}
-
-// UpdateGpuType sets the "gpu_type" field to the value that was provided on create.
-func (u *CIWorkflowResultUpsertBulk) UpdateGpuType() *CIWorkflowResultUpsertBulk {
-	return u.Update(func(s *CIWorkflowResultUpsert) {
-		s.UpdateGpuType()
-	})
-}
-
-// ClearGpuType clears the value of the "gpu_type" field.
-func (u *CIWorkflowResultUpsertBulk) ClearGpuType() *CIWorkflowResultUpsertBulk {
-	return u.Update(func(s *CIWorkflowResultUpsert) {
-		s.ClearGpuType()
-	})
-}
-
-// SetPytorchVersion sets the "pytorch_version" field.
-func (u *CIWorkflowResultUpsertBulk) SetPytorchVersion(v string) *CIWorkflowResultUpsertBulk {
-	return u.Update(func(s *CIWorkflowResultUpsert) {
-		s.SetPytorchVersion(v)
-	})
-}
-
-// UpdatePytorchVersion sets the "pytorch_version" field to the value that was provided on create.
-func (u *CIWorkflowResultUpsertBulk) UpdatePytorchVersion() *CIWorkflowResultUpsertBulk {
-	return u.Update(func(s *CIWorkflowResultUpsert) {
-		s.UpdatePytorchVersion()
-	})
-}
-
-// ClearPytorchVersion clears the value of the "pytorch_version" field.
-func (u *CIWorkflowResultUpsertBulk) ClearPytorchVersion() *CIWorkflowResultUpsertBulk {
-	return u.Update(func(s *CIWorkflowResultUpsert) {
-		s.ClearPytorchVersion()
-	})
-}
-
 // SetWorkflowName sets the "workflow_name" field.
 func (u *CIWorkflowResultUpsertBulk) SetWorkflowName(v string) *CIWorkflowResultUpsertBulk {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
@@ -1454,6 +1469,27 @@ func (u *CIWorkflowResultUpsertBulk) UpdateRunID() *CIWorkflowResultUpsertBulk {
 func (u *CIWorkflowResultUpsertBulk) ClearRunID() *CIWorkflowResultUpsertBulk {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
 		s.ClearRunID()
+	})
+}
+
+// SetJobID sets the "job_id" field.
+func (u *CIWorkflowResultUpsertBulk) SetJobID(v string) *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetJobID(v)
+	})
+}
+
+// UpdateJobID sets the "job_id" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertBulk) UpdateJobID() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdateJobID()
+	})
+}
+
+// ClearJobID clears the value of the "job_id" field.
+func (u *CIWorkflowResultUpsertBulk) ClearJobID() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearJobID()
 	})
 }
 
@@ -1545,6 +1581,48 @@ func (u *CIWorkflowResultUpsertBulk) UpdatePythonVersion() *CIWorkflowResultUpse
 func (u *CIWorkflowResultUpsertBulk) ClearPythonVersion() *CIWorkflowResultUpsertBulk {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
 		s.ClearPythonVersion()
+	})
+}
+
+// SetPytorchVersion sets the "pytorch_version" field.
+func (u *CIWorkflowResultUpsertBulk) SetPytorchVersion(v string) *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetPytorchVersion(v)
+	})
+}
+
+// UpdatePytorchVersion sets the "pytorch_version" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertBulk) UpdatePytorchVersion() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdatePytorchVersion()
+	})
+}
+
+// ClearPytorchVersion clears the value of the "pytorch_version" field.
+func (u *CIWorkflowResultUpsertBulk) ClearPytorchVersion() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearPytorchVersion()
+	})
+}
+
+// SetCudaVersion sets the "cuda_version" field.
+func (u *CIWorkflowResultUpsertBulk) SetCudaVersion(v string) *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetCudaVersion(v)
+	})
+}
+
+// UpdateCudaVersion sets the "cuda_version" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertBulk) UpdateCudaVersion() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdateCudaVersion()
+	})
+}
+
+// ClearCudaVersion clears the value of the "cuda_version" field.
+func (u *CIWorkflowResultUpsertBulk) ClearCudaVersion() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearCudaVersion()
 	})
 }
 

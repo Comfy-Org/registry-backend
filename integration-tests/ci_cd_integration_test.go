@@ -60,6 +60,7 @@ func TestCICD(t *testing.T) {
 		EndTime:             now.Unix(),
 		PrNumber:            "123",
 		PythonVersion:       "3.8",
+		PytorchVersion:      proto.String("1.0.0"),
 		JobTriggerUser:      "comfy",
 		Author:              "robin",
 		AvgVram:             &avgVram,
@@ -73,6 +74,8 @@ func TestCICD(t *testing.T) {
 			MemoryCapacity: proto.String("2.0"),
 			OsVersion:      proto.String("Ubuntu 24.10"),
 			PipFreeze:      proto.String("requests==1.0.0"),
+			MachineName:    proto.String("comfy-dev"),
+			GpuType:        proto.String("NVIDIA Tesla V100"),
 		},
 	}
 
@@ -112,6 +115,7 @@ func TestCICD(t *testing.T) {
 		assert.Equal(t, drip.ActionJobResult{
 			Id:              (*res200.JobResults)[0].Id,
 			ActionRunId:     &body.RunId,
+			ActionJobId:     &body.JobId,
 			CommitHash:      &body.CommitHash,
 			CommitId:        proto.String(git.ID.String()),
 			CommitMessage:   &body.CommitMessage,
@@ -127,8 +131,8 @@ func TestCICD(t *testing.T) {
 			PythonVersion:   &body.PythonVersion,
 			Status:          &body.Status,
 			PrNumber:        &body.PrNumber,
-			GpuType:         proto.String(""),
-			PytorchVersion:  proto.String(""),
+			CudaVersion:     body.CudaVersion,
+			PytorchVersion:  body.PytorchVersion,
 			Author:          &body.Author,
 			StorageFile: &drip.StorageFile{
 				PublicUrl: proto.String(fmt.Sprintf("https://storage.googleapis.com/%s/%s", *body.BucketName, *body.OutputFilesGcsPaths)),

@@ -21,22 +21,25 @@ func (CIWorkflowResult) Fields() []ent.Field {
 		field.String("operating_system").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}),
-		field.String("gpu_type").SchemaType(map[string]string{
-			dialect.Postgres: "text",
-		}).Optional(),
-		field.String("pytorch_version").SchemaType(map[string]string{
-			dialect.Postgres: "text",
-		}).Optional(),
 		field.String("workflow_name").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}).Optional(),
 		field.String("run_id").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}).Optional(),
+		field.String("job_id").SchemaType(map[string]string{
+			dialect.Postgres: "text",
+		}).Optional(),
 		field.String("status").GoType(WorkflowRunStatusType("")).Default(string(WorkflowRunStatusTypeStarted)),
 		field.Int64("start_time").Optional(),
 		field.Int64("end_time").Optional(),
 		field.String("python_version").SchemaType(map[string]string{
+			dialect.Postgres: "text",
+		}).Optional(),
+		field.String("pytorch_version").SchemaType(map[string]string{
+			dialect.Postgres: "text",
+		}).Optional(),
+		field.String("cuda_version").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}).Optional(),
 		field.Int("avg_vram").Optional().Comment("Average amount of VRAM used by the workflow in Megabytes"),
