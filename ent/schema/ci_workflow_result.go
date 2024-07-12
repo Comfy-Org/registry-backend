@@ -42,6 +42,9 @@ func (CIWorkflowResult) Fields() []ent.Field {
 		field.String("cuda_version").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}).Optional(),
+		field.String("comfy_run_flags").SchemaType(map[string]string{
+			dialect.Postgres: "text",
+		}).Optional(),
 		field.Int("avg_vram").Optional().Comment("Average amount of VRAM used by the workflow in Megabytes"),
 		field.Int("peak_vram").Optional().Comment("Peak amount of VRAM used by the workflow in Megabytes"),
 		field.String("job_trigger_user").SchemaType(map[string]string{

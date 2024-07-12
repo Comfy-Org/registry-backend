@@ -64,6 +64,7 @@ func TestCICD(t *testing.T) {
 		JobTriggerUser:      "comfy",
 		Author:              "robin",
 		AvgVram:             &avgVram,
+		ComfyRunFlags:       proto.String("comfy"),
 		Status:              drip.WorkflowRunStatusStarted,
 		MachineStats: &drip.MachineStats{
 			CpuCapacity:    proto.String("2.0"),
@@ -134,6 +135,7 @@ func TestCICD(t *testing.T) {
 			CudaVersion:     body.CudaVersion,
 			PytorchVersion:  body.PytorchVersion,
 			Author:          &body.Author,
+			ComfyRunFlags:   body.ComfyRunFlags,
 			StorageFile: &drip.StorageFile{
 				PublicUrl: proto.String(fmt.Sprintf("https://storage.googleapis.com/%s/%s", *body.BucketName, *body.OutputFilesGcsPaths)),
 			},

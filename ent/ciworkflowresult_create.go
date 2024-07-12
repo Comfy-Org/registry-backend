@@ -187,6 +187,20 @@ func (cwrc *CIWorkflowResultCreate) SetNillableCudaVersion(s *string) *CIWorkflo
 	return cwrc
 }
 
+// SetComfyRunFlags sets the "comfy_run_flags" field.
+func (cwrc *CIWorkflowResultCreate) SetComfyRunFlags(s string) *CIWorkflowResultCreate {
+	cwrc.mutation.SetComfyRunFlags(s)
+	return cwrc
+}
+
+// SetNillableComfyRunFlags sets the "comfy_run_flags" field if the given value is not nil.
+func (cwrc *CIWorkflowResultCreate) SetNillableComfyRunFlags(s *string) *CIWorkflowResultCreate {
+	if s != nil {
+		cwrc.SetComfyRunFlags(*s)
+	}
+	return cwrc
+}
+
 // SetAvgVram sets the "avg_vram" field.
 func (cwrc *CIWorkflowResultCreate) SetAvgVram(i int) *CIWorkflowResultCreate {
 	cwrc.mutation.SetAvgVram(i)
@@ -433,6 +447,10 @@ func (cwrc *CIWorkflowResultCreate) createSpec() (*CIWorkflowResult, *sqlgraph.C
 	if value, ok := cwrc.mutation.CudaVersion(); ok {
 		_spec.SetField(ciworkflowresult.FieldCudaVersion, field.TypeString, value)
 		_node.CudaVersion = value
+	}
+	if value, ok := cwrc.mutation.ComfyRunFlags(); ok {
+		_spec.SetField(ciworkflowresult.FieldComfyRunFlags, field.TypeString, value)
+		_node.ComfyRunFlags = value
 	}
 	if value, ok := cwrc.mutation.AvgVram(); ok {
 		_spec.SetField(ciworkflowresult.FieldAvgVram, field.TypeInt, value)
@@ -724,6 +742,24 @@ func (u *CIWorkflowResultUpsert) UpdateCudaVersion() *CIWorkflowResultUpsert {
 // ClearCudaVersion clears the value of the "cuda_version" field.
 func (u *CIWorkflowResultUpsert) ClearCudaVersion() *CIWorkflowResultUpsert {
 	u.SetNull(ciworkflowresult.FieldCudaVersion)
+	return u
+}
+
+// SetComfyRunFlags sets the "comfy_run_flags" field.
+func (u *CIWorkflowResultUpsert) SetComfyRunFlags(v string) *CIWorkflowResultUpsert {
+	u.Set(ciworkflowresult.FieldComfyRunFlags, v)
+	return u
+}
+
+// UpdateComfyRunFlags sets the "comfy_run_flags" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsert) UpdateComfyRunFlags() *CIWorkflowResultUpsert {
+	u.SetExcluded(ciworkflowresult.FieldComfyRunFlags)
+	return u
+}
+
+// ClearComfyRunFlags clears the value of the "comfy_run_flags" field.
+func (u *CIWorkflowResultUpsert) ClearComfyRunFlags() *CIWorkflowResultUpsert {
+	u.SetNull(ciworkflowresult.FieldComfyRunFlags)
 	return u
 }
 
@@ -1083,6 +1119,27 @@ func (u *CIWorkflowResultUpsertOne) UpdateCudaVersion() *CIWorkflowResultUpsertO
 func (u *CIWorkflowResultUpsertOne) ClearCudaVersion() *CIWorkflowResultUpsertOne {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
 		s.ClearCudaVersion()
+	})
+}
+
+// SetComfyRunFlags sets the "comfy_run_flags" field.
+func (u *CIWorkflowResultUpsertOne) SetComfyRunFlags(v string) *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetComfyRunFlags(v)
+	})
+}
+
+// UpdateComfyRunFlags sets the "comfy_run_flags" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertOne) UpdateComfyRunFlags() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdateComfyRunFlags()
+	})
+}
+
+// ClearComfyRunFlags clears the value of the "comfy_run_flags" field.
+func (u *CIWorkflowResultUpsertOne) ClearComfyRunFlags() *CIWorkflowResultUpsertOne {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearComfyRunFlags()
 	})
 }
 
@@ -1623,6 +1680,27 @@ func (u *CIWorkflowResultUpsertBulk) UpdateCudaVersion() *CIWorkflowResultUpsert
 func (u *CIWorkflowResultUpsertBulk) ClearCudaVersion() *CIWorkflowResultUpsertBulk {
 	return u.Update(func(s *CIWorkflowResultUpsert) {
 		s.ClearCudaVersion()
+	})
+}
+
+// SetComfyRunFlags sets the "comfy_run_flags" field.
+func (u *CIWorkflowResultUpsertBulk) SetComfyRunFlags(v string) *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.SetComfyRunFlags(v)
+	})
+}
+
+// UpdateComfyRunFlags sets the "comfy_run_flags" field to the value that was provided on create.
+func (u *CIWorkflowResultUpsertBulk) UpdateComfyRunFlags() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.UpdateComfyRunFlags()
+	})
+}
+
+// ClearComfyRunFlags clears the value of the "comfy_run_flags" field.
+func (u *CIWorkflowResultUpsertBulk) ClearComfyRunFlags() *CIWorkflowResultUpsertBulk {
+	return u.Update(func(s *CIWorkflowResultUpsert) {
+		s.ClearComfyRunFlags()
 	})
 }
 

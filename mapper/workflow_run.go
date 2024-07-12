@@ -61,6 +61,7 @@ func CiWorkflowResultToActionJobResult(result *ent.CIWorkflowResult) (*drip.Acti
 		JobTriggerUser:  &result.JobTriggerUser,
 		AvgVram:         &result.AvgVram,
 		PeakVram:        &result.PeakVram,
+		ComfyRunFlags:   &result.ComfyRunFlags,
 
 		Status:       &apiStatus,
 		PrNumber:     &result.Edges.Gitcommit.PrNumber,

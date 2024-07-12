@@ -45,6 +45,8 @@ type CIWorkflowResult struct {
 	PytorchVersion string `json:"pytorch_version,omitempty"`
 	// CudaVersion holds the value of the "cuda_version" field.
 	CudaVersion string `json:"cuda_version,omitempty"`
+	// ComfyRunFlags holds the value of the "comfy_run_flags" field.
+	ComfyRunFlags string `json:"comfy_run_flags,omitempty"`
 	// Average amount of VRAM used by the workflow in Megabytes
 	AvgVram int `json:"avg_vram,omitempty"`
 	// Peak amount of VRAM used by the workflow in Megabytes
@@ -100,7 +102,7 @@ func (*CIWorkflowResult) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case ciworkflowresult.FieldStartTime, ciworkflowresult.FieldEndTime, ciworkflowresult.FieldAvgVram, ciworkflowresult.FieldPeakVram:
 			values[i] = new(sql.NullInt64)
-		case ciworkflowresult.FieldOperatingSystem, ciworkflowresult.FieldWorkflowName, ciworkflowresult.FieldRunID, ciworkflowresult.FieldJobID, ciworkflowresult.FieldStatus, ciworkflowresult.FieldPythonVersion, ciworkflowresult.FieldPytorchVersion, ciworkflowresult.FieldCudaVersion, ciworkflowresult.FieldJobTriggerUser:
+		case ciworkflowresult.FieldOperatingSystem, ciworkflowresult.FieldWorkflowName, ciworkflowresult.FieldRunID, ciworkflowresult.FieldJobID, ciworkflowresult.FieldStatus, ciworkflowresult.FieldPythonVersion, ciworkflowresult.FieldPytorchVersion, ciworkflowresult.FieldCudaVersion, ciworkflowresult.FieldComfyRunFlags, ciworkflowresult.FieldJobTriggerUser:
 			values[i] = new(sql.NullString)
 		case ciworkflowresult.FieldCreateTime, ciworkflowresult.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
@@ -200,6 +202,12 @@ func (cwr *CIWorkflowResult) assignValues(columns []string, values []any) error 
 				return fmt.Errorf("unexpected type %T for field cuda_version", values[i])
 			} else if value.Valid {
 				cwr.CudaVersion = value.String
+			}
+		case ciworkflowresult.FieldComfyRunFlags:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field comfy_run_flags", values[i])
+			} else if value.Valid {
+				cwr.ComfyRunFlags = value.String
 			}
 		case ciworkflowresult.FieldAvgVram:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -315,6 +323,9 @@ func (cwr *CIWorkflowResult) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("cuda_version=")
 	builder.WriteString(cwr.CudaVersion)
+	builder.WriteString(", ")
+	builder.WriteString("comfy_run_flags=")
+	builder.WriteString(cwr.ComfyRunFlags)
 	builder.WriteString(", ")
 	builder.WriteString("avg_vram=")
 	builder.WriteString(fmt.Sprintf("%v", cwr.AvgVram))

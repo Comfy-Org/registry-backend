@@ -82,8 +82,11 @@ func (s *ComfyCIService) ProcessCIRequest(ctx context.Context, client *ent.Clien
 		if req.Body.PytorchVersion != nil {
 			pytorchVersion = *req.Body.PytorchVersion
 		}
-
-		workflowResultId, err := s.UpsertRunResult(ctx, tx.Client(), gitcommit, req.Body.Os, cudaVersion, req.Body.WorkflowName, req.Body.RunId, req.Body.JobId, req.Body.StartTime, req.Body.EndTime, avgVram, peakVram, req.Body.PythonVersion, pytorchVersion, req.Body.JobTriggerUser, req.Body.Status, req.Body.MachineStats)
+		comfyRunFlags := ""
+		if req.Body.ComfyRunFlags != nil {
+			comfyRunFlags = *req.Body.ComfyRunFlags
+		}
+		workflowResultId, err := s.UpsertRunResult(ctx, tx.Client(), gitcommit, req.Body.Os, cudaVersion, req.Body.WorkflowName, req.Body.RunId, req.Body.JobId, req.Body.StartTime, req.Body.EndTime, avgVram, peakVram, req.Body.PythonVersion, pytorchVersion, req.Body.JobTriggerUser, comfyRunFlags, req.Body.Status, req.Body.MachineStats)
 		if err != nil {
 			return err
 		}
@@ -147,7 +150,7 @@ func (s *ComfyCIService) UpsertCommit(ctx context.Context, client *ent.Client, h
 }
 
 // UpsertRunResult creates or updates a ActionRunResult entity.
-func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client, gitcommit *ent.GitCommit, os, cudaVersion, workflowName, runId, jobId string, startTime, endTime int64, avgVram, peakVram int, pythonVersion, pytorchVersion, jobTriggerUser string, status drip.WorkflowRunStatus, machineStats *drip.MachineStats) (uuid.UUID, error) {
+func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client, gitcommit *ent.GitCommit, os, cudaVersion, workflowName, runId, jobId string, startTime, endTime int64, avgVram, peakVram int, pythonVersion, pytorchVersion, jobTriggerUser, comfyRunFlags string, status drip.WorkflowRunStatus, machineStats *drip.MachineStats) (uuid.UUID, error) {
 	log.Ctx(ctx).Info().Msgf("Upserting workflow result for commit %s", gitcommit.CommitHash)
 	dbWorkflowRunStatus, err := mapper.ApiWorkflowRunStatusToDb(status)
 	if err != nil {
@@ -165,6 +168,7 @@ func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client
 		SetPythonVersion(pythonVersion).
 		SetPytorchVersion(pytorchVersion).
 		SetCudaVersion(cudaVersion).
+		SetComfyRunFlags(comfyRunFlags).
 		SetAvgVram(avgVram).
 		SetPeakVram(peakVram).
 		SetStatus(dbWorkflowRunStatus).
