@@ -241,6 +241,26 @@ func (cwru *CIWorkflowResultUpdate) ClearCudaVersion() *CIWorkflowResultUpdate {
 	return cwru
 }
 
+// SetComfyRunFlags sets the "comfy_run_flags" field.
+func (cwru *CIWorkflowResultUpdate) SetComfyRunFlags(s string) *CIWorkflowResultUpdate {
+	cwru.mutation.SetComfyRunFlags(s)
+	return cwru
+}
+
+// SetNillableComfyRunFlags sets the "comfy_run_flags" field if the given value is not nil.
+func (cwru *CIWorkflowResultUpdate) SetNillableComfyRunFlags(s *string) *CIWorkflowResultUpdate {
+	if s != nil {
+		cwru.SetComfyRunFlags(*s)
+	}
+	return cwru
+}
+
+// ClearComfyRunFlags clears the value of the "comfy_run_flags" field.
+func (cwru *CIWorkflowResultUpdate) ClearComfyRunFlags() *CIWorkflowResultUpdate {
+	cwru.mutation.ClearComfyRunFlags()
+	return cwru
+}
+
 // SetAvgVram sets the "avg_vram" field.
 func (cwru *CIWorkflowResultUpdate) SetAvgVram(i int) *CIWorkflowResultUpdate {
 	cwru.mutation.ResetAvgVram()
@@ -506,6 +526,12 @@ func (cwru *CIWorkflowResultUpdate) sqlSave(ctx context.Context) (n int, err err
 	}
 	if cwru.mutation.CudaVersionCleared() {
 		_spec.ClearField(ciworkflowresult.FieldCudaVersion, field.TypeString)
+	}
+	if value, ok := cwru.mutation.ComfyRunFlags(); ok {
+		_spec.SetField(ciworkflowresult.FieldComfyRunFlags, field.TypeString, value)
+	}
+	if cwru.mutation.ComfyRunFlagsCleared() {
+		_spec.ClearField(ciworkflowresult.FieldComfyRunFlags, field.TypeString)
 	}
 	if value, ok := cwru.mutation.AvgVram(); ok {
 		_spec.SetField(ciworkflowresult.FieldAvgVram, field.TypeInt, value)
@@ -841,6 +867,26 @@ func (cwruo *CIWorkflowResultUpdateOne) ClearCudaVersion() *CIWorkflowResultUpda
 	return cwruo
 }
 
+// SetComfyRunFlags sets the "comfy_run_flags" field.
+func (cwruo *CIWorkflowResultUpdateOne) SetComfyRunFlags(s string) *CIWorkflowResultUpdateOne {
+	cwruo.mutation.SetComfyRunFlags(s)
+	return cwruo
+}
+
+// SetNillableComfyRunFlags sets the "comfy_run_flags" field if the given value is not nil.
+func (cwruo *CIWorkflowResultUpdateOne) SetNillableComfyRunFlags(s *string) *CIWorkflowResultUpdateOne {
+	if s != nil {
+		cwruo.SetComfyRunFlags(*s)
+	}
+	return cwruo
+}
+
+// ClearComfyRunFlags clears the value of the "comfy_run_flags" field.
+func (cwruo *CIWorkflowResultUpdateOne) ClearComfyRunFlags() *CIWorkflowResultUpdateOne {
+	cwruo.mutation.ClearComfyRunFlags()
+	return cwruo
+}
+
 // SetAvgVram sets the "avg_vram" field.
 func (cwruo *CIWorkflowResultUpdateOne) SetAvgVram(i int) *CIWorkflowResultUpdateOne {
 	cwruo.mutation.ResetAvgVram()
@@ -1136,6 +1182,12 @@ func (cwruo *CIWorkflowResultUpdateOne) sqlSave(ctx context.Context) (_node *CIW
 	}
 	if cwruo.mutation.CudaVersionCleared() {
 		_spec.ClearField(ciworkflowresult.FieldCudaVersion, field.TypeString)
+	}
+	if value, ok := cwruo.mutation.ComfyRunFlags(); ok {
+		_spec.SetField(ciworkflowresult.FieldComfyRunFlags, field.TypeString, value)
+	}
+	if cwruo.mutation.ComfyRunFlagsCleared() {
+		_spec.ClearField(ciworkflowresult.FieldComfyRunFlags, field.TypeString)
 	}
 	if value, ok := cwruo.mutation.AvgVram(); ok {
 		_spec.SetField(ciworkflowresult.FieldAvgVram, field.TypeInt, value)

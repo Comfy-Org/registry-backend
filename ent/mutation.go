@@ -67,6 +67,7 @@ type CIWorkflowResultMutation struct {
 	python_version      *string
 	pytorch_version     *string
 	cuda_version        *string
+	comfy_run_flags     *string
 	avg_vram            *int
 	addavg_vram         *int
 	peak_vram           *int
@@ -766,6 +767,55 @@ func (m *CIWorkflowResultMutation) ResetCudaVersion() {
 	delete(m.clearedFields, ciworkflowresult.FieldCudaVersion)
 }
 
+// SetComfyRunFlags sets the "comfy_run_flags" field.
+func (m *CIWorkflowResultMutation) SetComfyRunFlags(s string) {
+	m.comfy_run_flags = &s
+}
+
+// ComfyRunFlags returns the value of the "comfy_run_flags" field in the mutation.
+func (m *CIWorkflowResultMutation) ComfyRunFlags() (r string, exists bool) {
+	v := m.comfy_run_flags
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldComfyRunFlags returns the old "comfy_run_flags" field's value of the CIWorkflowResult entity.
+// If the CIWorkflowResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CIWorkflowResultMutation) OldComfyRunFlags(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldComfyRunFlags is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldComfyRunFlags requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldComfyRunFlags: %w", err)
+	}
+	return oldValue.ComfyRunFlags, nil
+}
+
+// ClearComfyRunFlags clears the value of the "comfy_run_flags" field.
+func (m *CIWorkflowResultMutation) ClearComfyRunFlags() {
+	m.comfy_run_flags = nil
+	m.clearedFields[ciworkflowresult.FieldComfyRunFlags] = struct{}{}
+}
+
+// ComfyRunFlagsCleared returns if the "comfy_run_flags" field was cleared in this mutation.
+func (m *CIWorkflowResultMutation) ComfyRunFlagsCleared() bool {
+	_, ok := m.clearedFields[ciworkflowresult.FieldComfyRunFlags]
+	return ok
+}
+
+// ResetComfyRunFlags resets all changes to the "comfy_run_flags" field.
+func (m *CIWorkflowResultMutation) ResetComfyRunFlags() {
+	m.comfy_run_flags = nil
+	delete(m.clearedFields, ciworkflowresult.FieldComfyRunFlags)
+}
+
 // SetAvgVram sets the "avg_vram" field.
 func (m *CIWorkflowResultMutation) SetAvgVram(i int) {
 	m.avg_vram = &i
@@ -1131,7 +1181,7 @@ func (m *CIWorkflowResultMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CIWorkflowResultMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 17)
 	if m.create_time != nil {
 		fields = append(fields, ciworkflowresult.FieldCreateTime)
 	}
@@ -1167,6 +1217,9 @@ func (m *CIWorkflowResultMutation) Fields() []string {
 	}
 	if m.cuda_version != nil {
 		fields = append(fields, ciworkflowresult.FieldCudaVersion)
+	}
+	if m.comfy_run_flags != nil {
+		fields = append(fields, ciworkflowresult.FieldComfyRunFlags)
 	}
 	if m.avg_vram != nil {
 		fields = append(fields, ciworkflowresult.FieldAvgVram)
@@ -1212,6 +1265,8 @@ func (m *CIWorkflowResultMutation) Field(name string) (ent.Value, bool) {
 		return m.PytorchVersion()
 	case ciworkflowresult.FieldCudaVersion:
 		return m.CudaVersion()
+	case ciworkflowresult.FieldComfyRunFlags:
+		return m.ComfyRunFlags()
 	case ciworkflowresult.FieldAvgVram:
 		return m.AvgVram()
 	case ciworkflowresult.FieldPeakVram:
@@ -1253,6 +1308,8 @@ func (m *CIWorkflowResultMutation) OldField(ctx context.Context, name string) (e
 		return m.OldPytorchVersion(ctx)
 	case ciworkflowresult.FieldCudaVersion:
 		return m.OldCudaVersion(ctx)
+	case ciworkflowresult.FieldComfyRunFlags:
+		return m.OldComfyRunFlags(ctx)
 	case ciworkflowresult.FieldAvgVram:
 		return m.OldAvgVram(ctx)
 	case ciworkflowresult.FieldPeakVram:
@@ -1353,6 +1410,13 @@ func (m *CIWorkflowResultMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCudaVersion(v)
+		return nil
+	case ciworkflowresult.FieldComfyRunFlags:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetComfyRunFlags(v)
 		return nil
 	case ciworkflowresult.FieldAvgVram:
 		v, ok := value.(int)
@@ -1487,6 +1551,9 @@ func (m *CIWorkflowResultMutation) ClearedFields() []string {
 	if m.FieldCleared(ciworkflowresult.FieldCudaVersion) {
 		fields = append(fields, ciworkflowresult.FieldCudaVersion)
 	}
+	if m.FieldCleared(ciworkflowresult.FieldComfyRunFlags) {
+		fields = append(fields, ciworkflowresult.FieldComfyRunFlags)
+	}
 	if m.FieldCleared(ciworkflowresult.FieldAvgVram) {
 		fields = append(fields, ciworkflowresult.FieldAvgVram)
 	}
@@ -1536,6 +1603,9 @@ func (m *CIWorkflowResultMutation) ClearField(name string) error {
 		return nil
 	case ciworkflowresult.FieldCudaVersion:
 		m.ClearCudaVersion()
+		return nil
+	case ciworkflowresult.FieldComfyRunFlags:
+		m.ClearComfyRunFlags()
 		return nil
 	case ciworkflowresult.FieldAvgVram:
 		m.ClearAvgVram()
@@ -1592,6 +1662,9 @@ func (m *CIWorkflowResultMutation) ResetField(name string) error {
 		return nil
 	case ciworkflowresult.FieldCudaVersion:
 		m.ResetCudaVersion()
+		return nil
+	case ciworkflowresult.FieldComfyRunFlags:
+		m.ResetComfyRunFlags()
 		return nil
 	case ciworkflowresult.FieldAvgVram:
 		m.ResetAvgVram()

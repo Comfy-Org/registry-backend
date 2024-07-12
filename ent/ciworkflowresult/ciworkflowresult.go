@@ -40,6 +40,8 @@ const (
 	FieldPytorchVersion = "pytorch_version"
 	// FieldCudaVersion holds the string denoting the cuda_version field in the database.
 	FieldCudaVersion = "cuda_version"
+	// FieldComfyRunFlags holds the string denoting the comfy_run_flags field in the database.
+	FieldComfyRunFlags = "comfy_run_flags"
 	// FieldAvgVram holds the string denoting the avg_vram field in the database.
 	FieldAvgVram = "avg_vram"
 	// FieldPeakVram holds the string denoting the peak_vram field in the database.
@@ -85,6 +87,7 @@ var Columns = []string{
 	FieldPythonVersion,
 	FieldPytorchVersion,
 	FieldCudaVersion,
+	FieldComfyRunFlags,
 	FieldAvgVram,
 	FieldPeakVram,
 	FieldJobTriggerUser,
@@ -191,6 +194,11 @@ func ByPytorchVersion(opts ...sql.OrderTermOption) OrderOption {
 // ByCudaVersion orders the results by the cuda_version field.
 func ByCudaVersion(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCudaVersion, opts...).ToFunc()
+}
+
+// ByComfyRunFlags orders the results by the comfy_run_flags field.
+func ByComfyRunFlags(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldComfyRunFlags, opts...).ToFunc()
 }
 
 // ByAvgVram orders the results by the avg_vram field.

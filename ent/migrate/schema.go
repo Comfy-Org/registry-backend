@@ -23,6 +23,7 @@ var (
 		{Name: "python_version", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "pytorch_version", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "cuda_version", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "comfy_run_flags", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "avg_vram", Type: field.TypeInt, Nullable: true},
 		{Name: "peak_vram", Type: field.TypeInt, Nullable: true},
 		{Name: "job_trigger_user", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
@@ -37,7 +38,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "ci_workflow_results_git_commits_results",
-				Columns:    []*schema.Column{CiWorkflowResultsColumns[17]},
+				Columns:    []*schema.Column{CiWorkflowResultsColumns[18]},
 				RefColumns: []*schema.Column{GitCommitsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
