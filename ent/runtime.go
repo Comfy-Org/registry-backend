@@ -38,11 +38,7 @@ func init() {
 	// ciworkflowresult.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
 	ciworkflowresult.UpdateDefaultUpdateTime = ciworkflowresultDescUpdateTime.UpdateDefault.(func() time.Time)
 	// ciworkflowresultDescStatus is the schema descriptor for status field.
-<<<<<<< HEAD
 	ciworkflowresultDescStatus := ciworkflowresultFields[5].Descriptor()
-=======
-	ciworkflowresultDescStatus := ciworkflowresultFields[7].Descriptor()
->>>>>>> c1afb53 (Add comfy run flags field)
 	// ciworkflowresult.DefaultStatus holds the default value on creation for the status field.
 	ciworkflowresult.DefaultStatus = schema.WorkflowRunStatusType(ciworkflowresultDescStatus.Default.(string))
 	// ciworkflowresultDescID is the schema descriptor for id field.

@@ -82,15 +82,9 @@ func RunID(v string) predicate.CIWorkflowResult {
 	return predicate.CIWorkflowResult(sql.FieldEQ(FieldRunID, v))
 }
 
-<<<<<<< HEAD
 // JobID applies equality check predicate on the "job_id" field. It's identical to JobIDEQ.
 func JobID(v string) predicate.CIWorkflowResult {
 	return predicate.CIWorkflowResult(sql.FieldEQ(FieldJobID, v))
-=======
-// ComfyRunFlags applies equality check predicate on the "comfy_run_flags" field. It's identical to ComfyRunFlagsEQ.
-func ComfyRunFlags(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldEQ(FieldComfyRunFlags, v))
->>>>>>> c1afb53 (Add comfy run flags field)
 }
 
 // Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
@@ -434,7 +428,6 @@ func RunIDContainsFold(v string) predicate.CIWorkflowResult {
 	return predicate.CIWorkflowResult(sql.FieldContainsFold(FieldRunID, v))
 }
 
-<<<<<<< HEAD
 // JobIDEQ applies the EQ predicate on the "job_id" field.
 func JobIDEQ(v string) predicate.CIWorkflowResult {
 	return predicate.CIWorkflowResult(sql.FieldEQ(FieldJobID, v))
@@ -508,81 +501,6 @@ func JobIDEqualFold(v string) predicate.CIWorkflowResult {
 // JobIDContainsFold applies the ContainsFold predicate on the "job_id" field.
 func JobIDContainsFold(v string) predicate.CIWorkflowResult {
 	return predicate.CIWorkflowResult(sql.FieldContainsFold(FieldJobID, v))
-=======
-// ComfyRunFlagsEQ applies the EQ predicate on the "comfy_run_flags" field.
-func ComfyRunFlagsEQ(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldEQ(FieldComfyRunFlags, v))
-}
-
-// ComfyRunFlagsNEQ applies the NEQ predicate on the "comfy_run_flags" field.
-func ComfyRunFlagsNEQ(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldNEQ(FieldComfyRunFlags, v))
-}
-
-// ComfyRunFlagsIn applies the In predicate on the "comfy_run_flags" field.
-func ComfyRunFlagsIn(vs ...string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldIn(FieldComfyRunFlags, vs...))
-}
-
-// ComfyRunFlagsNotIn applies the NotIn predicate on the "comfy_run_flags" field.
-func ComfyRunFlagsNotIn(vs ...string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldNotIn(FieldComfyRunFlags, vs...))
-}
-
-// ComfyRunFlagsGT applies the GT predicate on the "comfy_run_flags" field.
-func ComfyRunFlagsGT(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldGT(FieldComfyRunFlags, v))
-}
-
-// ComfyRunFlagsGTE applies the GTE predicate on the "comfy_run_flags" field.
-func ComfyRunFlagsGTE(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldGTE(FieldComfyRunFlags, v))
-}
-
-// ComfyRunFlagsLT applies the LT predicate on the "comfy_run_flags" field.
-func ComfyRunFlagsLT(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldLT(FieldComfyRunFlags, v))
-}
-
-// ComfyRunFlagsLTE applies the LTE predicate on the "comfy_run_flags" field.
-func ComfyRunFlagsLTE(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldLTE(FieldComfyRunFlags, v))
-}
-
-// ComfyRunFlagsContains applies the Contains predicate on the "comfy_run_flags" field.
-func ComfyRunFlagsContains(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldContains(FieldComfyRunFlags, v))
-}
-
-// ComfyRunFlagsHasPrefix applies the HasPrefix predicate on the "comfy_run_flags" field.
-func ComfyRunFlagsHasPrefix(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldHasPrefix(FieldComfyRunFlags, v))
-}
-
-// ComfyRunFlagsHasSuffix applies the HasSuffix predicate on the "comfy_run_flags" field.
-func ComfyRunFlagsHasSuffix(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldHasSuffix(FieldComfyRunFlags, v))
-}
-
-// ComfyRunFlagsIsNil applies the IsNil predicate on the "comfy_run_flags" field.
-func ComfyRunFlagsIsNil() predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldIsNull(FieldComfyRunFlags))
-}
-
-// ComfyRunFlagsNotNil applies the NotNil predicate on the "comfy_run_flags" field.
-func ComfyRunFlagsNotNil() predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldNotNull(FieldComfyRunFlags))
-}
-
-// ComfyRunFlagsEqualFold applies the EqualFold predicate on the "comfy_run_flags" field.
-func ComfyRunFlagsEqualFold(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldEqualFold(FieldComfyRunFlags, v))
-}
-
-// ComfyRunFlagsContainsFold applies the ContainsFold predicate on the "comfy_run_flags" field.
-func ComfyRunFlagsContainsFold(v string) predicate.CIWorkflowResult {
-	return predicate.CIWorkflowResult(sql.FieldContainsFold(FieldComfyRunFlags, v))
->>>>>>> c1afb53 (Add comfy run flags field)
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.

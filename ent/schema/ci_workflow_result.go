@@ -27,11 +27,7 @@ func (CIWorkflowResult) Fields() []ent.Field {
 		field.String("run_id").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}).Optional(),
-<<<<<<< HEAD
 		field.String("job_id").SchemaType(map[string]string{
-=======
-		field.String("comfy_run_flags").SchemaType(map[string]string{
->>>>>>> c1afb53 (Add comfy run flags field)
 			dialect.Postgres: "text",
 		}).Optional(),
 		field.String("status").GoType(WorkflowRunStatusType("")).Default(string(WorkflowRunStatusTypeStarted)),

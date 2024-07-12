@@ -93,7 +93,6 @@ func (cwru *CIWorkflowResultUpdate) ClearRunID() *CIWorkflowResultUpdate {
 	return cwru
 }
 
-<<<<<<< HEAD
 // SetJobID sets the "job_id" field.
 func (cwru *CIWorkflowResultUpdate) SetJobID(s string) *CIWorkflowResultUpdate {
 	cwru.mutation.SetJobID(s)
@@ -104,31 +103,13 @@ func (cwru *CIWorkflowResultUpdate) SetJobID(s string) *CIWorkflowResultUpdate {
 func (cwru *CIWorkflowResultUpdate) SetNillableJobID(s *string) *CIWorkflowResultUpdate {
 	if s != nil {
 		cwru.SetJobID(*s)
-=======
-// SetComfyRunFlags sets the "comfy_run_flags" field.
-func (cwru *CIWorkflowResultUpdate) SetComfyRunFlags(s string) *CIWorkflowResultUpdate {
-	cwru.mutation.SetComfyRunFlags(s)
-	return cwru
-}
-
-// SetNillableComfyRunFlags sets the "comfy_run_flags" field if the given value is not nil.
-func (cwru *CIWorkflowResultUpdate) SetNillableComfyRunFlags(s *string) *CIWorkflowResultUpdate {
-	if s != nil {
-		cwru.SetComfyRunFlags(*s)
->>>>>>> c1afb53 (Add comfy run flags field)
 	}
 	return cwru
 }
 
-<<<<<<< HEAD
 // ClearJobID clears the value of the "job_id" field.
 func (cwru *CIWorkflowResultUpdate) ClearJobID() *CIWorkflowResultUpdate {
 	cwru.mutation.ClearJobID()
-=======
-// ClearComfyRunFlags clears the value of the "comfy_run_flags" field.
-func (cwru *CIWorkflowResultUpdate) ClearComfyRunFlags() *CIWorkflowResultUpdate {
-	cwru.mutation.ClearComfyRunFlags()
->>>>>>> c1afb53 (Add comfy run flags field)
 	return cwru
 }
 
@@ -481,19 +462,11 @@ func (cwru *CIWorkflowResultUpdate) sqlSave(ctx context.Context) (n int, err err
 	if cwru.mutation.RunIDCleared() {
 		_spec.ClearField(ciworkflowresult.FieldRunID, field.TypeString)
 	}
-<<<<<<< HEAD
 	if value, ok := cwru.mutation.JobID(); ok {
 		_spec.SetField(ciworkflowresult.FieldJobID, field.TypeString, value)
 	}
 	if cwru.mutation.JobIDCleared() {
 		_spec.ClearField(ciworkflowresult.FieldJobID, field.TypeString)
-=======
-	if value, ok := cwru.mutation.ComfyRunFlags(); ok {
-		_spec.SetField(ciworkflowresult.FieldComfyRunFlags, field.TypeString, value)
-	}
-	if cwru.mutation.ComfyRunFlagsCleared() {
-		_spec.ClearField(ciworkflowresult.FieldComfyRunFlags, field.TypeString)
->>>>>>> c1afb53 (Add comfy run flags field)
 	}
 	if value, ok := cwru.mutation.Status(); ok {
 		_spec.SetField(ciworkflowresult.FieldStatus, field.TypeString, value)
@@ -720,7 +693,6 @@ func (cwruo *CIWorkflowResultUpdateOne) ClearRunID() *CIWorkflowResultUpdateOne 
 	return cwruo
 }
 
-<<<<<<< HEAD
 // SetJobID sets the "job_id" field.
 func (cwruo *CIWorkflowResultUpdateOne) SetJobID(s string) *CIWorkflowResultUpdateOne {
 	cwruo.mutation.SetJobID(s)
@@ -731,31 +703,13 @@ func (cwruo *CIWorkflowResultUpdateOne) SetJobID(s string) *CIWorkflowResultUpda
 func (cwruo *CIWorkflowResultUpdateOne) SetNillableJobID(s *string) *CIWorkflowResultUpdateOne {
 	if s != nil {
 		cwruo.SetJobID(*s)
-=======
-// SetComfyRunFlags sets the "comfy_run_flags" field.
-func (cwruo *CIWorkflowResultUpdateOne) SetComfyRunFlags(s string) *CIWorkflowResultUpdateOne {
-	cwruo.mutation.SetComfyRunFlags(s)
-	return cwruo
-}
-
-// SetNillableComfyRunFlags sets the "comfy_run_flags" field if the given value is not nil.
-func (cwruo *CIWorkflowResultUpdateOne) SetNillableComfyRunFlags(s *string) *CIWorkflowResultUpdateOne {
-	if s != nil {
-		cwruo.SetComfyRunFlags(*s)
->>>>>>> c1afb53 (Add comfy run flags field)
 	}
 	return cwruo
 }
 
-<<<<<<< HEAD
 // ClearJobID clears the value of the "job_id" field.
 func (cwruo *CIWorkflowResultUpdateOne) ClearJobID() *CIWorkflowResultUpdateOne {
 	cwruo.mutation.ClearJobID()
-=======
-// ClearComfyRunFlags clears the value of the "comfy_run_flags" field.
-func (cwruo *CIWorkflowResultUpdateOne) ClearComfyRunFlags() *CIWorkflowResultUpdateOne {
-	cwruo.mutation.ClearComfyRunFlags()
->>>>>>> c1afb53 (Add comfy run flags field)
 	return cwruo
 }
 
@@ -1138,19 +1092,11 @@ func (cwruo *CIWorkflowResultUpdateOne) sqlSave(ctx context.Context) (_node *CIW
 	if cwruo.mutation.RunIDCleared() {
 		_spec.ClearField(ciworkflowresult.FieldRunID, field.TypeString)
 	}
-<<<<<<< HEAD
 	if value, ok := cwruo.mutation.JobID(); ok {
 		_spec.SetField(ciworkflowresult.FieldJobID, field.TypeString, value)
 	}
 	if cwruo.mutation.JobIDCleared() {
 		_spec.ClearField(ciworkflowresult.FieldJobID, field.TypeString)
-=======
-	if value, ok := cwruo.mutation.ComfyRunFlags(); ok {
-		_spec.SetField(ciworkflowresult.FieldComfyRunFlags, field.TypeString, value)
-	}
-	if cwruo.mutation.ComfyRunFlagsCleared() {
-		_spec.ClearField(ciworkflowresult.FieldComfyRunFlags, field.TypeString)
->>>>>>> c1afb53 (Add comfy run flags field)
 	}
 	if value, ok := cwruo.mutation.Status(); ok {
 		_spec.SetField(ciworkflowresult.FieldStatus, field.TypeString, value)

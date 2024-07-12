@@ -26,13 +26,8 @@ const (
 	FieldWorkflowName = "workflow_name"
 	// FieldRunID holds the string denoting the run_id field in the database.
 	FieldRunID = "run_id"
-<<<<<<< HEAD
 	// FieldJobID holds the string denoting the job_id field in the database.
 	FieldJobID = "job_id"
-=======
-	// FieldComfyRunFlags holds the string denoting the comfy_run_flags field in the database.
-	FieldComfyRunFlags = "comfy_run_flags"
->>>>>>> c1afb53 (Add comfy run flags field)
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldStartTime holds the string denoting the start_time field in the database.
@@ -83,11 +78,7 @@ var Columns = []string{
 	FieldOperatingSystem,
 	FieldWorkflowName,
 	FieldRunID,
-<<<<<<< HEAD
 	FieldJobID,
-=======
-	FieldComfyRunFlags,
->>>>>>> c1afb53 (Add comfy run flags field)
 	FieldStatus,
 	FieldStartTime,
 	FieldEndTime,
@@ -167,15 +158,9 @@ func ByRunID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRunID, opts...).ToFunc()
 }
 
-<<<<<<< HEAD
 // ByJobID orders the results by the job_id field.
 func ByJobID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldJobID, opts...).ToFunc()
-=======
-// ByComfyRunFlags orders the results by the comfy_run_flags field.
-func ByComfyRunFlags(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldComfyRunFlags, opts...).ToFunc()
->>>>>>> c1afb53 (Add comfy run flags field)
 }
 
 // ByStatus orders the results by the status field.
