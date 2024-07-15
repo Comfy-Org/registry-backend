@@ -21,6 +21,9 @@ func CiWorkflowResultsToActionJobResults(results []*ent.CIWorkflowResult) ([]dri
 }
 
 func CiWorkflowResultToActionJobResult(result *ent.CIWorkflowResult) (*drip.ActionJobResult, error) {
+	if result == nil {
+		return nil, nil
+	}
 	var storageFileData *drip.StorageFile
 
 	// Check if the StorageFile slice is not empty before accessing
@@ -29,6 +32,11 @@ func CiWorkflowResultToActionJobResult(result *ent.CIWorkflowResult) (*drip.Acti
 			PublicUrl: &result.Edges.StorageFile[0].FileURL,
 		}
 	}
+
+	if result.Edges.Gitcommit == nil {
+		return nil, fmt.Errorf("missing git commit for workflow result: %v", result.ID)
+	}
+
 	commitId := result.Edges.Gitcommit.ID.String()
 	commitUnixTime := result.Edges.Gitcommit.CommitTimestamp.Unix()
 	apiStatus, err := DbWorkflowRunStatusToApi(result.Status)
@@ -100,6 +108,10 @@ func DbWorkflowRunStatusToApi(status schema.WorkflowRunStatusType) (drip.Workflo
 }
 
 func MachineStatsToMap(ms *drip.MachineStats) map[string]interface{} {
+	if ms == nil {
+		return nil
+	}
+
 	return map[string]interface{}{
 		"CpuCapacity":    ms.CpuCapacity,
 		"DiskCapacity":   ms.DiskCapacity,
