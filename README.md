@@ -29,13 +29,9 @@ Install [Supabase Cli](https://supabase.com/docs/guides/cli/getting-started)
 
 Open [Supabase Studio](http://127.0.0.1:54323/project/default) locally.
 
-### Start API Server
-
-`docker compose up`
-
-This commands starts the server with Air that listens to changes. It connects to the Supabase running locally.
-
 ### Set up local ADC credentials
+
+Install GCloud CLI <https://cloud.google.com/sdk/docs/install>
 
 These are needed for authenticating Firebase JWT token auth + calling other GCP APIs.
 
@@ -49,6 +45,12 @@ If you are testing creating a node, you need to impersonate a service account be
 `gcloud auth application-default login --impersonate-service-account 357148958219-compute@developer.gserviceaccount.com`
 
 TODO(robinhuang): Create a service account suitable for dev.
+
+### Start API Server
+
+`docker compose up`
+
+This commands starts the server with Air that listens to changes. It connects to the Supabase running locally.
 
 # Code Generation
 
