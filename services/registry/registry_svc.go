@@ -840,7 +840,8 @@ func (s *RegistryService) ReindexAllNodes(ctx context.Context, client *ent.Clien
 }
 
 func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.Client, nodeVersion *ent.NodeVersion) error {
-	log.Ctx(ctx).Info().Msgf("scanning node %s@%s", nodeVersion.NodeID, nodeVersion.Version)
+	log.Ctx(ctx).Info().Msgf("Scanning node %s@%s w/ version ID: %s",
+		nodeVersion.NodeID, nodeVersion.Version, nodeVersion.ID)
 
 	if (nodeVersion.Edges.StorageFile == nil) || (nodeVersion.Edges.StorageFile.FileURL == "") {
 		return fmt.Errorf("node version %s@%s does not have a storage file", nodeVersion.NodeID, nodeVersion.Version)
@@ -849,8 +850,11 @@ func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.
 	issues, err := sendScanRequest(s.config.SecretScannerURL, nodeVersion.Edges.StorageFile.FileURL)
 	if err != nil {
 		if strings.Contains(err.Error(), "404") {
-			log.Ctx(ctx).Info().Msgf("Node zip file doesn’t exist %s@%s. Updating to deleted.", nodeVersion.NodeID, nodeVersion.Version)
-			err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusDeleted).SetStatusReason("Node zip file doesn’t exist").Exec(ctx)
+			log.Ctx(ctx).Info().Msgf(
+				"Node zip file doesn’t exist %s@%s. Updating to deleted.", nodeVersion.NodeID, nodeVersion.Version)
+			err := nodeVersion.Update().
+				SetStatus(schema.NodeVersionStatusDeleted).
+				SetStatusReason("Node zip file doesn’t exist").Exec(ctx)
 			if err != nil {
 				log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to active")
 			}
@@ -859,22 +863,33 @@ func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.
 	}
 
 	if issues != "" {
-		log.Ctx(ctx).Info().Msgf("No security issues found in node %s@%s. Updating to active.", nodeVersion.NodeID, nodeVersion.Version)
-		err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusActive).SetStatusReason("Passed automated checks").Exec(ctx)
+		log.Ctx(ctx).Info().Msgf(""+
+			"No security issues found in node %s@%s. Updating to active.", nodeVersion.NodeID, nodeVersion.Version)
+		err := nodeVersion.Update().
+			SetStatus(schema.NodeVersionStatusActive).
+			SetStatusReason("Passed automated checks").Exec(ctx)
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to active")
 		}
-		err = s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Node %s@%s has passed automated scans. Changing status to active.", nodeVersion.NodeID, nodeVersion.Version))
+		err = s.discordService.SendSecurityCouncilMessage(
+			fmt.Sprintf("Node %s@%s has passed automated scans. Changing status to active.",
+				nodeVersion.NodeID, nodeVersion.Version))
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to send message to discord")
 		}
 	} else {
-		log.Ctx(ctx).Info().Msgf("Security issues found in node %s@%s. Updating to flagged.", nodeVersion.NodeID, nodeVersion.Version)
+		log.Ctx(ctx).Info().Msgf(
+			"Security issues found in node %s@%s. Updating to flagged.", nodeVersion.NodeID, nodeVersion.Version)
+		log.Ctx(ctx).Info().Msgf(
+			"List of security issues %s.", issues[:500]) // 500 character max.
 		err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusFlagged).SetStatusReason(issues).Exec(ctx)
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to security issue")
 		}
-		err = s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Security issues were found in node %s@%s. Status is flagged. Please check it here: https://registry.comfy.org/admin/nodes/%s/versions/%s. \n Issues are: %s", nodeVersion.NodeID, nodeVersion.Version, nodeVersion.NodeID, nodeVersion.Version, issues))
+		err = s.discordService.SendSecurityCouncilMessage(
+			fmt.Sprintf("Security issues were found in node %s@%s. Status is flagged. "+
+				"Please check it here: https://registry.comfy.org/admin/nodes/%s/versions/%s. \n "+
+				"Issues are: %s", nodeVersion.NodeID, nodeVersion.Version, nodeVersion.NodeID, nodeVersion.Version, issues))
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to send message to discord")
 		}
