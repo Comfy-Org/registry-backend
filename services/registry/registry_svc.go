@@ -874,7 +874,7 @@ func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to security issue")
 		}
-		err = s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Security issues were found in node %s@%s. Status is flagged. Please check it here: https://registry.comfy.org/admin/nodes/%s/versions/%s", nodeVersion.NodeID, nodeVersion.Version, nodeVersion.NodeID, nodeVersion.Version))
+		err = s.discordService.SendSecurityCouncilMessage(fmt.Sprintf("Security issues were found in node %s@%s. Status is flagged. Please check it here: https://registry.comfy.org/admin/nodes/%s/versions/%s. \n Issues are: %s", nodeVersion.NodeID, nodeVersion.Version, nodeVersion.NodeID, nodeVersion.Version, issues))
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to send message to discord")
 		}
