@@ -5,6 +5,7 @@ The backend API server for [Comfy Registry](https://comfyregistry.org) and [Comf
 Join us at our [Discord](https://discord.gg/comfyorg)
 
 Registry React Frontend [Github](https://github.com/Comfy-Org/registry-web)
+
 Registry CLI [Github](https://github.com/yoland68/comfy-cli)
 
 ## Local Development
