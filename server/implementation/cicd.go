@@ -164,7 +164,7 @@ func (impl *DripStrictServerImplementation) GetBranch(ctx context.Context, reque
 func (impl *DripStrictServerImplementation) PostUploadArtifact(ctx context.Context, request drip.PostUploadArtifactRequestObject) (drip.PostUploadArtifactResponseObject, error) {
 	err := impl.ComfyCIService.ProcessCIRequest(ctx, impl.Client, &request)
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("Error processiong CI request w/ err: %v", err)
+		log.Ctx(ctx).Error().Msgf("Error processing CI request w/ err: %v", err)
 		return drip.PostUploadArtifact500Response{}, err
 	}
 

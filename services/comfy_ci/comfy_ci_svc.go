@@ -34,36 +34,34 @@ func NewComfyCIService(config *config.Config) *ComfyCIService {
 
 // ProcessCIRequest handles the incoming request and creates/updates the necessary entities.
 func (s *ComfyCIService) ProcessCIRequest(ctx context.Context, client *ent.Client, req *drip.PostUploadArtifactRequestObject) error {
-	// Check if git commit exists
-	// If it does, remove all CiWorkflowRuns associated with it.
-	existingCommit, err := client.GitCommit.Query().Where(gitcommit.CommitHashEQ(req.Body.CommitHash)).Where(gitcommit.RepoNameEQ(req.Body.Repo)).Only(ctx)
-	if ent.IsNotSingular(err) {
-		log.Ctx(ctx).Error().Err(err).Msgf("Failed to query git commit %s", req.Body.CommitHash)
-		drip_metric.IncrementCustomCounterMetric(ctx, drip_metric.CustomCounterIncrement{
-			Type:   "ci-git-commit-query-error",
-			Val:    1,
-			Labels: map[string]string{},
-		})
-	}
-	if existingCommit != nil {
-		log.Ctx(ctx).Info().Msgf("Deleting existing run results for git commit %s, operating system %s, and workflow name %s", req.Body.CommitHash, req.Body.Os, req.Body.WorkflowName)
-		_, err := client.CIWorkflowResult.Delete().Where(
-			ciworkflowresult.HasGitcommitWith(gitcommit.IDEQ(existingCommit.ID)),
-			ciworkflowresult.WorkflowName(req.Body.WorkflowName),
-			ciworkflowresult.OperatingSystem(req.Body.Os),
-		).Exec(ctx)
-		if err != nil {
-			log.Ctx(ctx).Error().Err(err).Msgf("Failed to delete existing run results for git commit %s", req.Body.CommitHash)
-			return err
-		}
-	}
-
 	return db.WithTx(ctx, client, func(tx *ent.Tx) error {
+		existingCommit, err := tx.GitCommit.Query().Where(gitcommit.CommitHashEQ(req.Body.CommitHash)).Where(gitcommit.RepoNameEQ(req.Body.Repo)).Only(ctx)
+		if ent.IsNotSingular(err) {
+			log.Ctx(ctx).Error().Err(err).Msgf("Failed to query git commit %s", req.Body.CommitHash)
+			drip_metric.IncrementCustomCounterMetric(ctx, drip_metric.CustomCounterIncrement{
+				Type:   "ci-git-commit-query-error",
+				Val:    1,
+				Labels: map[string]string{},
+			})
+		}
+		if existingCommit != nil {
+			log.Ctx(ctx).Info().Msgf("Deleting existing run results for git commit %s, operating system %s, and workflow name %s", req.Body.CommitHash, req.Body.Os, req.Body.WorkflowName)
+			_, err := tx.CIWorkflowResult.Delete().Where(
+				ciworkflowresult.HasGitcommitWith(gitcommit.IDEQ(existingCommit.ID)),
+				ciworkflowresult.WorkflowName(req.Body.WorkflowName),
+				ciworkflowresult.OperatingSystem(req.Body.Os),
+			).Exec(ctx)
+			if err != nil {
+				log.Ctx(ctx).Error().Err(err).Msgf("Failed to delete existing run results for git commit %s", req.Body.CommitHash)
+				return err
+			}
+		}
+
 		id, err := s.UpsertCommit(ctx, tx.Client(), req.Body.CommitHash, req.Body.BranchName, req.Body.Repo, req.Body.CommitTime, req.Body.CommitMessage, req.Body.PrNumber, req.Body.Author)
 		if err != nil {
 			return err
 		}
-		gitcommit := tx.Client().GitCommit.GetX(ctx, id)
+		gitcommit := tx.GitCommit.GetX(ctx, id)
 
 		// Create the CI Workflow Result first. Then add files to it (if there are any).
 		cudaVersion := ""

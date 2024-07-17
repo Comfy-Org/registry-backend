@@ -143,6 +143,12 @@ func TestCICD(t *testing.T) {
 		}, (*res200.JobResults)[0])
 	})
 
+	t.Run("Should not have duplicate workflow ci results from re-uploading", func(t *testing.T) {
+		count, err := client.GitCommit.Query().Where(gitcommit.CommitHashEQ(body.CommitHash)).Count(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, 1, count)
+	})
+
 	t.Run("Get invalid Git Commit", func(t *testing.T) {
 		fakeID, _ := uuid.NewV7()
 		res, err := impl.GetGitcommit(ctx, drip.GetGitcommitRequestObject{Params: drip.GetGitcommitParams{
