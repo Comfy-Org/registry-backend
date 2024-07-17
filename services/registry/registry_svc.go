@@ -862,7 +862,7 @@ func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.
 		return err
 	}
 
-	if issues != "" {
+	if issues == "" {
 		log.Ctx(ctx).Info().Msgf(""+
 			"No security issues found in node %s@%s. Updating to active.", nodeVersion.NodeID, nodeVersion.Version)
 		err := nodeVersion.Update().
@@ -881,7 +881,7 @@ func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.
 		log.Ctx(ctx).Info().Msgf(
 			"Security issues found in node %s@%s. Updating to flagged.", nodeVersion.NodeID, nodeVersion.Version)
 		log.Ctx(ctx).Info().Msgf(
-			"List of security issues %s.", issues[:500]) // 500 character max.
+			"List of security issues %s.", issues) // 500 character max.
 		err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusFlagged).SetStatusReason(issues).Exec(ctx)
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to security issue")
@@ -894,6 +894,7 @@ func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to send message to discord")
 		}
 	}
+
 	return nil
 }
 
