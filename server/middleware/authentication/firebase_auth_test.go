@@ -42,6 +42,8 @@ func TestAllowlist(t *testing.T) {
 		{"Reindex Nodes", "/nodes/reindex", "POST", true},
 		{"Get All Nodes", "/nodes", "GET", true},
 		{"Install Nodes", "/nodes/node-id/install", "GET", true},
+		{"Get all node versions", "/nodes/node-id/versions", "GET", true},
+		{"Get specific node version", "/nodes/node-id/versions/1.0.0", "GET", true},
 	}
 
 	for _, tt := range tests {
