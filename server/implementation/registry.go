@@ -916,21 +916,20 @@ func (s *DripStrictServerImplementation) SecurityScan(
 	if request.Params.MaxNodes != nil {
 		maxNodes = *request.Params.MaxNodes
 	}
+
 	nodeVersionsResult, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &drip_services.NodeVersionFilter{
 		Status:   []schema.NodeVersionStatus{schema.NodeVersionStatusPending},
 		MinAge:   minAge,
 		PageSize: maxNodes,
 		Page:     1,
 	})
-	nodeVersions := nodeVersionsResult.NodeVersions
-
-	log.Ctx(ctx).Info().Msgf("Found %d node versions to scan", len(nodeVersions))
-
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to list node versions w/ err: %v", err)
 		return drip.SecurityScan500JSONResponse{}, err
 	}
 
+	nodeVersions := nodeVersionsResult.NodeVersions
+	log.Ctx(ctx).Info().Msgf("Found %d node versions to scan", len(nodeVersions))
 	for _, nodeVersion := range nodeVersions {
 		err := s.RegistryService.PerformSecurityCheck(ctx, s.Client, nodeVersion)
 		if err != nil {
