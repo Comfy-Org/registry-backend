@@ -41,6 +41,12 @@ func (s *Server) Start() error {
 	e := echo.New()
 	e.HideBanner = true
 	e.Use(drip_middleware.TracingMiddleware)
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins:     []string{"*"}, // This allows all origins
+		AllowMethods:     []string{"*"},
+		AllowHeaders:     []string{"*"},
+		AllowCredentials: true,
+	}))
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogURI:    true,
 		LogStatus: true,
