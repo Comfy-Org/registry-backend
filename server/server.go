@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"os"
 	"registry-backend/config"
 	generated "registry-backend/drip"
 	"registry-backend/ent"
@@ -42,35 +41,6 @@ func (s *Server) Start() error {
 	e := echo.New()
 	e.HideBanner = true
 	e.Use(drip_middleware.TracingMiddleware)
-	//e.Use(middleware.Logger()) //  Useful for debugging
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowMethods:     []string{echo.GET, echo.PUT, echo.POST, echo.DELETE},
-		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
-		AllowCredentials: true,
-		AllowOriginFunc: func(origin string) (bool, error) {
-			// Allow all GET requests
-			if strings.EqualFold(echo.GET, echo.HeaderXHTTPMethodOverride) {
-				return true, nil
-			}
-			allowedOrigins := []string{
-				".comfyci.org",           // Any subdomain of comfyci.org
-				os.Getenv("CORS_ORIGIN"), // Environment-specific allowed origin
-				".comfyregistry.org",
-				".comfy.org",
-			}
-
-			for _, allowed := range allowedOrigins {
-				if strings.HasSuffix(origin, allowed) || origin == allowed {
-					log.Debug().Msg("[CORSWithConfig] Allowing origin " + origin)
-					return true, nil
-				}
-			}
-
-			log.Debug().Msg("[CORSWithConfig] Rejecting origin " + origin)
-			return false, nil
-		},
-	}))
-
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogURI:    true,
 		LogStatus: true,
