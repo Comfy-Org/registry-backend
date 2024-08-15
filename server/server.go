@@ -48,6 +48,10 @@ func (s *Server) Start() error {
 		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 		AllowCredentials: true,
 		AllowOriginFunc: func(origin string) (bool, error) {
+			// Allow all GET requests
+			if strings.EqualFold(echo.GET, echo.HeaderXHTTPMethodOverride) {
+				return true, nil
+			}
 			allowedOrigins := []string{
 				".comfyci.org",           // Any subdomain of comfyci.org
 				os.Getenv("CORS_ORIGIN"), // Environment-specific allowed origin
