@@ -6,7 +6,7 @@ Join us at our [Discord](https://discord.gg/comfyorg)
 
 Registry React Frontend [Github](https://github.com/Comfy-Org/registry-web)
 
-Registry CLI [Github](https://github.com/yoland68/comfy-cli)
+Registry CLI [Github](https://github.com/Comfy-Org/comfy-cli)
 
 ## Local Development
 
