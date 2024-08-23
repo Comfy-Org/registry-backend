@@ -133,6 +133,7 @@ func TestCICD(t *testing.T) {
 			Status:          &body.Status,
 			PrNumber:        &body.PrNumber,
 			CudaVersion:     body.CudaVersion,
+			BranchName:      &body.BranchName,
 			PytorchVersion:  body.PytorchVersion,
 			Author:          &body.Author,
 			ComfyRunFlags:   body.ComfyRunFlags,

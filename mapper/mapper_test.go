@@ -113,6 +113,7 @@ func TestCiWorkflowResultToActionJobResult(t *testing.T) {
 		assert.Equal(t, result.PythonVersion, *actionJobResult.PythonVersion)
 		assert.Equal(t, result.PytorchVersion, *actionJobResult.PytorchVersion)
 		assert.Equal(t, result.CudaVersion, *actionJobResult.CudaVersion)
+		assert.Equal(t, result.Edges.Gitcommit.BranchName, *actionJobResult.BranchName)
 		assert.Equal(t, "http://example.com/file", *actionJobResult.StorageFile.PublicUrl)
 		assert.Equal(t, result.Edges.Gitcommit.CommitHash, *actionJobResult.CommitHash)
 		assert.Equal(t, result.Edges.Gitcommit.ID.String(), *actionJobResult.CommitId)

@@ -56,6 +56,7 @@ func CiWorkflowResultToActionJobResult(result *ent.CIWorkflowResult) (*drip.Acti
 		PythonVersion:   &result.PythonVersion,
 		PytorchVersion:  &result.PytorchVersion,
 		CudaVersion:     &result.CudaVersion,
+		BranchName:      &result.Edges.Gitcommit.BranchName,
 		StorageFile:     storageFileData,
 		CommitHash:      &result.Edges.Gitcommit.CommitHash,
 		CommitId:        &commitId,
