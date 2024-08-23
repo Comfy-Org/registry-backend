@@ -1805,7 +1805,7 @@ components:
           description: CUDA version used
         branch_name:
           type: string
-          description: CUDA version used
+          description: Name of the relevant git branch
         commit_hash:
           type: string
           description: The hash of the commit
