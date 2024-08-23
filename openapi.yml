@@ -1803,6 +1803,9 @@ components:
         cuda_version:
           type: string
           description: CUDA version used
+        branch_name:
+          type: string
+          description: CUDA version used
         commit_hash:
           type: string
           description: The hash of the commit
