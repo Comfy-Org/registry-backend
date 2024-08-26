@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"registry-backend/ent"
+	"registry-backend/ent/schema"
 	"testing"
 	"time"
 
@@ -25,24 +26,51 @@ func TestIndex(t *testing.T) {
 	algolia, err := NewFromEnv()
 	require.NoError(t, err)
 
-	ctx := context.Background()
-	node := &ent.Node{
-		ID:          uuid.NewString(),
-		Name:        t.Name() + "-" + uuid.NewString(),
-		TotalStar:   98,
-		TotalReview: 20,
-	}
-	for i := 0; i < 10; i++ {
-		err = algolia.IndexNodes(ctx, node)
+	t.Run("node", func(t *testing.T) {
+		ctx := context.Background()
+		node := &ent.Node{
+			ID:          uuid.NewString(),
+			Name:        t.Name() + "-" + uuid.NewString(),
+			TotalStar:   98,
+			TotalReview: 20,
+		}
+		for i := 0; i < 10; i++ {
+			err = algolia.IndexNodes(ctx, node)
+			require.NoError(t, err)
+		}
+
+		<-time.After(time.Second * 10)
+		nodes, err := algolia.SearchNodes(ctx, node.Name)
 		require.NoError(t, err)
-	}
+		require.Len(t, nodes, 1)
+		assert.Equal(t, node, nodes[0])
+	})
 
-	<-time.After(time.Second * 10)
-	nodes, err := algolia.SearchNodes(ctx, node.Name)
-	require.NoError(t, err)
-	require.Len(t, nodes, 1)
-	assert.Equal(t, node, nodes[0])
+	t.Run("nodeVersion", func(t *testing.T) {
+		ctx := context.Background()
+		now := time.Now()
+		nv := &ent.NodeVersion{
+			ID:              uuid.New(),
+			NodeID:          uuid.NewString(),
+			Version:         "v1.0.0-" + uuid.NewString(),
+			Changelog:       "test",
+			Status:          schema.NodeVersionStatusActive,
+			StatusReason:    "test",
+			PipDependencies: []string{"test"},
+			CreateTime:      time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second(), now.Nanosecond(), time.UTC),
+			UpdateTime:      time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second(), now.Nanosecond(), time.UTC),
+		}
+		for i := 0; i < 10; i++ {
+			err = algolia.IndexNodeVersions(ctx, nv)
+			require.NoError(t, err)
+		}
 
+		<-time.After(time.Second * 10)
+		nodes, err := algolia.SearchNodeVersions(ctx, nv.Version)
+		require.NoError(t, err)
+		require.Len(t, nodes, 1)
+		assert.Equal(t, nv, nodes[0])
+	})
 }
 
 func TestNoop(t *testing.T) {

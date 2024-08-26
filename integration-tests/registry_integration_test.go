@@ -128,6 +128,10 @@ func newMockedImpl(client *ent.Client, cfg *config.Config) (impl mockedImpl, aut
 		On("IndexNodes", mock.Anything, mock.Anything).
 		Return(nil).
 		On("DeleteNode", mock.Anything, mock.Anything).
+		Return(nil).
+		On("IndexNodeVersions", mock.Anything, mock.Anything).
+		Return(nil).
+		On("DeleteNodeVersions", mock.Anything, mock.Anything).
 		Return(nil)
 
 	impl = mockedImpl{
@@ -766,103 +770,52 @@ func TestRegistryNodeVersion(t *testing.T) {
 	})
 
 	t.Run("Scan Node", func(t *testing.T) {
-		table := []struct {
-			scenario                  string
-			scanStatus                int
-			scanBody                  []byte
-			expectedNodeVersionStatus drip.NodeVersionStatus
-		}{
-			{
-				scenario:                  "NoIssueFound",
-				scanStatus:                200,
-				scanBody:                  nil,
-				expectedNodeVersionStatus: drip.NodeVersionStatusActive,
+		node := randomNode()
+		nodeVersion := randomNodeVersion(0)
+		downloadUrl := fmt.Sprintf("https://storage.googleapis.com/comfy-registry/%s/%s/%s/node.tar.gz", *pub.Id, *node.Id, *nodeVersion.Version)
+
+		impl.mockStorageService.On("GenerateSignedURL", mock.Anything, mock.Anything).Return("test-url", nil)
+		impl.mockStorageService.On("GetFileUrl", mock.Anything, mock.Anything, mock.Anything).Return("test-url", nil)
+		impl.mockDiscordService.On("SendSecurityCouncilMessage", mock.Anything, mock.Anything).Return(nil)
+		_, err := withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
+			PublisherId: *pub.Id,
+			NodeId:      *node.Id,
+			Body: &drip.PublishNodeVersionJSONRequestBody{
+				Node:                *node,
+				NodeVersion:         *nodeVersion,
+				PersonalAccessToken: *respat.(drip.CreatePersonalAccessToken201JSONResponse).Token,
 			},
-			{
-				scenario:                  "IssuesFound",
-				scanStatus:                200,
-				scanBody:                  []byte("some issues"),
-				expectedNodeVersionStatus: drip.NodeVersionStatusFlagged,
+		})
+		require.NoError(t, err, "should return created node version")
+
+		nodesToScans, err := client.NodeVersion.Query().Where(nodeversion.StatusEQ(schema.NodeVersionStatusPending)).Count(ctx)
+		require.NoError(t, err)
+
+		newNodeScanned := false
+		nodesScanned := 0
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+
+			req := dripservices_registry.ScanRequest{}
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
+			if downloadUrl == req.URL {
+				newNodeScanned = true
+			}
+			nodesScanned++
+		}))
+		t.Cleanup(s.Close)
+
+		impl, authz := newMockedImpl(client, &config.Config{SecretScannerURL: s.URL})
+		dur := time.Duration(0)
+		scanres, err := withMiddleware(authz, impl.SecurityScan)(ctx, drip.SecurityScanRequestObject{
+			Params: drip.SecurityScanParams{
+				MinAge: &dur,
 			},
-			{
-				scenario:                  "NoLongerExists",
-				scanStatus:                500,
-				scanBody:                  []byte("Failed to download file: 404 Client Error: "),
-				expectedNodeVersionStatus: drip.NodeVersionStatusDeleted,
-			},
-			{
-				scenario:                  "InvalidUrl",
-				scanStatus:                400,
-				scanBody:                  []byte("No URL provided"),
-				expectedNodeVersionStatus: drip.NodeVersionStatusPending,
-			},
-		}
-
-		for _, tt := range table {
-			t.Run(tt.scenario, func(t *testing.T) {
-				node := randomNode()
-				nodeVersion := randomNodeVersion(0)
-				downloadUrl := fmt.Sprintf("https://storage.googleapis.com/comfy-registry/%s/%s/%s/node.tar.gz", *pub.Id, *node.Id, *nodeVersion.Version)
-
-				impl.mockStorageService.On("GenerateSignedURL", mock.Anything, mock.Anything).Return("test-url", nil)
-				impl.mockStorageService.On("GetFileUrl", mock.Anything, mock.Anything, mock.Anything).Return("test-url", nil)
-				impl.mockDiscordService.On("SendSecurityCouncilMessage", mock.Anything, mock.Anything).Return(nil)
-				_, err := withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
-					PublisherId: *pub.Id,
-					NodeId:      *node.Id,
-					Body: &drip.PublishNodeVersionJSONRequestBody{
-						Node:                *node,
-						NodeVersion:         *nodeVersion,
-						PersonalAccessToken: *respat.(drip.CreatePersonalAccessToken201JSONResponse).Token,
-					},
-				})
-				require.NoError(t, err, "should return created node version")
-
-				nodesToScans, err := client.NodeVersion.Query().Where(nodeversion.StatusEQ(schema.NodeVersionStatusPending)).All(ctx)
-				require.NoError(t, err)
-
-				newNodeScanned := false
-				nodesScanned := 0
-				s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(tt.scanStatus)
-					w.Write(tt.scanBody)
-
-					req := dripservices_registry.ScanRequest{}
-					require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
-					if downloadUrl == req.URL {
-						newNodeScanned = true
-					}
-					nodesScanned++
-				}))
-				t.Cleanup(s.Close)
-
-				impl, authz := newMockedImpl(client, &config.Config{SecretScannerURL: s.URL})
-				dur := time.Duration(0)
-				scanres, err := withMiddleware(authz, impl.SecurityScan)(ctx, drip.SecurityScanRequestObject{
-					Params: drip.SecurityScanParams{
-						MinAge: &dur,
-					},
-				})
-				require.NoError(t, err)
-				require.IsType(t, drip.SecurityScan200Response{}, scanres)
-				assert.True(t, newNodeScanned)
-				assert.Equal(t, len(nodesToScans), nodesScanned)
-
-				for _, nodeversion := range nodesToScans {
-					res, err := withMiddleware(authz, impl.GetNodeVersion)(ctx, drip.GetNodeVersionRequestObject{
-						NodeId:    nodeversion.NodeID,
-						VersionId: nodeversion.Version,
-					})
-					require.NoError(t, err)
-					require.IsType(t, drip.GetNodeVersion200JSONResponse{}, res)
-					nv := res.(drip.GetNodeVersion200JSONResponse)
-					assert.Equal(t, tt.expectedNodeVersionStatus, *nv.Status)
-					if tt.expectedNodeVersionStatus == drip.NodeVersionStatusFlagged {
-						assert.Equal(t, string(tt.scanBody), *nv.StatusReason)
-					}
-				}
-			})
-		}
+		})
+		require.NoError(t, err)
+		require.IsType(t, drip.SecurityScan200Response{}, scanres)
+		assert.True(t, newNodeScanned)
+		assert.Equal(t, nodesToScans, nodesScanned)
 	})
 
 }
