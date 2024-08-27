@@ -82,10 +82,7 @@ Or manually run:
 Run this command to generate migration files needed for staging/prod database schema changes:
 
 ```shell
-atlas migrate diff migration \
-  --dir "file://ent/migrate/migrations" \
-  --to "ent://ent/schema" \
-  --dev-url "docker://postgres/15/test?search_path=public"
+atlas migrate diff migration --dir "file://ent/migrate/migrations" --to "ent://ent/schema" --dev-url "docker://postgres/15/test?search_path=public"
 ```
 
 ## API Spec Change (openapi.yml)
