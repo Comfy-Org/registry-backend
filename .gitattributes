@@ -1,0 +1,5 @@
+# Default
+* text=auto
+
+# Special SQL handling, as it's sensitive
+*.sql text eol=lf
