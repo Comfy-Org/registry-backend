@@ -1,5 +1,11 @@
+# Project Files
 tmp/
+
+# General IDE Stuff
 .vscode/*
 .vscode/settings.json
 .idea/*
 .DS_Store
+
+# Lazy way to make atlas usable on windows
+atlas.exe
