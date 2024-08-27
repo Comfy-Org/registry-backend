@@ -20,6 +20,10 @@ Install go packages
 
 `go get`
 
+### Atlas
+
+Atlas is used for editing the database, so install it from <https://github.com/ariga/atlas/?tab=readme-ov-file#quick-installation>
+
 ### Supabase
 
 Install [Supabase Cli](https://supabase.com/docs/guides/cli/getting-started)
