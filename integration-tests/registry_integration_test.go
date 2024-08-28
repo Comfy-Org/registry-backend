@@ -11,6 +11,7 @@ import (
 	"registry-backend/ent"
 	"registry-backend/ent/nodeversion"
 	"registry-backend/ent/schema"
+	drip_logging "registry-backend/logging"
 	"registry-backend/mock/gateways"
 	"registry-backend/server/implementation"
 	drip_authorization "registry-backend/server/middleware/authorization"
@@ -725,6 +726,13 @@ func TestRegistryNodeVersion(t *testing.T) {
 			expectedNode.Publisher.CreatedAt = node.Publisher.CreatedAt
 			assert.Equal(t, expectedNode, node)
 		}
+	})
+
+	t.Run("Index Nodes", func(t *testing.T) {
+		ctx := drip_logging.SetupLogger().WithContext(ctx)
+		res, err := withMiddleware(authz, impl.ReindexNodes)(ctx, drip.ReindexNodesRequestObject{})
+		require.NoError(t, err, "should not return error")
+		assert.IsType(t, drip.ReindexNodes200Response{}, res)
 	})
 
 	t.Run("Node Installation", func(t *testing.T) {

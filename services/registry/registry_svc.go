@@ -849,13 +849,35 @@ func (s *RegistryService) AssertPublisherBanned(ctx context.Context, client *ent
 
 func (s *RegistryService) ReindexAllNodes(ctx context.Context, client *ent.Client) error {
 	log.Ctx(ctx).Info().Msgf("reindexing nodes")
-	nodes, err := client.Node.Query().All(ctx)
+	nodes, err := client.Node.Query().
+		WithVersions(func(q *ent.NodeVersionQuery) {
+			q.Modify(func(s *sql.Selector) {
+				s.Where(sql.ExprP(
+					`(node_id, create_time) IN (
+						SELECT node_id, MAX(create_time)
+						FROM node_versions
+						GROUP BY node_id
+					)`,
+				))
+			})
+		}).All(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch all nodes: %w", err)
 	}
 
+	nvs := []*ent.NodeVersion{}
+	for _, node := range nodes {
+		nvs = append(nvs, node.Edges.Versions...)
+	}
+
 	log.Ctx(ctx).Info().Msgf("reindexing %d number of nodes", len(nodes))
 	err = s.algolia.IndexNodes(ctx, nodes...)
+	if err != nil {
+		return fmt.Errorf("failed to reindex all nodes: %w", err)
+	}
+
+	log.Ctx(ctx).Info().Msgf("reindexing %d number of nodes version", len(nvs))
+	err = s.algolia.IndexNodeVersions(ctx, nvs...)
 	if err != nil {
 		return fmt.Errorf("failed to reindex all nodes: %w", err)
 	}
