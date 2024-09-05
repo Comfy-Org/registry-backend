@@ -35,6 +35,7 @@ func TestAllowlist(t *testing.T) {
 		{"Artifact POST", "/upload-artifact", "POST", true},
 		{"Git Commit POST", "/gitcommit", "POST", true},
 		{"Git Commit GET", "/gitcommit", "GET", true},
+		{"Git Commit Summary GET", "/gitcommitsummary", "GET", true},
 		{"Branch GET", "/branch", "GET", true},
 		{"Node Version Path POST", "/publishers/pub123/nodes/node456/versions", "POST", true},
 		{"Publisher POST", "/publishers", "POST", false},

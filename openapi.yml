@@ -206,6 +206,61 @@ paths:
           description: Commit not found
         '500':
           description: Internal server error
+  /gitcommitsummary:
+    get:
+      summary: Retrieve a summary of git commits
+      description: Returns a summary of git commits, including status, start time, and end time.
+      parameters:
+        - in: query
+          name: repoName
+          required: false
+          schema:
+            type: string
+            default: comfyanonymous/ComfyUI
+          description: The repository name to filter the git commits by.
+        - in: query
+          name: branchName
+          required: false
+          schema:
+            type: string
+          description: The branch name to filter the git commits by.
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+          description: The page number to retrieve.
+        - in: query
+          name: pageSize
+          required: false
+          schema:
+            type: integer
+            default: 10
+          description: The number of items to include per page.
+      responses:
+        '200':
+          description: Successfully retrieved git commit summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  commitSummaries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GitCommitSummary'
+                  totalNumberOfPages:
+                    type: integer
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
   /workflowresult/{workflowResultId}:
     get:
       summary: Retrieve a specific commit by ID
@@ -1735,6 +1790,30 @@ components:
           type: string
           format: date-time
           description: The timestamp when the commit was made
+    GitCommitSummary:
+      type: object
+      properties:
+        commit_hash:
+          type: string
+          description: The hash of the commit
+        commit_name:
+          type: string
+          description: The name of the commit
+        branch_name:
+          type: string
+          description: The branch where the commit was made
+        author:
+          type: string
+          description: The author of the commit
+        timestamp:
+          type: string
+          format: date-time
+          description: The timestamp when the commit was made
+        status_summary:
+          type: object
+          description: A map of operating system to status pairs
+          additionalProperties:
+            type: string
     User:
       type: object
       properties:
