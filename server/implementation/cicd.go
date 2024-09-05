@@ -2,10 +2,13 @@ package implementation
 
 import (
 	"context"
+	"fmt"
 	"registry-backend/drip"
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/gitcommit"
+	"registry-backend/ent/schema"
 	"registry-backend/mapper"
+	"sort"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -117,6 +120,104 @@ func (impl *DripStrictServerImplementation) GetGitcommit(ctx context.Context, re
 	return drip.GetGitcommit200JSONResponse{
 		JobResults:         &results,
 		TotalNumberOfPages: &numberOfPages,
+	}, nil
+}
+
+func (impl *DripStrictServerImplementation) GetGitcommitsummary(ctx context.Context, request drip.GetGitcommitsummaryRequestObject) (drip.GetGitcommitsummaryResponseObject, error) {
+	log.Ctx(ctx).Info().Msg("Getting git commit summary")
+
+	// TODO: This is implementing as a dense processing at time of request, but this should really be preprocessed in advance
+	// probably even stored in the database
+	query := impl.Client.CIWorkflowResult.Query().
+		WithGitcommit().
+		WithStorageFile()
+
+	// Apply filters
+	repoName := "comfyanonymous/ComfyUI"
+	if request.Params.RepoName != nil {
+		repoName = *request.Params.RepoName
+	}
+	repoName = strings.ToLower(repoName)
+	if request.Params.RepoName != nil {
+		log.Ctx(ctx).Info().Msgf("Filtering git commit by repo name %s", repoName)
+		query.Where(ciworkflowresult.HasGitcommitWith(gitcommit.RepoNameEQ(repoName)))
+	}
+	if request.Params.BranchName != nil {
+		log.Ctx(ctx).Info().Msgf("Filtering git commit by branch name %s", *request.Params.BranchName)
+		query.Where(ciworkflowresult.HasGitcommitWith(gitcommit.BranchNameEQ(*request.Params.BranchName)))
+	}
+	query.Order(ciworkflowresult.ByGitcommitField(gitcommit.FieldCommitTimestamp, sql.OrderDesc()))
+
+	// Execute the query to get all commits
+	commits, err := query.All(ctx)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Error retrieving git commits w/ err: %v", err)
+		message := fmt.Sprintf("Error retrieving git commits: %v", err)
+		return drip.GetGitcommitsummary500JSONResponse{
+			Message: &message,
+		}, nil
+	}
+	log.Ctx(ctx).Info().Msgf("Retrieved %d commits to summarize", len(commits))
+
+	// Create summaries
+	summaries := make(map[string]*drip.GitCommitSummary)
+	for _, commit := range commits {
+		summary, exists := summaries[commit.Edges.Gitcommit.CommitHash]
+		if !exists {
+			summary = &drip.GitCommitSummary{
+				CommitHash:    &commit.Edges.Gitcommit.CommitHash,
+				Timestamp:     &commit.Edges.Gitcommit.CommitTimestamp,
+				Author:        &commit.Edges.Gitcommit.Author,
+				CommitName:    &commit.Edges.Gitcommit.CommitMessage,
+				BranchName:    &commit.Edges.Gitcommit.BranchName,
+				StatusSummary: &map[string]string{},
+			}
+			summaries[commit.Edges.Gitcommit.CommitHash] = summary
+		}
+		_, exists = (*summary.StatusSummary)[commit.OperatingSystem]
+		if !exists {
+			(*summary.StatusSummary)[commit.OperatingSystem] = string(commit.Status)
+		} else if commit.Status == schema.WorkflowRunStatusTypeFailed {
+			(*summary.StatusSummary)[commit.OperatingSystem] = string(commit.Status)
+		}
+	}
+
+	// Convert map to slice for pagination
+	summarySlice := make([]drip.GitCommitSummary, 0, len(summaries))
+	for _, summary := range summaries {
+		summarySlice = append(summarySlice, *summary)
+	}
+
+	// Sort summaries by commit date (newest first)
+	sort.Slice(summarySlice, func(i, j int) bool {
+		dateI := summarySlice[i].Timestamp
+		dateJ := summarySlice[j].Timestamp
+		return dateI.After(*dateJ)
+	})
+
+	// Pagination
+	page := 1
+	pageSize := 10
+	if request.Params.Page != nil {
+		page = *request.Params.Page
+	}
+	if request.Params.PageSize != nil {
+		pageSize = *request.Params.PageSize
+	}
+
+	start := (page - 1) * pageSize
+	end := start + pageSize
+	if end > len(summarySlice) {
+		end = len(summarySlice)
+	}
+
+	paginatedSummaries := summarySlice[start:end]
+	totalPages := (len(summarySlice) + pageSize - 1) / pageSize
+
+	log.Ctx(ctx).Info().Msgf("Git commit summaries retrieved successfully, %d summaries, %d of %d pages", len(paginatedSummaries), page, totalPages)
+	return drip.GetGitcommitsummary200JSONResponse{
+		CommitSummaries:    &paginatedSummaries,
+		TotalNumberOfPages: &totalPages,
 	}, nil
 }
 
