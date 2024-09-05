@@ -146,6 +146,7 @@ func (impl *DripStrictServerImplementation) GetGitcommitsummary(ctx context.Cont
 		log.Ctx(ctx).Info().Msgf("Filtering git commit by branch name %s", *request.Params.BranchName)
 		query.Where(ciworkflowresult.HasGitcommitWith(gitcommit.BranchNameEQ(*request.Params.BranchName)))
 	}
+	query.Order(ciworkflowresult.ByGitcommitField(gitcommit.FieldCommitTimestamp, sql.OrderDesc()))
 
 	// Execute the query to get all commits
 	commits, err := query.All(ctx)
