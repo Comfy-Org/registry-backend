@@ -166,7 +166,7 @@ func (impl *DripStrictServerImplementation) GetGitcommitsummary(ctx context.Cont
 		if !exists {
 			summary = &drip.GitCommitSummary{
 				CommitHash:    &commit.Edges.Gitcommit.CommitHash,
-				Timestamp:     &commit.Edges.Gitcommit.Timestamp,
+				Timestamp:     &commit.Edges.Gitcommit.CommitTimestamp,
 				Author:        &commit.Edges.Gitcommit.Author,
 				CommitName:    &commit.Edges.Gitcommit.CommitMessage,
 				BranchName:    &commit.Edges.Gitcommit.BranchName,
