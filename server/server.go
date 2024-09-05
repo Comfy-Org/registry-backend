@@ -42,9 +42,12 @@ func (s *Server) Start() error {
 	e.HideBanner = true
 	e.Use(drip_middleware.TracingMiddleware)
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     []string{"*"}, // This allows all origins
-		AllowMethods:     []string{"*"},
-		AllowHeaders:     []string{"*"},
+		AllowOrigins: []string{"*"}, // This allows all origins
+		AllowMethods: []string{"*"},
+		AllowHeaders: []string{"*"},
+		AllowOriginFunc: func(origin string) (bool, error) {
+			return true, nil
+		},
 		AllowCredentials: true,
 	}))
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
