@@ -67,13 +67,14 @@ func (a *algolia) IndexNodes(ctx context.Context, nodes ...*ent.Node) error {
 	}, len(nodes))
 
 	for i, n := range nodes {
-		objects[i] = struct {
+		o := struct {
 			ObjectID string `json:"objectID"`
 			*ent.Node
 		}{
 			ObjectID: n.ID,
 			Node:     n,
 		}
+		objects[i] = o
 	}
 
 	res, err := index.SaveObjects(objects)
@@ -118,13 +119,15 @@ func (a *algolia) IndexNodeVersions(ctx context.Context, nodes ...*ent.NodeVersi
 	}, len(nodes))
 
 	for i, n := range nodes {
-		objects[i] = struct {
+		o := struct {
 			ObjectID string `json:"objectID"`
 			*ent.NodeVersion
 		}{
 			ObjectID:    n.ID.String(),
 			NodeVersion: n,
 		}
+		o.StatusReason = ""
+		objects[i] = o
 	}
 
 	res, err := index.SaveObjects(objects)
