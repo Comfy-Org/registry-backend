@@ -876,10 +876,10 @@ func (s *RegistryService) ReindexAllNodes(ctx context.Context, client *ent.Clien
 		return fmt.Errorf("failed to reindex all nodes: %w", err)
 	}
 
-	log.Ctx(ctx).Info().Msgf("reindexing %d number of nodes version", len(nvs))
+	log.Ctx(ctx).Info().Msgf("reindexing %d number of node versions", len(nvs))
 	err = s.algolia.IndexNodeVersions(ctx, nvs...)
 	if err != nil {
-		return fmt.Errorf("failed to reindex all nodes: %w", err)
+		return fmt.Errorf("failed to reindex all node versions: %w", err)
 	}
 	return nil
 }
