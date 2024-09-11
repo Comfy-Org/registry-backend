@@ -61,18 +61,25 @@ func NewFromEnvOrNoop() (AlgoliaService, error) {
 // IndexNodes indexes the provided nodes in Algolia.
 func (a *algolia) IndexNodes(ctx context.Context, nodes ...*ent.Node) error {
 	index := a.client.InitIndex("nodes_index")
-	objects := make([]struct {
-		ObjectID string `json:"objectID"`
-		*ent.Node
-	}, len(nodes))
+	objects := make([]map[string]interface{}, len(nodes))
 
 	for i, n := range nodes {
-		o := struct {
-			ObjectID string `json:"objectID"`
-			*ent.Node
-		}{
-			ObjectID: n.ID,
-			Node:     n,
+		o := map[string]interface{}{
+			"objectID":       n.ID,
+			"name":           n.Name,
+			"publiser_id":    n.PublisherID,
+			"description":    n.Description,
+			"id":             n.ID,
+			"create_time":    n.CreateTime,
+			"update_time":    n.UpdateTime,
+			"license":        n.License,
+			"repository_url": n.RepositoryURL,
+			"total_install":  n.TotalInstall,
+			"status":         n.Status,
+			"author":         n.Author,
+			"category":       n.Category,
+			"total_star":     n.TotalStar,
+			"total_review":   n.TotalReview,
 		}
 		objects[i] = o
 	}
