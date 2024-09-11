@@ -997,7 +997,7 @@ func (s *DripStrictServerImplementation) ReindexNodes(ctx context.Context, reque
 	log.Ctx(ctx).Info().Msg("ReindexNodes request received")
 	err = s.RegistryService.ReindexAllNodes(ctx, s.Client)
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("Failed to list node versions w/ err: %v", err)
+		log.Ctx(ctx).Error().Msgf("Failed to reindex all nodes w/ err: %v", err)
 		return drip.ReindexNodes500JSONResponse{Message: "Failed to reindex nodes", Error: err.Error()}, nil
 	}
 
