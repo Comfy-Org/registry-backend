@@ -57,7 +57,7 @@ func (s *DripStrictServerImplementation) ValidatePublisher(
 	// Check if the username is empty
 	name := request.Params.Username
 	if name == "" {
-		log.Ctx(ctx).Error().Msg("Username parameter is missing")
+		log.Ctx(ctx).Warn().Msg("Username parameter is missing")
 		return drip.ValidatePublisher400JSONResponse{Message: "Username parameter is required"}, nil
 	}
 
@@ -673,16 +673,16 @@ func (s *DripStrictServerImplementation) DeletePersonalAccessToken(
 	err = s.RegistryService.AssertAccessTokenBelongsToPublisher(ctx, s.Client, request.PublisherId, uuid.MustParse(request.TokenId))
 	switch {
 	case ent.IsNotFound(err):
-		log.Ctx(ctx).Info().Msgf("Publisher with ID %s not found", request.PublisherId)
+		log.Ctx(ctx).Warn().Msgf("Publisher with ID %s not found", request.PublisherId)
 		return drip.DeletePersonalAccessToken404JSONResponse{Message: "Publisher not found"}, nil
 
 	case drip_services.IsPermissionError(err):
-		log.Ctx(ctx).Error().Msgf(
+		log.Ctx(ctx).Warn().Msgf(
 			"Permission denied for user ID %s on publisher ID %s w/ err: %v", userId, request.PublisherId, err)
 		return drip.DeletePersonalAccessToken403JSONResponse{}, err
 
 	case err != nil:
-		log.Ctx(ctx).Error().Msgf("Failed to assert publisher permission %s w/ err: %v", request.PublisherId, err)
+		log.Ctx(ctx).Warn().Msgf("Failed to assert publisher permission %s w/ err: %v", request.PublisherId, err)
 		return drip.DeletePersonalAccessToken500JSONResponse{Message: "Failed to assert publisher permission", Error: err.Error()}, err
 	}
 
