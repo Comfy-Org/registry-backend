@@ -139,6 +139,7 @@ func (impl *DripStrictServerImplementation) GetGitcommitsummary(ctx context.Cont
 	summaries := make(map[string]*drip.GitCommitSummary)
 	commitsThusFar := 0
 	readCount := 4096
+	reachedEnd := false
 
 	for len(summaries) < targetCount {
 
@@ -181,6 +182,7 @@ func (impl *DripStrictServerImplementation) GetGitcommitsummary(ctx context.Cont
 		}
 		log.Ctx(ctx).Info().Msgf("Retrieved %d commits to summarize", len(commits))
 		if len(commits) == 0 {
+			reachedEnd = true
 			break
 		}
 
@@ -239,11 +241,15 @@ func (impl *DripStrictServerImplementation) GetGitcommitsummary(ctx context.Cont
 
 	paginatedSummaries := summarySlice[start:end]
 	totalPages := (len(summarySlice) + pageSize - 1) / pageSize
+	displayedTotalPages := totalPages
+	if !reachedEnd {
+		displayedTotalPages = page + 2
+	}
 
 	log.Ctx(ctx).Info().Msgf("Git commit summaries retrieved successfully, %d summaries, %d of %d pages", len(paginatedSummaries), page, totalPages)
 	return drip.GetGitcommitsummary200JSONResponse{
 		CommitSummaries:    &paginatedSummaries,
-		TotalNumberOfPages: &totalPages,
+		TotalNumberOfPages: &displayedTotalPages,
 	}, nil
 }
 
