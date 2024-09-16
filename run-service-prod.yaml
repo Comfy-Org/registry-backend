@@ -11,6 +11,7 @@ spec:
         autoscaling.knative.dev/min-scale: "1"
         autoscaling.knative.dev/minScale: '1'
         autoscaling.knative.dev/maxScale: '20'
+        run.googleapis.com/minScale: '1'
     spec:
       containers:
       - image: registry-backend-image-substitute
@@ -57,3 +58,7 @@ spec:
             secretKeyRef:
               key: 2
               name: PROD_ALGOLIA_API_KEY
+        resources:
+          limits:
+            cpu: 4000m
+            memory: 2Gi
