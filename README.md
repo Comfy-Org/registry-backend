@@ -1,20 +1,20 @@
 # registry-backend
 
-The backend API server for [Comfy Registry](https://comfyregistry.org) and [Comfy CI/CD](https://comfyci.org).
+The server that backs ComfyUI Registry, a public collection of custom node packs used in ComfyUI. Read the [docs]() to publish your first node. Browse existing nodes at https://registry.comfy.org.
 
-Join us at our [Discord](https://discord.gg/comfyorg)
+The backend API server for [Comfy Registry](https://registry.comfy.org) and [Comfy CI/CD](https://ci.comfy.org).
 
-Registry React Frontend [Github](https://github.com/Comfy-Org/registry-web)
+[Discord](https://discord.gg/comfyorg)
 
-Registry CLI [Github](https://github.com/Comfy-Org/comfy-cli)
+[Registry Frontend](https://github.com/Comfy-Org/registry-web)
+
+[cli](https://github.com/Comfy-Org/comfy-cli)
 
 ## Local Development
 
 ### Golang
 
-Install Golang:
-
-<https://go.dev/doc/install>
+Install Golang [here](https://go.dev/doc/install).
 
 Install go packages
 
