@@ -245,6 +245,15 @@ func (s *DripStrictServerImplementation) ListNodesForPublisher(
 
 func (s *DripStrictServerImplementation) ListAllNodes(
 	ctx context.Context, request drip.ListAllNodesRequestObject) (drip.ListAllNodesResponseObject, error) {
+	err := s.MixpanelService.Track(ctx, []*mixpanel.Event{
+		s.MixpanelService.NewEvent("List All Nodes", "", map[string]any{
+			"page":  request.Params.Page,
+			"limit": request.Params.Limit,
+		}),
+	})
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to track event w/ err: %v", err)
+	}
 
 	log.Ctx(ctx).Info().Msg("ListAllNodes request received")
 
@@ -701,7 +710,6 @@ func (s *DripStrictServerImplementation) DeletePersonalAccessToken(
 func (s *DripStrictServerImplementation) InstallNode(
 	ctx context.Context, request drip.InstallNodeRequestObject) (drip.InstallNodeResponseObject, error) {
 	// TODO(robinhuang): Refactor to separate class
-	mp := mixpanel.NewApiClient("f919d1b9da9a57482453c72ef7b16d88")
 	log.Ctx(ctx).Info().Msgf("InstallNode request received for node ID: %s", request.NodeId)
 
 	// Get node
@@ -733,8 +741,8 @@ func (s *DripStrictServerImplementation) InstallNode(
 			log.Ctx(ctx).Error().Msgf("Error incrementing number of latest node version install w/ err: %v", err)
 			return drip.InstallNode500JSONResponse{Message: errMessage}, err
 		}
-		mp.Track(ctx, []*mixpanel.Event{
-			mp.NewEvent("Install Node Latest", "", map[string]any{
+		s.MixpanelService.Track(ctx, []*mixpanel.Event{
+			s.MixpanelService.NewEvent("Install Node Latest", "", map[string]any{
 				"Node ID": request.NodeId,
 				"Version": nodeVersion.Version,
 			}),
@@ -759,8 +767,8 @@ func (s *DripStrictServerImplementation) InstallNode(
 			log.Ctx(ctx).Error().Msgf("Error incrementing number of latest node version install w/ err: %v", err)
 			return drip.InstallNode500JSONResponse{Message: errMessage}, err
 		}
-		mp.Track(ctx, []*mixpanel.Event{
-			mp.NewEvent("Install Node", "", map[string]any{
+		s.MixpanelService.Track(ctx, []*mixpanel.Event{
+			s.MixpanelService.NewEvent("Install Node", "", map[string]any{
 				"Node ID": request.NodeId,
 				"Version": nodeVersion.Version,
 			}),
