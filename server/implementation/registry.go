@@ -453,8 +453,9 @@ func (s *DripStrictServerImplementation) ListNodeVersions(
 	apiStatus := mapper.ApiNodeVersionStatusesToDbNodeVersionStatuses(request.Params.Statuses)
 
 	nodeVersionsResult, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &drip_services.NodeVersionFilter{
-		NodeId: request.NodeId,
-		Status: apiStatus,
+		NodeId:              request.NodeId,
+		Status:              apiStatus,
+		IncludeStatusReason: mapper.BoolPtrToBool(request.Params.IncludeStatusReason),
 	})
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to list node versions for node %s w/ err: %v", request.NodeId, err)
@@ -960,8 +961,9 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 		pageSize = *request.Params.PageSize
 	}
 	f := &drip_services.NodeVersionFilter{
-		Page:     page,
-		PageSize: pageSize,
+		Page:                page,
+		PageSize:            pageSize,
+		IncludeStatusReason: mapper.BoolPtrToBool(request.Params.IncludeStatusReason),
 	}
 
 	if request.Params.Statuses != nil {

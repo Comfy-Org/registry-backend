@@ -530,7 +530,8 @@ func TestRegistryNodeVersion(t *testing.T) {
 			NodeId:        *node.Id,
 			VersionNumber: *createdNodeVersion.Version,
 			Body: &drip.AdminUpdateNodeVersionJSONRequestBody{
-				Status: &activeStatus,
+				Status:       &activeStatus,
+				StatusReason: proto.String("test reason"),
 			},
 		})
 		require.NoError(t, err, "should return updated node version")
@@ -617,6 +618,19 @@ func TestRegistryNodeVersion(t *testing.T) {
 			Status:       &nodeVersionStatus,
 			StatusReason: proto.String(""),
 		}, resVersions200[0], "should be equal")
+
+		// retrieve node versions with the status reason
+		resVersions, err = withMiddleware(authz, impl.ListNodeVersions)(ctx, drip.ListNodeVersionsRequestObject{
+			NodeId: *node.Id,
+			Params: drip.ListNodeVersionsParams{
+				IncludeStatusReason: proto.Bool(true),
+			},
+		})
+		require.NoError(t, err, "should not return error")
+		require.IsType(t, drip.ListNodeVersions200JSONResponse{}, resVersions, "should return 200")
+
+		resVersions200 = resVersions.(drip.ListNodeVersions200JSONResponse)
+		assert.Equal(t, "test reason", *resVersions200[0].StatusReason)
 	})
 
 	t.Run("Update Node Version", func(t *testing.T) {
