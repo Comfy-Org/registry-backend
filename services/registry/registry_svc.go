@@ -67,11 +67,12 @@ type NodeFilter struct {
 }
 
 type NodeVersionFilter struct {
-	NodeId   string
-	Status   []schema.NodeVersionStatus
-	MinAge   time.Duration
-	PageSize int
-	Page     int
+	NodeId              string
+	Status              []schema.NodeVersionStatus
+	IncludeStatusReason bool
+	MinAge              time.Duration
+	PageSize            int
+	Page                int
 }
 
 type NodeData struct {
@@ -430,7 +431,8 @@ type NodeVersionCreation struct {
 	SignedUrl   string
 }
 
-func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Client, filter *NodeVersionFilter) (*ListNodeVersionsResult, error) {
+func (s *RegistryService) ListNodeVersions(
+	ctx context.Context, client *ent.Client, filter *NodeVersionFilter) (*ListNodeVersionsResult, error) {
 	query := client.NodeVersion.Query().
 		WithStorageFile().
 		Order(ent.Desc(nodeversion.FieldCreateTime))
@@ -449,27 +451,40 @@ func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Clie
 		query.Where(nodeversion.CreateTimeLT(time.Now().Add(-filter.MinAge)))
 	}
 
+	// Apply pagination
 	if filter.Page > 0 && filter.PageSize > 0 {
-		query.Offset((filter.Page - 1) * filter.PageSize)
-		query.Limit(filter.PageSize)
+		query.Offset((filter.Page - 1) * filter.PageSize).Limit(filter.PageSize)
 	}
+
+	// Note: custom SELECT statement cause errors in the ent framework when using the Count method.
+	// We need to include the logic to exclude certain fields after the count query is executed.
 	total, err := query.Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count node versions: %w", err)
+	}
+
+	// By default, we are selecting all fields. If the status reason is not required, we will exclude it
+	if !filter.IncludeStatusReason {
+		columns := make([]string, 0, len(nodeversion.Columns))
+		for _, column := range nodeversion.Columns {
+			if column != nodeversion.FieldStatusReason {
+				columns = append(columns, column)
+			}
+		}
+
+		query.Select(columns...)
 	}
 	versions, err := query.All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list node versions: %w", err)
 	}
 
+	// Calculate total pages
 	totalPages := 0
-	if total > 0 && filter.PageSize > 0 {
-		totalPages = total / filter.PageSize
-
-		if total%filter.PageSize != 0 {
-			totalPages += 1
-		}
+	if filter.PageSize > 0 {
+		totalPages = (total + filter.PageSize - 1) / filter.PageSize // Use ceiling division for total pages
 	}
+
 	return &ListNodeVersionsResult{
 		Total:        total,
 		NodeVersions: versions,
