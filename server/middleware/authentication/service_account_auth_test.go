@@ -37,9 +37,11 @@ func TestServiceAccountAllowList(t *testing.T) {
 		{"Unauthorized Path", "/nonexistent", "GET", true},
 		{"Get All Nodes", "/nodes", "GET", true},
 		{"Install Nodes", "/nodes/node-id/install", "GET", true},
+		{"Get Comfy-Nodes", "/nodes/test/versions/1.0.0/comfy-nodes/test", "GET", true},
 
 		{"Reindex Nodes", "/nodes/reindex", "POST", false},
 		{"Reindex Nodes", "/security-scan", "GET", false},
+		{"Create Comfy-Nodes", "/nodes/test/versions/1.0.0/comfy-nodes", "POST", false},
 	}
 
 	for _, tt := range tests {

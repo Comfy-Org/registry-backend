@@ -9,6 +9,9 @@ import (
 // CIWorkflowResult is the predicate function for ciworkflowresult builders.
 type CIWorkflowResult func(*sql.Selector)
 
+// ComfyNode is the predicate function for comfynode builders.
+type ComfyNode func(*sql.Selector)
+
 // GitCommit is the predicate function for gitcommit builders.
 type GitCommit func(*sql.Selector)
 

@@ -4,8 +4,10 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
+	"registry-backend/ent/comfynode"
 	"registry-backend/ent/node"
 	"registry-backend/ent/nodeversion"
 	"registry-backend/ent/predicate"
@@ -27,6 +29,7 @@ type NodeVersionQuery struct {
 	predicates      []predicate.NodeVersion
 	withNode        *NodeQuery
 	withStorageFile *StorageFileQuery
+	withComfyNodes  *ComfyNodeQuery
 	withFKs         bool
 	modifiers       []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
@@ -102,6 +105,28 @@ func (nvq *NodeVersionQuery) QueryStorageFile() *StorageFileQuery {
 			sqlgraph.From(nodeversion.Table, nodeversion.FieldID, selector),
 			sqlgraph.To(storagefile.Table, storagefile.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, nodeversion.StorageFileTable, nodeversion.StorageFileColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(nvq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryComfyNodes chains the current query on the "comfy_nodes" edge.
+func (nvq *NodeVersionQuery) QueryComfyNodes() *ComfyNodeQuery {
+	query := (&ComfyNodeClient{config: nvq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := nvq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := nvq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(nodeversion.Table, nodeversion.FieldID, selector),
+			sqlgraph.To(comfynode.Table, comfynode.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, nodeversion.ComfyNodesTable, nodeversion.ComfyNodesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(nvq.driver.Dialect(), step)
 		return fromU, nil
@@ -303,6 +328,7 @@ func (nvq *NodeVersionQuery) Clone() *NodeVersionQuery {
 		predicates:      append([]predicate.NodeVersion{}, nvq.predicates...),
 		withNode:        nvq.withNode.Clone(),
 		withStorageFile: nvq.withStorageFile.Clone(),
+		withComfyNodes:  nvq.withComfyNodes.Clone(),
 		// clone intermediate query.
 		sql:  nvq.sql.Clone(),
 		path: nvq.path,
@@ -328,6 +354,17 @@ func (nvq *NodeVersionQuery) WithStorageFile(opts ...func(*StorageFileQuery)) *N
 		opt(query)
 	}
 	nvq.withStorageFile = query
+	return nvq
+}
+
+// WithComfyNodes tells the query-builder to eager-load the nodes that are connected to
+// the "comfy_nodes" edge. The optional arguments are used to configure the query builder of the edge.
+func (nvq *NodeVersionQuery) WithComfyNodes(opts ...func(*ComfyNodeQuery)) *NodeVersionQuery {
+	query := (&ComfyNodeClient{config: nvq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	nvq.withComfyNodes = query
 	return nvq
 }
 
@@ -410,9 +447,10 @@ func (nvq *NodeVersionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		nodes       = []*NodeVersion{}
 		withFKs     = nvq.withFKs
 		_spec       = nvq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			nvq.withNode != nil,
 			nvq.withStorageFile != nil,
+			nvq.withComfyNodes != nil,
 		}
 	)
 	if nvq.withStorageFile != nil {
@@ -451,6 +489,13 @@ func (nvq *NodeVersionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	if query := nvq.withStorageFile; query != nil {
 		if err := nvq.loadStorageFile(ctx, query, nodes, nil,
 			func(n *NodeVersion, e *StorageFile) { n.Edges.StorageFile = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := nvq.withComfyNodes; query != nil {
+		if err := nvq.loadComfyNodes(ctx, query, nodes,
+			func(n *NodeVersion) { n.Edges.ComfyNodes = []*ComfyNode{} },
+			func(n *NodeVersion, e *ComfyNode) { n.Edges.ComfyNodes = append(n.Edges.ComfyNodes, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -515,6 +560,36 @@ func (nvq *NodeVersionQuery) loadStorageFile(ctx context.Context, query *Storage
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
+	}
+	return nil
+}
+func (nvq *NodeVersionQuery) loadComfyNodes(ctx context.Context, query *ComfyNodeQuery, nodes []*NodeVersion, init func(*NodeVersion), assign func(*NodeVersion, *ComfyNode)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*NodeVersion)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(comfynode.FieldNodeVersionID)
+	}
+	query.Where(predicate.ComfyNode(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(nodeversion.ComfyNodesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.NodeVersionID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "node_version_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }

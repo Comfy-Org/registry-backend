@@ -1014,3 +1014,41 @@ func (s *DripStrictServerImplementation) ReindexNodes(ctx context.Context, reque
 	log.Ctx(ctx).Info().Msgf("Reindex nodes successful")
 	return drip.ReindexNodes200Response{}, nil
 }
+
+// CreateComfyNodes bulk-creates comfy-nodes for a node version
+func (impl *DripStrictServerImplementation) CreateComfyNodes(ctx context.Context, request drip.CreateComfyNodesRequestObject) (res drip.CreateComfyNodesResponseObject, err error) {
+	log.Ctx(ctx).Info().Msg("CreateComfyNodes request received")
+	err = impl.RegistryService.CreateComfyNodes(ctx, impl.Client, request.NodeId, request.VersionId, *request.Body)
+	if ent.IsNotFound(err) {
+		log.Ctx(ctx).Error().Msgf("Node or node version not found w/ err: %v", err)
+		return drip.CreateComfyNodes404JSONResponse{Message: "Node or node version not found", Error: err.Error()}, nil
+	}
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to create comfy nodes w/ err: %v", err)
+		return drip.CreateComfyNodes500JSONResponse{Message: "Failed to create comfy nodes", Error: err.Error()}, nil
+	}
+
+	log.Ctx(ctx).Info().Msgf("CreateComfyNodes successful")
+	return drip.CreateComfyNodes204Response{}, nil
+}
+
+// GetComfyNode return a certain comfy-node of a certain node version
+func (impl *DripStrictServerImplementation) GetComfyNode(ctx context.Context, request drip.GetComfyNodeRequestObject) (res drip.GetComfyNodeResponseObject, err error) {
+	log.Ctx(ctx).Info().Msg("GetComfyNode request received")
+
+	n, err := impl.RegistryService.GetComfyNode(ctx, impl.Client, request.NodeId, request.VersionId, request.ComfyNodeId)
+	if ent.IsNotFound(err) {
+		log.Ctx(ctx).Error().Msgf("Node or node version or comfy node not found w/ err: %v", err)
+		return drip.GetComfyNode404JSONResponse{Message: "Node or node version or comfy node not found", Error: err.Error()}, nil
+	}
+
+	cn := mapper.DBComfyNodeToApiComfyNode(n)
+	if cn == nil {
+		log.Ctx(ctx).Error().Msgf("Comfy Node not found")
+		return drip.GetComfyNode404JSONResponse{Message: "Comfy Node not found"}, nil
+	}
+
+	log.Ctx(ctx).Info().Msgf("GetComfyNode successful")
+	res = drip.GetComfyNode200JSONResponse(*cn)
+	return
+}

@@ -59,6 +59,15 @@ func DbNodeVersionToApiNodeVersion(dbNodeVersion *ent.NodeVersion) *drip.NodeVer
 		downloadUrl = dbNodeVersion.Edges.StorageFile.FileURL
 	}
 
+	var comfyNodes *map[string]drip.ComfyNode
+	if len(dbNodeVersion.Edges.ComfyNodes) > 0 {
+		cn := make(map[string]drip.ComfyNode, len(dbNodeVersion.Edges.ComfyNodes))
+		for _, v := range dbNodeVersion.Edges.ComfyNodes {
+			cn[v.ID] = *DBComfyNodeToApiComfyNode(v)
+		}
+		comfyNodes = &cn
+	}
+
 	apiVersion := &drip.NodeVersion{
 		Id:           &id,
 		Version:      &dbNodeVersion.Version,
@@ -69,8 +78,28 @@ func DbNodeVersionToApiNodeVersion(dbNodeVersion *ent.NodeVersion) *drip.NodeVer
 		Status:       status,
 		StatusReason: &dbNodeVersion.StatusReason,
 		DownloadUrl:  &downloadUrl,
+		ComfyNodes:   comfyNodes,
 	}
 	return apiVersion
+}
+
+func DBComfyNodeToApiComfyNode(dbComfyNode *ent.ComfyNode) *drip.ComfyNode {
+	if dbComfyNode == nil {
+		return nil
+	}
+
+	return &drip.ComfyNode{
+		ComfyNodeId:  &dbComfyNode.ID,
+		Category:     &dbComfyNode.Category,
+		Function:     &dbComfyNode.Function,
+		Description:  &dbComfyNode.Description,
+		Deprecated:   &dbComfyNode.Deprecated,
+		Experimental: &dbComfyNode.Experimental,
+		InputTypes:   &dbComfyNode.InputTypes,
+		OutputIsList: &dbComfyNode.OutputIsList,
+		ReturnNames:  &dbComfyNode.ReturnNames,
+		ReturnTypes:  &dbComfyNode.ReturnTypes,
+	}
 }
 
 func CheckValidSemv(version string) bool {

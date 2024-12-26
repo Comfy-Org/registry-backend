@@ -38,13 +38,16 @@ func TestAllowlist(t *testing.T) {
 		{"Git Commit Summary GET", "/gitcommitsummary", "GET", true},
 		{"Branch GET", "/branch", "GET", true},
 		{"Node Version Path POST", "/publishers/pub123/nodes/node456/versions", "POST", true},
-		{"Publisher POST", "/publishers", "POST", false},
-		{"Unauthorized Path", "/nonexistent", "GET", false},
 		{"Reindex Nodes", "/nodes/reindex", "POST", true},
 		{"Get All Nodes", "/nodes", "GET", true},
 		{"Install Nodes", "/nodes/node-id/install", "GET", true},
 		{"Get all node versions", "/nodes/node-id/versions", "GET", true},
 		{"Get specific node version", "/nodes/node-id/versions/1.0.0", "GET", true},
+		{"Create Comfy Nodes", "/nodes/test/versions/1.0.0/comfy-nodes", "POST", true},
+		{"Get a Comfy-Node", "/nodes/test/versions/1.0.0/comfy-nodes/test", "GET", true},
+
+		{"Publisher POST", "/publishers", "POST", false},
+		{"Unauthorized Path", "/nonexistent", "GET", false},
 	}
 
 	for _, tt := range tests {

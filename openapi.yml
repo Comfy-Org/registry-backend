@@ -82,10 +82,10 @@ paths:
                   format: int64
                   description: The end time of the job as a Unix timestamp.
                 avg_vram:
-                  type: integer
+                  type: integer 
                   description: The average amount of VRAM used in the run.
                 peak_vram:
-                  type: integer
+                  type: integer 
                   description: The peak amount of VRAM used in the run.
                 pr_number:
                   type: string
@@ -1677,7 +1677,7 @@ paths:
         required: true
         content:
           application/json:
-            schema:
+            schema: 
               type: object
               properties:
                 status:
@@ -1759,6 +1759,104 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /nodes/{nodeId}/versions/{versionId}/comfy-nodes:
+    post: 
+      summary: create comfy-nodes for certain node
+      operationId: CreateComfyNodes
+      tags:
+        - ComfyNodes
+      parameters:
+        - in: path
+          name: nodeId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: versionId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: 
+              type: object
+              additionalProperties:
+                $ref: '#/components/schemas/ComfyNode'
+      responses:
+        '204':
+          description: Comy Nodes created successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Version not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /nodes/{nodeId}/versions/{versionId}/comfy-nodes/{comfyNodeId}:
+    get:
+      summary: get specify comfy-node based on its id
+      operationId: GetComfyNode
+      tags:
+        - ComfyNodes
+      parameters:
+        - in: path
+          name: nodeId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: versionId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: comfyNodeId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Comy Nodes created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComfyNode'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Version not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   schemas:
     PersonalAccessToken:
@@ -1918,7 +2016,7 @@ components:
         git_repo:
           type: string
           description: The repository name
-        pr_number:
+        pr_number: 
           type: string
           description: The pull request number
         start_time:
@@ -1938,12 +2036,12 @@ components:
         job_trigger_user:
           type: string
           description: The user who triggered the job.
-        author:
+        author: 
           type: string
           description: The author of the commit
         machine_stats:
           $ref: "#/components/schemas/MachineStats"
-        status:
+        status: 
           $ref: "#/components/schemas/WorkflowRunStatus"
         storage_file:
           $ref: "#/components/schemas/StorageFile"
@@ -2082,6 +2180,49 @@ components:
         status_reason:
           type: string
           description: The reason for the status change.
+        comfy_nodes:
+          type: object 
+          additionalProperties:
+            $ref: "#/components/schemas/ComfyNode"
+    ComfyNode:
+      type: object
+      properties:
+        comfy_node_id:
+          type: string
+          description: Unique identifier for the node
+        category:
+          type: string
+          description: UI category where the node is listed, used for grouping nodes.
+        description:
+          type: string
+          description: Brief description of the node's functionality or purpose.
+        input_types:
+          type: string
+          description: Defines input parameters
+        deprecated:
+          type: boolean
+          description: Indicates if the node is deprecated. Deprecated nodes are hidden in the UI.
+        experimental:
+          type: boolean
+          description: Indicates if the node is experimental, subject to changes or removal.
+        output_is_list:
+          type: array
+          items:
+            type: boolean
+          description: Boolean values indicating if each output is a list.
+        return_names:
+          type: array
+          items:
+            type: string
+          description: Names of the outputs for clarity in workflows.
+        return_types:
+          type: array
+          items:
+            type: string
+          description: Specifies the types of outputs produced by the node.
+        function:
+          type: string
+          description: Name of the entry-point function to execute the node.
     Error:
       type: object
       properties:

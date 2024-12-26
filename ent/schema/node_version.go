@@ -51,6 +51,7 @@ func (NodeVersion) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("node", Node.Type).Field("node_id").Ref("versions").Required().Unique(),
 		edge.To("storage_file", StorageFile.Type).Unique(),
+		edge.To("comfy_nodes", ComfyNode.Type),
 	}
 }
 

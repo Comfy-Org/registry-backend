@@ -44,6 +44,43 @@ var (
 			},
 		},
 	}
+	// ComfyNodesColumns holds the columns for the "comfy_nodes" table.
+	ComfyNodesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
+		{Name: "category", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "description", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "input_types", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "deprecated", Type: field.TypeBool, Default: false},
+		{Name: "experimental", Type: field.TypeBool, Default: false},
+		{Name: "output_is_list", Type: field.TypeJSON},
+		{Name: "return_names", Type: field.TypeJSON},
+		{Name: "return_types", Type: field.TypeJSON},
+		{Name: "function", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "node_version_id", Type: field.TypeUUID},
+	}
+	// ComfyNodesTable holds the schema information for the "comfy_nodes" table.
+	ComfyNodesTable = &schema.Table{
+		Name:       "comfy_nodes",
+		Columns:    ComfyNodesColumns,
+		PrimaryKey: []*schema.Column{ComfyNodesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "comfy_nodes_node_versions_comfy_nodes",
+				Columns:    []*schema.Column{ComfyNodesColumns[12]},
+				RefColumns: []*schema.Column{NodeVersionsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "comfynode_id_node_version_id",
+				Unique:  true,
+				Columns: []*schema.Column{ComfyNodesColumns[0], ComfyNodesColumns[12]},
+			},
+		},
+	}
 	// GitCommitsColumns holds the columns for the "git_commits" table.
 	GitCommitsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -303,6 +340,7 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		CiWorkflowResultsTable,
+		ComfyNodesTable,
 		GitCommitsTable,
 		NodesTable,
 		NodeReviewsTable,
@@ -317,6 +355,7 @@ var (
 
 func init() {
 	CiWorkflowResultsTable.ForeignKeys[0].RefTable = GitCommitsTable
+	ComfyNodesTable.ForeignKeys[0].RefTable = NodeVersionsTable
 	NodesTable.ForeignKeys[0].RefTable = PublishersTable
 	NodeReviewsTable.ForeignKeys[0].RefTable = NodesTable
 	NodeReviewsTable.ForeignKeys[1].RefTable = UsersTable

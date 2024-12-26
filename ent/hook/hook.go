@@ -20,6 +20,18 @@ func (f CIWorkflowResultFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.V
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CIWorkflowResultMutation", m)
 }
 
+// The ComfyNodeFunc type is an adapter to allow the use of ordinary
+// function as ComfyNode mutator.
+type ComfyNodeFunc func(context.Context, *ent.ComfyNodeMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ComfyNodeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ComfyNodeMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ComfyNodeMutation", m)
+}
+
 // The GitCommitFunc type is an adapter to allow the use of ordinary
 // function as GitCommit mutator.
 type GitCommitFunc func(context.Context, *ent.GitCommitMutation) (ent.Value, error)

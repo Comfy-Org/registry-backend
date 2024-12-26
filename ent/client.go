@@ -12,6 +12,7 @@ import (
 	"registry-backend/ent/migrate"
 
 	"registry-backend/ent/ciworkflowresult"
+	"registry-backend/ent/comfynode"
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/node"
 	"registry-backend/ent/nodereview"
@@ -36,6 +37,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// CIWorkflowResult is the client for interacting with the CIWorkflowResult builders.
 	CIWorkflowResult *CIWorkflowResultClient
+	// ComfyNode is the client for interacting with the ComfyNode builders.
+	ComfyNode *ComfyNodeClient
 	// GitCommit is the client for interacting with the GitCommit builders.
 	GitCommit *GitCommitClient
 	// Node is the client for interacting with the Node builders.
@@ -66,6 +69,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.CIWorkflowResult = NewCIWorkflowResultClient(c.config)
+	c.ComfyNode = NewComfyNodeClient(c.config)
 	c.GitCommit = NewGitCommitClient(c.config)
 	c.Node = NewNodeClient(c.config)
 	c.NodeReview = NewNodeReviewClient(c.config)
@@ -168,6 +172,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ctx:                 ctx,
 		config:              cfg,
 		CIWorkflowResult:    NewCIWorkflowResultClient(cfg),
+		ComfyNode:           NewComfyNodeClient(cfg),
 		GitCommit:           NewGitCommitClient(cfg),
 		Node:                NewNodeClient(cfg),
 		NodeReview:          NewNodeReviewClient(cfg),
@@ -197,6 +202,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ctx:                 ctx,
 		config:              cfg,
 		CIWorkflowResult:    NewCIWorkflowResultClient(cfg),
+		ComfyNode:           NewComfyNodeClient(cfg),
 		GitCommit:           NewGitCommitClient(cfg),
 		Node:                NewNodeClient(cfg),
 		NodeReview:          NewNodeReviewClient(cfg),
@@ -235,9 +241,9 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.CIWorkflowResult, c.GitCommit, c.Node, c.NodeReview, c.NodeVersion,
-		c.PersonalAccessToken, c.Publisher, c.PublisherPermission, c.StorageFile,
-		c.User,
+		c.CIWorkflowResult, c.ComfyNode, c.GitCommit, c.Node, c.NodeReview,
+		c.NodeVersion, c.PersonalAccessToken, c.Publisher, c.PublisherPermission,
+		c.StorageFile, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -247,9 +253,9 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.CIWorkflowResult, c.GitCommit, c.Node, c.NodeReview, c.NodeVersion,
-		c.PersonalAccessToken, c.Publisher, c.PublisherPermission, c.StorageFile,
-		c.User,
+		c.CIWorkflowResult, c.ComfyNode, c.GitCommit, c.Node, c.NodeReview,
+		c.NodeVersion, c.PersonalAccessToken, c.Publisher, c.PublisherPermission,
+		c.StorageFile, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -260,6 +266,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *CIWorkflowResultMutation:
 		return c.CIWorkflowResult.mutate(ctx, m)
+	case *ComfyNodeMutation:
+		return c.ComfyNode.mutate(ctx, m)
 	case *GitCommitMutation:
 		return c.GitCommit.mutate(ctx, m)
 	case *NodeMutation:
@@ -445,6 +453,155 @@ func (c *CIWorkflowResultClient) mutate(ctx context.Context, m *CIWorkflowResult
 		return (&CIWorkflowResultDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown CIWorkflowResult mutation op: %q", m.Op())
+	}
+}
+
+// ComfyNodeClient is a client for the ComfyNode schema.
+type ComfyNodeClient struct {
+	config
+}
+
+// NewComfyNodeClient returns a client for the ComfyNode from the given config.
+func NewComfyNodeClient(c config) *ComfyNodeClient {
+	return &ComfyNodeClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `comfynode.Hooks(f(g(h())))`.
+func (c *ComfyNodeClient) Use(hooks ...Hook) {
+	c.hooks.ComfyNode = append(c.hooks.ComfyNode, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `comfynode.Intercept(f(g(h())))`.
+func (c *ComfyNodeClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ComfyNode = append(c.inters.ComfyNode, interceptors...)
+}
+
+// Create returns a builder for creating a ComfyNode entity.
+func (c *ComfyNodeClient) Create() *ComfyNodeCreate {
+	mutation := newComfyNodeMutation(c.config, OpCreate)
+	return &ComfyNodeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ComfyNode entities.
+func (c *ComfyNodeClient) CreateBulk(builders ...*ComfyNodeCreate) *ComfyNodeCreateBulk {
+	return &ComfyNodeCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ComfyNodeClient) MapCreateBulk(slice any, setFunc func(*ComfyNodeCreate, int)) *ComfyNodeCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ComfyNodeCreateBulk{err: fmt.Errorf("calling to ComfyNodeClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ComfyNodeCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ComfyNodeCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ComfyNode.
+func (c *ComfyNodeClient) Update() *ComfyNodeUpdate {
+	mutation := newComfyNodeMutation(c.config, OpUpdate)
+	return &ComfyNodeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ComfyNodeClient) UpdateOne(cn *ComfyNode) *ComfyNodeUpdateOne {
+	mutation := newComfyNodeMutation(c.config, OpUpdateOne, withComfyNode(cn))
+	return &ComfyNodeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ComfyNodeClient) UpdateOneID(id string) *ComfyNodeUpdateOne {
+	mutation := newComfyNodeMutation(c.config, OpUpdateOne, withComfyNodeID(id))
+	return &ComfyNodeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ComfyNode.
+func (c *ComfyNodeClient) Delete() *ComfyNodeDelete {
+	mutation := newComfyNodeMutation(c.config, OpDelete)
+	return &ComfyNodeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ComfyNodeClient) DeleteOne(cn *ComfyNode) *ComfyNodeDeleteOne {
+	return c.DeleteOneID(cn.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ComfyNodeClient) DeleteOneID(id string) *ComfyNodeDeleteOne {
+	builder := c.Delete().Where(comfynode.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ComfyNodeDeleteOne{builder}
+}
+
+// Query returns a query builder for ComfyNode.
+func (c *ComfyNodeClient) Query() *ComfyNodeQuery {
+	return &ComfyNodeQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeComfyNode},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ComfyNode entity by its id.
+func (c *ComfyNodeClient) Get(ctx context.Context, id string) (*ComfyNode, error) {
+	return c.Query().Where(comfynode.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ComfyNodeClient) GetX(ctx context.Context, id string) *ComfyNode {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryVersions queries the versions edge of a ComfyNode.
+func (c *ComfyNodeClient) QueryVersions(cn *ComfyNode) *NodeVersionQuery {
+	query := (&NodeVersionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := cn.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(comfynode.Table, comfynode.FieldID, id),
+			sqlgraph.To(nodeversion.Table, nodeversion.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, comfynode.VersionsTable, comfynode.VersionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(cn.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ComfyNodeClient) Hooks() []Hook {
+	return c.hooks.ComfyNode
+}
+
+// Interceptors returns the client interceptors.
+func (c *ComfyNodeClient) Interceptors() []Interceptor {
+	return c.inters.ComfyNode
+}
+
+func (c *ComfyNodeClient) mutate(ctx context.Context, m *ComfyNodeMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ComfyNodeCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ComfyNodeUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ComfyNodeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ComfyNodeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ComfyNode mutation op: %q", m.Op())
 	}
 }
 
@@ -1076,6 +1233,22 @@ func (c *NodeVersionClient) QueryStorageFile(nv *NodeVersion) *StorageFileQuery 
 			sqlgraph.From(nodeversion.Table, nodeversion.FieldID, id),
 			sqlgraph.To(storagefile.Table, storagefile.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, nodeversion.StorageFileTable, nodeversion.StorageFileColumn),
+		)
+		fromV = sqlgraph.Neighbors(nv.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryComfyNodes queries the comfy_nodes edge of a NodeVersion.
+func (c *NodeVersionClient) QueryComfyNodes(nv *NodeVersion) *ComfyNodeQuery {
+	query := (&ComfyNodeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := nv.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(nodeversion.Table, nodeversion.FieldID, id),
+			sqlgraph.To(comfynode.Table, comfynode.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, nodeversion.ComfyNodesTable, nodeversion.ComfyNodesColumn),
 		)
 		fromV = sqlgraph.Neighbors(nv.driver.Dialect(), step)
 		return fromV, nil
@@ -1904,11 +2077,13 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		CIWorkflowResult, GitCommit, Node, NodeReview, NodeVersion, PersonalAccessToken,
-		Publisher, PublisherPermission, StorageFile, User []ent.Hook
+		CIWorkflowResult, ComfyNode, GitCommit, Node, NodeReview, NodeVersion,
+		PersonalAccessToken, Publisher, PublisherPermission, StorageFile,
+		User []ent.Hook
 	}
 	inters struct {
-		CIWorkflowResult, GitCommit, Node, NodeReview, NodeVersion, PersonalAccessToken,
-		Publisher, PublisherPermission, StorageFile, User []ent.Interceptor
+		CIWorkflowResult, ComfyNode, GitCommit, Node, NodeReview, NodeVersion,
+		PersonalAccessToken, Publisher, PublisherPermission, StorageFile,
+		User []ent.Interceptor
 	}
 )
