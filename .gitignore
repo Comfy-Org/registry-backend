@@ -9,3 +9,5 @@ tmp/
 
 # Lazy way to make atlas usable on windows
 atlas.exe
+
+.env

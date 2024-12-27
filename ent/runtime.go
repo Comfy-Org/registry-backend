@@ -4,6 +4,7 @@ package ent
 
 import (
 	"registry-backend/ent/ciworkflowresult"
+	"registry-backend/ent/comfynode"
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/node"
 	"registry-backend/ent/nodereview"
@@ -45,6 +46,41 @@ func init() {
 	ciworkflowresultDescID := ciworkflowresultFields[0].Descriptor()
 	// ciworkflowresult.DefaultID holds the default value on creation for the id field.
 	ciworkflowresult.DefaultID = ciworkflowresultDescID.Default.(func() uuid.UUID)
+	comfynodeMixin := schema.ComfyNode{}.Mixin()
+	comfynodeMixinFields0 := comfynodeMixin[0].Fields()
+	_ = comfynodeMixinFields0
+	comfynodeFields := schema.ComfyNode{}.Fields()
+	_ = comfynodeFields
+	// comfynodeDescCreateTime is the schema descriptor for create_time field.
+	comfynodeDescCreateTime := comfynodeMixinFields0[0].Descriptor()
+	// comfynode.DefaultCreateTime holds the default value on creation for the create_time field.
+	comfynode.DefaultCreateTime = comfynodeDescCreateTime.Default.(func() time.Time)
+	// comfynodeDescUpdateTime is the schema descriptor for update_time field.
+	comfynodeDescUpdateTime := comfynodeMixinFields0[1].Descriptor()
+	// comfynode.DefaultUpdateTime holds the default value on creation for the update_time field.
+	comfynode.DefaultUpdateTime = comfynodeDescUpdateTime.Default.(func() time.Time)
+	// comfynode.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	comfynode.UpdateDefaultUpdateTime = comfynodeDescUpdateTime.UpdateDefault.(func() time.Time)
+	// comfynodeDescDeprecated is the schema descriptor for deprecated field.
+	comfynodeDescDeprecated := comfynodeFields[5].Descriptor()
+	// comfynode.DefaultDeprecated holds the default value on creation for the deprecated field.
+	comfynode.DefaultDeprecated = comfynodeDescDeprecated.Default.(bool)
+	// comfynodeDescExperimental is the schema descriptor for experimental field.
+	comfynodeDescExperimental := comfynodeFields[6].Descriptor()
+	// comfynode.DefaultExperimental holds the default value on creation for the experimental field.
+	comfynode.DefaultExperimental = comfynodeDescExperimental.Default.(bool)
+	// comfynodeDescOutputIsList is the schema descriptor for output_is_list field.
+	comfynodeDescOutputIsList := comfynodeFields[7].Descriptor()
+	// comfynode.DefaultOutputIsList holds the default value on creation for the output_is_list field.
+	comfynode.DefaultOutputIsList = comfynodeDescOutputIsList.Default.([]bool)
+	// comfynodeDescReturnNames is the schema descriptor for return_names field.
+	comfynodeDescReturnNames := comfynodeFields[8].Descriptor()
+	// comfynode.DefaultReturnNames holds the default value on creation for the return_names field.
+	comfynode.DefaultReturnNames = comfynodeDescReturnNames.Default.([]string)
+	// comfynodeDescReturnTypes is the schema descriptor for return_types field.
+	comfynodeDescReturnTypes := comfynodeFields[9].Descriptor()
+	// comfynode.DefaultReturnTypes holds the default value on creation for the return_types field.
+	comfynode.DefaultReturnTypes = comfynodeDescReturnTypes.Default.([]string)
 	gitcommitMixin := schema.GitCommit{}.Mixin()
 	gitcommitMixinFields0 := gitcommitMixin[0].Fields()
 	_ = gitcommitMixinFields0

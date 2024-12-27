@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"reflect"
 	"registry-backend/ent/ciworkflowresult"
+	"registry-backend/ent/comfynode"
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/node"
 	"registry-backend/ent/nodereview"
@@ -83,6 +84,7 @@ func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			ciworkflowresult.Table:    ciworkflowresult.ValidColumn,
+			comfynode.Table:           comfynode.ValidColumn,
 			gitcommit.Table:           gitcommit.ValidColumn,
 			node.Table:                node.ValidColumn,
 			nodereview.Table:          nodereview.ValidColumn,

@@ -39,6 +39,8 @@ const (
 	EdgeNode = "node"
 	// EdgeStorageFile holds the string denoting the storage_file edge name in mutations.
 	EdgeStorageFile = "storage_file"
+	// EdgeComfyNodes holds the string denoting the comfy_nodes edge name in mutations.
+	EdgeComfyNodes = "comfy_nodes"
 	// Table holds the table name of the nodeversion in the database.
 	Table = "node_versions"
 	// NodeTable is the table that holds the node relation/edge.
@@ -55,6 +57,13 @@ const (
 	StorageFileInverseTable = "storage_files"
 	// StorageFileColumn is the table column denoting the storage_file relation/edge.
 	StorageFileColumn = "node_version_storage_file"
+	// ComfyNodesTable is the table that holds the comfy_nodes relation/edge.
+	ComfyNodesTable = "comfy_nodes"
+	// ComfyNodesInverseTable is the table name for the ComfyNode entity.
+	// It exists in this package in order to avoid circular dependency with the "comfynode" package.
+	ComfyNodesInverseTable = "comfy_nodes"
+	// ComfyNodesColumn is the table column denoting the comfy_nodes relation/edge.
+	ComfyNodesColumn = "node_version_id"
 )
 
 // Columns holds all SQL columns for nodeversion fields.
@@ -180,6 +189,20 @@ func ByStorageFileField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newStorageFileStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByComfyNodesCount orders the results by comfy_nodes count.
+func ByComfyNodesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newComfyNodesStep(), opts...)
+	}
+}
+
+// ByComfyNodes orders the results by comfy_nodes terms.
+func ByComfyNodes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newComfyNodesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newNodeStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -192,5 +215,12 @@ func newStorageFileStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(StorageFileInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, StorageFileTable, StorageFileColumn),
+	)
+}
+func newComfyNodesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ComfyNodesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ComfyNodesTable, ComfyNodesColumn),
 	)
 }

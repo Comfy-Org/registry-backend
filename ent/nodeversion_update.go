@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"registry-backend/ent/comfynode"
 	"registry-backend/ent/node"
 	"registry-backend/ent/nodeversion"
 	"registry-backend/ent/predicate"
@@ -166,6 +167,21 @@ func (nvu *NodeVersionUpdate) SetStorageFile(s *StorageFile) *NodeVersionUpdate 
 	return nvu.SetStorageFileID(s.ID)
 }
 
+// AddComfyNodeIDs adds the "comfy_nodes" edge to the ComfyNode entity by IDs.
+func (nvu *NodeVersionUpdate) AddComfyNodeIDs(ids ...string) *NodeVersionUpdate {
+	nvu.mutation.AddComfyNodeIDs(ids...)
+	return nvu
+}
+
+// AddComfyNodes adds the "comfy_nodes" edges to the ComfyNode entity.
+func (nvu *NodeVersionUpdate) AddComfyNodes(c ...*ComfyNode) *NodeVersionUpdate {
+	ids := make([]string, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return nvu.AddComfyNodeIDs(ids...)
+}
+
 // Mutation returns the NodeVersionMutation object of the builder.
 func (nvu *NodeVersionUpdate) Mutation() *NodeVersionMutation {
 	return nvu.mutation
@@ -181,6 +197,27 @@ func (nvu *NodeVersionUpdate) ClearNode() *NodeVersionUpdate {
 func (nvu *NodeVersionUpdate) ClearStorageFile() *NodeVersionUpdate {
 	nvu.mutation.ClearStorageFile()
 	return nvu
+}
+
+// ClearComfyNodes clears all "comfy_nodes" edges to the ComfyNode entity.
+func (nvu *NodeVersionUpdate) ClearComfyNodes() *NodeVersionUpdate {
+	nvu.mutation.ClearComfyNodes()
+	return nvu
+}
+
+// RemoveComfyNodeIDs removes the "comfy_nodes" edge to ComfyNode entities by IDs.
+func (nvu *NodeVersionUpdate) RemoveComfyNodeIDs(ids ...string) *NodeVersionUpdate {
+	nvu.mutation.RemoveComfyNodeIDs(ids...)
+	return nvu
+}
+
+// RemoveComfyNodes removes "comfy_nodes" edges to ComfyNode entities.
+func (nvu *NodeVersionUpdate) RemoveComfyNodes(c ...*ComfyNode) *NodeVersionUpdate {
+	ids := make([]string, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return nvu.RemoveComfyNodeIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -330,6 +367,51 @@ func (nvu *NodeVersionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(storagefile.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if nvu.mutation.ComfyNodesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   nodeversion.ComfyNodesTable,
+			Columns: []string{nodeversion.ComfyNodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := nvu.mutation.RemovedComfyNodesIDs(); len(nodes) > 0 && !nvu.mutation.ComfyNodesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   nodeversion.ComfyNodesTable,
+			Columns: []string{nodeversion.ComfyNodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := nvu.mutation.ComfyNodesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   nodeversion.ComfyNodesTable,
+			Columns: []string{nodeversion.ComfyNodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -491,6 +573,21 @@ func (nvuo *NodeVersionUpdateOne) SetStorageFile(s *StorageFile) *NodeVersionUpd
 	return nvuo.SetStorageFileID(s.ID)
 }
 
+// AddComfyNodeIDs adds the "comfy_nodes" edge to the ComfyNode entity by IDs.
+func (nvuo *NodeVersionUpdateOne) AddComfyNodeIDs(ids ...string) *NodeVersionUpdateOne {
+	nvuo.mutation.AddComfyNodeIDs(ids...)
+	return nvuo
+}
+
+// AddComfyNodes adds the "comfy_nodes" edges to the ComfyNode entity.
+func (nvuo *NodeVersionUpdateOne) AddComfyNodes(c ...*ComfyNode) *NodeVersionUpdateOne {
+	ids := make([]string, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return nvuo.AddComfyNodeIDs(ids...)
+}
+
 // Mutation returns the NodeVersionMutation object of the builder.
 func (nvuo *NodeVersionUpdateOne) Mutation() *NodeVersionMutation {
 	return nvuo.mutation
@@ -506,6 +603,27 @@ func (nvuo *NodeVersionUpdateOne) ClearNode() *NodeVersionUpdateOne {
 func (nvuo *NodeVersionUpdateOne) ClearStorageFile() *NodeVersionUpdateOne {
 	nvuo.mutation.ClearStorageFile()
 	return nvuo
+}
+
+// ClearComfyNodes clears all "comfy_nodes" edges to the ComfyNode entity.
+func (nvuo *NodeVersionUpdateOne) ClearComfyNodes() *NodeVersionUpdateOne {
+	nvuo.mutation.ClearComfyNodes()
+	return nvuo
+}
+
+// RemoveComfyNodeIDs removes the "comfy_nodes" edge to ComfyNode entities by IDs.
+func (nvuo *NodeVersionUpdateOne) RemoveComfyNodeIDs(ids ...string) *NodeVersionUpdateOne {
+	nvuo.mutation.RemoveComfyNodeIDs(ids...)
+	return nvuo
+}
+
+// RemoveComfyNodes removes "comfy_nodes" edges to ComfyNode entities.
+func (nvuo *NodeVersionUpdateOne) RemoveComfyNodes(c ...*ComfyNode) *NodeVersionUpdateOne {
+	ids := make([]string, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return nvuo.RemoveComfyNodeIDs(ids...)
 }
 
 // Where appends a list predicates to the NodeVersionUpdate builder.
@@ -685,6 +803,51 @@ func (nvuo *NodeVersionUpdateOne) sqlSave(ctx context.Context) (_node *NodeVersi
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(storagefile.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if nvuo.mutation.ComfyNodesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   nodeversion.ComfyNodesTable,
+			Columns: []string{nodeversion.ComfyNodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := nvuo.mutation.RemovedComfyNodesIDs(); len(nodes) > 0 && !nvuo.mutation.ComfyNodesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   nodeversion.ComfyNodesTable,
+			Columns: []string{nodeversion.ComfyNodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := nvuo.mutation.ComfyNodesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   nodeversion.ComfyNodesTable,
+			Columns: []string{nodeversion.ComfyNodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

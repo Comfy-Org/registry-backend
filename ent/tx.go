@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// CIWorkflowResult is the client for interacting with the CIWorkflowResult builders.
 	CIWorkflowResult *CIWorkflowResultClient
+	// ComfyNode is the client for interacting with the ComfyNode builders.
+	ComfyNode *ComfyNodeClient
 	// GitCommit is the client for interacting with the GitCommit builders.
 	GitCommit *GitCommitClient
 	// Node is the client for interacting with the Node builders.
@@ -164,6 +166,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.CIWorkflowResult = NewCIWorkflowResultClient(tx.config)
+	tx.ComfyNode = NewComfyNodeClient(tx.config)
 	tx.GitCommit = NewGitCommitClient(tx.config)
 	tx.Node = NewNodeClient(tx.config)
 	tx.NodeReview = NewNodeReviewClient(tx.config)

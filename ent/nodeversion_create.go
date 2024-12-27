@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"registry-backend/ent/comfynode"
 	"registry-backend/ent/node"
 	"registry-backend/ent/nodeversion"
 	"registry-backend/ent/schema"
@@ -165,6 +166,21 @@ func (nvc *NodeVersionCreate) SetNillableStorageFileID(id *uuid.UUID) *NodeVersi
 // SetStorageFile sets the "storage_file" edge to the StorageFile entity.
 func (nvc *NodeVersionCreate) SetStorageFile(s *StorageFile) *NodeVersionCreate {
 	return nvc.SetStorageFileID(s.ID)
+}
+
+// AddComfyNodeIDs adds the "comfy_nodes" edge to the ComfyNode entity by IDs.
+func (nvc *NodeVersionCreate) AddComfyNodeIDs(ids ...string) *NodeVersionCreate {
+	nvc.mutation.AddComfyNodeIDs(ids...)
+	return nvc
+}
+
+// AddComfyNodes adds the "comfy_nodes" edges to the ComfyNode entity.
+func (nvc *NodeVersionCreate) AddComfyNodes(c ...*ComfyNode) *NodeVersionCreate {
+	ids := make([]string, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return nvc.AddComfyNodeIDs(ids...)
 }
 
 // Mutation returns the NodeVersionMutation object of the builder.
@@ -362,6 +378,22 @@ func (nvc *NodeVersionCreate) createSpec() (*NodeVersion, *sqlgraph.CreateSpec) 
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.node_version_storage_file = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := nvc.mutation.ComfyNodesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   nodeversion.ComfyNodesTable,
+			Columns: []string{nodeversion.ComfyNodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

@@ -2,6 +2,7 @@ package drip_authentication
 
 import (
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -11,29 +12,33 @@ import (
 
 func ServiceAccountAuthMiddleware() echo.MiddlewareFunc {
 	// Handlers in here should be checked by this middleware.
-	var checklist = map[string][]string{
-		"/security-scan": {"GET"},
-		"/nodes/reindex": {"POST"},
+	var checklistRegex = map[*regexp.Regexp][]string{
+		regexp.MustCompile(`^/security-scan$`):                          {"GET"},
+		regexp.MustCompile(`^/nodes/reindex$`):                          {"POST"},
+		regexp.MustCompile(`^/nodes/[^/]+/versions/[^/]+/comfy-nodes$`): {"POST"},
 	}
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			// Check if the request path and method are in the checklist
-			path := ctx.Request().URL.Path
-			method := ctx.Request().Method
+			// Check if the request reqPath and method are in the checklist
+			reqPath := ctx.Request().URL.Path
+			reqMethod := ctx.Request().Method
+			match := false
+			for pathRe, methods := range checklistRegex {
+				if !pathRe.MatchString(reqPath) {
+					continue
+				}
 
-			methods, ok := checklist[path]
-			if !ok {
-				return next(ctx)
-			}
+				for _, method := range methods {
+					if method != "ANY" && reqMethod != method {
+						continue
+					}
 
-			for _, m := range methods {
-				if method == m {
-					ok = true
+					match = true
 					break
 				}
 			}
-			if !ok {
+			if !match {
 				return next(ctx)
 			}
 
@@ -48,7 +53,7 @@ func ServiceAccountAuthMiddleware() echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Missing token")
 			}
 
-			log.Ctx(ctx.Request().Context()).Info().Msgf("Validating google id token %s for path %s and method %s", token, path, method)
+			log.Ctx(ctx.Request().Context()).Info().Msgf("Validating google id token %s for path %s and method %s", token, reqPath, reqMethod)
 
 			payload, err := idtoken.Validate(ctx.Request().Context(), token, "https://api.comfy.org")
 			if err != nil {

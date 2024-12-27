@@ -12,6 +12,7 @@ import (
 	"registry-backend/db"
 	"registry-backend/drip"
 	"registry-backend/ent"
+	"registry-backend/ent/comfynode"
 	"registry-backend/ent/node"
 	"registry-backend/ent/nodeversion"
 	"registry-backend/ent/personalaccesstoken"
@@ -435,6 +436,7 @@ func (s *RegistryService) ListNodeVersions(
 	ctx context.Context, client *ent.Client, filter *NodeVersionFilter) (*ListNodeVersionsResult, error) {
 	query := client.NodeVersion.Query().
 		WithStorageFile().
+		WithComfyNodes().
 		Order(ent.Desc(nodeversion.FieldCreateTime))
 
 	if filter.NodeId != "" {
@@ -474,6 +476,7 @@ func (s *RegistryService) ListNodeVersions(
 
 		query.Select(columns...)
 	}
+
 	versions, err := query.All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list node versions: %w", err)
@@ -540,6 +543,7 @@ func (s *RegistryService) GetNodeVersionByVersion(ctx context.Context, client *e
 		Where(nodeversion.VersionEQ(nodeVersion)).
 		Where(nodeversion.NodeIDEQ(nodeId)).
 		WithStorageFile().
+		WithComfyNodes().
 		Only(ctx)
 }
 
@@ -584,6 +588,7 @@ func (s *RegistryService) GetLatestNodeVersion(ctx context.Context, client *ent.
 		//Where(nodeversion.StatusEQ(schema.NodeVersionStatusActive)).
 		Order(ent.Desc(nodeversion.FieldCreateTime)).
 		WithStorageFile().
+		WithComfyNodes().
 		First(ctx)
 
 	if err != nil {
@@ -598,6 +603,68 @@ func (s *RegistryService) GetLatestNodeVersion(ctx context.Context, client *ent.
 
 	log.Ctx(ctx).Info().Msgf("Found latest version for node %v: %v", nodeId, nodeVersion)
 	return nodeVersion, nil
+}
+
+func (s *RegistryService) CreateComfyNodes(ctx context.Context, client *ent.Client, nodeID string, nodeVersion string, comfyNodes map[string]drip.ComfyNode) (err error) {
+	nv, err := client.NodeVersion.Query().
+		Where(nodeversion.VersionEQ(nodeVersion)).
+		Where(nodeversion.NodeIDEQ(nodeID)).Only(ctx)
+	if err != nil {
+		return err
+	}
+
+	comfyNodesCreates := make([]*ent.ComfyNodeCreate, 0, len(comfyNodes))
+	for k, n := range comfyNodes {
+		comfyNodeCreate := client.ComfyNode.Create().
+			SetID(k).
+			SetNodeVersionID(nv.ID)
+
+		if n.Category != nil {
+			comfyNodeCreate.SetCategory(*n.Category)
+		}
+		if n.Description != nil {
+			comfyNodeCreate.SetDescription(*n.Description)
+		}
+		if n.InputTypes != nil {
+			comfyNodeCreate.SetInputTypes(*n.InputTypes)
+		}
+		if n.Deprecated != nil {
+			comfyNodeCreate.SetDeprecated(*n.Deprecated)
+		}
+		if n.Experimental != nil {
+			comfyNodeCreate.SetExperimental(*n.Experimental)
+		}
+		if n.OutputIsList != nil {
+			comfyNodeCreate.SetOutputIsList(*n.OutputIsList)
+		}
+		if n.ReturnNames != nil {
+			comfyNodeCreate.SetReturnNames(*n.ReturnNames)
+		}
+		if n.ReturnTypes != nil {
+			comfyNodeCreate.SetReturnTypes(*n.ReturnTypes)
+		}
+		if n.Function != nil {
+			comfyNodeCreate.SetFunction(*n.Function)
+		}
+		comfyNodesCreates = append(comfyNodesCreates, comfyNodeCreate)
+	}
+	return client.ComfyNode.
+		CreateBulk(comfyNodesCreates...).
+		Exec(ctx)
+}
+
+func (s *RegistryService) GetComfyNode(ctx context.Context, client *ent.Client, nodeID string, nodeVersion string, comfyNodeID string) (*ent.ComfyNode, error) {
+	nv, err := client.NodeVersion.Query().
+		Where(nodeversion.VersionEQ(nodeVersion)).
+		Where(nodeversion.NodeIDEQ(nodeID)).
+		WithComfyNodes(func(cnq *ent.ComfyNodeQuery) {
+			cnq.Where(comfynode.IDEQ(comfyNodeID))
+		}).
+		Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return nv.Edges.ComfyNodes[0], nil
 }
 
 func (s *RegistryService) AssertPublisherPermissions(ctx context.Context,

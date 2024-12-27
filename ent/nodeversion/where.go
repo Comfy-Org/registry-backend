@@ -528,6 +528,29 @@ func HasStorageFileWith(preds ...predicate.StorageFile) predicate.NodeVersion {
 	})
 }
 
+// HasComfyNodes applies the HasEdge predicate on the "comfy_nodes" edge.
+func HasComfyNodes() predicate.NodeVersion {
+	return predicate.NodeVersion(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ComfyNodesTable, ComfyNodesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasComfyNodesWith applies the HasEdge predicate on the "comfy_nodes" edge with a given conditions (other predicates).
+func HasComfyNodesWith(preds ...predicate.ComfyNode) predicate.NodeVersion {
+	return predicate.NodeVersion(func(s *sql.Selector) {
+		step := newComfyNodesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.NodeVersion) predicate.NodeVersion {
 	return predicate.NodeVersion(sql.AndPredicates(predicates...))

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"registry-backend/ent/ciworkflowresult"
+	"registry-backend/ent/comfynode"
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/node"
 	"registry-backend/ent/nodereview"
@@ -36,6 +37,7 @@ const (
 
 	// Node types.
 	TypeCIWorkflowResult    = "CIWorkflowResult"
+	TypeComfyNode           = "ComfyNode"
 	TypeGitCommit           = "GitCommit"
 	TypeNode                = "Node"
 	TypeNodeReview          = "NodeReview"
@@ -1782,6 +1784,1107 @@ func (m *CIWorkflowResultMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown CIWorkflowResult edge %s", name)
+}
+
+// ComfyNodeMutation represents an operation that mutates the ComfyNode nodes in the graph.
+type ComfyNodeMutation struct {
+	config
+	op                   Op
+	typ                  string
+	id                   *string
+	create_time          *time.Time
+	update_time          *time.Time
+	category             *string
+	description          *string
+	input_types          *string
+	deprecated           *bool
+	experimental         *bool
+	output_is_list       *[]bool
+	appendoutput_is_list []bool
+	return_names         *[]string
+	appendreturn_names   []string
+	return_types         *[]string
+	appendreturn_types   []string
+	function             *string
+	clearedFields        map[string]struct{}
+	versions             *uuid.UUID
+	clearedversions      bool
+	done                 bool
+	oldValue             func(context.Context) (*ComfyNode, error)
+	predicates           []predicate.ComfyNode
+}
+
+var _ ent.Mutation = (*ComfyNodeMutation)(nil)
+
+// comfynodeOption allows management of the mutation configuration using functional options.
+type comfynodeOption func(*ComfyNodeMutation)
+
+// newComfyNodeMutation creates new mutation for the ComfyNode entity.
+func newComfyNodeMutation(c config, op Op, opts ...comfynodeOption) *ComfyNodeMutation {
+	m := &ComfyNodeMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeComfyNode,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withComfyNodeID sets the ID field of the mutation.
+func withComfyNodeID(id string) comfynodeOption {
+	return func(m *ComfyNodeMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ComfyNode
+		)
+		m.oldValue = func(ctx context.Context) (*ComfyNode, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ComfyNode.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withComfyNode sets the old ComfyNode of the mutation.
+func withComfyNode(node *ComfyNode) comfynodeOption {
+	return func(m *ComfyNodeMutation) {
+		m.oldValue = func(context.Context) (*ComfyNode, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ComfyNodeMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ComfyNodeMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ComfyNode entities.
+func (m *ComfyNodeMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ComfyNodeMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ComfyNodeMutation) IDs(ctx context.Context) ([]string, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []string{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ComfyNode.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreateTime sets the "create_time" field.
+func (m *ComfyNodeMutation) SetCreateTime(t time.Time) {
+	m.create_time = &t
+}
+
+// CreateTime returns the value of the "create_time" field in the mutation.
+func (m *ComfyNodeMutation) CreateTime() (r time.Time, exists bool) {
+	v := m.create_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreateTime returns the old "create_time" field's value of the ComfyNode entity.
+// If the ComfyNode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ComfyNodeMutation) OldCreateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreateTime: %w", err)
+	}
+	return oldValue.CreateTime, nil
+}
+
+// ResetCreateTime resets all changes to the "create_time" field.
+func (m *ComfyNodeMutation) ResetCreateTime() {
+	m.create_time = nil
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (m *ComfyNodeMutation) SetUpdateTime(t time.Time) {
+	m.update_time = &t
+}
+
+// UpdateTime returns the value of the "update_time" field in the mutation.
+func (m *ComfyNodeMutation) UpdateTime() (r time.Time, exists bool) {
+	v := m.update_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdateTime returns the old "update_time" field's value of the ComfyNode entity.
+// If the ComfyNode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ComfyNodeMutation) OldUpdateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdateTime: %w", err)
+	}
+	return oldValue.UpdateTime, nil
+}
+
+// ResetUpdateTime resets all changes to the "update_time" field.
+func (m *ComfyNodeMutation) ResetUpdateTime() {
+	m.update_time = nil
+}
+
+// SetNodeVersionID sets the "node_version_id" field.
+func (m *ComfyNodeMutation) SetNodeVersionID(u uuid.UUID) {
+	m.versions = &u
+}
+
+// NodeVersionID returns the value of the "node_version_id" field in the mutation.
+func (m *ComfyNodeMutation) NodeVersionID() (r uuid.UUID, exists bool) {
+	v := m.versions
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNodeVersionID returns the old "node_version_id" field's value of the ComfyNode entity.
+// If the ComfyNode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ComfyNodeMutation) OldNodeVersionID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNodeVersionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNodeVersionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNodeVersionID: %w", err)
+	}
+	return oldValue.NodeVersionID, nil
+}
+
+// ResetNodeVersionID resets all changes to the "node_version_id" field.
+func (m *ComfyNodeMutation) ResetNodeVersionID() {
+	m.versions = nil
+}
+
+// SetCategory sets the "category" field.
+func (m *ComfyNodeMutation) SetCategory(s string) {
+	m.category = &s
+}
+
+// Category returns the value of the "category" field in the mutation.
+func (m *ComfyNodeMutation) Category() (r string, exists bool) {
+	v := m.category
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCategory returns the old "category" field's value of the ComfyNode entity.
+// If the ComfyNode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ComfyNodeMutation) OldCategory(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCategory is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCategory requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCategory: %w", err)
+	}
+	return oldValue.Category, nil
+}
+
+// ClearCategory clears the value of the "category" field.
+func (m *ComfyNodeMutation) ClearCategory() {
+	m.category = nil
+	m.clearedFields[comfynode.FieldCategory] = struct{}{}
+}
+
+// CategoryCleared returns if the "category" field was cleared in this mutation.
+func (m *ComfyNodeMutation) CategoryCleared() bool {
+	_, ok := m.clearedFields[comfynode.FieldCategory]
+	return ok
+}
+
+// ResetCategory resets all changes to the "category" field.
+func (m *ComfyNodeMutation) ResetCategory() {
+	m.category = nil
+	delete(m.clearedFields, comfynode.FieldCategory)
+}
+
+// SetDescription sets the "description" field.
+func (m *ComfyNodeMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *ComfyNodeMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the ComfyNode entity.
+// If the ComfyNode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ComfyNodeMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ClearDescription clears the value of the "description" field.
+func (m *ComfyNodeMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[comfynode.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the "description" field was cleared in this mutation.
+func (m *ComfyNodeMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[comfynode.FieldDescription]
+	return ok
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *ComfyNodeMutation) ResetDescription() {
+	m.description = nil
+	delete(m.clearedFields, comfynode.FieldDescription)
+}
+
+// SetInputTypes sets the "input_types" field.
+func (m *ComfyNodeMutation) SetInputTypes(s string) {
+	m.input_types = &s
+}
+
+// InputTypes returns the value of the "input_types" field in the mutation.
+func (m *ComfyNodeMutation) InputTypes() (r string, exists bool) {
+	v := m.input_types
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInputTypes returns the old "input_types" field's value of the ComfyNode entity.
+// If the ComfyNode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ComfyNodeMutation) OldInputTypes(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInputTypes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInputTypes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInputTypes: %w", err)
+	}
+	return oldValue.InputTypes, nil
+}
+
+// ClearInputTypes clears the value of the "input_types" field.
+func (m *ComfyNodeMutation) ClearInputTypes() {
+	m.input_types = nil
+	m.clearedFields[comfynode.FieldInputTypes] = struct{}{}
+}
+
+// InputTypesCleared returns if the "input_types" field was cleared in this mutation.
+func (m *ComfyNodeMutation) InputTypesCleared() bool {
+	_, ok := m.clearedFields[comfynode.FieldInputTypes]
+	return ok
+}
+
+// ResetInputTypes resets all changes to the "input_types" field.
+func (m *ComfyNodeMutation) ResetInputTypes() {
+	m.input_types = nil
+	delete(m.clearedFields, comfynode.FieldInputTypes)
+}
+
+// SetDeprecated sets the "deprecated" field.
+func (m *ComfyNodeMutation) SetDeprecated(b bool) {
+	m.deprecated = &b
+}
+
+// Deprecated returns the value of the "deprecated" field in the mutation.
+func (m *ComfyNodeMutation) Deprecated() (r bool, exists bool) {
+	v := m.deprecated
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeprecated returns the old "deprecated" field's value of the ComfyNode entity.
+// If the ComfyNode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ComfyNodeMutation) OldDeprecated(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeprecated is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeprecated requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeprecated: %w", err)
+	}
+	return oldValue.Deprecated, nil
+}
+
+// ResetDeprecated resets all changes to the "deprecated" field.
+func (m *ComfyNodeMutation) ResetDeprecated() {
+	m.deprecated = nil
+}
+
+// SetExperimental sets the "experimental" field.
+func (m *ComfyNodeMutation) SetExperimental(b bool) {
+	m.experimental = &b
+}
+
+// Experimental returns the value of the "experimental" field in the mutation.
+func (m *ComfyNodeMutation) Experimental() (r bool, exists bool) {
+	v := m.experimental
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExperimental returns the old "experimental" field's value of the ComfyNode entity.
+// If the ComfyNode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ComfyNodeMutation) OldExperimental(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExperimental is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExperimental requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExperimental: %w", err)
+	}
+	return oldValue.Experimental, nil
+}
+
+// ResetExperimental resets all changes to the "experimental" field.
+func (m *ComfyNodeMutation) ResetExperimental() {
+	m.experimental = nil
+}
+
+// SetOutputIsList sets the "output_is_list" field.
+func (m *ComfyNodeMutation) SetOutputIsList(b []bool) {
+	m.output_is_list = &b
+	m.appendoutput_is_list = nil
+}
+
+// OutputIsList returns the value of the "output_is_list" field in the mutation.
+func (m *ComfyNodeMutation) OutputIsList() (r []bool, exists bool) {
+	v := m.output_is_list
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOutputIsList returns the old "output_is_list" field's value of the ComfyNode entity.
+// If the ComfyNode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ComfyNodeMutation) OldOutputIsList(ctx context.Context) (v []bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOutputIsList is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOutputIsList requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOutputIsList: %w", err)
+	}
+	return oldValue.OutputIsList, nil
+}
+
+// AppendOutputIsList adds b to the "output_is_list" field.
+func (m *ComfyNodeMutation) AppendOutputIsList(b []bool) {
+	m.appendoutput_is_list = append(m.appendoutput_is_list, b...)
+}
+
+// AppendedOutputIsList returns the list of values that were appended to the "output_is_list" field in this mutation.
+func (m *ComfyNodeMutation) AppendedOutputIsList() ([]bool, bool) {
+	if len(m.appendoutput_is_list) == 0 {
+		return nil, false
+	}
+	return m.appendoutput_is_list, true
+}
+
+// ResetOutputIsList resets all changes to the "output_is_list" field.
+func (m *ComfyNodeMutation) ResetOutputIsList() {
+	m.output_is_list = nil
+	m.appendoutput_is_list = nil
+}
+
+// SetReturnNames sets the "return_names" field.
+func (m *ComfyNodeMutation) SetReturnNames(s []string) {
+	m.return_names = &s
+	m.appendreturn_names = nil
+}
+
+// ReturnNames returns the value of the "return_names" field in the mutation.
+func (m *ComfyNodeMutation) ReturnNames() (r []string, exists bool) {
+	v := m.return_names
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReturnNames returns the old "return_names" field's value of the ComfyNode entity.
+// If the ComfyNode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ComfyNodeMutation) OldReturnNames(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReturnNames is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReturnNames requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReturnNames: %w", err)
+	}
+	return oldValue.ReturnNames, nil
+}
+
+// AppendReturnNames adds s to the "return_names" field.
+func (m *ComfyNodeMutation) AppendReturnNames(s []string) {
+	m.appendreturn_names = append(m.appendreturn_names, s...)
+}
+
+// AppendedReturnNames returns the list of values that were appended to the "return_names" field in this mutation.
+func (m *ComfyNodeMutation) AppendedReturnNames() ([]string, bool) {
+	if len(m.appendreturn_names) == 0 {
+		return nil, false
+	}
+	return m.appendreturn_names, true
+}
+
+// ResetReturnNames resets all changes to the "return_names" field.
+func (m *ComfyNodeMutation) ResetReturnNames() {
+	m.return_names = nil
+	m.appendreturn_names = nil
+}
+
+// SetReturnTypes sets the "return_types" field.
+func (m *ComfyNodeMutation) SetReturnTypes(s []string) {
+	m.return_types = &s
+	m.appendreturn_types = nil
+}
+
+// ReturnTypes returns the value of the "return_types" field in the mutation.
+func (m *ComfyNodeMutation) ReturnTypes() (r []string, exists bool) {
+	v := m.return_types
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReturnTypes returns the old "return_types" field's value of the ComfyNode entity.
+// If the ComfyNode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ComfyNodeMutation) OldReturnTypes(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReturnTypes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReturnTypes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReturnTypes: %w", err)
+	}
+	return oldValue.ReturnTypes, nil
+}
+
+// AppendReturnTypes adds s to the "return_types" field.
+func (m *ComfyNodeMutation) AppendReturnTypes(s []string) {
+	m.appendreturn_types = append(m.appendreturn_types, s...)
+}
+
+// AppendedReturnTypes returns the list of values that were appended to the "return_types" field in this mutation.
+func (m *ComfyNodeMutation) AppendedReturnTypes() ([]string, bool) {
+	if len(m.appendreturn_types) == 0 {
+		return nil, false
+	}
+	return m.appendreturn_types, true
+}
+
+// ResetReturnTypes resets all changes to the "return_types" field.
+func (m *ComfyNodeMutation) ResetReturnTypes() {
+	m.return_types = nil
+	m.appendreturn_types = nil
+}
+
+// SetFunction sets the "function" field.
+func (m *ComfyNodeMutation) SetFunction(s string) {
+	m.function = &s
+}
+
+// Function returns the value of the "function" field in the mutation.
+func (m *ComfyNodeMutation) Function() (r string, exists bool) {
+	v := m.function
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFunction returns the old "function" field's value of the ComfyNode entity.
+// If the ComfyNode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ComfyNodeMutation) OldFunction(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFunction is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFunction requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFunction: %w", err)
+	}
+	return oldValue.Function, nil
+}
+
+// ResetFunction resets all changes to the "function" field.
+func (m *ComfyNodeMutation) ResetFunction() {
+	m.function = nil
+}
+
+// SetVersionsID sets the "versions" edge to the NodeVersion entity by id.
+func (m *ComfyNodeMutation) SetVersionsID(id uuid.UUID) {
+	m.versions = &id
+}
+
+// ClearVersions clears the "versions" edge to the NodeVersion entity.
+func (m *ComfyNodeMutation) ClearVersions() {
+	m.clearedversions = true
+	m.clearedFields[comfynode.FieldNodeVersionID] = struct{}{}
+}
+
+// VersionsCleared reports if the "versions" edge to the NodeVersion entity was cleared.
+func (m *ComfyNodeMutation) VersionsCleared() bool {
+	return m.clearedversions
+}
+
+// VersionsID returns the "versions" edge ID in the mutation.
+func (m *ComfyNodeMutation) VersionsID() (id uuid.UUID, exists bool) {
+	if m.versions != nil {
+		return *m.versions, true
+	}
+	return
+}
+
+// VersionsIDs returns the "versions" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// VersionsID instead. It exists only for internal usage by the builders.
+func (m *ComfyNodeMutation) VersionsIDs() (ids []uuid.UUID) {
+	if id := m.versions; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetVersions resets all changes to the "versions" edge.
+func (m *ComfyNodeMutation) ResetVersions() {
+	m.versions = nil
+	m.clearedversions = false
+}
+
+// Where appends a list predicates to the ComfyNodeMutation builder.
+func (m *ComfyNodeMutation) Where(ps ...predicate.ComfyNode) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ComfyNodeMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ComfyNodeMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ComfyNode, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ComfyNodeMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ComfyNodeMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ComfyNode).
+func (m *ComfyNodeMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ComfyNodeMutation) Fields() []string {
+	fields := make([]string, 0, 12)
+	if m.create_time != nil {
+		fields = append(fields, comfynode.FieldCreateTime)
+	}
+	if m.update_time != nil {
+		fields = append(fields, comfynode.FieldUpdateTime)
+	}
+	if m.versions != nil {
+		fields = append(fields, comfynode.FieldNodeVersionID)
+	}
+	if m.category != nil {
+		fields = append(fields, comfynode.FieldCategory)
+	}
+	if m.description != nil {
+		fields = append(fields, comfynode.FieldDescription)
+	}
+	if m.input_types != nil {
+		fields = append(fields, comfynode.FieldInputTypes)
+	}
+	if m.deprecated != nil {
+		fields = append(fields, comfynode.FieldDeprecated)
+	}
+	if m.experimental != nil {
+		fields = append(fields, comfynode.FieldExperimental)
+	}
+	if m.output_is_list != nil {
+		fields = append(fields, comfynode.FieldOutputIsList)
+	}
+	if m.return_names != nil {
+		fields = append(fields, comfynode.FieldReturnNames)
+	}
+	if m.return_types != nil {
+		fields = append(fields, comfynode.FieldReturnTypes)
+	}
+	if m.function != nil {
+		fields = append(fields, comfynode.FieldFunction)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ComfyNodeMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case comfynode.FieldCreateTime:
+		return m.CreateTime()
+	case comfynode.FieldUpdateTime:
+		return m.UpdateTime()
+	case comfynode.FieldNodeVersionID:
+		return m.NodeVersionID()
+	case comfynode.FieldCategory:
+		return m.Category()
+	case comfynode.FieldDescription:
+		return m.Description()
+	case comfynode.FieldInputTypes:
+		return m.InputTypes()
+	case comfynode.FieldDeprecated:
+		return m.Deprecated()
+	case comfynode.FieldExperimental:
+		return m.Experimental()
+	case comfynode.FieldOutputIsList:
+		return m.OutputIsList()
+	case comfynode.FieldReturnNames:
+		return m.ReturnNames()
+	case comfynode.FieldReturnTypes:
+		return m.ReturnTypes()
+	case comfynode.FieldFunction:
+		return m.Function()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ComfyNodeMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case comfynode.FieldCreateTime:
+		return m.OldCreateTime(ctx)
+	case comfynode.FieldUpdateTime:
+		return m.OldUpdateTime(ctx)
+	case comfynode.FieldNodeVersionID:
+		return m.OldNodeVersionID(ctx)
+	case comfynode.FieldCategory:
+		return m.OldCategory(ctx)
+	case comfynode.FieldDescription:
+		return m.OldDescription(ctx)
+	case comfynode.FieldInputTypes:
+		return m.OldInputTypes(ctx)
+	case comfynode.FieldDeprecated:
+		return m.OldDeprecated(ctx)
+	case comfynode.FieldExperimental:
+		return m.OldExperimental(ctx)
+	case comfynode.FieldOutputIsList:
+		return m.OldOutputIsList(ctx)
+	case comfynode.FieldReturnNames:
+		return m.OldReturnNames(ctx)
+	case comfynode.FieldReturnTypes:
+		return m.OldReturnTypes(ctx)
+	case comfynode.FieldFunction:
+		return m.OldFunction(ctx)
+	}
+	return nil, fmt.Errorf("unknown ComfyNode field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ComfyNodeMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case comfynode.FieldCreateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreateTime(v)
+		return nil
+	case comfynode.FieldUpdateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdateTime(v)
+		return nil
+	case comfynode.FieldNodeVersionID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNodeVersionID(v)
+		return nil
+	case comfynode.FieldCategory:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCategory(v)
+		return nil
+	case comfynode.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case comfynode.FieldInputTypes:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInputTypes(v)
+		return nil
+	case comfynode.FieldDeprecated:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeprecated(v)
+		return nil
+	case comfynode.FieldExperimental:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExperimental(v)
+		return nil
+	case comfynode.FieldOutputIsList:
+		v, ok := value.([]bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOutputIsList(v)
+		return nil
+	case comfynode.FieldReturnNames:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReturnNames(v)
+		return nil
+	case comfynode.FieldReturnTypes:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReturnTypes(v)
+		return nil
+	case comfynode.FieldFunction:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFunction(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ComfyNode field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ComfyNodeMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ComfyNodeMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ComfyNodeMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ComfyNode numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ComfyNodeMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(comfynode.FieldCategory) {
+		fields = append(fields, comfynode.FieldCategory)
+	}
+	if m.FieldCleared(comfynode.FieldDescription) {
+		fields = append(fields, comfynode.FieldDescription)
+	}
+	if m.FieldCleared(comfynode.FieldInputTypes) {
+		fields = append(fields, comfynode.FieldInputTypes)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ComfyNodeMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ComfyNodeMutation) ClearField(name string) error {
+	switch name {
+	case comfynode.FieldCategory:
+		m.ClearCategory()
+		return nil
+	case comfynode.FieldDescription:
+		m.ClearDescription()
+		return nil
+	case comfynode.FieldInputTypes:
+		m.ClearInputTypes()
+		return nil
+	}
+	return fmt.Errorf("unknown ComfyNode nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ComfyNodeMutation) ResetField(name string) error {
+	switch name {
+	case comfynode.FieldCreateTime:
+		m.ResetCreateTime()
+		return nil
+	case comfynode.FieldUpdateTime:
+		m.ResetUpdateTime()
+		return nil
+	case comfynode.FieldNodeVersionID:
+		m.ResetNodeVersionID()
+		return nil
+	case comfynode.FieldCategory:
+		m.ResetCategory()
+		return nil
+	case comfynode.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case comfynode.FieldInputTypes:
+		m.ResetInputTypes()
+		return nil
+	case comfynode.FieldDeprecated:
+		m.ResetDeprecated()
+		return nil
+	case comfynode.FieldExperimental:
+		m.ResetExperimental()
+		return nil
+	case comfynode.FieldOutputIsList:
+		m.ResetOutputIsList()
+		return nil
+	case comfynode.FieldReturnNames:
+		m.ResetReturnNames()
+		return nil
+	case comfynode.FieldReturnTypes:
+		m.ResetReturnTypes()
+		return nil
+	case comfynode.FieldFunction:
+		m.ResetFunction()
+		return nil
+	}
+	return fmt.Errorf("unknown ComfyNode field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ComfyNodeMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.versions != nil {
+		edges = append(edges, comfynode.EdgeVersions)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ComfyNodeMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case comfynode.EdgeVersions:
+		if id := m.versions; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ComfyNodeMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ComfyNodeMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ComfyNodeMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedversions {
+		edges = append(edges, comfynode.EdgeVersions)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ComfyNodeMutation) EdgeCleared(name string) bool {
+	switch name {
+	case comfynode.EdgeVersions:
+		return m.clearedversions
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ComfyNodeMutation) ClearEdge(name string) error {
+	switch name {
+	case comfynode.EdgeVersions:
+		m.ClearVersions()
+		return nil
+	}
+	return fmt.Errorf("unknown ComfyNode unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ComfyNodeMutation) ResetEdge(name string) error {
+	switch name {
+	case comfynode.EdgeVersions:
+		m.ResetVersions()
+		return nil
+	}
+	return fmt.Errorf("unknown ComfyNode edge %s", name)
 }
 
 // GitCommitMutation represents an operation that mutates the GitCommit nodes in the graph.
@@ -4931,6 +6034,9 @@ type NodeVersionMutation struct {
 	clearednode            bool
 	storage_file           *uuid.UUID
 	clearedstorage_file    bool
+	comfy_nodes            map[string]struct{}
+	removedcomfy_nodes     map[string]struct{}
+	clearedcomfy_nodes     bool
 	done                   bool
 	oldValue               func(context.Context) (*NodeVersion, error)
 	predicates             []predicate.NodeVersion
@@ -5458,6 +6564,60 @@ func (m *NodeVersionMutation) ResetStorageFile() {
 	m.clearedstorage_file = false
 }
 
+// AddComfyNodeIDs adds the "comfy_nodes" edge to the ComfyNode entity by ids.
+func (m *NodeVersionMutation) AddComfyNodeIDs(ids ...string) {
+	if m.comfy_nodes == nil {
+		m.comfy_nodes = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.comfy_nodes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearComfyNodes clears the "comfy_nodes" edge to the ComfyNode entity.
+func (m *NodeVersionMutation) ClearComfyNodes() {
+	m.clearedcomfy_nodes = true
+}
+
+// ComfyNodesCleared reports if the "comfy_nodes" edge to the ComfyNode entity was cleared.
+func (m *NodeVersionMutation) ComfyNodesCleared() bool {
+	return m.clearedcomfy_nodes
+}
+
+// RemoveComfyNodeIDs removes the "comfy_nodes" edge to the ComfyNode entity by IDs.
+func (m *NodeVersionMutation) RemoveComfyNodeIDs(ids ...string) {
+	if m.removedcomfy_nodes == nil {
+		m.removedcomfy_nodes = make(map[string]struct{})
+	}
+	for i := range ids {
+		delete(m.comfy_nodes, ids[i])
+		m.removedcomfy_nodes[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedComfyNodes returns the removed IDs of the "comfy_nodes" edge to the ComfyNode entity.
+func (m *NodeVersionMutation) RemovedComfyNodesIDs() (ids []string) {
+	for id := range m.removedcomfy_nodes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ComfyNodesIDs returns the "comfy_nodes" edge IDs in the mutation.
+func (m *NodeVersionMutation) ComfyNodesIDs() (ids []string) {
+	for id := range m.comfy_nodes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetComfyNodes resets all changes to the "comfy_nodes" edge.
+func (m *NodeVersionMutation) ResetComfyNodes() {
+	m.comfy_nodes = nil
+	m.clearedcomfy_nodes = false
+	m.removedcomfy_nodes = nil
+}
+
 // Where appends a list predicates to the NodeVersionMutation builder.
 func (m *NodeVersionMutation) Where(ps ...predicate.NodeVersion) {
 	m.predicates = append(m.predicates, ps...)
@@ -5736,12 +6896,15 @@ func (m *NodeVersionMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *NodeVersionMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.node != nil {
 		edges = append(edges, nodeversion.EdgeNode)
 	}
 	if m.storage_file != nil {
 		edges = append(edges, nodeversion.EdgeStorageFile)
+	}
+	if m.comfy_nodes != nil {
+		edges = append(edges, nodeversion.EdgeComfyNodes)
 	}
 	return edges
 }
@@ -5758,30 +6921,50 @@ func (m *NodeVersionMutation) AddedIDs(name string) []ent.Value {
 		if id := m.storage_file; id != nil {
 			return []ent.Value{*id}
 		}
+	case nodeversion.EdgeComfyNodes:
+		ids := make([]ent.Value, 0, len(m.comfy_nodes))
+		for id := range m.comfy_nodes {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *NodeVersionMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
+	if m.removedcomfy_nodes != nil {
+		edges = append(edges, nodeversion.EdgeComfyNodes)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *NodeVersionMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case nodeversion.EdgeComfyNodes:
+		ids := make([]ent.Value, 0, len(m.removedcomfy_nodes))
+		for id := range m.removedcomfy_nodes {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *NodeVersionMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearednode {
 		edges = append(edges, nodeversion.EdgeNode)
 	}
 	if m.clearedstorage_file {
 		edges = append(edges, nodeversion.EdgeStorageFile)
+	}
+	if m.clearedcomfy_nodes {
+		edges = append(edges, nodeversion.EdgeComfyNodes)
 	}
 	return edges
 }
@@ -5794,6 +6977,8 @@ func (m *NodeVersionMutation) EdgeCleared(name string) bool {
 		return m.clearednode
 	case nodeversion.EdgeStorageFile:
 		return m.clearedstorage_file
+	case nodeversion.EdgeComfyNodes:
+		return m.clearedcomfy_nodes
 	}
 	return false
 }
@@ -5821,6 +7006,9 @@ func (m *NodeVersionMutation) ResetEdge(name string) error {
 		return nil
 	case nodeversion.EdgeStorageFile:
 		m.ResetStorageFile()
+		return nil
+	case nodeversion.EdgeComfyNodes:
+		m.ResetComfyNodes()
 		return nil
 	}
 	return fmt.Errorf("unknown NodeVersion edge %s", name)

@@ -848,3 +848,178 @@ func isTokenMasked(token string) bool {
 	middle := token[4:tokenLength]
 	return strings.Count(middle, "*") == len(middle)
 }
+
+func TestRegistryComfyNode(t *testing.T) {
+	client, cleanup := setupDB(t, context.Background())
+	defer cleanup()
+	impl, authz := newMockedImpl(client, &config.Config{})
+
+	ctx, _ := setUpTest(client)
+	ctx = drip_logging.SetupLogger().WithContext(ctx)
+
+	pub := randomPublisher()
+	_, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{
+		Body: pub,
+	})
+	require.NoError(t, err, "should return created publisher")
+	// createdPublisher := (respub.(drip.CreatePublisher201JSONResponse))
+
+	tokenName := "test-token-name"
+	tokenDescription := "test-token-description"
+	respat, err := withMiddleware(authz, impl.CreatePersonalAccessToken)(ctx, drip.CreatePersonalAccessTokenRequestObject{
+		PublisherId: *pub.Id,
+		Body: &drip.PersonalAccessToken{
+			Name:        &tokenName,
+			Description: &tokenDescription,
+		},
+	})
+	require.NoError(t, err, "should return created token")
+	token := *respat.(drip.CreatePersonalAccessToken201JSONResponse).Token
+
+	// create node version
+	node := randomNode()
+	nodeVersion := randomNodeVersion(0)
+	signedUrl := "test-url"
+	impl.mockStorageService.On("GenerateSignedURL", mock.Anything, mock.Anything).Return(signedUrl, nil)
+	impl.mockStorageService.On("GetFileUrl", mock.Anything, mock.Anything, mock.Anything).Return(signedUrl, nil)
+	impl.mockDiscordService.On("SendSecurityCouncilMessage", mock.Anything, mock.Anything).Return(nil)
+	_, err = withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
+		PublisherId: *pub.Id,
+		NodeId:      *node.Id,
+		Body: &drip.PublishNodeVersionJSONRequestBody{
+			PersonalAccessToken: token,
+			Node:                *node,
+			NodeVersion:         *nodeVersion,
+		},
+	})
+	require.NoError(t, err, "should not return error")
+
+	// create another node version
+	_, err = withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
+		PublisherId: *pub.Id,
+		NodeId:      *node.Id,
+		Body: &drip.PublishNodeVersionJSONRequestBody{
+			PersonalAccessToken: token,
+			Node:                *node,
+			NodeVersion:         *randomNodeVersion(1),
+		},
+	})
+	require.NoError(t, err, "should not return error")
+
+	t.Run("NoComfyNode", func(t *testing.T) {
+		res, err := withMiddleware(authz, impl.GetNodeVersion)(ctx, drip.GetNodeVersionRequestObject{
+			NodeId:    *node.Id,
+			VersionId: *nodeVersion.Version,
+		})
+		require.NoError(t, err, "should return created node version")
+		require.IsType(t, drip.GetNodeVersion200JSONResponse{}, res)
+		assert.Empty(t, res.(drip.GetNodeVersion200JSONResponse).ComfyNodes)
+	})
+
+	comfyNodes := map[string]drip.ComfyNode{
+		"node1": {
+			InputTypes:   proto.String(`{"required":{"param":"string"}}`),
+			Function:     proto.String("node1Func"),
+			Category:     proto.String("node1Category"),
+			Description:  proto.String("node1Description"),
+			Deprecated:   proto.Bool(false),
+			Experimental: proto.Bool(false),
+			ReturnNames:  &[]string{"result1", "result2"},
+			ReturnTypes:  &[]string{"string", "string"},
+			OutputIsList: &[]bool{false, false},
+		},
+		"node2": {
+			InputTypes:   proto.String(`{"required":{"param":"string"}}`),
+			Function:     proto.String("node2Func"),
+			Category:     proto.String("node2Category"),
+			Description:  proto.String("node2Description"),
+			Deprecated:   proto.Bool(true),
+			Experimental: proto.Bool(true),
+			ReturnNames:  &[]string{"result1", "result2"},
+			ReturnTypes:  &[]string{"string", "string"},
+			OutputIsList: &[]bool{true, true},
+		},
+	}
+
+	// create comfy nodes
+	body := drip.CreateComfyNodesJSONRequestBody(comfyNodes)
+	res, err := withMiddleware(authz, impl.CreateComfyNodes)(ctx, drip.CreateComfyNodesRequestObject{
+		NodeId:    *node.Id,
+		VersionId: *nodeVersion.Version,
+		Body:      &body,
+	})
+	require.NoError(t, err)
+	require.IsType(t, drip.CreateComfyNodes204Response{}, res)
+
+	t.Run("GetComfyNodes", func(t *testing.T) {
+		for k, v := range comfyNodes {
+			v.ComfyNodeId = proto.String(k)
+			t.Run(k, func(t *testing.T) {
+				res, err := withMiddleware(authz, impl.GetComfyNode)(ctx, drip.GetComfyNodeRequestObject{
+					NodeId:      *node.Id,
+					VersionId:   *nodeVersion.Version,
+					ComfyNodeId: k,
+				})
+				require.NoError(t, err, "should return created node version")
+				require.IsType(t, drip.GetComfyNode200JSONResponse{}, res)
+				assert.Equal(t, drip.GetComfyNode200JSONResponse(v), res.(drip.GetComfyNode200JSONResponse))
+			})
+		}
+	})
+
+	t.Run("GetNodeVersion", func(t *testing.T) {
+		res, err := withMiddleware(authz, impl.GetNodeVersion)(ctx, drip.GetNodeVersionRequestObject{
+			NodeId:    *node.Id,
+			VersionId: *nodeVersion.Version,
+		})
+		require.NoError(t, err, "should return created node version")
+		require.IsType(t, drip.GetNodeVersion200JSONResponse{}, res)
+		for k, v := range *res.(drip.GetNodeVersion200JSONResponse).ComfyNodes {
+			ev := comfyNodes[k]
+			ev.ComfyNodeId = proto.String(k)
+			assert.Equal(t, ev, v)
+		}
+	})
+
+	t.Run("ListNodeVersion", func(t *testing.T) {
+		res, err := withMiddleware(authz, impl.ListNodeVersions)(ctx, drip.ListNodeVersionsRequestObject{
+			NodeId: *node.Id,
+		})
+		require.NoError(t, err, "should return created node version")
+		require.IsType(t, drip.ListNodeVersions200JSONResponse{}, res)
+		found := false
+		for _, nv := range res.(drip.ListNodeVersions200JSONResponse) {
+			if *nv.Version == *nodeVersion.Version {
+				for k, v := range *nv.ComfyNodes {
+					found = true
+					ev := comfyNodes[k]
+					ev.ComfyNodeId = proto.String(k)
+					assert.Equal(t, ev, v)
+				}
+			} else {
+				assert.Empty(t, nv.ComfyNodes)
+			}
+		}
+		assert.True(t, found)
+	})
+
+	t.Run("ListAllNodeVersion", func(t *testing.T) {
+		res, err := withMiddleware(authz, impl.ListAllNodeVersions)(ctx, drip.ListAllNodeVersionsRequestObject{})
+		require.NoError(t, err, "should return created node version")
+		require.IsType(t, drip.ListAllNodeVersions200JSONResponse{}, res)
+		found := false
+		for _, nv := range *res.(drip.ListAllNodeVersions200JSONResponse).Versions {
+			if *nv.Version == *nodeVersion.Version {
+				for k, v := range *nv.ComfyNodes {
+					found = true
+					ev := comfyNodes[k]
+					ev.ComfyNodeId = proto.String(k)
+					assert.Equal(t, ev, v)
+				}
+			} else {
+				assert.Empty(t, nv.ComfyNodes)
+			}
+		}
+		assert.True(t, found)
+	})
+}

@@ -53,9 +53,11 @@ type NodeVersionEdges struct {
 	Node *Node `json:"node,omitempty"`
 	// StorageFile holds the value of the storage_file edge.
 	StorageFile *StorageFile `json:"storage_file,omitempty"`
+	// ComfyNodes holds the value of the comfy_nodes edge.
+	ComfyNodes []*ComfyNode `json:"comfy_nodes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // NodeOrErr returns the Node value or an error if the edge
@@ -78,6 +80,15 @@ func (e NodeVersionEdges) StorageFileOrErr() (*StorageFile, error) {
 		return nil, &NotFoundError{label: storagefile.Label}
 	}
 	return nil, &NotLoadedError{edge: "storage_file"}
+}
+
+// ComfyNodesOrErr returns the ComfyNodes value or an error if the edge
+// was not loaded in eager-loading.
+func (e NodeVersionEdges) ComfyNodesOrErr() ([]*ComfyNode, error) {
+	if e.loadedTypes[2] {
+		return e.ComfyNodes, nil
+	}
+	return nil, &NotLoadedError{edge: "comfy_nodes"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -202,6 +213,11 @@ func (nv *NodeVersion) QueryNode() *NodeQuery {
 // QueryStorageFile queries the "storage_file" edge of the NodeVersion entity.
 func (nv *NodeVersion) QueryStorageFile() *StorageFileQuery {
 	return NewNodeVersionClient(nv.config).QueryStorageFile(nv)
+}
+
+// QueryComfyNodes queries the "comfy_nodes" edge of the NodeVersion entity.
+func (nv *NodeVersion) QueryComfyNodes() *ComfyNodeQuery {
+	return NewNodeVersionClient(nv.config).QueryComfyNodes(nv)
 }
 
 // Update returns a builder for updating this NodeVersion.
