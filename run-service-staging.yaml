@@ -47,10 +47,10 @@ spec:
         - name: ALGOLIA_APP_ID
           valueFrom:
               secretKeyRef:
-                  key: 1
+                  key: 2
                   name: STAGING_ALGOLIA_APP_ID
         - name: ALGOLIA_API_KEY
           valueFrom:
               secretKeyRef:
-                  key: 1
+                  key: 2
                   name: STAGING_ALGOLIA_API_KEY
