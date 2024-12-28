@@ -16,7 +16,7 @@ import (
 )
 
 func TestApply(t *testing.T) {
-	terraformDir := test_structure.CopyTerraformFolderToTemp(t, "../../", "infrastructure/example/simple-node-pack-extractcd")
+	terraformDir := test_structure.CopyTerraformFolderToTemp(t, "../../", "infrastructure/examples/simple-node-pack-extract")
 	terraformOptions := &terraform.Options{
 		TerraformDir: terraformDir,
 		Vars: map[string]interface{}{

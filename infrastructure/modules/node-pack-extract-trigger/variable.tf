@@ -1,7 +1,7 @@
 # REQUIRED VARIABLE
 variable "bucket_name" {
   type        = string
-  description = "existing bucket name"
+  description = "Existing public bucket that store the comfy node-packs."
 }
 
 variable "cloud_build_service_account" {
@@ -9,34 +9,40 @@ variable "cloud_build_service_account" {
   description = "Existing service account used to run the cloud build and used to access registry backend, e.g. cloud-build@my-project.iam.gserviceaccount.com. Note that this service account needs to have 'Service Account Token Creator' role."
 }
 
+variable "registry_backend_url" {
+  type        = string
+  description = "The base url where registry backend can be reached"
+}
+
 # OPTIONAL VARIABLE
 variable "region" {
   type        = string
+  description = "Google Cloud region"
   default     = "us-central1"
-  description = "google cloud region"
 }
 
 variable "topic_name" {
   type        = string
-  description = "pub/sub topic to be created"
+  description = "Google Cloudpub/sub topic to be created"
   default     = "comfy-registry-event"
+}
+
+variable "trigger_name" {
+  type        = string
+  description = "Cloud build trigger name"
+  default     = "comfy-registry-nodepack"
+
 }
 
 variable "git_repo_uri" {
   type        = string
-  description = "git repo containing the cloud build pipeline"
+  description = "Connected git repo containing the cloud build pipeline. See https://cloud.google.com/build/docs/repositories"
   default     = "https://github.com/Comfy-Org/registry-backend"
 }
 
 variable "git_repo_branch" {
   type        = string
-  description = "git repo branch"
-  default     = "master"
-}
-
-variable "registry_backend_url" {
-  type        = string
-  description = "the url where registry backend can be reached"
-  default     = "https://api.comfy.org"
+  description = "Git repo branch."
+  default     = "main"
 }
 

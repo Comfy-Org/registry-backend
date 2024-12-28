@@ -38,7 +38,7 @@ data "google_service_account" "cloudbuild_service_account" {
 
 # Create the cloud build trigger
 resource "google_cloudbuild_trigger" "trigger" {
-  name            = "comfy-registry-nodepack"
+  name            = var.trigger_name
   location        = var.region
   service_account = data.google_service_account.cloudbuild_service_account.id
 
@@ -60,8 +60,8 @@ resource "google_cloudbuild_trigger" "trigger" {
   }
 
   substitutions = {
-    _CUSTOM_NODE_NAME = "custom-node"
-    _CUSTOM_NODE_URL  = "https://storage.googleapis.com/$(body.message.data.bucket)/$(body.message.data.name)"
-    _NODEPACK_HANDLER = var.registry_backend_url
+    _CUSTOM_NODE_NAME     = "custom-node"
+    _CUSTOM_NODE_URL      = "https://storage.googleapis.com/$(body.message.data.bucket)/$(body.message.data.name)"
+    _REGISTRY_BACKEND_URL = var.registry_backend_url
   }
 }

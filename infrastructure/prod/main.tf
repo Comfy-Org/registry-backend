@@ -21,4 +21,5 @@ module "node_pack_extract_trigger" {
   bucket_name                 = "comfy-registry"
   cloud_build_service_account = "cloud-scheduler@dreamboothy.iam.gserviceaccount.com"
   topic_name                  = "comfy-registry-event"
+  registry_backend_url        = "https://api.comfy.org"
 }
