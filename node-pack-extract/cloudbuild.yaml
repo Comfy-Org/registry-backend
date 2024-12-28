@@ -1,0 +1,49 @@
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "--tag"
+      - "gcr.io/$PROJECT_ID/comfyui-nodepack"
+      - "."
+    dir: node-pack-extract
+
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "run"
+      - "--env"
+      - "CUSTOM_NODE_URL=$_CUSTOM_NODE_URL"
+      - "--env"
+      - "CUSTOM_NODE_NAME=$_CUSTOM_NODE_NAME"
+      - "--volume"
+      - "/workspace:/workspace"
+      - "--workdir"
+      - "/workspace"
+      - "gcr.io/$PROJECT_ID/comfyui-nodepack"
+      - "$_CUSTOM_NODE_NAME.json"
+
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
+    entrypoint: "bash"
+    args:
+      - -c
+      - gcloud auth print-identity-token | tee /workspace/token
+
+  - name: "gcr.io/cloud-builders/curl"
+    entrypoint: "bash"
+    args:
+      - -c
+      - |
+        NODE="$(basename $(dirname $(dirname '$_CUSTOM_NODE_URL')))"
+        VERSION="$(basename $(dirname '$_CUSTOM_NODE_URL'))"
+        curl -s \
+          -H "Authorization: Bearer $(cat /workspace/token)" \
+          -H "Content-Type: application/json" \
+          -X "POST" "-d" "@/workspace/$_CUSTOM_NODE_NAME.json" \
+          "$_REGISTRY_BACKEND_URL/nodes/$$NODE/versions/$$VERSION/comfy-nodes"
+
+substitutions:
+  _CUSTOM_NODE_NAME: "default-node-name"
+  _CUSTOM_NODE_URL: "https://example.com/default-node.tar.gz"
+  _REGISTRY_BACKEND_URL: "https://echo.free.beeceptor.com"
+
+options:
+  logging: CLOUD_LOGGING_ONLY

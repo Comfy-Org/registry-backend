@@ -10,4 +10,8 @@ tmp/
 # Lazy way to make atlas usable on windows
 atlas.exe
 
-.env
+
+# terraform
+**/.terraform/*
+terraform.tfstate
+terraform.tfstate.*

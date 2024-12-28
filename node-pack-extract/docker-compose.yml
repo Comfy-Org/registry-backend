@@ -1,0 +1,10 @@
+services:
+  node-pack-extact:
+    build: .
+    environment:
+      CUSTOM_NODE_URL: https://storage.googleapis.com/comfy-registry/altkeyproject/comfyui-dream-project/1.0.6/node.tar.gz
+      CUSTOM_NODE_NAME: comfyui-dream-project
+    volumes:
+      - ./output:/tmp/output
+    working_dir: /tmp/output
+    command: comfyui-dream-project.json
