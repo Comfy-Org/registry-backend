@@ -13,12 +13,12 @@ provider "google" {
 }
 
 module "node_pack_extract_trigger" {
-  source = "../../node-pack-extract/trigger"
+  source = "../module/node-pack-extract-trigger"
   providers = {
     google = google
   }
   region                      = var.region
   bucket_name                 = "comfy-registry"
   cloud_build_service_account = "cloud-scheduler@dreamboothy.iam.gserviceaccount.com"
-  topic_name                  = "comfy-registry-event-stage"
+  topic_name                  = "comfy-registry-event-staging"
 }

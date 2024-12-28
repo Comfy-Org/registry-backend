@@ -13,7 +13,7 @@ provider "google" {
 }
 
 module "node_pack_extract_trigger" {
-  source = "../../node-pack-extract/trigger"
+  source = "../module/node-pack-extract-trigger"
   providers = {
     google = google
   }
