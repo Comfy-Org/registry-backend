@@ -30,7 +30,7 @@ variable "topic_name" {
 variable "trigger_name" {
   type        = string
   description = "Cloud build trigger name"
-  default     = "comfy-registry-nodepack"
+  default     = "comfy-node-pack-extract"
 
 }
 
