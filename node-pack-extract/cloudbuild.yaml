@@ -25,7 +25,7 @@ steps:
     entrypoint: "bash"
     args:
       - -c
-      - gcloud auth print-identity-token | tee /workspace/token
+      - gcloud auth print-identity-token --audiences="https://api.comfy.org" | tee /workspace/token
 
   - name: "gcr.io/cloud-builders/curl"
     entrypoint: "bash"
