@@ -382,12 +382,12 @@ func (s *RegistryService) CreateNodeVersion(
 		}
 
 		// Create a new storage file for the node version
-		objectPath := fmt.Sprintf("%s/%s/%s/%s", publisherID, nodeID, *nodeVersion.Version, "node.tar.gz")
+		objectPath := fmt.Sprintf("%s/%s/%s/%s", publisherID, nodeID, *nodeVersion.Version, "node.zip")
 		storageFile := tx.StorageFile.Create().
 			SetBucketName(bucketName).
 			SetFilePath(objectPath).
 			SetFileType("zip").
-			// Sample URL: https://storage.googleapis.com/comfy-registry/james-test-publisher/comfyui-inspire-pack/1.0.0/node.tar.gz
+			// Sample URL: https://storage.googleapis.com/comfy-registry/james-test-publisher/comfyui-inspire-pack/1.0.0/node.zip
 			SetFileURL(fmt.Sprintf("https://storage.googleapis.com/%s/%s", bucketName, objectPath)).
 			SaveX(ctx)
 		signedUrl, err := s.storageService.GenerateSignedURL(bucketName, objectPath)
