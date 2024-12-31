@@ -4,53 +4,124 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"registry-backend/config"
 	"registry-backend/ent"
 	"registry-backend/ent/migrate"
 	drip_logging "registry-backend/logging"
 	"registry-backend/server"
+	"syscall"
 
 	"github.com/rs/zerolog/log"
 
 	_ "github.com/lib/pq"
 )
 
+// validateEnvVars ensures all required environment variables are set based on the environment.
+func validateEnvVars(env string) {
+	// Variables mandatory for all environments
+	mandatoryVars := []string{
+		"DB_CONNECTION_STRING",
+		"PROJECT_ID",
+		"DRIP_ENV",
+		"JWT_SECRET",
+	}
+
+	// Additional variables mandatory for production and staging
+	prodStagingVars := []string{
+		"SLACK_REGISTRY_CHANNEL_WEBHOOK",
+		"SECRET_SCANNER_URL",
+		"SECURITY_COUNCIL_DISCORD_WEBHOOK",
+		"ALGOLIA_APP_ID",
+		"ALGOLIA_API_KEY",
+		"ID_TOKEN_AUDIENCE",
+	}
+
+	// Add production and staging-specific variables
+	if env == "prod" || env == "staging" {
+		mandatoryVars = append(mandatoryVars, prodStagingVars...)
+	}
+
+	// Validate that all mandatory environment variables are set
+	missingVars := []string{}
+	for _, key := range mandatoryVars {
+		if os.Getenv(key) == "" {
+			missingVars = append(missingVars, key)
+		}
+	}
+
+	// Log and terminate if mandatory variables are missing
+	if len(missingVars) > 0 {
+		log.Fatal().Msgf("Missing mandatory environment variables for '%s': %v", env, missingVars)
+	}
+}
+
 func main() {
+	// Retrieve the current environment
+	dripEnv := os.Getenv("DRIP_ENV")
+	if dripEnv == "" {
+		log.Fatal().Msg("Environment variable DRIP_ENV is not set.")
+	}
+
+	// Validate environment variables based on the current environment
+	validateEnvVars(dripEnv)
+
+	// Set global log level based on the LOG_LEVEL environment variable
 	drip_logging.SetGlobalLogLevel(os.Getenv("LOG_LEVEL"))
 
-	connection_string := os.Getenv("DB_CONNECTION_STRING")
+	// Retrieve the database connection string
+	connectionString := os.Getenv("DB_CONNECTION_STRING")
 
-	config := config.Config{
+	// Build the application configuration
+	appConfig := config.Config{
 		ProjectID:                     os.Getenv("PROJECT_ID"),
-		DripEnv:                       os.Getenv("DRIP_ENV"),
+		DripEnv:                       dripEnv,
 		SlackRegistryChannelWebhook:   os.Getenv("SLACK_REGISTRY_CHANNEL_WEBHOOK"),
 		JWTSecret:                     os.Getenv("JWT_SECRET"),
 		SecretScannerURL:              os.Getenv("SECRET_SCANNER_URL"),
 		DiscordSecurityChannelWebhook: os.Getenv("SECURITY_COUNCIL_DISCORD_WEBHOOK"),
+		AlgoliaAppID:                  os.Getenv("ALGOLIA_APP_ID"),
+		AlgoliaAPIKey:                 os.Getenv("ALGOLIA_API_KEY"),
+		IDTokenAudience:               os.Getenv("ID_TOKEN_AUDIENCE"),
 	}
 
+	// Construct the database connection string
 	var dsn string
-	if os.Getenv("DRIP_ENV") == "localdev" {
-		dsn = fmt.Sprintf("%s sslmode=disable", connection_string)
+	if dripEnv == "localdev" {
+		// For local development, disable SSL for easier setup
+		dsn = fmt.Sprintf("%s sslmode=disable", connectionString)
 	} else {
-		dsn = connection_string
+		// Use the connection string as-is for non-development environments
+		dsn = connectionString
 	}
 
+	// Initialize the database client
 	client, err := ent.Open("postgres", dsn)
-
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed opening connection to postgres.")
+		log.Fatal().Err(err).Msg("Failed to establish a connection to the PostgreSQL database.")
 	}
-	defer client.Close()
-	// Run the auto migration tool for localdev.
-	if os.Getenv("DRIP_ENV") == "localdev" {
-		log.Info().Msg("Running migrations")
-		if err := client.Schema.Create(context.Background(), migrate.WithDropIndex(true),
-			migrate.WithDropColumn(true)); err != nil {
-			log.Fatal().Err(err).Msg("failed creating schema resources.")
+	defer client.Close() // Ensure the database client is closed when the application exits
+
+	// Run database migrations in local development to keep the schema up to date
+	if dripEnv == "localdev" {
+		log.Info().Msg("Running migrations for local development.")
+		if err := client.Schema.Create(context.Background(), migrate.WithDropIndex(true), migrate.WithDropColumn(true)); err != nil {
+			log.Fatal().Err(err).Msg("Failed to create schema resources during migration.")
 		}
 	}
 
-	server := server.NewServer(client, &config)
-	log.Fatal().Err(server.Start()).Msg("Server stopped")
+	// Handle graceful shutdown
+	go func() {
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+		<-sigs
+		log.Info().Msg("Shutting down server gracefully.")
+		client.Close()
+		os.Exit(0)
+	}()
+
+	// Initialize and start the server
+	server := server.NewServer(client, &appConfig)
+	log.Info().Msg("Starting the server.")
+	log.Fatal().Err(server.Start()).Msg("Server has stopped unexpectedly.")
 }

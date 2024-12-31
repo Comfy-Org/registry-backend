@@ -15,42 +15,44 @@ spec:
         run.googleapis.com/startup-cpu-boost: 'false'
     spec:
       containers:
-      - image: registry-backend-image-substitute
-        env: 
-        - name: DRIP_ENV
-          value: staging
-        - name: DB_CONNECTION_STRING
-          valueFrom:
-              secretKeyRef:
-                key: 1
-                name: STAGING_SUPABASE_CONNECTION_STRING
-        - name: JWT_SECRET
-          valueFrom:
-              secretKeyRef:
-                key: 1
-                name: STAGING_JWT_SECRET
-        - name: PROJECT_ID
-          value: dreamboothy
-          # TODO(robinhuang): Switch to a list of strings
-        - name: CORS_ORIGIN
-          value: https://staging.comfyregistry.org
-        - name: SECRET_SCANNER_URL
-          valueFrom:
-              secretKeyRef:
+        - image: registry-backend-image-substitute
+          env:
+            - name: DRIP_ENV
+              value: staging
+            - name: DB_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  key: 1
+                  name: STAGING_SUPABASE_CONNECTION_STRING
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: 1
+                  name: STAGING_JWT_SECRET
+            - name: PROJECT_ID
+              value: dreamboothy
+              # TODO(robinhuang): Switch to a list of strings
+            - name: CORS_ORIGIN
+              value: https://staging.comfyregistry.org
+            - name: SECRET_SCANNER_URL
+              valueFrom:
+                secretKeyRef:
                   key: 1
                   name: SECURITY_SCANNER_CLOUD_FUNCTION_URL
-        - name: SECURITY_COUNCIL_DISCORD_WEBHOOK
-          valueFrom:
-              secretKeyRef:
+            - name: SECURITY_COUNCIL_DISCORD_WEBHOOK
+              valueFrom:
+                secretKeyRef:
                   key: 1
                   name: SECURITY_COUNCIL_DISCORD_WEBHOOK
-        - name: ALGOLIA_APP_ID
-          valueFrom:
-              secretKeyRef:
+            - name: ALGOLIA_APP_ID
+              valueFrom:
+                secretKeyRef:
                   key: 2
                   name: STAGING_ALGOLIA_APP_ID
-        - name: ALGOLIA_API_KEY
-          valueFrom:
-              secretKeyRef:
+            - name: ALGOLIA_API_KEY
+              valueFrom:
+                secretKeyRef:
                   key: 2
                   name: STAGING_ALGOLIA_API_KEY
+            - name: ID_TOKEN_AUDIENCE
+              value: https://stagingapi.comfy.org
