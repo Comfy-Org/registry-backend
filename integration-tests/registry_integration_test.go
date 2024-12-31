@@ -499,7 +499,7 @@ func TestRegistryNodeVersion(t *testing.T) {
 	node := randomNode()
 	nodeVersion := randomNodeVersion(0)
 	signedUrl := "test-url"
-	downloadUrl := fmt.Sprintf("https://storage.googleapis.com/comfy-registry/%s/%s/%s/node.tar.gz", *pub.Id, *node.Id, *nodeVersion.Version)
+	downloadUrl := fmt.Sprintf("https://storage.googleapis.com/comfy-registry/%s/%s/%s/node.zip", *pub.Id, *node.Id, *nodeVersion.Version)
 	var createdNodeVersion drip.NodeVersion
 
 	impl.mockStorageService.On("GenerateSignedURL", mock.Anything, mock.Anything).Return(signedUrl, nil)
@@ -780,7 +780,7 @@ func TestRegistryNodeVersion(t *testing.T) {
 	t.Run("Scan Node", func(t *testing.T) {
 		node := randomNode()
 		nodeVersion := randomNodeVersion(0)
-		downloadUrl := fmt.Sprintf("https://storage.googleapis.com/comfy-registry/%s/%s/%s/node.tar.gz", *pub.Id, *node.Id, *nodeVersion.Version)
+		downloadUrl := fmt.Sprintf("https://storage.googleapis.com/comfy-registry/%s/%s/%s/node.zip", *pub.Id, *node.Id, *nodeVersion.Version)
 
 		impl.mockStorageService.On("GenerateSignedURL", mock.Anything, mock.Anything).Return("test-url", nil)
 		impl.mockStorageService.On("GetFileUrl", mock.Anything, mock.Anything, mock.Anything).Return("test-url", nil)

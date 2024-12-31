@@ -150,7 +150,7 @@ func (s *GCPStorageService) GenerateSignedURL(bucketName, objectName string) (st
 
 	expires := time.Now().Add(15 * time.Minute)
 	url, err := client.Bucket(bucketName).SignedURL(objectName, &storage.SignedURLOptions{
-		ContentType: "application/gzip",
+		ContentType: "application/zip",
 		Method:      "PUT",
 		Expires:     expires,
 	})
