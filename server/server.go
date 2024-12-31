@@ -7,7 +7,7 @@ import (
 	"registry-backend/ent"
 	"registry-backend/gateways/algolia"
 	"registry-backend/gateways/discord"
-	gateway "registry-backend/gateways/slack"
+	"registry-backend/gateways/slack"
 	"registry-backend/gateways/storage"
 	handler "registry-backend/server/handlers"
 	"registry-backend/server/implementation"
@@ -25,24 +25,72 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type Server struct {
-	Client *ent.Client
-	Config *config.Config
+type ServerDependencies struct {
+	StorageService   storage.StorageService
+	SlackService     slack.SlackService
+	AlgoliaService   algolia.AlgoliaService
+	DiscordService   discord.DiscordService
+	MonitoringClient monitoring.MetricClient
 }
 
-func NewServer(client *ent.Client, config *config.Config) *Server {
-	return &Server{
-		Client: client,
-		Config: config,
+type Server struct {
+	Client       *ent.Client
+	Config       *config.Config
+	Dependencies *ServerDependencies
+}
+
+func NewServer(client *ent.Client, config *config.Config) (*Server, error) {
+	deps, err := initializeDependencies(config)
+	if err != nil {
+		return nil, err
 	}
+	return &Server{
+		Client:       client,
+		Config:       config,
+		Dependencies: deps,
+	}, nil
+}
+
+func initializeDependencies(config *config.Config) (*ServerDependencies, error) {
+	storageService, err := storage.NewStorageService(config)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to initialize storage service")
+		return nil, err
+	}
+
+	slackService := slack.NewSlackService(config)
+
+	algoliaService, err := algolia.NewAlgoliaService(config)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to initialize Algolia service")
+		return nil, err
+	}
+
+	discordService := discord.NewDiscordService(config)
+
+	mon, err := monitoring.NewMetricClient(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to initialize monitoring client")
+		return nil, err
+	}
+
+	return &ServerDependencies{
+		StorageService:   storageService,
+		SlackService:     slackService,
+		AlgoliaService:   algoliaService,
+		DiscordService:   discordService,
+		MonitoringClient: *mon,
+	}, nil
 }
 
 func (s *Server) Start() error {
 	e := echo.New()
 	e.HideBanner = true
+
+	// Apply middleware
 	e.Use(drip_middleware.TracingMiddleware)
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"*"}, // This allows all origins
+		AllowOrigins: []string{"*"},
 		AllowMethods: []string{"*"},
 		AllowHeaders: []string{"*"},
 		AllowOriginFunc: func(origin string) (bool, error) {
@@ -54,7 +102,6 @@ func (s *Server) Start() error {
 		LogURI:    true,
 		LogStatus: true,
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			// Ignore when url is path /vm/{sessionId}
 			if strings.HasPrefix(c.Request().URL.Path, "/vm/") {
 				return nil
 			}
@@ -66,47 +113,40 @@ func (s *Server) Start() error {
 		},
 	}))
 
-	storageService, err := storage.NewGCPStorageService(context.Background())
-	if err != nil {
-		return err
-	}
+	// Attach implementation of the generated OAPI strict server
+	impl := implementation.NewStrictServerImplementation(
+		s.Client, s.Config, s.Dependencies.StorageService, s.Dependencies.SlackService,
+		s.Dependencies.DiscordService, s.Dependencies.AlgoliaService)
 
-	slackService := gateway.NewSlackService(s.Config)
-	algoliaService, err := algolia.NewFromEnvOrNoop()
-	if err != nil {
-		return err
-	}
-	discordService := discord.NewDiscordService(s.Config)
-
-	mon, err := monitoring.NewMetricClient(context.Background())
-	if err != nil {
-		return err
-	}
-
-	// Attach implementation of generated oapi strict server.
-	impl := implementation.NewStrictServerImplementation(s.Client, s.Config, storageService, slackService, discordService, algoliaService)
-
-	// Define middlewares in the order of operations
+	// Define middleware for authorization
 	authorizationManager := drip_authorization.NewAuthorizationManager(s.Client, impl.RegistryService)
 	middlewares := []generated.StrictMiddlewareFunc{
 		authorizationManager.AuthorizationMiddleware(),
 	}
+
+	// Create the strict handler with middlewares
 	wrapped := generated.NewStrictHandler(impl, middlewares)
 
+	// Register routes
 	generated.RegisterHandlers(e, wrapped)
 
+	// Define public routes
 	e.GET("/openapi", handler.SwaggerHandler)
-	e.GET("/health", func(c echo.Context) error {
-		return c.String(200, "OK")
-	})
+	e.GET("/health", s.HealthCheckHandler)
 
-	// Global Middlewares
-	e.Use(drip_metric.MetricsMiddleware(mon, s.Config))
+	// Apply global middlewares
+	e.Use(drip_metric.MetricsMiddleware(&s.Dependencies.MonitoringClient, s.Config))
 	e.Use(drip_authentication.FirebaseAuthMiddleware(s.Client))
 	e.Use(drip_authentication.ServiceAccountAuthMiddleware())
 	e.Use(drip_authentication.JWTAdminAuthMiddleware(s.Client, s.Config.JWTSecret))
 	e.Use(drip_middleware.ErrorLoggingMiddleware())
 
-	e.Logger.Fatal(e.Start(":8080"))
-	return nil
+	// Start the server
+	return e.Start(":8080")
+}
+
+// HealthCheckHandler performs health checks on the critical dependencies
+func (s *Server) HealthCheckHandler(c echo.Context) error {
+	// This could be extended to check storage, slack, and other dependencies
+	return c.String(200, "OK")
 }

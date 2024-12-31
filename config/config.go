@@ -11,4 +11,5 @@ type Config struct {
 	IDTokenAudience               string
 	AlgoliaAppID                  string
 	AlgoliaAPIKey                 string
+	CloudStorageBucketName        string
 }

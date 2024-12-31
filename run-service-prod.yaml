@@ -65,6 +65,8 @@ spec:
                   name: PROD_ALGOLIA_API_KEY
             - name: ID_TOKEN_AUDIENCE
               value: https://api.comfy.org
+            - name: CLOUD_STORAGE_BUCKET_NAME
+              value: comfy-registry
           resources:
             limits:
               cpu: 4000m

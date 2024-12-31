@@ -44,6 +44,11 @@ spec:
                 secretKeyRef:
                   key: 1
                   name: SECURITY_COUNCIL_DISCORD_WEBHOOK
+            - name: SECURITY_COUNCIL_DISCORD_PRIVATE_WEBHOOK
+              valueFrom:
+                secretKeyRef:
+                  key: 1
+                  name: SECURITY_COUNCIL_DISCORD_PRIVATE_WEBHOOK
             - name: ALGOLIA_APP_ID
               valueFrom:
                 secretKeyRef:
@@ -56,3 +61,5 @@ spec:
                   name: STAGING_ALGOLIA_API_KEY
             - name: ID_TOKEN_AUDIENCE
               value: https://stagingapi.comfy.org
+            - name: CLOUD_STORAGE_BUCKET_NAME
+              value: staging-comfy-registry

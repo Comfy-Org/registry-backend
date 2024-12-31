@@ -3,6 +3,7 @@ package algolia
 import (
 	"context"
 	"os"
+	"registry-backend/config"
 	"registry-backend/ent"
 	"registry-backend/ent/schema"
 	"testing"
@@ -23,7 +24,10 @@ func TestIndex(t *testing.T) {
 		t.Skip("Required env variables `ALGOLIA_API_KEY` is not set")
 	}
 
-	algolia, err := NewFromEnv()
+	algolia, err := NewAlgoliaService(&config.Config{
+		AlgoliaAppID:  os.Getenv("ALGOLIA_APP_ID"),
+		AlgoliaAPIKey: os.Getenv("ALGOLIA_API_KEY"),
+	})
 	require.NoError(t, err)
 
 	t.Run("node", func(t *testing.T) {
@@ -74,9 +78,7 @@ func TestIndex(t *testing.T) {
 }
 
 func TestNoop(t *testing.T) {
-	t.Setenv("ALGOLIA_APP_ID", "")
-	t.Setenv("ALGOLIA_API_KEY", "")
-	a, err := NewFromEnvOrNoop()
+	a, err := NewAlgoliaService(&config.Config{})
 	require.NoError(t, err)
 	require.NoError(t, a.IndexNodes(context.Background(), &ent.Node{}))
 	require.NoError(t, a.DeleteNode(context.Background(), &ent.Node{}))

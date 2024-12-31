@@ -29,6 +29,7 @@ func validateEnvVars(env string) {
 
 	// Additional variables mandatory for production and staging
 	prodStagingVars := []string{
+		"CLOUD_STORAGE_BUCKET_NAME",
 		"SLACK_REGISTRY_CHANNEL_WEBHOOK",
 		"SECRET_SCANNER_URL",
 		"SECURITY_COUNCIL_DISCORD_WEBHOOK",
@@ -84,6 +85,7 @@ func main() {
 		AlgoliaAppID:                  os.Getenv("ALGOLIA_APP_ID"),
 		AlgoliaAPIKey:                 os.Getenv("ALGOLIA_API_KEY"),
 		IDTokenAudience:               os.Getenv("ID_TOKEN_AUDIENCE"),
+		CloudStorageBucketName:        os.Getenv("CLOUD_STORAGE_BUCKET_NAME"),
 	}
 
 	// Construct the database connection string
@@ -106,7 +108,8 @@ func main() {
 	// Run database migrations in local development to keep the schema up to date
 	if dripEnv == "localdev" {
 		log.Info().Msg("Running migrations for local development.")
-		if err := client.Schema.Create(context.Background(), migrate.WithDropIndex(true), migrate.WithDropColumn(true)); err != nil {
+		if err := client.Schema.Create(context.Background(),
+			migrate.WithDropIndex(true), migrate.WithDropColumn(true)); err != nil {
 			log.Fatal().Err(err).Msg("Failed to create schema resources during migration.")
 		}
 	}
@@ -122,7 +125,11 @@ func main() {
 	}()
 
 	// Initialize and start the server
-	server := server.NewServer(client, &appConfig)
+	registryServer, err := server.NewServer(client, &appConfig)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to initialize the server.")
+	}
+
 	log.Info().Msg("Starting the server.")
-	log.Fatal().Err(server.Start()).Msg("Server has stopped unexpectedly.")
+	log.Fatal().Err(registryServer.Start()).Msg("Server has stopped unexpectedly.")
 }
