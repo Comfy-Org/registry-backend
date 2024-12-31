@@ -8,7 +8,8 @@ type MockDiscordService struct {
 	mock.Mock
 }
 
-func (m *MockDiscordService) SendSecurityCouncilMessage(msg string) error {
-	args := m.Called(msg)
+func (m *MockDiscordService) SendSecurityCouncilMessage(msg string, private bool	) error {
+	args := m.Called(msg, private)
 	return args.Error(0)
 }
+
