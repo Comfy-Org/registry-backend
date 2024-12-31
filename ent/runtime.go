@@ -77,10 +77,6 @@ func init() {
 	comfynodeDescReturnNames := comfynodeFields[8].Descriptor()
 	// comfynode.DefaultReturnNames holds the default value on creation for the return_names field.
 	comfynode.DefaultReturnNames = comfynodeDescReturnNames.Default.([]string)
-	// comfynodeDescReturnTypes is the schema descriptor for return_types field.
-	comfynodeDescReturnTypes := comfynodeFields[9].Descriptor()
-	// comfynode.DefaultReturnTypes holds the default value on creation for the return_types field.
-	comfynode.DefaultReturnTypes = comfynodeDescReturnTypes.Default.([]string)
 	gitcommitMixin := schema.GitCommit{}.Mixin()
 	gitcommitMixinFields0 := gitcommitMixin[0].Fields()
 	_ = gitcommitMixinFields0

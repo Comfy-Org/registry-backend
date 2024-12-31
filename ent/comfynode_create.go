@@ -142,8 +142,16 @@ func (cnc *ComfyNodeCreate) SetReturnNames(s []string) *ComfyNodeCreate {
 }
 
 // SetReturnTypes sets the "return_types" field.
-func (cnc *ComfyNodeCreate) SetReturnTypes(s []string) *ComfyNodeCreate {
+func (cnc *ComfyNodeCreate) SetReturnTypes(s string) *ComfyNodeCreate {
 	cnc.mutation.SetReturnTypes(s)
+	return cnc
+}
+
+// SetNillableReturnTypes sets the "return_types" field if the given value is not nil.
+func (cnc *ComfyNodeCreate) SetNillableReturnTypes(s *string) *ComfyNodeCreate {
+	if s != nil {
+		cnc.SetReturnTypes(*s)
+	}
 	return cnc
 }
 
@@ -229,10 +237,6 @@ func (cnc *ComfyNodeCreate) defaults() {
 		v := comfynode.DefaultReturnNames
 		cnc.mutation.SetReturnNames(v)
 	}
-	if _, ok := cnc.mutation.ReturnTypes(); !ok {
-		v := comfynode.DefaultReturnTypes
-		cnc.mutation.SetReturnTypes(v)
-	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -257,9 +261,6 @@ func (cnc *ComfyNodeCreate) check() error {
 	}
 	if _, ok := cnc.mutation.ReturnNames(); !ok {
 		return &ValidationError{Name: "return_names", err: errors.New(`ent: missing required field "ComfyNode.return_names"`)}
-	}
-	if _, ok := cnc.mutation.ReturnTypes(); !ok {
-		return &ValidationError{Name: "return_types", err: errors.New(`ent: missing required field "ComfyNode.return_types"`)}
 	}
 	if _, ok := cnc.mutation.Function(); !ok {
 		return &ValidationError{Name: "function", err: errors.New(`ent: missing required field "ComfyNode.function"`)}
@@ -340,7 +341,7 @@ func (cnc *ComfyNodeCreate) createSpec() (*ComfyNode, *sqlgraph.CreateSpec) {
 		_node.ReturnNames = value
 	}
 	if value, ok := cnc.mutation.ReturnTypes(); ok {
-		_spec.SetField(comfynode.FieldReturnTypes, field.TypeJSON, value)
+		_spec.SetField(comfynode.FieldReturnTypes, field.TypeString, value)
 		_node.ReturnTypes = value
 	}
 	if value, ok := cnc.mutation.Function(); ok {
@@ -543,7 +544,7 @@ func (u *ComfyNodeUpsert) UpdateReturnNames() *ComfyNodeUpsert {
 }
 
 // SetReturnTypes sets the "return_types" field.
-func (u *ComfyNodeUpsert) SetReturnTypes(v []string) *ComfyNodeUpsert {
+func (u *ComfyNodeUpsert) SetReturnTypes(v string) *ComfyNodeUpsert {
 	u.Set(comfynode.FieldReturnTypes, v)
 	return u
 }
@@ -551,6 +552,12 @@ func (u *ComfyNodeUpsert) SetReturnTypes(v []string) *ComfyNodeUpsert {
 // UpdateReturnTypes sets the "return_types" field to the value that was provided on create.
 func (u *ComfyNodeUpsert) UpdateReturnTypes() *ComfyNodeUpsert {
 	u.SetExcluded(comfynode.FieldReturnTypes)
+	return u
+}
+
+// ClearReturnTypes clears the value of the "return_types" field.
+func (u *ComfyNodeUpsert) ClearReturnTypes() *ComfyNodeUpsert {
+	u.SetNull(comfynode.FieldReturnTypes)
 	return u
 }
 
@@ -765,7 +772,7 @@ func (u *ComfyNodeUpsertOne) UpdateReturnNames() *ComfyNodeUpsertOne {
 }
 
 // SetReturnTypes sets the "return_types" field.
-func (u *ComfyNodeUpsertOne) SetReturnTypes(v []string) *ComfyNodeUpsertOne {
+func (u *ComfyNodeUpsertOne) SetReturnTypes(v string) *ComfyNodeUpsertOne {
 	return u.Update(func(s *ComfyNodeUpsert) {
 		s.SetReturnTypes(v)
 	})
@@ -775,6 +782,13 @@ func (u *ComfyNodeUpsertOne) SetReturnTypes(v []string) *ComfyNodeUpsertOne {
 func (u *ComfyNodeUpsertOne) UpdateReturnTypes() *ComfyNodeUpsertOne {
 	return u.Update(func(s *ComfyNodeUpsert) {
 		s.UpdateReturnTypes()
+	})
+}
+
+// ClearReturnTypes clears the value of the "return_types" field.
+func (u *ComfyNodeUpsertOne) ClearReturnTypes() *ComfyNodeUpsertOne {
+	return u.Update(func(s *ComfyNodeUpsert) {
+		s.ClearReturnTypes()
 	})
 }
 
@@ -1158,7 +1172,7 @@ func (u *ComfyNodeUpsertBulk) UpdateReturnNames() *ComfyNodeUpsertBulk {
 }
 
 // SetReturnTypes sets the "return_types" field.
-func (u *ComfyNodeUpsertBulk) SetReturnTypes(v []string) *ComfyNodeUpsertBulk {
+func (u *ComfyNodeUpsertBulk) SetReturnTypes(v string) *ComfyNodeUpsertBulk {
 	return u.Update(func(s *ComfyNodeUpsert) {
 		s.SetReturnTypes(v)
 	})
@@ -1168,6 +1182,13 @@ func (u *ComfyNodeUpsertBulk) SetReturnTypes(v []string) *ComfyNodeUpsertBulk {
 func (u *ComfyNodeUpsertBulk) UpdateReturnTypes() *ComfyNodeUpsertBulk {
 	return u.Update(func(s *ComfyNodeUpsert) {
 		s.UpdateReturnTypes()
+	})
+}
+
+// ClearReturnTypes clears the value of the "return_types" field.
+func (u *ComfyNodeUpsertBulk) ClearReturnTypes() *ComfyNodeUpsertBulk {
+	return u.Update(func(s *ComfyNodeUpsert) {
+		s.ClearReturnTypes()
 	})
 }
 

@@ -1803,8 +1803,7 @@ type ComfyNodeMutation struct {
 	appendoutput_is_list []bool
 	return_names         *[]string
 	appendreturn_names   []string
-	return_types         *[]string
-	appendreturn_types   []string
+	return_types         *string
 	function             *string
 	clearedFields        map[string]struct{}
 	versions             *uuid.UUID
@@ -2348,13 +2347,12 @@ func (m *ComfyNodeMutation) ResetReturnNames() {
 }
 
 // SetReturnTypes sets the "return_types" field.
-func (m *ComfyNodeMutation) SetReturnTypes(s []string) {
+func (m *ComfyNodeMutation) SetReturnTypes(s string) {
 	m.return_types = &s
-	m.appendreturn_types = nil
 }
 
 // ReturnTypes returns the value of the "return_types" field in the mutation.
-func (m *ComfyNodeMutation) ReturnTypes() (r []string, exists bool) {
+func (m *ComfyNodeMutation) ReturnTypes() (r string, exists bool) {
 	v := m.return_types
 	if v == nil {
 		return
@@ -2365,7 +2363,7 @@ func (m *ComfyNodeMutation) ReturnTypes() (r []string, exists bool) {
 // OldReturnTypes returns the old "return_types" field's value of the ComfyNode entity.
 // If the ComfyNode object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ComfyNodeMutation) OldReturnTypes(ctx context.Context) (v []string, err error) {
+func (m *ComfyNodeMutation) OldReturnTypes(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldReturnTypes is only allowed on UpdateOne operations")
 	}
@@ -2379,23 +2377,22 @@ func (m *ComfyNodeMutation) OldReturnTypes(ctx context.Context) (v []string, err
 	return oldValue.ReturnTypes, nil
 }
 
-// AppendReturnTypes adds s to the "return_types" field.
-func (m *ComfyNodeMutation) AppendReturnTypes(s []string) {
-	m.appendreturn_types = append(m.appendreturn_types, s...)
+// ClearReturnTypes clears the value of the "return_types" field.
+func (m *ComfyNodeMutation) ClearReturnTypes() {
+	m.return_types = nil
+	m.clearedFields[comfynode.FieldReturnTypes] = struct{}{}
 }
 
-// AppendedReturnTypes returns the list of values that were appended to the "return_types" field in this mutation.
-func (m *ComfyNodeMutation) AppendedReturnTypes() ([]string, bool) {
-	if len(m.appendreturn_types) == 0 {
-		return nil, false
-	}
-	return m.appendreturn_types, true
+// ReturnTypesCleared returns if the "return_types" field was cleared in this mutation.
+func (m *ComfyNodeMutation) ReturnTypesCleared() bool {
+	_, ok := m.clearedFields[comfynode.FieldReturnTypes]
+	return ok
 }
 
 // ResetReturnTypes resets all changes to the "return_types" field.
 func (m *ComfyNodeMutation) ResetReturnTypes() {
 	m.return_types = nil
-	m.appendreturn_types = nil
+	delete(m.clearedFields, comfynode.FieldReturnTypes)
 }
 
 // SetFunction sets the "function" field.
@@ -2690,7 +2687,7 @@ func (m *ComfyNodeMutation) SetField(name string, value ent.Value) error {
 		m.SetReturnNames(v)
 		return nil
 	case comfynode.FieldReturnTypes:
-		v, ok := value.([]string)
+		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -2742,6 +2739,9 @@ func (m *ComfyNodeMutation) ClearedFields() []string {
 	if m.FieldCleared(comfynode.FieldInputTypes) {
 		fields = append(fields, comfynode.FieldInputTypes)
 	}
+	if m.FieldCleared(comfynode.FieldReturnTypes) {
+		fields = append(fields, comfynode.FieldReturnTypes)
+	}
 	return fields
 }
 
@@ -2764,6 +2764,9 @@ func (m *ComfyNodeMutation) ClearField(name string) error {
 		return nil
 	case comfynode.FieldInputTypes:
 		m.ClearInputTypes()
+		return nil
+	case comfynode.FieldReturnTypes:
+		m.ClearReturnTypes()
 		return nil
 	}
 	return fmt.Errorf("unknown ComfyNode nullable field %s", name)

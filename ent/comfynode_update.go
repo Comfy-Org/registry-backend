@@ -165,14 +165,22 @@ func (cnu *ComfyNodeUpdate) AppendReturnNames(s []string) *ComfyNodeUpdate {
 }
 
 // SetReturnTypes sets the "return_types" field.
-func (cnu *ComfyNodeUpdate) SetReturnTypes(s []string) *ComfyNodeUpdate {
+func (cnu *ComfyNodeUpdate) SetReturnTypes(s string) *ComfyNodeUpdate {
 	cnu.mutation.SetReturnTypes(s)
 	return cnu
 }
 
-// AppendReturnTypes appends s to the "return_types" field.
-func (cnu *ComfyNodeUpdate) AppendReturnTypes(s []string) *ComfyNodeUpdate {
-	cnu.mutation.AppendReturnTypes(s)
+// SetNillableReturnTypes sets the "return_types" field if the given value is not nil.
+func (cnu *ComfyNodeUpdate) SetNillableReturnTypes(s *string) *ComfyNodeUpdate {
+	if s != nil {
+		cnu.SetReturnTypes(*s)
+	}
+	return cnu
+}
+
+// ClearReturnTypes clears the value of the "return_types" field.
+func (cnu *ComfyNodeUpdate) ClearReturnTypes() *ComfyNodeUpdate {
+	cnu.mutation.ClearReturnTypes()
 	return cnu
 }
 
@@ -318,12 +326,10 @@ func (cnu *ComfyNodeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		})
 	}
 	if value, ok := cnu.mutation.ReturnTypes(); ok {
-		_spec.SetField(comfynode.FieldReturnTypes, field.TypeJSON, value)
+		_spec.SetField(comfynode.FieldReturnTypes, field.TypeString, value)
 	}
-	if value, ok := cnu.mutation.AppendedReturnTypes(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, comfynode.FieldReturnTypes, value)
-		})
+	if cnu.mutation.ReturnTypesCleared() {
+		_spec.ClearField(comfynode.FieldReturnTypes, field.TypeString)
 	}
 	if value, ok := cnu.mutation.Function(); ok {
 		_spec.SetField(comfynode.FieldFunction, field.TypeString, value)
@@ -512,14 +518,22 @@ func (cnuo *ComfyNodeUpdateOne) AppendReturnNames(s []string) *ComfyNodeUpdateOn
 }
 
 // SetReturnTypes sets the "return_types" field.
-func (cnuo *ComfyNodeUpdateOne) SetReturnTypes(s []string) *ComfyNodeUpdateOne {
+func (cnuo *ComfyNodeUpdateOne) SetReturnTypes(s string) *ComfyNodeUpdateOne {
 	cnuo.mutation.SetReturnTypes(s)
 	return cnuo
 }
 
-// AppendReturnTypes appends s to the "return_types" field.
-func (cnuo *ComfyNodeUpdateOne) AppendReturnTypes(s []string) *ComfyNodeUpdateOne {
-	cnuo.mutation.AppendReturnTypes(s)
+// SetNillableReturnTypes sets the "return_types" field if the given value is not nil.
+func (cnuo *ComfyNodeUpdateOne) SetNillableReturnTypes(s *string) *ComfyNodeUpdateOne {
+	if s != nil {
+		cnuo.SetReturnTypes(*s)
+	}
+	return cnuo
+}
+
+// ClearReturnTypes clears the value of the "return_types" field.
+func (cnuo *ComfyNodeUpdateOne) ClearReturnTypes() *ComfyNodeUpdateOne {
+	cnuo.mutation.ClearReturnTypes()
 	return cnuo
 }
 
@@ -695,12 +709,10 @@ func (cnuo *ComfyNodeUpdateOne) sqlSave(ctx context.Context) (_node *ComfyNode, 
 		})
 	}
 	if value, ok := cnuo.mutation.ReturnTypes(); ok {
-		_spec.SetField(comfynode.FieldReturnTypes, field.TypeJSON, value)
+		_spec.SetField(comfynode.FieldReturnTypes, field.TypeString, value)
 	}
-	if value, ok := cnuo.mutation.AppendedReturnTypes(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, comfynode.FieldReturnTypes, value)
-		})
+	if cnuo.mutation.ReturnTypesCleared() {
+		_spec.ClearField(comfynode.FieldReturnTypes, field.TypeString)
 	}
 	if value, ok := cnuo.mutation.Function(); ok {
 		_spec.SetField(comfynode.FieldFunction, field.TypeString, value)

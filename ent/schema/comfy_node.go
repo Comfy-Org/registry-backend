@@ -33,7 +33,9 @@ func (ComfyNode) Fields() []ent.Field {
 		field.Bool("experimental").Default(false),
 		field.JSON("output_is_list", []bool{}).Default([]bool{}),
 		field.Strings("return_names").Default([]string{}),
-		field.Strings("return_types").Default([]string{}),
+		field.String("return_types").SchemaType(map[string]string{
+			dialect.Postgres: "text",
+		}).Optional(),
 		field.String("function").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}),

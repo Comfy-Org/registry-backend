@@ -41,7 +41,7 @@ type ComfyNode struct {
 	// ReturnNames holds the value of the "return_names" field.
 	ReturnNames []string `json:"return_names,omitempty"`
 	// ReturnTypes holds the value of the "return_types" field.
-	ReturnTypes []string `json:"return_types,omitempty"`
+	ReturnTypes string `json:"return_types,omitempty"`
 	// Function holds the value of the "function" field.
 	Function string `json:"function,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -75,11 +75,11 @@ func (*ComfyNode) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case comfynode.FieldOutputIsList, comfynode.FieldReturnNames, comfynode.FieldReturnTypes:
+		case comfynode.FieldOutputIsList, comfynode.FieldReturnNames:
 			values[i] = new([]byte)
 		case comfynode.FieldDeprecated, comfynode.FieldExperimental:
 			values[i] = new(sql.NullBool)
-		case comfynode.FieldID, comfynode.FieldCategory, comfynode.FieldDescription, comfynode.FieldInputTypes, comfynode.FieldFunction:
+		case comfynode.FieldID, comfynode.FieldCategory, comfynode.FieldDescription, comfynode.FieldInputTypes, comfynode.FieldReturnTypes, comfynode.FieldFunction:
 			values[i] = new(sql.NullString)
 		case comfynode.FieldCreateTime, comfynode.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
@@ -171,12 +171,10 @@ func (cn *ComfyNode) assignValues(columns []string, values []any) error {
 				}
 			}
 		case comfynode.FieldReturnTypes:
-			if value, ok := values[i].(*[]byte); !ok {
+			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field return_types", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &cn.ReturnTypes); err != nil {
-					return fmt.Errorf("unmarshal field return_types: %w", err)
-				}
+			} else if value.Valid {
+				cn.ReturnTypes = value.String
 			}
 		case comfynode.FieldFunction:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -256,7 +254,7 @@ func (cn *ComfyNode) String() string {
 	builder.WriteString(fmt.Sprintf("%v", cn.ReturnNames))
 	builder.WriteString(", ")
 	builder.WriteString("return_types=")
-	builder.WriteString(fmt.Sprintf("%v", cn.ReturnTypes))
+	builder.WriteString(cn.ReturnTypes)
 	builder.WriteString(", ")
 	builder.WriteString("function=")
 	builder.WriteString(cn.Function)

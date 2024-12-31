@@ -93,8 +93,6 @@ var (
 	DefaultOutputIsList []bool
 	// DefaultReturnNames holds the default value on creation for the "return_names" field.
 	DefaultReturnNames []string
-	// DefaultReturnTypes holds the default value on creation for the "return_types" field.
-	DefaultReturnTypes []string
 )
 
 // OrderOption defines the ordering options for the ComfyNode queries.
@@ -143,6 +141,11 @@ func ByDeprecated(opts ...sql.OrderTermOption) OrderOption {
 // ByExperimental orders the results by the experimental field.
 func ByExperimental(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldExperimental, opts...).ToFunc()
+}
+
+// ByReturnTypes orders the results by the return_types field.
+func ByReturnTypes(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReturnTypes, opts...).ToFunc()
 }
 
 // ByFunction orders the results by the function field.

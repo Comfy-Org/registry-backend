@@ -926,7 +926,7 @@ func TestRegistryComfyNode(t *testing.T) {
 				Deprecated:   proto.Bool(false),
 				Experimental: proto.Bool(false),
 				ReturnNames:  &[]string{"result1", "result2"},
-				ReturnTypes:  &[]string{"string", "string"},
+				ReturnTypes:  proto.String(`["string", "string"]`),
 				OutputIsList: &[]bool{false, false},
 			},
 			"node2": {
@@ -937,7 +937,7 @@ func TestRegistryComfyNode(t *testing.T) {
 				Deprecated:   proto.Bool(true),
 				Experimental: proto.Bool(true),
 				ReturnNames:  &[]string{"result1", "result2"},
-				ReturnTypes:  &[]string{"string", "string"},
+				ReturnTypes:  proto.String(`["string", "string"]`),
 				OutputIsList: &[]bool{true, true},
 			},
 		}}
