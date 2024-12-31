@@ -20,7 +20,13 @@ type DripStrictServerImplementation struct {
 	MixpanelService *mixpanel.ApiClient
 }
 
-func NewStrictServerImplementation(client *ent.Client, config *config.Config, storageService storage.StorageService, slackService gateway.SlackService, discordService discord.DiscordService, algolia algolia.AlgoliaService) *DripStrictServerImplementation {
+func NewStrictServerImplementation(
+	client *ent.Client,
+	config *config.Config,
+	storageService storage.StorageService,
+	slackService gateway.SlackService,
+	discordService discord.DiscordService,
+	algolia algolia.AlgoliaService) *DripStrictServerImplementation {
 	return &DripStrictServerImplementation{
 		Client:          client,
 		ComfyCIService:  dripservices_comfyci.NewComfyCIService(config),

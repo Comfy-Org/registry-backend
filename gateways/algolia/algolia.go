@@ -3,10 +3,10 @@ package algolia
 import (
 	"context"
 	"fmt"
-	"os"
-	"registry-backend/ent"
-
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+	"github.com/rs/zerolog/log"
+	"registry-backend/config" // assuming a config package exists to hold config values
+	"registry-backend/ent"
 )
 
 // AlgoliaService defines the interface for interacting with Algolia search.
@@ -27,35 +27,21 @@ type algolia struct {
 	client *search.Client
 }
 
-// New creates a new Algolia service with the provided app ID and API key.
-func New(appid, apikey string) (AlgoliaService, error) {
-	return &algolia{
-		client: search.NewClient(appid, apikey),
-	}, nil
-}
-
-// NewFromEnv creates a new Algolia service using environment variables for configuration.
-func NewFromEnv() (AlgoliaService, error) {
-	appid, ok := os.LookupEnv("ALGOLIA_APP_ID")
-	if !ok {
-		return nil, fmt.Errorf("required env variable ALGOLIA_APP_ID is not set")
-	}
-	apikey, ok := os.LookupEnv("ALGOLIA_API_KEY")
-	if !ok {
-		return nil, fmt.Errorf("required env variable ALGOLIA_API_KEY is not set")
-	}
-	return New(appid, apikey)
-}
-
-// NewFromEnvOrNoop creates a new Algolia service using environment variables or noop implementation if no environment found
-func NewFromEnvOrNoop() (AlgoliaService, error) {
-	id := os.Getenv("ALGOLIA_APP_ID")
-	key := os.Getenv("ALGOLIA_API_KEY")
-	if id == "" && key == "" {
+// NewAlgoliaService creates a new Algolia service using the provided config or returns a noop implementation if the config is missing.
+func NewAlgoliaService(cfg *config.Config) (AlgoliaService, error) {
+	if cfg == nil || cfg.AlgoliaAppID == "" || cfg.AlgoliaAPIKey == "" {
+		// Return a noop implementation if config is nil or missing keys
+		log.Info().Msg("No Algolia configuration found, using noop implementation")
 		return &algolianoop{}, nil
 	}
 
-	return NewFromEnv()
+	// Fetch the Algolia app ID and API key from the provided config
+	appID := cfg.AlgoliaAppID
+	apiKey := cfg.AlgoliaAPIKey
+
+	// Initialize the Algolia client
+	client := search.NewClient(appID, apiKey)
+	return &algolia{client: client}, nil
 }
 
 // IndexNodes indexes the provided nodes in Algolia.
@@ -67,7 +53,7 @@ func (a *algolia) IndexNodes(ctx context.Context, nodes ...*ent.Node) error {
 		o := map[string]interface{}{
 			"objectID":       n.ID,
 			"name":           n.Name,
-			"publiser_id":    n.PublisherID,
+			"publisher_id":   n.PublisherID,
 			"description":    n.Description,
 			"id":             n.ID,
 			"create_time":    n.CreateTime,
@@ -139,13 +125,13 @@ func (a *algolia) IndexNodeVersions(ctx context.Context, nodes ...*ent.NodeVersi
 
 	res, err := index.SaveObjects(objects)
 	if err != nil {
-		return fmt.Errorf("failed to index nodes: %w", err)
+		return fmt.Errorf("failed to index node versions: %w", err)
 	}
 
 	return res.Wait()
 }
 
-// DeleteNodeVersion implements AlgoliaService.
+// DeleteNodeVersions implements AlgoliaService.
 func (a *algolia) DeleteNodeVersions(ctx context.Context, nodes ...*ent.NodeVersion) error {
 	index := a.client.InitIndex("node_versions_index")
 	ids := []string{}
@@ -154,7 +140,7 @@ func (a *algolia) DeleteNodeVersions(ctx context.Context, nodes ...*ent.NodeVers
 	}
 	res, err := index.DeleteObjects(ids)
 	if err != nil {
-		return fmt.Errorf("failed to delete node: %w", err)
+		return fmt.Errorf("failed to delete node versions: %w", err)
 	}
 	return res.Wait()
 }
@@ -164,7 +150,7 @@ func (a *algolia) SearchNodeVersions(ctx context.Context, query string, opts ...
 	index := a.client.InitIndex("node_versions_index")
 	res, err := index.Search(query, opts...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to search nodes: %w", err)
+		return nil, fmt.Errorf("failed to search node versions: %w", err)
 	}
 
 	var nodes []*ent.NodeVersion
