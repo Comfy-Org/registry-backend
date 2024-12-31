@@ -9,18 +9,20 @@ import (
 )
 
 type DiscordService interface {
-	SendSecurityCouncilMessage(msg string) error
+	SendSecurityCouncilMessage(msg string, private bool) error
 }
 
 type DripDiscordService struct {
-	securityDiscordChannelWebhook string
-	config                        *config.Config
+	securityDiscordChannelWebhook        string
+	securityDiscordPrivateChannelWebhook string
+	config                               *config.Config
 }
 
 func NewDiscordService(config *config.Config) *DripDiscordService {
 	return &DripDiscordService{
-		config:                        config,
-		securityDiscordChannelWebhook: config.DiscordSecurityChannelWebhook,
+		config:                               config,
+		securityDiscordChannelWebhook:        config.DiscordSecurityChannelWebhook,
+		securityDiscordPrivateChannelWebhook: config.DiscordSecurityPrivateChannelWebhook,
 	}
 }
 
@@ -28,9 +30,13 @@ type discordRequestBody struct {
 	Content string `json:"content"`
 }
 
-func (s *DripDiscordService) SendSecurityCouncilMessage(msg string) error {
+func (s *DripDiscordService) SendSecurityCouncilMessage(msg string, private bool) error {
 	if s.config.DripEnv == "prod" {
-		return sendDiscordNotification(msg, s.securityDiscordChannelWebhook)
+		webhookURL := s.securityDiscordChannelWebhook
+		if private {
+			webhookURL = s.securityDiscordPrivateChannelWebhook
+		}
+		return sendDiscordNotification(msg, webhookURL)
 	} else {
 		println("Skipping sending message to Discord in non-prod environment. " + msg)
 	}

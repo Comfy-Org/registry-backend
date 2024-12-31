@@ -80,6 +80,7 @@ func main() {
 		JWTSecret:                     os.Getenv("JWT_SECRET"),
 		SecretScannerURL:              os.Getenv("SECRET_SCANNER_URL"),
 		DiscordSecurityChannelWebhook: os.Getenv("SECURITY_COUNCIL_DISCORD_WEBHOOK"),
+		DiscordSecurityPrivateChannelWebhook: os.Getenv("SECURITY_COUNCIL_DISCORD_PRIVATE_WEBHOOK"),
 		AlgoliaAppID:                  os.Getenv("ALGOLIA_APP_ID"),
 		AlgoliaAPIKey:                 os.Getenv("ALGOLIA_API_KEY"),
 		IDTokenAudience:               os.Getenv("ID_TOKEN_AUDIENCE"),
