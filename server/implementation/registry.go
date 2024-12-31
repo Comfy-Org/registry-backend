@@ -453,9 +453,8 @@ func (s *DripStrictServerImplementation) ListNodeVersions(
 	apiStatus := mapper.ApiNodeVersionStatusesToDbNodeVersionStatuses(request.Params.Statuses)
 
 	nodeVersionsResult, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &drip_services.NodeVersionFilter{
-		NodeId:              request.NodeId,
-		Status:              apiStatus,
-		IncludeStatusReason: mapper.BoolPtrToBool(request.Params.IncludeStatusReason),
+		NodeId: request.NodeId,
+		Status: apiStatus,
 	})
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to list node versions for node %s w/ err: %v", request.NodeId, err)
@@ -961,9 +960,8 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 		pageSize = *request.Params.PageSize
 	}
 	f := &drip_services.NodeVersionFilter{
-		Page:                page,
-		PageSize:            pageSize,
-		IncludeStatusReason: mapper.BoolPtrToBool(request.Params.IncludeStatusReason),
+		Page:     page,
+		PageSize: pageSize,
 	}
 
 	if request.Params.Statuses != nil {
@@ -1018,7 +1016,7 @@ func (s *DripStrictServerImplementation) ReindexNodes(ctx context.Context, reque
 // CreateComfyNodes bulk-creates comfy-nodes for a node version
 func (impl *DripStrictServerImplementation) CreateComfyNodes(ctx context.Context, request drip.CreateComfyNodesRequestObject) (res drip.CreateComfyNodesResponseObject, err error) {
 	log.Ctx(ctx).Info().Msg("CreateComfyNodes request received")
-	err = impl.RegistryService.CreateComfyNodes(ctx, impl.Client, request.NodeId, request.VersionId, *request.Body)
+	err = impl.RegistryService.CreateComfyNodes(ctx, impl.Client, request.NodeId, request.Version, *request.Body.Nodes)
 	if ent.IsNotFound(err) {
 		log.Ctx(ctx).Error().Msgf("Node or node version not found w/ err: %v", err)
 		return drip.CreateComfyNodes404JSONResponse{Message: "Node or node version not found", Error: err.Error()}, nil
@@ -1036,7 +1034,7 @@ func (impl *DripStrictServerImplementation) CreateComfyNodes(ctx context.Context
 func (impl *DripStrictServerImplementation) GetComfyNode(ctx context.Context, request drip.GetComfyNodeRequestObject) (res drip.GetComfyNodeResponseObject, err error) {
 	log.Ctx(ctx).Info().Msg("GetComfyNode request received")
 
-	n, err := impl.RegistryService.GetComfyNode(ctx, impl.Client, request.NodeId, request.VersionId, request.ComfyNodeId)
+	n, err := impl.RegistryService.GetComfyNode(ctx, impl.Client, request.NodeId, request.Version, request.ComfyNodeId)
 	if ent.IsNotFound(err) {
 		log.Ctx(ctx).Error().Msgf("Node or node version or comfy node not found w/ err: %v", err)
 		return drip.GetComfyNode404JSONResponse{Message: "Node or node version or comfy node not found", Error: err.Error()}, nil

@@ -530,8 +530,7 @@ func TestRegistryNodeVersion(t *testing.T) {
 			NodeId:        *node.Id,
 			VersionNumber: *createdNodeVersion.Version,
 			Body: &drip.AdminUpdateNodeVersionJSONRequestBody{
-				Status:       &activeStatus,
-				StatusReason: proto.String("test reason"),
+				Status: &activeStatus,
 			},
 		})
 		require.NoError(t, err, "should return updated node version")
@@ -618,19 +617,6 @@ func TestRegistryNodeVersion(t *testing.T) {
 			Status:       &nodeVersionStatus,
 			StatusReason: proto.String(""),
 		}, resVersions200[0], "should be equal")
-
-		// retrieve node versions with the status reason
-		resVersions, err = withMiddleware(authz, impl.ListNodeVersions)(ctx, drip.ListNodeVersionsRequestObject{
-			NodeId: *node.Id,
-			Params: drip.ListNodeVersionsParams{
-				IncludeStatusReason: proto.Bool(true),
-			},
-		})
-		require.NoError(t, err, "should not return error")
-		require.IsType(t, drip.ListNodeVersions200JSONResponse{}, resVersions, "should return 200")
-
-		resVersions200 = resVersions.(drip.ListNodeVersions200JSONResponse)
-		assert.Equal(t, "test reason", *resVersions200[0].StatusReason)
 	})
 
 	t.Run("Update Node Version", func(t *testing.T) {
@@ -916,48 +902,49 @@ func TestRegistryComfyNode(t *testing.T) {
 		assert.Empty(t, res.(drip.GetNodeVersion200JSONResponse).ComfyNodes)
 	})
 
-	comfyNodes := map[string]drip.ComfyNode{
-		"node1": {
-			InputTypes:   proto.String(`{"required":{"param":"string"}}`),
-			Function:     proto.String("node1Func"),
-			Category:     proto.String("node1Category"),
-			Description:  proto.String("node1Description"),
-			Deprecated:   proto.Bool(false),
-			Experimental: proto.Bool(false),
-			ReturnNames:  &[]string{"result1", "result2"},
-			ReturnTypes:  &[]string{"string", "string"},
-			OutputIsList: &[]bool{false, false},
-		},
-		"node2": {
-			InputTypes:   proto.String(`{"required":{"param":"string"}}`),
-			Function:     proto.String("node2Func"),
-			Category:     proto.String("node2Category"),
-			Description:  proto.String("node2Description"),
-			Deprecated:   proto.Bool(true),
-			Experimental: proto.Bool(true),
-			ReturnNames:  &[]string{"result1", "result2"},
-			ReturnTypes:  &[]string{"string", "string"},
-			OutputIsList: &[]bool{true, true},
-		},
-	}
+	comfyNodes := drip.CreateComfyNodesJSONRequestBody{
+		Nodes: &map[string]drip.ComfyNode{
+			"node1": {
+				InputTypes:   proto.String(`{"required":{"param":"string"}}`),
+				Function:     proto.String("node1Func"),
+				Category:     proto.String("node1Category"),
+				Description:  proto.String("node1Description"),
+				Deprecated:   proto.Bool(false),
+				Experimental: proto.Bool(false),
+				ReturnNames:  &[]string{"result1", "result2"},
+				ReturnTypes:  &[]string{"string", "string"},
+				OutputIsList: &[]bool{false, false},
+			},
+			"node2": {
+				InputTypes:   proto.String(`{"required":{"param":"string"}}`),
+				Function:     proto.String("node2Func"),
+				Category:     proto.String("node2Category"),
+				Description:  proto.String("node2Description"),
+				Deprecated:   proto.Bool(true),
+				Experimental: proto.Bool(true),
+				ReturnNames:  &[]string{"result1", "result2"},
+				ReturnTypes:  &[]string{"string", "string"},
+				OutputIsList: &[]bool{true, true},
+			},
+		}}
 
 	// create comfy nodes
 	body := drip.CreateComfyNodesJSONRequestBody(comfyNodes)
 	res, err := withMiddleware(authz, impl.CreateComfyNodes)(ctx, drip.CreateComfyNodesRequestObject{
-		NodeId:    *node.Id,
-		VersionId: *nodeVersion.Version,
-		Body:      &body,
+		NodeId:  *node.Id,
+		Version: *nodeVersion.Version,
+		Body:    &body,
 	})
 	require.NoError(t, err)
 	require.IsType(t, drip.CreateComfyNodes204Response{}, res)
 
 	t.Run("GetComfyNodes", func(t *testing.T) {
-		for k, v := range comfyNodes {
+		for k, v := range *comfyNodes.Nodes {
 			v.ComfyNodeId = proto.String(k)
 			t.Run(k, func(t *testing.T) {
 				res, err := withMiddleware(authz, impl.GetComfyNode)(ctx, drip.GetComfyNodeRequestObject{
 					NodeId:      *node.Id,
-					VersionId:   *nodeVersion.Version,
+					Version:     *nodeVersion.Version,
 					ComfyNodeId: k,
 				})
 				require.NoError(t, err, "should return created node version")
@@ -975,7 +962,7 @@ func TestRegistryComfyNode(t *testing.T) {
 		require.NoError(t, err, "should return created node version")
 		require.IsType(t, drip.GetNodeVersion200JSONResponse{}, res)
 		for k, v := range *res.(drip.GetNodeVersion200JSONResponse).ComfyNodes {
-			ev := comfyNodes[k]
+			ev := (*comfyNodes.Nodes)[k]
 			ev.ComfyNodeId = proto.String(k)
 			assert.Equal(t, ev, v)
 		}
@@ -992,7 +979,7 @@ func TestRegistryComfyNode(t *testing.T) {
 			if *nv.Version == *nodeVersion.Version {
 				for k, v := range *nv.ComfyNodes {
 					found = true
-					ev := comfyNodes[k]
+					ev := (*comfyNodes.Nodes)[k]
 					ev.ComfyNodeId = proto.String(k)
 					assert.Equal(t, ev, v)
 				}
@@ -1012,7 +999,7 @@ func TestRegistryComfyNode(t *testing.T) {
 			if *nv.Version == *nodeVersion.Version {
 				for k, v := range *nv.ComfyNodes {
 					found = true
-					ev := comfyNodes[k]
+					ev := (*comfyNodes.Nodes)[k]
 					ev.ComfyNodeId = proto.String(k)
 					assert.Equal(t, ev, v)
 				}
