@@ -6,6 +6,7 @@ type Config struct {
 	SlackRegistryChannelWebhook   string
 	JWTSecret                     string
 	DiscordSecurityChannelWebhook string
+	DiscordSecurityPrivateChannelWebhook string
 	SecretScannerURL              string
 	IDTokenAudience               string
 	AlgoliaAppID                  string

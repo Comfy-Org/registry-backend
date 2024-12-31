@@ -99,6 +99,23 @@ type ListNodeVersionsResult struct {
 	TotalPages   int                `json:"totalPages"`
 }
 
+func PrettifyJSON(input string) (string, error) {
+	// First unmarshal the input string into a generic interface{}
+	var temp interface{}
+	err := json.Unmarshal([]byte(input), &temp)
+	if err != nil {
+			return "", fmt.Errorf("invalid JSON input: %v", err)
+	}
+	
+	// Marshal back to JSON with indentation
+	pretty, err := json.MarshalIndent(temp, "", "    ")
+	if err != nil {
+			return "", fmt.Errorf("failed to marshal JSON: %v", err)
+	}
+	
+	return string(pretty), nil
+}
+
 // ListNodes retrieves a paginated list of nodes with optional filtering.
 func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, page, limit int, filter *NodeFilter) (*ListNodesResult, error) {
 	// Ensure valid pagination parameters
@@ -410,7 +427,7 @@ func (s *RegistryService) CreateNodeVersion(
 
 		message := fmt.Sprintf("Version %s of node %s was published successfully. Publisher: %s. https://registry.comfy.org/nodes/%s", createdNodeVersion.Version, createdNodeVersion.NodeID, publisherID, nodeID)
 		slackErr := s.slackService.SendRegistryMessageToSlack(message)
-		s.discordService.SendSecurityCouncilMessage(message)
+		s.discordService.SendSecurityCouncilMessage(message, false)
 		if slackErr != nil {
 			log.Ctx(ctx).Error().Msgf("Failed to send message to Slack w/ err: %v", slackErr)
 			drip_metric.IncrementCustomCounterMetric(ctx, drip_metric.CustomCounterIncrement{
@@ -998,9 +1015,10 @@ func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to active")
 		}
+		// Send the message to the private channel
 		err = s.discordService.SendSecurityCouncilMessage(
 			fmt.Sprintf("Node %s@%s has passed automated scans. Changing status to active.",
-				nodeVersion.NodeID, nodeVersion.Version))
+				nodeVersion.NodeID, nodeVersion.Version), true)
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to send message to discord")
 		}
@@ -1009,14 +1027,16 @@ func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.
 			"Security issues found in node %s@%s. Updating to flagged.", nodeVersion.NodeID, nodeVersion.Version)
 		log.Ctx(ctx).Info().Msgf(
 			"List of security issues %s.", issues) // 500 character max.
-		err := nodeVersion.Update().SetStatus(schema.NodeVersionStatusFlagged).SetStatusReason(issues).Exec(ctx)
+		prettyIssues, err := PrettifyJSON(issues)
 		if err != nil {
-			log.Ctx(ctx).Error().Err(err).Msgf("failed to update node version status to security issue")
+			log.Ctx(ctx).Error().Err(err).Msg("failed to prettify JSON issues")
+			prettyIssues = issues // fallback to unprettified issues
 		}
 		err = s.discordService.SendSecurityCouncilMessage(
 			fmt.Sprintf("Security issues were found in node %s@%s. Status is flagged. "+
-				"Please check it here: https://registry.comfy.org/admin/nodes/%s/versions/%s. \n "+
-				"Issues are: %s", nodeVersion.NodeID, nodeVersion.Version, nodeVersion.NodeID, nodeVersion.Version, issues))
+				"Please check it here: https://registry.comfy.org/nodes/%s/versions/%s. \n "+
+				"Issues are: \n%s", nodeVersion.NodeID, nodeVersion.Version, nodeVersion.NodeID, nodeVersion.Version, 
+				prettyIssues), false)
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to send message to discord")
 		}
