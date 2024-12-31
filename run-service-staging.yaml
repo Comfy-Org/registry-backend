@@ -44,11 +44,6 @@ spec:
                 secretKeyRef:
                   key: 1
                   name: SECURITY_COUNCIL_DISCORD_WEBHOOK
-            - name: SECURITY_COUNCIL_DISCORD_PRIVATE_WEBHOOK
-              valueFrom:
-                secretKeyRef:
-                  key: 1
-                  name: SECURITY_COUNCIL_DISCORD_PRIVATE_WEBHOOK
             - name: ALGOLIA_APP_ID
               valueFrom:
                 secretKeyRef:
