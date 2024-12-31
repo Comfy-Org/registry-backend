@@ -38,7 +38,7 @@ func (ComfyNode) Fields() []ent.Field {
 		}).Optional(),
 		field.String("function").SchemaType(map[string]string{
 			dialect.Postgres: "text",
-		}),
+		}).Optional(),
 	}
 }
 

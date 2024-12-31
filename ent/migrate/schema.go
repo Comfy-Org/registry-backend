@@ -57,7 +57,7 @@ var (
 		{Name: "output_is_list", Type: field.TypeJSON},
 		{Name: "return_names", Type: field.TypeJSON},
 		{Name: "return_types", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
-		{Name: "function", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "function", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "node_version_id", Type: field.TypeUUID},
 	}
 	// ComfyNodesTable holds the schema information for the "comfy_nodes" table.
