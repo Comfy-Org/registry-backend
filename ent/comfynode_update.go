@@ -198,6 +198,12 @@ func (cnu *ComfyNodeUpdate) SetNillableFunction(s *string) *ComfyNodeUpdate {
 	return cnu
 }
 
+// ClearFunction clears the value of the "function" field.
+func (cnu *ComfyNodeUpdate) ClearFunction() *ComfyNodeUpdate {
+	cnu.mutation.ClearFunction()
+	return cnu
+}
+
 // SetVersionsID sets the "versions" edge to the NodeVersion entity by ID.
 func (cnu *ComfyNodeUpdate) SetVersionsID(id uuid.UUID) *ComfyNodeUpdate {
 	cnu.mutation.SetVersionsID(id)
@@ -333,6 +339,9 @@ func (cnu *ComfyNodeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := cnu.mutation.Function(); ok {
 		_spec.SetField(comfynode.FieldFunction, field.TypeString, value)
+	}
+	if cnu.mutation.FunctionCleared() {
+		_spec.ClearField(comfynode.FieldFunction, field.TypeString)
 	}
 	if cnu.mutation.VersionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -551,6 +560,12 @@ func (cnuo *ComfyNodeUpdateOne) SetNillableFunction(s *string) *ComfyNodeUpdateO
 	return cnuo
 }
 
+// ClearFunction clears the value of the "function" field.
+func (cnuo *ComfyNodeUpdateOne) ClearFunction() *ComfyNodeUpdateOne {
+	cnuo.mutation.ClearFunction()
+	return cnuo
+}
+
 // SetVersionsID sets the "versions" edge to the NodeVersion entity by ID.
 func (cnuo *ComfyNodeUpdateOne) SetVersionsID(id uuid.UUID) *ComfyNodeUpdateOne {
 	cnuo.mutation.SetVersionsID(id)
@@ -716,6 +731,9 @@ func (cnuo *ComfyNodeUpdateOne) sqlSave(ctx context.Context) (_node *ComfyNode, 
 	}
 	if value, ok := cnuo.mutation.Function(); ok {
 		_spec.SetField(comfynode.FieldFunction, field.TypeString, value)
+	}
+	if cnuo.mutation.FunctionCleared() {
+		_spec.ClearField(comfynode.FieldFunction, field.TypeString)
 	}
 	if cnuo.mutation.VersionsCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -2426,9 +2426,22 @@ func (m *ComfyNodeMutation) OldFunction(ctx context.Context) (v string, err erro
 	return oldValue.Function, nil
 }
 
+// ClearFunction clears the value of the "function" field.
+func (m *ComfyNodeMutation) ClearFunction() {
+	m.function = nil
+	m.clearedFields[comfynode.FieldFunction] = struct{}{}
+}
+
+// FunctionCleared returns if the "function" field was cleared in this mutation.
+func (m *ComfyNodeMutation) FunctionCleared() bool {
+	_, ok := m.clearedFields[comfynode.FieldFunction]
+	return ok
+}
+
 // ResetFunction resets all changes to the "function" field.
 func (m *ComfyNodeMutation) ResetFunction() {
 	m.function = nil
+	delete(m.clearedFields, comfynode.FieldFunction)
 }
 
 // SetVersionsID sets the "versions" edge to the NodeVersion entity by id.
@@ -2742,6 +2755,9 @@ func (m *ComfyNodeMutation) ClearedFields() []string {
 	if m.FieldCleared(comfynode.FieldReturnTypes) {
 		fields = append(fields, comfynode.FieldReturnTypes)
 	}
+	if m.FieldCleared(comfynode.FieldFunction) {
+		fields = append(fields, comfynode.FieldFunction)
+	}
 	return fields
 }
 
@@ -2767,6 +2783,9 @@ func (m *ComfyNodeMutation) ClearField(name string) error {
 		return nil
 	case comfynode.FieldReturnTypes:
 		m.ClearReturnTypes()
+		return nil
+	case comfynode.FieldFunction:
+		m.ClearFunction()
 		return nil
 	}
 	return fmt.Errorf("unknown ComfyNode nullable field %s", name)

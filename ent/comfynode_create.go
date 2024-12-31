@@ -161,6 +161,14 @@ func (cnc *ComfyNodeCreate) SetFunction(s string) *ComfyNodeCreate {
 	return cnc
 }
 
+// SetNillableFunction sets the "function" field if the given value is not nil.
+func (cnc *ComfyNodeCreate) SetNillableFunction(s *string) *ComfyNodeCreate {
+	if s != nil {
+		cnc.SetFunction(*s)
+	}
+	return cnc
+}
+
 // SetID sets the "id" field.
 func (cnc *ComfyNodeCreate) SetID(s string) *ComfyNodeCreate {
 	cnc.mutation.SetID(s)
@@ -261,9 +269,6 @@ func (cnc *ComfyNodeCreate) check() error {
 	}
 	if _, ok := cnc.mutation.ReturnNames(); !ok {
 		return &ValidationError{Name: "return_names", err: errors.New(`ent: missing required field "ComfyNode.return_names"`)}
-	}
-	if _, ok := cnc.mutation.Function(); !ok {
-		return &ValidationError{Name: "function", err: errors.New(`ent: missing required field "ComfyNode.function"`)}
 	}
 	if _, ok := cnc.mutation.VersionsID(); !ok {
 		return &ValidationError{Name: "versions", err: errors.New(`ent: missing required edge "ComfyNode.versions"`)}
@@ -573,6 +578,12 @@ func (u *ComfyNodeUpsert) UpdateFunction() *ComfyNodeUpsert {
 	return u
 }
 
+// ClearFunction clears the value of the "function" field.
+func (u *ComfyNodeUpsert) ClearFunction() *ComfyNodeUpsert {
+	u.SetNull(comfynode.FieldFunction)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -803,6 +814,13 @@ func (u *ComfyNodeUpsertOne) SetFunction(v string) *ComfyNodeUpsertOne {
 func (u *ComfyNodeUpsertOne) UpdateFunction() *ComfyNodeUpsertOne {
 	return u.Update(func(s *ComfyNodeUpsert) {
 		s.UpdateFunction()
+	})
+}
+
+// ClearFunction clears the value of the "function" field.
+func (u *ComfyNodeUpsertOne) ClearFunction() *ComfyNodeUpsertOne {
+	return u.Update(func(s *ComfyNodeUpsert) {
+		s.ClearFunction()
 	})
 }
 
@@ -1203,6 +1221,13 @@ func (u *ComfyNodeUpsertBulk) SetFunction(v string) *ComfyNodeUpsertBulk {
 func (u *ComfyNodeUpsertBulk) UpdateFunction() *ComfyNodeUpsertBulk {
 	return u.Update(func(s *ComfyNodeUpsert) {
 		s.UpdateFunction()
+	})
+}
+
+// ClearFunction clears the value of the "function" field.
+func (u *ComfyNodeUpsertBulk) ClearFunction() *ComfyNodeUpsertBulk {
+	return u.Update(func(s *ComfyNodeUpsert) {
+		s.ClearFunction()
 	})
 }
 

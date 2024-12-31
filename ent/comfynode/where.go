@@ -591,6 +591,16 @@ func FunctionHasSuffix(v string) predicate.ComfyNode {
 	return predicate.ComfyNode(sql.FieldHasSuffix(FieldFunction, v))
 }
 
+// FunctionIsNil applies the IsNil predicate on the "function" field.
+func FunctionIsNil() predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldIsNull(FieldFunction))
+}
+
+// FunctionNotNil applies the NotNil predicate on the "function" field.
+func FunctionNotNil() predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldNotNull(FieldFunction))
+}
+
 // FunctionEqualFold applies the EqualFold predicate on the "function" field.
 func FunctionEqualFold(v string) predicate.ComfyNode {
 	return predicate.ComfyNode(sql.FieldEqualFold(FieldFunction, v))
