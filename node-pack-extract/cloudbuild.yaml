@@ -34,7 +34,7 @@ steps:
       - |
         NODE="$(basename $(dirname $(dirname '$_CUSTOM_NODE_URL')))"
         VERSION="$(basename $(dirname '$_CUSTOM_NODE_URL'))"
-        curl -sf \
+        curl -vsSf \
           -H "Authorization: Bearer $(cat /workspace/token)" \
           -H "Content-Type: application/json" \
           -X "POST" "-d" "@/workspace/$_CUSTOM_NODE_NAME.json" \
