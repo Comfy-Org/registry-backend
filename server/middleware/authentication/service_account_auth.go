@@ -2,6 +2,7 @@ package drip_authentication
 
 import (
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 
@@ -42,7 +43,7 @@ func ServiceAccountAuthMiddleware() echo.MiddlewareFunc {
 				return next(ctx)
 			}
 
-			// validate token
+			// Validate token
 			authHeader := ctx.Request().Header.Get("Authorization")
 			token := ""
 			if strings.HasPrefix(authHeader, "Bearer ") {
@@ -53,9 +54,16 @@ func ServiceAccountAuthMiddleware() echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Missing token")
 			}
 
-			log.Ctx(ctx.Request().Context()).Info().Msgf("Validating google id token %s for path %s and method %s", token, reqPath, reqMethod)
+			log.Ctx(ctx.Request().Context()).Info().Msgf("Validating Google ID token %s for path %s and method %s", token, reqPath, reqMethod)
 
-			payload, err := idtoken.Validate(ctx.Request().Context(), token, "https://api.comfy.org")
+			// Get the audience from the environment variable
+			audience := os.Getenv("ID_TOKEN_AUDIENCE")
+			if audience == "" {
+				log.Ctx(ctx.Request().Context()).Error().Msg("ID_TOKEN_AUDIENCE environment variable is not set")
+				return echo.NewHTTPError(http.StatusInternalServerError, "Server misconfiguration")
+			}
+
+			payload, err := idtoken.Validate(ctx.Request().Context(), token, audience)
 			if err != nil {
 				log.Ctx(ctx.Request().Context()).Error().Err(err).Msg("Invalid token")
 				return ctx.JSON(http.StatusUnauthorized, "Invalid token")

@@ -7,4 +7,7 @@ type Config struct {
 	JWTSecret                     string
 	DiscordSecurityChannelWebhook string
 	SecretScannerURL              string
+	IDTokenAudience               string
+	AlgoliaAppID                  string
+	AlgoliaAPIKey                 string
 }

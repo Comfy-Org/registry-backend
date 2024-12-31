@@ -14,51 +14,53 @@ spec:
         run.googleapis.com/minScale: '1'
     spec:
       containers:
-      - image: registry-backend-image-substitute
-        env: 
-        - name: DRIP_ENV
-          value: prod
-        - name: DB_CONNECTION_STRING
-          valueFrom:
-              secretKeyRef:
-                key: 1
-                name: PROD_SUPABASE_CONNECTION_STRING
-        - name: JWT_SECRET
-          valueFrom:
-              secretKeyRef:
+        - image: registry-backend-image-substitute
+          env:
+            - name: DRIP_ENV
+              value: prod
+            - name: DB_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  key: 1
+                  name: PROD_SUPABASE_CONNECTION_STRING
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
                   key: 1
                   name: PROD_JWT_SECRET
-        - name: SLACK_REGISTRY_CHANNEL_WEBHOOK
-          valueFrom:
-              secretKeyRef:
-                key: 1
-                name: PROD_SLACK_REGISTRY_CHANNEL_WEBHOOK
-        - name: PROJECT_ID
-          value: dreamboothy
-        # TODO(robinhuang): Switch to a list of strings
-        - name: CORS_ORIGIN
-          value: https://comfyregistry.org
-        - name: SECRET_SCANNER_URL
-          valueFrom:
-              secretKeyRef:
+            - name: SLACK_REGISTRY_CHANNEL_WEBHOOK
+              valueFrom:
+                secretKeyRef:
+                  key: 1
+                  name: PROD_SLACK_REGISTRY_CHANNEL_WEBHOOK
+            - name: PROJECT_ID
+              value: dreamboothy
+            # TODO(robinhuang): Switch to a list of strings
+            - name: CORS_ORIGIN
+              value: https://comfyregistry.org
+            - name: SECRET_SCANNER_URL
+              valueFrom:
+                secretKeyRef:
                   key: 1
                   name: SECURITY_SCANNER_CLOUD_FUNCTION_URL
-        - name: SECURITY_COUNCIL_DISCORD_WEBHOOK
-          valueFrom:
-              secretKeyRef:
+            - name: SECURITY_COUNCIL_DISCORD_WEBHOOK
+              valueFrom:
+                secretKeyRef:
                   key: 1
                   name: SECURITY_COUNCIL_DISCORD_WEBHOOK
-        - name: ALGOLIA_APP_ID
-          valueFrom:
-            secretKeyRef:
-              key: 2
-              name: PROD_ALGOLIA_APP_ID
-        - name: ALGOLIA_API_KEY
-          valueFrom:
-            secretKeyRef:
-              key: 2
-              name: PROD_ALGOLIA_API_KEY
-        resources:
-          limits:
-            cpu: 4000m
-            memory: 2Gi
+            - name: ALGOLIA_APP_ID
+              valueFrom:
+                secretKeyRef:
+                  key: 2
+                  name: PROD_ALGOLIA_APP_ID
+            - name: ALGOLIA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: 2
+                  name: PROD_ALGOLIA_API_KEY
+            - name: ID_TOKEN_AUDIENCE
+              value: https://api.comfy.org
+          resources:
+            limits:
+              cpu: 4000m
+              memory: 2Gi
