@@ -2218,9 +2218,7 @@ components:
             type: string
           description: Names of the outputs for clarity in workflows.
         return_types:
-          type: array
-          items:
-            type: string
+          type: string
           description: Specifies the types of outputs produced by the node.
         function:
           type: string

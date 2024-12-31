@@ -106,6 +106,11 @@ func Experimental(v bool) predicate.ComfyNode {
 	return predicate.ComfyNode(sql.FieldEQ(FieldExperimental, v))
 }
 
+// ReturnTypes applies equality check predicate on the "return_types" field. It's identical to ReturnTypesEQ.
+func ReturnTypes(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldEQ(FieldReturnTypes, v))
+}
+
 // Function applies equality check predicate on the "function" field. It's identical to FunctionEQ.
 func Function(v string) predicate.ComfyNode {
 	return predicate.ComfyNode(sql.FieldEQ(FieldFunction, v))
@@ -454,6 +459,81 @@ func ExperimentalEQ(v bool) predicate.ComfyNode {
 // ExperimentalNEQ applies the NEQ predicate on the "experimental" field.
 func ExperimentalNEQ(v bool) predicate.ComfyNode {
 	return predicate.ComfyNode(sql.FieldNEQ(FieldExperimental, v))
+}
+
+// ReturnTypesEQ applies the EQ predicate on the "return_types" field.
+func ReturnTypesEQ(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldEQ(FieldReturnTypes, v))
+}
+
+// ReturnTypesNEQ applies the NEQ predicate on the "return_types" field.
+func ReturnTypesNEQ(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldNEQ(FieldReturnTypes, v))
+}
+
+// ReturnTypesIn applies the In predicate on the "return_types" field.
+func ReturnTypesIn(vs ...string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldIn(FieldReturnTypes, vs...))
+}
+
+// ReturnTypesNotIn applies the NotIn predicate on the "return_types" field.
+func ReturnTypesNotIn(vs ...string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldNotIn(FieldReturnTypes, vs...))
+}
+
+// ReturnTypesGT applies the GT predicate on the "return_types" field.
+func ReturnTypesGT(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldGT(FieldReturnTypes, v))
+}
+
+// ReturnTypesGTE applies the GTE predicate on the "return_types" field.
+func ReturnTypesGTE(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldGTE(FieldReturnTypes, v))
+}
+
+// ReturnTypesLT applies the LT predicate on the "return_types" field.
+func ReturnTypesLT(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldLT(FieldReturnTypes, v))
+}
+
+// ReturnTypesLTE applies the LTE predicate on the "return_types" field.
+func ReturnTypesLTE(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldLTE(FieldReturnTypes, v))
+}
+
+// ReturnTypesContains applies the Contains predicate on the "return_types" field.
+func ReturnTypesContains(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldContains(FieldReturnTypes, v))
+}
+
+// ReturnTypesHasPrefix applies the HasPrefix predicate on the "return_types" field.
+func ReturnTypesHasPrefix(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldHasPrefix(FieldReturnTypes, v))
+}
+
+// ReturnTypesHasSuffix applies the HasSuffix predicate on the "return_types" field.
+func ReturnTypesHasSuffix(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldHasSuffix(FieldReturnTypes, v))
+}
+
+// ReturnTypesIsNil applies the IsNil predicate on the "return_types" field.
+func ReturnTypesIsNil() predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldIsNull(FieldReturnTypes))
+}
+
+// ReturnTypesNotNil applies the NotNil predicate on the "return_types" field.
+func ReturnTypesNotNil() predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldNotNull(FieldReturnTypes))
+}
+
+// ReturnTypesEqualFold applies the EqualFold predicate on the "return_types" field.
+func ReturnTypesEqualFold(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldEqualFold(FieldReturnTypes, v))
+}
+
+// ReturnTypesContainsFold applies the ContainsFold predicate on the "return_types" field.
+func ReturnTypesContainsFold(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldContainsFold(FieldReturnTypes, v))
 }
 
 // FunctionEQ applies the EQ predicate on the "function" field.
