@@ -116,8 +116,8 @@ func newMockedImpl(client *ent.Client, cfg *config.Config) (impl mockedImpl, aut
 	mockStorageService := new(gateways.MockStorageService)
 
 	mockDiscordService := new(gateways.MockDiscordService)
-	mockDiscordService.On("SendSecurityCouncilMessage", mock.Anything).
-		Return(nil) // Do nothing for all discord messsage calls.
+	mockDiscordService.On("SendSecurityCouncilMessage", mock.Anything, mock.Anything).
+		Return(nil) // Update mock to accept both string and bool parameters
 
 	mockSlackService := new(gateways.MockSlackService)
 	mockSlackService.
