@@ -36,6 +36,18 @@ data "google_service_account" "cloudbuild_service_account" {
   account_id = var.cloud_build_service_account
 }
 
+resource "google_project_iam_member" "logs_writer" {
+  project = var.project_id
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${data.google_service_account.cloudbuild_service_account.email}"
+}
+
+resource "google_project_iam_member" "token_creator" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountTokenCreator"
+  member  = "serviceAccount:${data.google_service_account.cloudbuild_service_account.email}"
+}
+
 # Create the cloud build trigger
 resource "google_cloudbuild_trigger" "trigger" {
   name            = var.trigger_name

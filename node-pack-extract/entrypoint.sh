@@ -24,7 +24,7 @@ until cat "$OUTPUTFILE" | grep ''; do
                     output_is_list : .output_is_list,
                 }
             ) |
-            if length > 0 then from_entries else "" end' | 
+            if length > 0 then {nodes: from_entries} else "" end' | 
         tee "$OUTPUTFILE" 
 
     sleep 1
