@@ -27,8 +27,10 @@ func validateEnvVars(env string) {
 		"JWT_SECRET",
 	}
 
+	// TODO: Add staging specific variables
+
 	// Additional variables mandatory for production and staging
-	prodStagingVars := []string{
+	prodVars := []string{
 		"CLOUD_STORAGE_BUCKET_NAME",
 		"SLACK_REGISTRY_CHANNEL_WEBHOOK",
 		"SECRET_SCANNER_URL",
@@ -38,13 +40,13 @@ func validateEnvVars(env string) {
 		"ID_TOKEN_AUDIENCE",
 	}
 
-	// Add production and staging-specific variables
-	if env == "prod" || env == "staging" {
-		mandatoryVars = append(mandatoryVars, prodStagingVars...)
+	// Add production specific variables
+	if env == "prod" {
+		mandatoryVars = append(mandatoryVars, prodVars...)
 	}
 
 	// Validate that all mandatory environment variables are set
-	missingVars := []string{}
+	var missingVars []string
 	for _, key := range mandatoryVars {
 		if os.Getenv(key) == "" {
 			missingVars = append(missingVars, key)
@@ -75,17 +77,17 @@ func main() {
 
 	// Build the application configuration
 	appConfig := config.Config{
-		ProjectID:                     os.Getenv("PROJECT_ID"),
-		DripEnv:                       dripEnv,
-		SlackRegistryChannelWebhook:   os.Getenv("SLACK_REGISTRY_CHANNEL_WEBHOOK"),
-		JWTSecret:                     os.Getenv("JWT_SECRET"),
-		SecretScannerURL:              os.Getenv("SECRET_SCANNER_URL"),
-		DiscordSecurityChannelWebhook: os.Getenv("SECURITY_COUNCIL_DISCORD_WEBHOOK"),
+		ProjectID:                            os.Getenv("PROJECT_ID"),
+		DripEnv:                              dripEnv,
+		SlackRegistryChannelWebhook:          os.Getenv("SLACK_REGISTRY_CHANNEL_WEBHOOK"),
+		JWTSecret:                            os.Getenv("JWT_SECRET"),
+		SecretScannerURL:                     os.Getenv("SECRET_SCANNER_URL"),
+		DiscordSecurityChannelWebhook:        os.Getenv("SECURITY_COUNCIL_DISCORD_WEBHOOK"),
 		DiscordSecurityPrivateChannelWebhook: os.Getenv("SECURITY_COUNCIL_DISCORD_PRIVATE_WEBHOOK"),
-		AlgoliaAppID:                  os.Getenv("ALGOLIA_APP_ID"),
-		AlgoliaAPIKey:                 os.Getenv("ALGOLIA_API_KEY"),
-		IDTokenAudience:               os.Getenv("ID_TOKEN_AUDIENCE"),
-		CloudStorageBucketName:        os.Getenv("CLOUD_STORAGE_BUCKET_NAME"),
+		AlgoliaAppID:                         os.Getenv("ALGOLIA_APP_ID"),
+		AlgoliaAPIKey:                        os.Getenv("ALGOLIA_API_KEY"),
+		IDTokenAudience:                      os.Getenv("ID_TOKEN_AUDIENCE"),
+		CloudStorageBucketName:               os.Getenv("CLOUD_STORAGE_BUCKET_NAME"),
 	}
 
 	// Construct the database connection string
