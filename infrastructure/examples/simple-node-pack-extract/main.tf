@@ -11,13 +11,18 @@ variable "prefix" {
   type = string
 }
 
+variable "project_id" {
+  type = string
+}
+
 variable "region" {
   type    = string
   default = "us-central1"
 }
 
 provider "google" {
-  region = var.region
+  region  = var.region
+  project = var.project_id
 }
 
 resource "google_storage_bucket" "bucket" {
@@ -35,6 +40,7 @@ module "node_pack_extract_trigger" {
   providers = {
     google = google
   }
+  project_id                  = var.project_id
   region                      = var.region
   bucket_name                 = google_storage_bucket.bucket.name
   cloud_build_service_account = google_service_account.service_account.email

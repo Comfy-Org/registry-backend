@@ -17,6 +17,7 @@ module "node_pack_extract_trigger" {
   providers = {
     google = google
   }
+  project_id                  = var.project_id
   region                      = var.region
   bucket_name                 = "comfy-registry"
   cloud_build_service_account = "cloud-scheduler@dreamboothy.iam.gserviceaccount.com"

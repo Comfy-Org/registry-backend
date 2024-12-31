@@ -7,6 +7,7 @@ import (
 
 	"cloud.google.com/go/cloudbuild/apiv1/v2/cloudbuildpb"
 	"cloud.google.com/go/storage"
+	"github.com/gruntwork-io/terratest/modules/environment"
 	"github.com/gruntwork-io/terratest/modules/gcp"
 	"github.com/gruntwork-io/terratest/modules/random"
 	"github.com/gruntwork-io/terratest/modules/terraform"
@@ -20,7 +21,8 @@ func TestApply(t *testing.T) {
 	terraformOptions := &terraform.Options{
 		TerraformDir: terraformDir,
 		Vars: map[string]interface{}{
-			"prefix": "t" + strings.ToLower(random.UniqueId()),
+			"prefix":     "t" + strings.ToLower(random.UniqueId()),
+			"project_id": environment.GetFirstNonEmptyEnvVarOrFatal(t, []string{"GOOGLE_PROJECT", "GOOGLE_CLOUD_PROJECT", "GCLOUD_PROJECT", "CLOUDSDK_CORE_PROJECT"}),
 		},
 	}
 

@@ -15,7 +15,11 @@ echo "=================================="
 unzip "${CUSTOM_NODE_NAME}.zip" -d "$CUSTOM_NODE_NAME"
 cd "$CUSTOM_NODE_NAME"
 source /opt/environments/python/comfyui/bin/activate
-pip install -r requirements.txt 
+if [ -f "requirements.txt" ]; then
+    echo "=== installing dependencies from requirements.txt"
+    pip install -r requirements.txt 
+fi
 if [ -f "install.py" ]; then
+    echo "=== executing install.py"
     python install.py
 fi
