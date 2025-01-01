@@ -17,6 +17,7 @@ func ServiceAccountAuthMiddleware() echo.MiddlewareFunc {
 		regexp.MustCompile(`^/security-scan$`):                          {"GET"},
 		regexp.MustCompile(`^/nodes/reindex$`):                          {"POST"},
 		regexp.MustCompile(`^/nodes/[^/]+/versions/[^/]+/comfy-nodes$`): {"POST"},
+		regexp.MustCompile(`^/comfy-nodes/backfill$`):                   {"POST"},
 	}
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {

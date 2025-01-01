@@ -42,6 +42,7 @@ func TestServiceAccountAllowList(t *testing.T) {
 		{"Reindex Nodes", "/nodes/reindex", "POST", false},
 		{"Reindex Nodes", "/security-scan", "GET", false},
 		{"Create Comfy-Nodes", "/nodes/test/versions/1.0.0/comfy-nodes", "POST", false},
+		{"Backfill Comfy-Nodes", "/comfy-nodes/backfill", "POST", false},
 	}
 
 	for _, tt := range tests {

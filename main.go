@@ -38,6 +38,7 @@ func validateEnvVars(env string) {
 		"ALGOLIA_APP_ID",
 		"ALGOLIA_API_KEY",
 		"ID_TOKEN_AUDIENCE",
+		"PUBSUB_TOPIC",
 	}
 
 	// Add production specific variables
@@ -88,6 +89,7 @@ func main() {
 		AlgoliaAPIKey:                        os.Getenv("ALGOLIA_API_KEY"),
 		IDTokenAudience:                      os.Getenv("ID_TOKEN_AUDIENCE"),
 		CloudStorageBucketName:               os.Getenv("CLOUD_STORAGE_BUCKET_NAME"),
+		PubSubTopic:                          os.Getenv("PUBSUB_TOPIC"),
 	}
 
 	// Construct the database connection string

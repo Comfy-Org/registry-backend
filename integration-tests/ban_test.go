@@ -26,6 +26,7 @@ func TestBan(t *testing.T) {
 
 	// Initialize the Service
 	mockStorageService := new(gateways.MockStorageService)
+	mockPubsubService := new(gateways.MockPubSubService)
 	mockSlackService := new(gateways.MockSlackService)
 	mockDiscordService := new(gateways.MockDiscordService)
 	mockSlackService.
@@ -37,7 +38,7 @@ func TestBan(t *testing.T) {
 		Return(nil)
 
 	impl := implementation.NewStrictServerImplementation(
-		client, &config.Config{}, mockStorageService, mockSlackService, mockDiscordService, mockAlgolia)
+		client, &config.Config{}, mockStorageService, mockPubsubService, mockSlackService, mockDiscordService, mockAlgolia)
 
 	authz := drip_authorization.NewAuthorizationManager(client, impl.RegistryService).AuthorizationMiddleware()
 

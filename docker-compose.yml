@@ -22,3 +22,4 @@ services:
       ALGOLIA_API_KEY: 
       SECRET_SCANNER_URL: ""
       CLOUD_STORAGE_BUCKET_NAME: "staging-comfy-registry"
+      PUBSUB_TOPIC: comfy-registry-event-staging

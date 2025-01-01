@@ -23,6 +23,7 @@ import (
 	"registry-backend/ent/user"
 	"registry-backend/gateways/algolia"
 	"registry-backend/gateways/discord"
+	"registry-backend/gateways/pubsub"
 	gateway "registry-backend/gateways/slack"
 	"registry-backend/gateways/storage"
 	"registry-backend/mapper"
@@ -40,15 +41,17 @@ import (
 
 type RegistryService struct {
 	storageService storage.StorageService
+	pubsubService  pubsub.PubSubService
 	slackService   gateway.SlackService
 	algolia        algolia.AlgoliaService
 	discordService discord.DiscordService
 	config         *config.Config
 }
 
-func NewRegistryService(storageSvc storage.StorageService, slackSvc gateway.SlackService, discordSvc discord.DiscordService, algoliaSvc algolia.AlgoliaService, config *config.Config) *RegistryService {
+func NewRegistryService(storageSvc storage.StorageService, pubsubService pubsub.PubSubService, slackSvc gateway.SlackService, discordSvc discord.DiscordService, algoliaSvc algolia.AlgoliaService, config *config.Config) *RegistryService {
 	return &RegistryService{
 		storageService: storageSvc,
+		pubsubService:  pubsubService,
 		slackService:   slackSvc,
 		discordService: discordSvc,
 		algolia:        algoliaSvc,
@@ -104,15 +107,15 @@ func PrettifyJSON(input string) (string, error) {
 	var temp interface{}
 	err := json.Unmarshal([]byte(input), &temp)
 	if err != nil {
-			return "", fmt.Errorf("invalid JSON input: %v", err)
+		return "", fmt.Errorf("invalid JSON input: %v", err)
 	}
-	
+
 	// Marshal back to JSON with indentation
 	pretty, err := json.MarshalIndent(temp, "", "    ")
 	if err != nil {
-			return "", fmt.Errorf("failed to marshal JSON: %v", err)
+		return "", fmt.Errorf("failed to marshal JSON: %v", err)
 	}
-	
+
 	return string(pretty), nil
 }
 
@@ -685,6 +688,29 @@ func (s *RegistryService) GetComfyNode(ctx context.Context, client *ent.Client, 
 	return nv.Edges.ComfyNodes[0], nil
 }
 
+func (s *RegistryService) TriggerComfyNodesBackfill(ctx context.Context, client *ent.Client) error {
+	nvs, err := client.NodeVersion.
+		Query().
+		WithStorageFile().
+		Where(nodeversion.Not(nodeversion.HasComfyNodes())).
+		All(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to query node versions: %w", err)
+	}
+	for i, nv := range nvs {
+		if nv.Edges.StorageFile.FileURL == "" {
+			continue
+		}
+
+		log.Ctx(ctx).Info().Msgf("backfilling comfy node: %s", nv.Edges.StorageFile.FileURL)
+		err := s.pubsubService.PublishNodePack(ctx, nv.Edges.StorageFile.FileURL)
+		if err != nil {
+			return fmt.Errorf("fail to trigger node pack backfil for node %s-%s at index %d", nv.NodeID, nv.Version, i)
+		}
+	}
+	return nil
+}
+
 func (s *RegistryService) AssertPublisherPermissions(ctx context.Context,
 	client *ent.Client,
 	publisherID string,
@@ -1036,7 +1062,7 @@ func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.
 		err = s.discordService.SendSecurityCouncilMessage(
 			fmt.Sprintf("Security issues were found in node %s@%s. Status is flagged. "+
 				"Please check it here: https://registry.comfy.org/nodes/%s/versions/%s. \n "+
-				"Issues are: \n%s", nodeVersion.NodeID, nodeVersion.Version, nodeVersion.NodeID, nodeVersion.Version, 
+				"Issues are: \n%s", nodeVersion.NodeID, nodeVersion.Version, nodeVersion.NodeID, nodeVersion.Version,
 				prettyIssues), false)
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msgf("failed to send message to discord")
