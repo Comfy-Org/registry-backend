@@ -7,6 +7,7 @@ import (
 	"registry-backend/ent"
 	"registry-backend/gateways/algolia"
 	"registry-backend/gateways/discord"
+	"registry-backend/gateways/pubsub"
 	"registry-backend/gateways/slack"
 	"registry-backend/gateways/storage"
 	handler "registry-backend/server/handlers"
@@ -27,6 +28,7 @@ import (
 
 type ServerDependencies struct {
 	StorageService   storage.StorageService
+	PubSubService    pubsub.PubSubService
 	SlackService     slack.SlackService
 	AlgoliaService   algolia.AlgoliaService
 	DiscordService   discord.DiscordService
@@ -58,6 +60,12 @@ func initializeDependencies(config *config.Config) (*ServerDependencies, error) 
 		return nil, err
 	}
 
+	pubsubService, err := pubsub.NewPubSubService(config)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to initialize pub/sub service")
+		return nil, err
+	}
+
 	slackService := slack.NewSlackService(config)
 
 	algoliaService, err := algolia.NewAlgoliaService(config)
@@ -77,6 +85,7 @@ func initializeDependencies(config *config.Config) (*ServerDependencies, error) 
 	return &ServerDependencies{
 		StorageService:   storageService,
 		SlackService:     slackService,
+		PubSubService:    pubsubService,
 		AlgoliaService:   algoliaService,
 		DiscordService:   discordService,
 		MonitoringClient: *mon,
@@ -115,7 +124,8 @@ func (s *Server) Start() error {
 
 	// Attach implementation of the generated OAPI strict server
 	impl := implementation.NewStrictServerImplementation(
-		s.Client, s.Config, s.Dependencies.StorageService, s.Dependencies.SlackService,
+		s.Client, s.Config, s.Dependencies.StorageService, s.Dependencies.PubSubService,
+		s.Dependencies.SlackService,
 		s.Dependencies.DiscordService, s.Dependencies.AlgoliaService)
 
 	// Define middleware for authorization

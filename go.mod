@@ -4,6 +4,7 @@ go 1.21.5
 
 require (
 	cloud.google.com/go/monitoring v1.18.0
+	cloud.google.com/go/pubsub v1.36.1
 	cloud.google.com/go/storage v1.38.0
 	entgo.io/ent v0.13.1
 	firebase.google.com/go v3.13.0+incompatible

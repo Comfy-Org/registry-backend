@@ -67,6 +67,8 @@ spec:
               value: https://api.comfy.org
             - name: CLOUD_STORAGE_BUCKET_NAME
               value: comfy-registry
+            - name: PUBSUB_TOPIC
+              value: comfy-registry-event
           resources:
             limits:
               cpu: 4000m

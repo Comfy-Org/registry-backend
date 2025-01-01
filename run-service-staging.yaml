@@ -58,3 +58,5 @@ spec:
               value: https://stagingapi.comfy.org
             - name: CLOUD_STORAGE_BUCKET_NAME
               value: staging-comfy-registry
+            - name: PUBSUB_TOPIC
+              value: comfy-registry-event-staging

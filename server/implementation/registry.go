@@ -1052,3 +1052,15 @@ func (impl *DripStrictServerImplementation) GetComfyNode(ctx context.Context, re
 	res = drip.GetComfyNode200JSONResponse(*cn)
 	return
 }
+
+func (impl *DripStrictServerImplementation) ComfyNodesBackfill(ctx context.Context, request drip.ComfyNodesBackfillRequestObject) (drip.ComfyNodesBackfillResponseObject, error) {
+	log.Ctx(ctx).Info().Msg("ComfyNodesBackfill request received")
+	err := impl.RegistryService.TriggerComfyNodesBackfill(ctx, impl.Client)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to trigger comfy nodes backfill w/ err: %v", err)
+		return drip.ComfyNodesBackfill500JSONResponse{Message: "Failed to trigger comfy nodes backfill", Error: err.Error()}, nil
+	}
+
+	log.Ctx(ctx).Info().Msgf("ComfyNodesBackfill successful")
+	return drip.ComfyNodesBackfill204Response{}, nil
+}

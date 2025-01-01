@@ -1858,7 +1858,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
+  /comfy-nodes/backfill:
+    post:
+      summary: trigger comfy nodes backfill
+      operationId: ComfyNodesBackfill
+      tags:
+        - ComfyNodes
+      responses:
+        '204':
+          description: Backfill triggered
+        '400':
+          description: Bad request, invalid input data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'  
 components:
   schemas:
     PersonalAccessToken:

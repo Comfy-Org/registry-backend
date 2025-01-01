@@ -109,11 +109,13 @@ type mockedImpl struct {
 	mockSlackService   *gateways.MockSlackService
 	mockDiscordService *gateways.MockDiscordService
 	mockAlgolia        *gateways.MockAlgoliaService
+	mockPubsubService  *gateways.MockPubSubService
 }
 
 func newMockedImpl(client *ent.Client, cfg *config.Config) (impl mockedImpl, authz strictecho.StrictEchoMiddlewareFunc) {
 	// Initialize the Service
 	mockStorageService := new(gateways.MockStorageService)
+	mockPubsubService := new(gateways.MockPubSubService)
 
 	mockDiscordService := new(gateways.MockDiscordService)
 	mockDiscordService.On("SendSecurityCouncilMessage", mock.Anything, mock.Anything).
@@ -137,11 +139,12 @@ func newMockedImpl(client *ent.Client, cfg *config.Config) (impl mockedImpl, aut
 
 	impl = mockedImpl{
 		DripStrictServerImplementation: implementation.NewStrictServerImplementation(
-			client, cfg, mockStorageService, mockSlackService, mockDiscordService, mockAlgolia),
+			client, cfg, mockStorageService, mockPubsubService, mockSlackService, mockDiscordService, mockAlgolia),
 		mockStorageService: mockStorageService,
 		mockSlackService:   mockSlackService,
 		mockDiscordService: mockDiscordService,
 		mockAlgolia:        mockAlgolia,
+		mockPubsubService:  mockPubsubService,
 	}
 	authz = drip_authorization.NewAuthorizationManager(client, impl.RegistryService).
 		AuthorizationMiddleware()
@@ -862,7 +865,6 @@ func TestRegistryComfyNode(t *testing.T) {
 		Body: pub,
 	})
 	require.NoError(t, err, "should return created publisher")
-	// createdPublisher := (respub.(drip.CreatePublisher201JSONResponse))
 
 	tokenName := "test-token-name"
 	tokenDescription := "test-token-description"
@@ -894,24 +896,30 @@ func TestRegistryComfyNode(t *testing.T) {
 	})
 	require.NoError(t, err, "should not return error")
 
-	// create another node version
-	_, err = withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
-		PublisherId: *pub.Id,
-		NodeId:      *node.Id,
-		Body: &drip.PublishNodeVersionJSONRequestBody{
-			PersonalAccessToken: token,
-			Node:                *node,
-			NodeVersion:         *randomNodeVersion(1),
-		},
-	})
-	require.NoError(t, err, "should not return error")
+	// create another node versions
+	nodeVersionToBeBackfill := []*drip.NodeVersion{
+		randomNodeVersion(1),
+		randomNodeVersion(2),
+	}
+	for _, nv := range nodeVersionToBeBackfill {
+		_, err = withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
+			PublisherId: *pub.Id,
+			NodeId:      *node.Id,
+			Body: &drip.PublishNodeVersionJSONRequestBody{
+				PersonalAccessToken: token,
+				Node:                *node,
+				NodeVersion:         *nv,
+			},
+		})
+		require.NoError(t, err, "should not return error")
+	}
 
 	t.Run("NoComfyNode", func(t *testing.T) {
 		res, err := withMiddleware(authz, impl.GetNodeVersion)(ctx, drip.GetNodeVersionRequestObject{
 			NodeId:    *node.Id,
 			VersionId: *nodeVersion.Version,
 		})
-		require.NoError(t, err, "should return created node version")
+		require.NoError(t, err, "should not return error")
 		require.IsType(t, drip.GetNodeVersion200JSONResponse{}, res)
 		assert.Empty(t, res.(drip.GetNodeVersion200JSONResponse).ComfyNodes)
 	})
@@ -1022,5 +1030,13 @@ func TestRegistryComfyNode(t *testing.T) {
 			}
 		}
 		assert.True(t, found)
+	})
+
+	t.Run("TriggerBackfill", func(t *testing.T) {
+		impl.mockPubsubService.On("PublishNodePack", mock.Anything, mock.Anything).Return(nil)
+		res, err := withMiddleware(authz, impl.ComfyNodesBackfill)(ctx, drip.ComfyNodesBackfillRequestObject{})
+		require.NoError(t, err, "should return created node version")
+		require.IsType(t, drip.ComfyNodesBackfill204Response{}, res)
+		impl.mockPubsubService.AssertNumberOfCalls(t, "PublishNodePack", len(nodeVersionToBeBackfill))
 	})
 }
