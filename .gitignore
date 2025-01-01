@@ -1,5 +1,6 @@
 # Project Files
 tmp/
+.env
 
 # General IDE Stuff
 .vscode/*
