@@ -585,7 +585,7 @@ func (s *RegistryService) UpdateNodeVersion(ctx context.Context, client *ent.Cli
 	})
 }
 
-func (s *RegistryService) RecordNodeInstalation(ctx context.Context, client *ent.Client, node *ent.Node) (*ent.Node, error) {
+func (s *RegistryService) RecordNodeInstallation(ctx context.Context, client *ent.Client, node *ent.Node) (*ent.Node, error) {
 	var n *ent.Node
 	err := db.WithTx(ctx, client, func(tx *ent.Tx) (err error) {
 		node, err = tx.Node.UpdateOne(node).AddTotalInstall(1).Save(ctx)

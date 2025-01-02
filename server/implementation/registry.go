@@ -726,6 +726,12 @@ func (s *DripStrictServerImplementation) InstallNode(
 
 	// Install node version
 	if request.Params.Version == nil {
+		s.MixpanelService.Track(ctx, []*mixpanel.Event{
+			s.MixpanelService.NewEvent("Install Node", "", map[string]any{
+				"Node ID": request.NodeId,
+				"Version": "latest",
+			}),
+		})
 		nodeVersion, err := s.RegistryService.GetLatestNodeVersion(ctx, s.Client, request.NodeId)
 		if err == nil && nodeVersion == nil {
 			log.Ctx(ctx).Error().Msgf("Latest node version not found")
@@ -736,22 +742,19 @@ func (s *DripStrictServerImplementation) InstallNode(
 			log.Ctx(ctx).Error().Msgf("Error retrieving latest node version w/ err: %v", err)
 			return drip.InstallNode500JSONResponse{Message: errMessage}, err
 		}
-		_, err = s.RegistryService.RecordNodeInstalation(ctx, s.Client, node)
+
+		_, err = s.RegistryService.RecordNodeInstallation(ctx, s.Client, node)
 		if err != nil {
 			errMessage := "Failed to get increment number of node version install: " + err.Error()
 			log.Ctx(ctx).Error().Msgf("Error incrementing number of latest node version install w/ err: %v", err)
 			return drip.InstallNode500JSONResponse{Message: errMessage}, err
 		}
-		s.MixpanelService.Track(ctx, []*mixpanel.Event{
-			s.MixpanelService.NewEvent("Install Node Latest", "", map[string]any{
-				"Node ID": request.NodeId,
-				"Version": nodeVersion.Version,
-			}),
-		})
+
 		return drip.InstallNode200JSONResponse(
 			*mapper.DbNodeVersionToApiNodeVersion(nodeVersion),
 		), nil
 	} else {
+
 		nodeVersion, err := s.RegistryService.GetNodeVersionByVersion(ctx, s.Client, request.NodeId, *request.Params.Version)
 		if ent.IsNotFound(err) {
 			log.Ctx(ctx).Error().Msgf("Error retrieving node version w/ err: %v", err)
@@ -762,18 +765,18 @@ func (s *DripStrictServerImplementation) InstallNode(
 			log.Ctx(ctx).Error().Msgf("Error retrieving node version w/ err: %v", err)
 			return drip.InstallNode500JSONResponse{Message: errMessage}, err
 		}
-		_, err = s.RegistryService.RecordNodeInstalation(ctx, s.Client, node)
+		s.MixpanelService.Track(ctx, []*mixpanel.Event{
+			s.MixpanelService.NewEvent("Install Node", "", map[string]any{
+				"Node ID": request.NodeId,
+				"Version": request.Params.Version,
+			}),
+		})
+		_, err = s.RegistryService.RecordNodeInstallation(ctx, s.Client, node)
 		if err != nil {
 			errMessage := "Failed to get increment number of node version install: " + err.Error()
 			log.Ctx(ctx).Error().Msgf("Error incrementing number of latest node version install w/ err: %v", err)
 			return drip.InstallNode500JSONResponse{Message: errMessage}, err
 		}
-		s.MixpanelService.Track(ctx, []*mixpanel.Event{
-			s.MixpanelService.NewEvent("Install Node", "", map[string]any{
-				"Node ID": request.NodeId,
-				"Version": nodeVersion.Version,
-			}),
-		})
 		return drip.InstallNode200JSONResponse(
 			*mapper.DbNodeVersionToApiNodeVersion(nodeVersion),
 		), nil
