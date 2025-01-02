@@ -44,6 +44,7 @@ func FirebaseAuthMiddleware(entClient *ent.Client) echo.MiddlewareFunc {
 		regexp.MustCompile(`^/publishers/[^/]+/nodes/[^/]+/ban$`):             {"POST"},
 		regexp.MustCompile(`^/nodes/[^/]+/versions/[^/]+/comfy-nodes$`):       {"POST"},
 		regexp.MustCompile(`^/nodes/[^/]+/versions/[^/]+/comfy-nodes/[^/]+$`): {"GET"},
+		regexp.MustCompile(`^/comfy-nodes/backfill$`):                         {"POST"},
 	}
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
