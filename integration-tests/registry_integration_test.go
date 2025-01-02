@@ -976,6 +976,17 @@ func TestRegistryComfyNode(t *testing.T) {
 		}
 	})
 
+	t.Run("Conflict", func(t *testing.T) {
+		body := drip.CreateComfyNodesJSONRequestBody(comfyNodes)
+		res, err := withMiddleware(authz, impl.CreateComfyNodes)(ctx, drip.CreateComfyNodesRequestObject{
+			NodeId:  *node.Id,
+			Version: *nodeVersion.Version,
+			Body:    &body,
+		})
+		require.NoError(t, err)
+		require.IsType(t, drip.CreateComfyNodes409JSONResponse{}, res)
+	})
+
 	t.Run("GetNodeVersion", func(t *testing.T) {
 		res, err := withMiddleware(authz, impl.GetNodeVersion)(ctx, drip.GetNodeVersionRequestObject{
 			NodeId:    *node.Id,

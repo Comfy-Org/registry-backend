@@ -2,6 +2,7 @@ package implementation
 
 import (
 	"context"
+	"errors"
 	"registry-backend/drip"
 	"registry-backend/ent"
 	"registry-backend/ent/publisher"
@@ -1022,6 +1023,10 @@ func (impl *DripStrictServerImplementation) CreateComfyNodes(ctx context.Context
 	if ent.IsNotFound(err) {
 		log.Ctx(ctx).Error().Msgf("Node or node version not found w/ err: %v", err)
 		return drip.CreateComfyNodes404JSONResponse{Message: "Node or node version not found", Error: err.Error()}, nil
+	}
+	if errors.Is(err, drip_services.ErrComfyNodesAlreadyExist) {
+		log.Ctx(ctx).Error().Msgf("Comfy nodes for %s %s exist", request.NodeId, request.Version)
+		return drip.CreateComfyNodes409JSONResponse{Message: "Comfy nodes already exist", Error: err.Error()}, nil
 	}
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to create comfy nodes w/ err: %v", err)
