@@ -2,11 +2,15 @@ package test
 
 import (
 	"context"
+	"net/http"
 	"strings"
 	"testing"
 
 	"cloud.google.com/go/cloudbuild/apiv1/v2/cloudbuildpb"
+	cloudscheduler "cloud.google.com/go/scheduler/apiv1"
+	"cloud.google.com/go/scheduler/apiv1/schedulerpb"
 	"cloud.google.com/go/storage"
+
 	"github.com/gruntwork-io/terratest/modules/environment"
 	"github.com/gruntwork-io/terratest/modules/gcp"
 	"github.com/gruntwork-io/terratest/modules/random"
@@ -33,8 +37,10 @@ func TestApply(t *testing.T) {
 
 	topicID := terraform.Output(t, terraformOptions, "topic_id")
 	triggerID := terraform.Output(t, terraformOptions, "trigger_id")
-	bucketName := terraform.Output(t, terraformOptions, "bucket_name")
 	bucketNotificationID := terraform.Output(t, terraformOptions, "bucket_notification_id")
+	schedulerID := terraform.Output(t, terraformOptions, "backfill_scheduler_id")
+	bucketName := terraform.Output(t, terraformOptions, "bucket_name")
+	serviceAccount := terraform.Output(t, terraformOptions, "service_account")
 
 	t.Run("CheckCloudBuildTrigger", func(t *testing.T) {
 		gcb := gcp.NewCloudBuildService(t)
@@ -62,5 +68,22 @@ func TestApply(t *testing.T) {
 			found = true
 		}
 		assert.True(t, found)
+	})
+
+	t.Run("CheckScheduler", func(t *testing.T) {
+		client, err := cloudscheduler.NewCloudSchedulerClient(context.Background())
+		require.NoError(t, err)
+		defer client.Close()
+
+		j, err := client.GetJob(context.Background(), &schedulerpb.GetJobRequest{
+			Name: schedulerID,
+		})
+		require.NoError(t, err)
+		h := j.GetHttpTarget()
+		require.NotNil(t, h)
+		assert.Contains(t, h.GetUri(), "/comfy-nodes/backfill")
+		assert.Equal(t, http.MethodPost, h.GetHttpMethod().String())
+		assert.Equal(t, "https://stagingapi.comfy.org", h.GetOidcToken().GetAudience())
+		assert.Equal(t, serviceAccount, h.GetOidcToken().GetServiceAccountEmail())
 	})
 }

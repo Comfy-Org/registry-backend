@@ -77,3 +77,22 @@ resource "google_cloudbuild_trigger" "trigger" {
     _REGISTRY_BACKEND_URL = var.registry_backend_url
   }
 }
+
+
+resource "google_cloud_scheduler_job" "backfill" {
+  name        = var.backfill_job_name
+  description = "A job to trigger comfy node pack backfill."
+
+  schedule = var.backfill_job_schedule
+  paused   = true
+
+  http_target {
+    http_method = "POST"
+    uri         = "${var.registry_backend_url}/comfy-nodes/backfill"
+
+    oidc_token {
+      service_account_email = data.google_service_account.cloudbuild_service_account.email
+      audience              = var.registry_backend_url
+    }
+  }
+}

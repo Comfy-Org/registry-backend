@@ -58,6 +58,12 @@ output "topic_id" {
 output "bucket_notification_id" {
   value = module.node_pack_extract_trigger.bucket_notification_id
 }
+output "backfill_scheduler_id" {
+  value = module.node_pack_extract_trigger.backfill_scheduler_id
+}
 output "bucket_name" {
   value = google_storage_bucket.bucket.name
+}
+output "service_account" {
+  value = google_service_account.service_account.email
 }
