@@ -33,6 +33,18 @@ variable "trigger_name" {
   default     = "comfy-node-pack-extract"
 }
 
+variable "backfill_job_name" {
+  type        = string
+  description = "Cloud build trigger name"
+  default     = "comfy-node-pack-backfill"
+}
+
+variable "backfill_job_schedule" {
+  type        = string
+  description = "Cron schedule for backfill job in UTC. Default is 3:30am on the 29th of february UTC."
+  default     = "30 3 29 2 *"
+}
+
 variable "git_repo_uri" {
   type        = string
   description = "Connected git repo containing the cloud build pipeline. See https://cloud.google.com/build/docs/repositories"

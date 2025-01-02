@@ -9,3 +9,7 @@ output "bucket_notification_id" {
 output "trigger_id" {
   value = google_cloudbuild_trigger.trigger.id
 }
+
+output "backfill_scheduler_id" {
+  value = google_cloud_scheduler_job.backfill.id
+}
