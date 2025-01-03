@@ -45,6 +45,12 @@ variable "backfill_job_schedule" {
   default     = "30 3 29 2 *"
 }
 
+variable "backfill_job_max_node" {
+  type        = number
+  default     = 10
+  description = "maximum number of nodes to be backfilled"
+}
+
 variable "git_repo_uri" {
   type        = string
   description = "Connected git repo containing the cloud build pipeline. See https://cloud.google.com/build/docs/repositories"

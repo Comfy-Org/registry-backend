@@ -700,12 +700,15 @@ func (s *RegistryService) GetComfyNode(ctx context.Context, client *ent.Client, 
 	return nv.Edges.ComfyNodes[0], nil
 }
 
-func (s *RegistryService) TriggerComfyNodesBackfill(ctx context.Context, client *ent.Client) error {
-	nvs, err := client.NodeVersion.
+func (s *RegistryService) TriggerComfyNodesBackfill(ctx context.Context, client *ent.Client, max *int) error {
+	q := client.NodeVersion.
 		Query().
 		WithStorageFile().
-		Where(nodeversion.Not(nodeversion.HasComfyNodes())).
-		All(ctx)
+		Where(nodeversion.Not(nodeversion.HasComfyNodes()))
+	if max != nil {
+		q.Limit(*max)
+	}
+	nvs, err := q.All(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to query node versions: %w", err)
 	}

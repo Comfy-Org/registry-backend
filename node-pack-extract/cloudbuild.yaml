@@ -27,8 +27,8 @@ steps:
       - -c
       - gcloud auth print-identity-token --audiences="$_REGISTRY_BACKEND_URL" | tee /workspace/token
 
-  - name: "gcr.io/cloud-builders/curl"
-    entrypoint: "bash"
+  - name: "curlimages/curl"
+    entrypoint: "sh"
     args:
       - -c
       - |

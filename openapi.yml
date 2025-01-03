@@ -1870,6 +1870,13 @@ paths:
       operationId: ComfyNodesBackfill
       tags:
         - ComfyNodes
+      parameters:
+        - in: query
+          name: max_node
+          required: false
+          schema:
+            type: integer
+            default: 10
       responses:
         '204':
           description: Backfill triggered

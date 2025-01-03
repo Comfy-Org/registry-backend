@@ -81,7 +81,7 @@ func TestApply(t *testing.T) {
 		require.NoError(t, err)
 		h := j.GetHttpTarget()
 		require.NotNil(t, h)
-		assert.Contains(t, h.GetUri(), "/comfy-nodes/backfill")
+		assert.Equal(t, h.GetUri(), "https://stagingapi.comfy.org/comfy-nodes/backfill?max_node=10")
 		assert.Equal(t, http.MethodPost, h.GetHttpMethod().String())
 		assert.Equal(t, "https://stagingapi.comfy.org", h.GetOidcToken().GetAudience())
 		assert.Equal(t, serviceAccount, h.GetOidcToken().GetServiceAccountEmail())

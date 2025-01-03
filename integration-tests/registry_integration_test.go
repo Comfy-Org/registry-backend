@@ -900,6 +900,9 @@ func TestRegistryComfyNode(t *testing.T) {
 	nodeVersionToBeBackfill := []*drip.NodeVersion{
 		randomNodeVersion(1),
 		randomNodeVersion(2),
+		randomNodeVersion(3),
+		randomNodeVersion(4),
+		randomNodeVersion(5),
 	}
 	for _, nv := range nodeVersionToBeBackfill {
 		_, err = withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
@@ -1044,10 +1047,25 @@ func TestRegistryComfyNode(t *testing.T) {
 	})
 
 	t.Run("TriggerBackfill", func(t *testing.T) {
-		impl.mockPubsubService.On("PublishNodePack", mock.Anything, mock.Anything).Return(nil)
-		res, err := withMiddleware(authz, impl.ComfyNodesBackfill)(ctx, drip.ComfyNodesBackfillRequestObject{})
-		require.NoError(t, err, "should return created node version")
-		require.IsType(t, drip.ComfyNodesBackfill204Response{}, res)
-		impl.mockPubsubService.AssertNumberOfCalls(t, "PublishNodePack", len(nodeVersionToBeBackfill))
+		mockCalled := 0
+		t.Run("Unlimited", func(t *testing.T) {
+			impl.mockPubsubService.On("PublishNodePack", mock.Anything, mock.Anything).Return(nil)
+			res, err := withMiddleware(authz, impl.ComfyNodesBackfill)(ctx, drip.ComfyNodesBackfillRequestObject{})
+			require.NoError(t, err, "should return created node version")
+			require.IsType(t, drip.ComfyNodesBackfill204Response{}, res)
+			impl.mockPubsubService.AssertNumberOfCalls(t, "PublishNodePack", len(nodeVersionToBeBackfill)+mockCalled)
+			mockCalled += len(nodeVersionToBeBackfill)
+		})
+
+		t.Run("Limited", func(t *testing.T) {
+			limit := 2
+			impl.mockPubsubService.On("PublishNodePack", mock.Anything, mock.Anything).Return(nil)
+			res, err := withMiddleware(authz, impl.ComfyNodesBackfill)(ctx, drip.ComfyNodesBackfillRequestObject{Params: drip.ComfyNodesBackfillParams{MaxNode: &limit}})
+			require.NoError(t, err, "should return created node version")
+			require.IsType(t, drip.ComfyNodesBackfill204Response{}, res)
+			impl.mockPubsubService.AssertNumberOfCalls(t, "PublishNodePack", limit+mockCalled)
+			mockCalled += limit
+		})
 	})
+
 }

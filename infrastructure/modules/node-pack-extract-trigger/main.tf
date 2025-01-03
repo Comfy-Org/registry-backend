@@ -88,7 +88,8 @@ resource "google_cloud_scheduler_job" "backfill" {
 
   http_target {
     http_method = "POST"
-    uri         = "${var.registry_backend_url}/comfy-nodes/backfill"
+    uri         = "${var.registry_backend_url}/comfy-nodes/backfill?max_node=${var.backfill_job_max_node}"
+
 
     oidc_token {
       service_account_email = data.google_service_account.cloudbuild_service_account.email

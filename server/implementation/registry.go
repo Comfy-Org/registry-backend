@@ -1063,7 +1063,7 @@ func (impl *DripStrictServerImplementation) GetComfyNode(ctx context.Context, re
 
 func (impl *DripStrictServerImplementation) ComfyNodesBackfill(ctx context.Context, request drip.ComfyNodesBackfillRequestObject) (drip.ComfyNodesBackfillResponseObject, error) {
 	log.Ctx(ctx).Info().Msg("ComfyNodesBackfill request received")
-	err := impl.RegistryService.TriggerComfyNodesBackfill(ctx, impl.Client)
+	err := impl.RegistryService.TriggerComfyNodesBackfill(ctx, impl.Client, request.Params.MaxNode)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to trigger comfy nodes backfill w/ err: %v", err)
 		return drip.ComfyNodesBackfill500JSONResponse{Message: "Failed to trigger comfy nodes backfill", Error: err.Error()}, nil
