@@ -585,7 +585,7 @@ func (s *RegistryService) UpdateNodeVersion(ctx context.Context, client *ent.Cli
 	})
 }
 
-func (s *RegistryService) RecordNodeInstallation(ctx context.Context, client *ent.Client, node *ent.Node) (*ent.Node, error) {
+func (s *RegistryService) RecordNodeInstalation(ctx context.Context, client *ent.Client, node *ent.Node) (*ent.Node, error) {
 	var n *ent.Node
 	err := db.WithTx(ctx, client, func(tx *ent.Tx) (err error) {
 		node, err = tx.Node.UpdateOne(node).AddTotalInstall(1).Save(ctx)
@@ -626,64 +626,52 @@ func (s *RegistryService) GetLatestNodeVersion(ctx context.Context, client *ent.
 	return nodeVersion, nil
 }
 
-var ErrComfyNodesAlreadyExist = errors.New("comfy nodes already exist")
-
 func (s *RegistryService) CreateComfyNodes(ctx context.Context, client *ent.Client, nodeID string, nodeVersion string, comfyNodes map[string]drip.ComfyNode) (err error) {
-	return db.WithTx(ctx, client, func(tx *ent.Tx) error {
-		nv, err := client.NodeVersion.Query().
-			Where(nodeversion.VersionEQ(nodeVersion)).
-			Where(nodeversion.NodeIDEQ(nodeID)).
-			WithComfyNodes().
-			ForUpdate().
-			Only(ctx)
-		if err != nil {
-			return err
+	nv, err := client.NodeVersion.Query().
+		Where(nodeversion.VersionEQ(nodeVersion)).
+		Where(nodeversion.NodeIDEQ(nodeID)).Only(ctx)
+	if err != nil {
+		return err
+	}
+
+	comfyNodesCreates := make([]*ent.ComfyNodeCreate, 0, len(comfyNodes))
+	for k, n := range comfyNodes {
+		comfyNodeCreate := client.ComfyNode.Create().
+			SetID(k).
+			SetNodeVersionID(nv.ID)
+
+		if n.Category != nil {
+			comfyNodeCreate.SetCategory(*n.Category)
 		}
-
-		if len(nv.Edges.ComfyNodes) > 0 {
-			return ErrComfyNodesAlreadyExist
+		if n.Description != nil {
+			comfyNodeCreate.SetDescription(*n.Description)
 		}
-
-		comfyNodesCreates := make([]*ent.ComfyNodeCreate, 0, len(comfyNodes))
-		for k, n := range comfyNodes {
-			comfyNodeCreate := client.ComfyNode.Create().
-				SetID(k).
-				SetNodeVersionID(nv.ID)
-
-			if n.Category != nil {
-				comfyNodeCreate.SetCategory(*n.Category)
-			}
-			if n.Description != nil {
-				comfyNodeCreate.SetDescription(*n.Description)
-			}
-			if n.InputTypes != nil {
-				comfyNodeCreate.SetInputTypes(*n.InputTypes)
-			}
-			if n.Deprecated != nil {
-				comfyNodeCreate.SetDeprecated(*n.Deprecated)
-			}
-			if n.Experimental != nil {
-				comfyNodeCreate.SetExperimental(*n.Experimental)
-			}
-			if n.OutputIsList != nil {
-				comfyNodeCreate.SetOutputIsList(*n.OutputIsList)
-			}
-			if n.ReturnNames != nil {
-				comfyNodeCreate.SetReturnNames(*n.ReturnNames)
-			}
-			if n.ReturnTypes != nil {
-				comfyNodeCreate.SetReturnTypes(*n.ReturnTypes)
-			}
-			if n.Function != nil {
-				comfyNodeCreate.SetFunction(*n.Function)
-			}
-			comfyNodesCreates = append(comfyNodesCreates, comfyNodeCreate)
+		if n.InputTypes != nil {
+			comfyNodeCreate.SetInputTypes(*n.InputTypes)
 		}
-		return client.ComfyNode.
-			CreateBulk(comfyNodesCreates...).
-			Exec(ctx)
-	})
-
+		if n.Deprecated != nil {
+			comfyNodeCreate.SetDeprecated(*n.Deprecated)
+		}
+		if n.Experimental != nil {
+			comfyNodeCreate.SetExperimental(*n.Experimental)
+		}
+		if n.OutputIsList != nil {
+			comfyNodeCreate.SetOutputIsList(*n.OutputIsList)
+		}
+		if n.ReturnNames != nil {
+			comfyNodeCreate.SetReturnNames(*n.ReturnNames)
+		}
+		if n.ReturnTypes != nil {
+			comfyNodeCreate.SetReturnTypes(*n.ReturnTypes)
+		}
+		if n.Function != nil {
+			comfyNodeCreate.SetFunction(*n.Function)
+		}
+		comfyNodesCreates = append(comfyNodesCreates, comfyNodeCreate)
+	}
+	return client.ComfyNode.
+		CreateBulk(comfyNodesCreates...).
+		Exec(ctx)
 }
 
 func (s *RegistryService) GetComfyNode(ctx context.Context, client *ent.Client, nodeID string, nodeVersion string, comfyNodeID string) (*ent.ComfyNode, error) {
@@ -700,12 +688,15 @@ func (s *RegistryService) GetComfyNode(ctx context.Context, client *ent.Client, 
 	return nv.Edges.ComfyNodes[0], nil
 }
 
-func (s *RegistryService) TriggerComfyNodesBackfill(ctx context.Context, client *ent.Client) error {
-	nvs, err := client.NodeVersion.
+func (s *RegistryService) TriggerComfyNodesBackfill(ctx context.Context, client *ent.Client, max *int) error {
+	q := client.NodeVersion.
 		Query().
 		WithStorageFile().
-		Where(nodeversion.Not(nodeversion.HasComfyNodes())).
-		All(ctx)
+		Where(nodeversion.Not(nodeversion.HasComfyNodes()))
+	if max != nil {
+		q.Limit(*max)
+	}
+	nvs, err := q.All(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to query node versions: %w", err)
 	}

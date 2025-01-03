@@ -1803,12 +1803,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: Existing Comfy Nodes exists
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Internal server error
           content:
@@ -1870,6 +1864,13 @@ paths:
       operationId: ComfyNodesBackfill
       tags:
         - ComfyNodes
+      parameters:
+        - in: query
+          name: max_node
+          required: false
+          schema:
+            type: integer
+            default: 10
       responses:
         '204':
           description: Backfill triggered

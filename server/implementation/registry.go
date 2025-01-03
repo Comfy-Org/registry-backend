@@ -2,7 +2,6 @@ package implementation
 
 import (
 	"context"
-	"errors"
 	"registry-backend/drip"
 	"registry-backend/ent"
 	"registry-backend/ent/publisher"
@@ -727,12 +726,6 @@ func (s *DripStrictServerImplementation) InstallNode(
 
 	// Install node version
 	if request.Params.Version == nil {
-		s.MixpanelService.Track(ctx, []*mixpanel.Event{
-			s.MixpanelService.NewEvent("Install Node", "", map[string]any{
-				"Node ID": request.NodeId,
-				"Version": "latest",
-			}),
-		})
 		nodeVersion, err := s.RegistryService.GetLatestNodeVersion(ctx, s.Client, request.NodeId)
 		if err == nil && nodeVersion == nil {
 			log.Ctx(ctx).Error().Msgf("Latest node version not found")
@@ -743,19 +736,22 @@ func (s *DripStrictServerImplementation) InstallNode(
 			log.Ctx(ctx).Error().Msgf("Error retrieving latest node version w/ err: %v", err)
 			return drip.InstallNode500JSONResponse{Message: errMessage}, err
 		}
-
-		_, err = s.RegistryService.RecordNodeInstallation(ctx, s.Client, node)
+		_, err = s.RegistryService.RecordNodeInstalation(ctx, s.Client, node)
 		if err != nil {
 			errMessage := "Failed to get increment number of node version install: " + err.Error()
 			log.Ctx(ctx).Error().Msgf("Error incrementing number of latest node version install w/ err: %v", err)
 			return drip.InstallNode500JSONResponse{Message: errMessage}, err
 		}
-
+		s.MixpanelService.Track(ctx, []*mixpanel.Event{
+			s.MixpanelService.NewEvent("Install Node Latest", "", map[string]any{
+				"Node ID": request.NodeId,
+				"Version": nodeVersion.Version,
+			}),
+		})
 		return drip.InstallNode200JSONResponse(
 			*mapper.DbNodeVersionToApiNodeVersion(nodeVersion),
 		), nil
 	} else {
-
 		nodeVersion, err := s.RegistryService.GetNodeVersionByVersion(ctx, s.Client, request.NodeId, *request.Params.Version)
 		if ent.IsNotFound(err) {
 			log.Ctx(ctx).Error().Msgf("Error retrieving node version w/ err: %v", err)
@@ -766,18 +762,18 @@ func (s *DripStrictServerImplementation) InstallNode(
 			log.Ctx(ctx).Error().Msgf("Error retrieving node version w/ err: %v", err)
 			return drip.InstallNode500JSONResponse{Message: errMessage}, err
 		}
-		s.MixpanelService.Track(ctx, []*mixpanel.Event{
-			s.MixpanelService.NewEvent("Install Node", "", map[string]any{
-				"Node ID": request.NodeId,
-				"Version": request.Params.Version,
-			}),
-		})
-		_, err = s.RegistryService.RecordNodeInstallation(ctx, s.Client, node)
+		_, err = s.RegistryService.RecordNodeInstalation(ctx, s.Client, node)
 		if err != nil {
 			errMessage := "Failed to get increment number of node version install: " + err.Error()
 			log.Ctx(ctx).Error().Msgf("Error incrementing number of latest node version install w/ err: %v", err)
 			return drip.InstallNode500JSONResponse{Message: errMessage}, err
 		}
+		s.MixpanelService.Track(ctx, []*mixpanel.Event{
+			s.MixpanelService.NewEvent("Install Node", "", map[string]any{
+				"Node ID": request.NodeId,
+				"Version": nodeVersion.Version,
+			}),
+		})
 		return drip.InstallNode200JSONResponse(
 			*mapper.DbNodeVersionToApiNodeVersion(nodeVersion),
 		), nil
@@ -1027,10 +1023,6 @@ func (impl *DripStrictServerImplementation) CreateComfyNodes(ctx context.Context
 		log.Ctx(ctx).Error().Msgf("Node or node version not found w/ err: %v", err)
 		return drip.CreateComfyNodes404JSONResponse{Message: "Node or node version not found", Error: err.Error()}, nil
 	}
-	if errors.Is(err, drip_services.ErrComfyNodesAlreadyExist) {
-		log.Ctx(ctx).Error().Msgf("Comfy nodes for %s %s exist", request.NodeId, request.Version)
-		return drip.CreateComfyNodes409JSONResponse{Message: "Comfy nodes already exist", Error: err.Error()}, nil
-	}
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to create comfy nodes w/ err: %v", err)
 		return drip.CreateComfyNodes500JSONResponse{Message: "Failed to create comfy nodes", Error: err.Error()}, nil
@@ -1063,7 +1055,7 @@ func (impl *DripStrictServerImplementation) GetComfyNode(ctx context.Context, re
 
 func (impl *DripStrictServerImplementation) ComfyNodesBackfill(ctx context.Context, request drip.ComfyNodesBackfillRequestObject) (drip.ComfyNodesBackfillResponseObject, error) {
 	log.Ctx(ctx).Info().Msg("ComfyNodesBackfill request received")
-	err := impl.RegistryService.TriggerComfyNodesBackfill(ctx, impl.Client)
+	err := impl.RegistryService.TriggerComfyNodesBackfill(ctx, impl.Client, request.Params.MaxNode)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to trigger comfy nodes backfill w/ err: %v", err)
 		return drip.ComfyNodesBackfill500JSONResponse{Message: "Failed to trigger comfy nodes backfill", Error: err.Error()}, nil
