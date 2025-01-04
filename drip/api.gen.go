@@ -3607,6 +3607,15 @@ func (response ListAllNodeVersions200JSONResponse) VisitListAllNodeVersionsRespo
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListAllNodeVersions400JSONResponse ErrorResponse
+
+func (response ListAllNodeVersions400JSONResponse) VisitListAllNodeVersionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListAllNodeVersions403JSONResponse ErrorResponse
 
 func (response ListAllNodeVersions403JSONResponse) VisitListAllNodeVersionsResponse(w http.ResponseWriter) error {
@@ -4995,9 +5004,9 @@ var swaggerSpec = []string{
 	"ao2xqljDHSqTqxmUg3Pwo8s6X4Apo5mantV83mHxr2ICdJF3o/DyrqcY3yFxwc0Tew90863gezb7/S+r",
 	"vjfRrs/2dvU4kXdIeN4cV8oRTFP7gtXQ2TzXS9XzTcu3lN3Htm6fttz0py1rF4mGCwbvEHtVFTFVtZcU",
 	"Fmn4RMrYnU5/JbrOUxWNrD2Sj15YRMqFRSp/kOQXPWCdkW2R/ztL0rtVGC2n37NoauWSLDcG2J6Yg5e7",
-	"u8O7VjJ1vJ6PWNF0ELlUfw/1a3qoMRtb0WZzS8vUEUSzc04zJDUtYYpIB6KcrDKtn+Mc3dh/n6l/L3m2",
-	"/rda514XVk34G/PIn9Y6f6YTsxj/m/EZbijRj3h/ZIZ/fjVdjN9Ov+13q/VdCUAjScHSaC+aC5HzvdEI",
-	"5nio/JJDymbR7Zfb/w8AAP//IbFMgHbCAAA=",
+	"u8O7VjJ1vJ6PWNF0ELlUfw/1a3qoMUsq2jzdW5G+yqtPV19ncwvd1NFVCxdOMyT1PmFKWgdirqxqrx8H",
+	"Hd3Yf5+pfy95RP+3Wude12dN+Bvz5KDWgX+mE7MY/wv2GW6o9I94m2WGf34VZowXUb80eKu1bwlAI0nB",
+	"0mgvmguR873RCOZ4qLykQ8pm0e2X2/8PAAD//+q2rNUEwwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -3,6 +3,7 @@ package implementation
 import (
 	"context"
 	"errors"
+	"fmt"
 	"registry-backend/drip"
 	"registry-backend/ent"
 	"registry-backend/ent/publisher"
@@ -954,16 +955,29 @@ func (s *DripStrictServerImplementation) SecurityScan(
 
 func (s *DripStrictServerImplementation) ListAllNodeVersions(
 	ctx context.Context, request drip.ListAllNodeVersionsRequestObject) (drip.ListAllNodeVersionsResponseObject, error) {
-	log.Ctx(ctx).Info().Msg("ListAllNodeVersions request received")
+	log.Ctx(ctx).Info().Msgf("ListAllNodeVersions request received %+v", request.Params)
 
+	// Default values for pagination
 	page := 1
 	if request.Params.Page != nil {
 		page = *request.Params.Page
 	}
+
 	pageSize := 10
-	if request.Params.PageSize != nil && *request.Params.PageSize < 100 {
+	maxPageSize := 100
+	if request.Params.PageSize != nil {
+		// Validate pageSize
+		if *request.Params.PageSize > maxPageSize {
+			log.Ctx(ctx).Error().Msgf(
+				"Requested pageSize %d exceeds maximum allowed %d", *request.Params.PageSize, maxPageSize)
+			return drip.ListAllNodeVersions400JSONResponse{
+				Message: fmt.Sprintf(
+					"Invalid pageSize: %d. The maximum allowed is %d.", *request.Params.PageSize, maxPageSize),
+			}, nil
+		}
 		pageSize = *request.Params.PageSize
 	}
+
 	f := &drip_services.NodeVersionFilter{
 		Page:                page,
 		PageSize:            pageSize,
@@ -974,15 +988,22 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 		f.Status = mapper.ApiNodeVersionStatusesToDbNodeVersionStatuses(request.Params.Statuses)
 	}
 
+	// Log the constructed filter
+	log.Ctx(ctx).Info().Msgf("Constructed Filter: %+v", f)
+
 	// List nodes from the registry service
 	nodeVersionResults, err := s.RegistryService.ListNodeVersions(ctx, s.Client, f)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to list node versions w/ err: %v", err)
-		return drip.ListAllNodeVersions500JSONResponse{Message: "Failed to list node versions", Error: err.Error()}, nil
+		return drip.ListAllNodeVersions500JSONResponse{
+			Message: "Failed to list node versions",
+			Error:   err.Error(),
+		}, nil
 	}
 
+	// Handle no results
 	if len(nodeVersionResults.NodeVersions) == 0 {
-		log.Ctx(ctx).Info().Msg("No node versions found")
+		log.Ctx(ctx).Info().Msgf("No node versions found. Total: %d", nodeVersionResults.Total)
 		return drip.ListAllNodeVersions200JSONResponse{
 			Versions:   &[]drip.NodeVersion{},
 			Total:      &nodeVersionResults.Total,
@@ -992,12 +1013,15 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 		}, nil
 	}
 
+	// Transform DB results into API results
 	apiNodeVersions := make([]drip.NodeVersion, 0, len(nodeVersionResults.NodeVersions))
 	for _, dbNodeVersion := range nodeVersionResults.NodeVersions {
 		apiNodeVersions = append(apiNodeVersions, *mapper.DbNodeVersionToApiNodeVersion(dbNodeVersion))
 	}
 
-	log.Ctx(ctx).Info().Msgf("Found %d node versions", nodeVersionResults.Total)
+	// Log success
+	log.Ctx(ctx).Info().Msgf(
+		"Found %d node versions. Total: %d", len(nodeVersionResults.NodeVersions), nodeVersionResults.Total)
 	return drip.ListAllNodeVersions200JSONResponse{
 		Versions:   &apiNodeVersions,
 		Total:      &nodeVersionResults.Total,
