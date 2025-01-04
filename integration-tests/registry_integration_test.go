@@ -620,6 +620,7 @@ func TestRegistryNodeVersion(t *testing.T) {
 			DownloadUrl:  &downloadUrl,
 			Status:       &nodeVersionStatus,
 			StatusReason: proto.String(""),
+			NodeId:       node.Id,
 		}, resVersions200[0], "should be equal")
 
 		// retrieve node versions with the status reason
@@ -668,6 +669,7 @@ func TestRegistryNodeVersion(t *testing.T) {
 			DownloadUrl:  &downloadUrl,
 			Status:       &status,
 			StatusReason: proto.String(""),
+			NodeId:       node.Id,
 		}
 		assert.Equal(t, updatedNodeVersion, res200[0], "should be equal")
 		createdNodeVersion = res200[0]

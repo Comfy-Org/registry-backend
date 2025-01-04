@@ -2227,6 +2227,9 @@ components:
           type: object 
           additionalProperties:
             $ref: "#/components/schemas/ComfyNode"
+        node_id:
+          type: string
+          description: The unique identifier of the node.
     ComfyNode:
       type: object
       properties:

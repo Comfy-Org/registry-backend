@@ -79,6 +79,7 @@ func DbNodeVersionToApiNodeVersion(dbNodeVersion *ent.NodeVersion) *drip.NodeVer
 		StatusReason: &dbNodeVersion.StatusReason,
 		DownloadUrl:  &downloadUrl,
 		ComfyNodes:   comfyNodes,
+		NodeId:       &dbNodeVersion.NodeID,
 	}
 	return apiVersion
 }
