@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"registry-backend/common"
 	"registry-backend/config"
 	"registry-backend/db"
 	"registry-backend/drip"
@@ -21,6 +22,7 @@ import (
 	"registry-backend/ent/publisherpermission"
 	"registry-backend/ent/schema"
 	"registry-backend/ent/user"
+	"registry-backend/entity"
 	"registry-backend/gateways/algolia"
 	"registry-backend/gateways/discord"
 	"registry-backend/gateways/pubsub"
@@ -59,68 +61,8 @@ func NewRegistryService(storageSvc storage.StorageService, pubsubService pubsub.
 	}
 }
 
-type PublisherFilter struct {
-	UserID string
-}
-
-// NodeFilter holds optional parameters for filtering node results
-type NodeFilter struct {
-	PublisherID   string
-	Search        string
-	IncludeBanned bool
-}
-
-type NodeVersionFilter struct {
-	NodeId              string
-	Status              []schema.NodeVersionStatus
-	IncludeStatusReason bool
-	MinAge              time.Duration
-	PageSize            int
-	Page                int
-}
-
-type NodeData struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	PublisherID string `json:"publisherId"`
-}
-
-// ListNodesResult is the structure that holds the paginated result of nodes
-type ListNodesResult struct {
-	Total      int         `json:"total"`
-	Nodes      []*ent.Node `json:"nodes"`
-	Page       int         `json:"page"`
-	Limit      int         `json:"limit"`
-	TotalPages int         `json:"totalPages"`
-}
-
-type ListNodeVersionsResult struct {
-	Total        int                `json:"total"`
-	NodeVersions []*ent.NodeVersion `json:"nodes"`
-	Page         int                `json:"page"`
-	Limit        int                `json:"limit"`
-	TotalPages   int                `json:"totalPages"`
-}
-
-func PrettifyJSON(input string) (string, error) {
-	// First unmarshal the input string into a generic interface{}
-	var temp interface{}
-	err := json.Unmarshal([]byte(input), &temp)
-	if err != nil {
-		return "", fmt.Errorf("invalid JSON input: %v", err)
-	}
-
-	// Marshal back to JSON with indentation
-	pretty, err := json.MarshalIndent(temp, "", "    ")
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal JSON: %v", err)
-	}
-
-	return string(pretty), nil
-}
-
 // ListNodes retrieves a paginated list of nodes with optional filtering.
-func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, page, limit int, filter *NodeFilter) (*ListNodesResult, error) {
+func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, page, limit int, filter *entity.NodeFilter) (*entity.ListNodesResult, error) {
 	// Ensure valid pagination parameters
 	if page < 1 {
 		page = 1
@@ -200,7 +142,7 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 	}
 
 	// Return the result
-	return &ListNodesResult{
+	return &entity.ListNodesResult{
 		Total:      total,
 		Nodes:      nodes,
 		Page:       page,
@@ -210,7 +152,7 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 }
 
 // ListPublishers queries the Publisher table with an optional user ID filter via PublisherPermission
-func (s *RegistryService) ListPublishers(ctx context.Context, client *ent.Client, filter *PublisherFilter) ([]*ent.Publisher, error) {
+func (s *RegistryService) ListPublishers(ctx context.Context, client *ent.Client, filter *entity.PublisherFilter) ([]*ent.Publisher, error) {
 	log.Ctx(ctx).Info().Msg("Listing publishers")
 
 	query := client.Publisher.Query()
@@ -454,7 +396,7 @@ type NodeVersionCreation struct {
 }
 
 func (s *RegistryService) ListNodeVersions(
-	ctx context.Context, client *ent.Client, filter *NodeVersionFilter) (*ListNodeVersionsResult, error) {
+	ctx context.Context, client *ent.Client, filter *entity.NodeVersionFilter) (*entity.ListNodeVersionsResult, error) {
 	query := client.NodeVersion.Query().
 		WithStorageFile().
 		WithComfyNodes().
@@ -513,7 +455,7 @@ func (s *RegistryService) ListNodeVersions(
 		totalPages = (total + filter.PageSize - 1) / filter.PageSize // Use ceiling division for total pages
 	}
 
-	return &ListNodeVersionsResult{
+	return &entity.ListNodeVersionsResult{
 		Total:        total,
 		NodeVersions: versions,
 		Page:         filter.Page,
@@ -1073,7 +1015,7 @@ func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.
 			"Security issues found in node %s@%s. Updating to flagged.", nodeVersion.NodeID, nodeVersion.Version)
 		log.Ctx(ctx).Info().Msgf(
 			"List of security issues %s.", issues) // 500 character max.
-		prettyIssues, err := PrettifyJSON(issues)
+		prettyIssues, err := common.PrettifyJSON(issues)
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msg("failed to prettify JSON issues")
 			prettyIssues = issues // fallback to unprettified issues

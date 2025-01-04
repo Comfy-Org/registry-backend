@@ -1,6 +1,6 @@
 // File: common/types.go
 
-package common
+package entity
 
 type InviteTokenStatus string
 

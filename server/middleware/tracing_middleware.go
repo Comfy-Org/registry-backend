@@ -1,4 +1,4 @@
-package drip_middleware
+package middleware
 
 import (
 	"context"

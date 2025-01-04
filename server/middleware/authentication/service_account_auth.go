@@ -1,4 +1,4 @@
-package drip_authentication
+package authentication
 
 import (
 	"net/http"
