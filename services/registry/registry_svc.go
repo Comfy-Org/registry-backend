@@ -471,12 +471,8 @@ func (s *RegistryService) ListNodeVersions(
 	}
 
 	if filter.MinAge > 0 {
+		log.Ctx(ctx).Info().Msgf("listing node versions with min age: %v", filter.MinAge)
 		query.Where(nodeversion.CreateTimeLT(time.Now().Add(-filter.MinAge)))
-	}
-
-	// Apply pagination
-	if filter.Page > 0 && filter.PageSize > 0 {
-		query.Offset((filter.Page - 1) * filter.PageSize).Limit(filter.PageSize)
 	}
 
 	// Note: custom SELECT statement cause errors in the ent framework when using the Count method.
@@ -484,6 +480,14 @@ func (s *RegistryService) ListNodeVersions(
 	total, err := query.Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count node versions: %w", err)
+	}
+
+	// Apply pagination
+	// Note: the pagination logic needs to be applied after the count query is executed
+	if filter.Page > 0 && filter.PageSize > 0 {
+		log.Ctx(ctx).Info().Msgf(
+			"listing node versions with pagination: page %v, limit %v", filter.Page, filter.PageSize)
+		query.Offset((filter.Page - 1) * filter.PageSize).Limit(filter.PageSize)
 	}
 
 	// By default, we are selecting all fields. If the status reason is not required, we will exclude it
