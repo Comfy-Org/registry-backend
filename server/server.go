@@ -1,7 +1,10 @@
 package server
 
 import (
+	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 	"context"
+	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 	"registry-backend/config"
 	generated "registry-backend/drip"
 	"registry-backend/ent"
@@ -12,18 +15,10 @@ import (
 	"registry-backend/gateways/storage"
 	handler "registry-backend/server/handlers"
 	"registry-backend/server/implementation"
-	drip_middleware "registry-backend/server/middleware"
-	drip_authentication "registry-backend/server/middleware/authentication"
-	drip_authorization "registry-backend/server/middleware/authorization"
-	drip_metric "registry-backend/server/middleware/metric"
-	"strings"
-
-	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
-
-	"github.com/labstack/echo/v4/middleware"
-	"github.com/rs/zerolog/log"
-
-	"github.com/labstack/echo/v4"
+	"registry-backend/server/middleware"
+	"registry-backend/server/middleware/authentication"
+	"registry-backend/server/middleware/authorization"
+	"registry-backend/server/middleware/metric"
 )
 
 type ServerDependencies struct {
@@ -97,30 +92,13 @@ func (s *Server) Start() error {
 	e.HideBanner = true
 
 	// Apply middleware
-	e.Use(drip_middleware.TracingMiddleware)
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"*"},
-		AllowMethods: []string{"*"},
-		AllowHeaders: []string{"*"},
-		AllowOriginFunc: func(origin string) (bool, error) {
-			return true, nil
-		},
-		AllowCredentials: true,
-	}))
-	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
-		LogURI:    true,
-		LogStatus: true,
-		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			if strings.HasPrefix(c.Request().URL.Path, "/vm/") {
-				return nil
-			}
-
-			log.Ctx(c.Request().Context()).Debug().
-				Str("URI: ", v.URI).
-				Int("status", v.Status).Msg("")
-			return nil
-		},
-	}))
+	e.Use(middleware.TracingMiddleware)
+	e.Use(middleware.RequestLoggerMiddleware())
+	e.Use(middleware.ResponseLoggerMiddleware())
+	e.Use(metric.MetricsMiddleware(&s.Dependencies.MonitoringClient, s.Config))
+	e.Use(authentication.FirebaseAuthMiddleware(s.Client))
+	e.Use(authentication.ServiceAccountAuthMiddleware())
+	e.Use(authentication.JWTAdminAuthMiddleware(s.Client, s.Config.JWTSecret))
 
 	// Attach implementation of the generated OAPI strict server
 	impl := implementation.NewStrictServerImplementation(
@@ -143,13 +121,6 @@ func (s *Server) Start() error {
 	// Define public routes
 	e.GET("/openapi", handler.SwaggerHandler)
 	e.GET("/health", s.HealthCheckHandler)
-
-	// Apply global middlewares
-	e.Use(drip_metric.MetricsMiddleware(&s.Dependencies.MonitoringClient, s.Config))
-	e.Use(drip_authentication.FirebaseAuthMiddleware(s.Client))
-	e.Use(drip_authentication.ServiceAccountAuthMiddleware())
-	e.Use(drip_authentication.JWTAdminAuthMiddleware(s.Client, s.Config.JWTSecret))
-	e.Use(drip_middleware.ErrorLoggingMiddleware())
 
 	// Start the server
 	return e.Start(":8080")

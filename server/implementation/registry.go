@@ -8,6 +8,7 @@ import (
 	"registry-backend/ent"
 	"registry-backend/ent/publisher"
 	"registry-backend/ent/schema"
+	"registry-backend/entity"
 	"registry-backend/mapper"
 	drip_services "registry-backend/services/registry"
 	"time"
@@ -20,7 +21,6 @@ import (
 
 func (impl *DripStrictServerImplementation) ListPublishersForUser(
 	ctx context.Context, request drip.ListPublishersForUserRequestObject) (drip.ListPublishersForUserResponseObject, error) {
-	log.Ctx(ctx).Debug().Msg("ListPublishersForUser called.")
 
 	// Extract user ID from context
 	userId, err := mapper.GetUserIDFromContext(ctx)
@@ -31,7 +31,7 @@ func (impl *DripStrictServerImplementation) ListPublishersForUser(
 
 	// Call the service to list publishers
 	log.Ctx(ctx).Info().Msgf("Fetching publishers for user %s", userId)
-	publishers, err := impl.RegistryService.ListPublishers(ctx, impl.Client, &drip_services.PublisherFilter{
+	publishers, err := impl.RegistryService.ListPublishers(ctx, impl.Client, &entity.PublisherFilter{
 		UserID: userId,
 	})
 	if err != nil {
@@ -53,9 +53,6 @@ func (impl *DripStrictServerImplementation) ListPublishersForUser(
 
 func (s *DripStrictServerImplementation) ValidatePublisher(
 	ctx context.Context, request drip.ValidatePublisherRequestObject) (drip.ValidatePublisherResponseObject, error) {
-	// Log the incoming request for validation
-	log.Ctx(ctx).Info().Msgf("ValidatePublisher request with username: %s", request.Params.Username)
-
 	// Check if the username is empty
 	name := request.Params.Username
 	if name == "" {
@@ -92,9 +89,6 @@ func (s *DripStrictServerImplementation) ValidatePublisher(
 
 func (s *DripStrictServerImplementation) CreatePublisher(
 	ctx context.Context, request drip.CreatePublisherRequestObject) (drip.CreatePublisherResponseObject, error) {
-	// Log the incoming request
-	log.Ctx(ctx).Info().Msgf("CreatePublisher request called")
-
 	// Extract user ID from context
 	userId, err := mapper.GetUserIDFromContext(ctx)
 	if err != nil {
@@ -104,7 +98,7 @@ func (s *DripStrictServerImplementation) CreatePublisher(
 
 	log.Ctx(ctx).Info().Msgf("Checking if user ID %s has reached the maximum number of publishers", userId)
 	userPublishers, err := s.RegistryService.ListPublishers(
-		ctx, s.Client, &drip_services.PublisherFilter{UserID: userId})
+		ctx, s.Client, &entity.PublisherFilter{UserID: userId})
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to list publishers for user ID %s w/ err: %v", userId, err)
 		return drip.CreatePublisher500JSONResponse{Message: "Failed to list publishers", Error: err.Error()}, err
@@ -164,10 +158,9 @@ func (s *DripStrictServerImplementation) DeletePublisher(
 
 func (s *DripStrictServerImplementation) GetPublisher(
 	ctx context.Context, request drip.GetPublisherRequestObject) (drip.GetPublisherResponseObject, error) {
-	publisherId := request.PublisherId
-	log.Ctx(ctx).Info().Msgf("GetPublisher request received for publisher ID: %s", publisherId)
 
-	publisher, err := s.RegistryService.GetPublisher(ctx, s.Client, publisherId)
+	publisherId := request.PublisherId
+	publisher, err := s.RegistryService.GetPublisher(ctx, s.Client, request.PublisherId)
 	if ent.IsNotFound(err) {
 		log.Ctx(ctx).Info().Msgf("Publisher with ID %s not found", publisherId)
 		return drip.GetPublisher404JSONResponse{Message: "Publisher not found"}, nil
@@ -183,9 +176,7 @@ func (s *DripStrictServerImplementation) GetPublisher(
 
 func (s *DripStrictServerImplementation) UpdatePublisher(
 	ctx context.Context, request drip.UpdatePublisherRequestObject) (drip.UpdatePublisherResponseObject, error) {
-	log.Ctx(ctx).Info().Msgf("UpdatePublisher called with publisher ID: %s", request.PublisherId)
 
-	log.Ctx(ctx).Info().Msgf("Updating publisher with ID %s", request.PublisherId)
 	updateOne := mapper.ApiUpdatePublisherToUpdateFields(request.PublisherId, request.Body, s.Client)
 	updatedPublisher, err := s.RegistryService.UpdatePublisher(ctx, s.Client, updateOne)
 	if err != nil {
@@ -199,7 +190,6 @@ func (s *DripStrictServerImplementation) UpdatePublisher(
 
 func (s *DripStrictServerImplementation) CreateNode(
 	ctx context.Context, request drip.CreateNodeRequestObject) (drip.CreateNodeResponseObject, error) {
-	log.Ctx(ctx).Info().Msgf("CreateNode called with publisher ID: %s", request.PublisherId)
 
 	node, err := s.RegistryService.CreateNode(ctx, s.Client, request.PublisherId, request.Body)
 	if mapper.IsErrorBadRequest(err) || ent.IsConstraintError(err) {
@@ -218,10 +208,9 @@ func (s *DripStrictServerImplementation) CreateNode(
 
 func (s *DripStrictServerImplementation) ListNodesForPublisher(
 	ctx context.Context, request drip.ListNodesForPublisherRequestObject) (drip.ListNodesForPublisherResponseObject, error) {
-	log.Ctx(ctx).Info().Msgf("ListNodesForPublisher request received for publisher ID: %s", request.PublisherId)
 
 	nodeResults, err := s.RegistryService.ListNodes(
-		ctx, s.Client /*page=*/, 1 /*limit=*/, 10, &drip_services.NodeFilter{
+		ctx, s.Client /*page=*/, 1 /*limit=*/, 10, &entity.NodeFilter{
 			PublisherID: request.PublisherId,
 		})
 	if err != nil {
@@ -257,8 +246,6 @@ func (s *DripStrictServerImplementation) ListAllNodes(
 		log.Ctx(ctx).Error().Msgf("Failed to track event w/ err: %v", err)
 	}
 
-	log.Ctx(ctx).Info().Msg("ListAllNodes request received")
-
 	// Set default values for pagination parameters
 	page := 1
 	if request.Params.Page != nil {
@@ -270,7 +257,7 @@ func (s *DripStrictServerImplementation) ListAllNodes(
 	}
 
 	// Initialize the node filter
-	filter := &drip_services.NodeFilter{}
+	filter := &entity.NodeFilter{}
 	if request.Params.IncludeBanned != nil {
 		filter.IncludeBanned = *request.Params.IncludeBanned
 	}
@@ -321,7 +308,6 @@ func (s *DripStrictServerImplementation) ListAllNodes(
 
 // SearchNodes implements drip.StrictServerInterface.
 func (s *DripStrictServerImplementation) SearchNodes(ctx context.Context, request drip.SearchNodesRequestObject) (drip.SearchNodesResponseObject, error) {
-	log.Ctx(ctx).Info().Msg("SearchNodes request received")
 
 	// Set default values for pagination parameters
 	page := 1
@@ -333,7 +319,7 @@ func (s *DripStrictServerImplementation) SearchNodes(ctx context.Context, reques
 		limit = *request.Params.Limit
 	}
 
-	f := &drip_services.NodeFilter{}
+	f := &entity.NodeFilter{}
 	if request.Params.Search != nil {
 		f.Search = *request.Params.Search
 	}
@@ -386,8 +372,6 @@ func (s *DripStrictServerImplementation) SearchNodes(ctx context.Context, reques
 func (s *DripStrictServerImplementation) DeleteNode(
 	ctx context.Context, request drip.DeleteNodeRequestObject) (drip.DeleteNodeResponseObject, error) {
 
-	log.Ctx(ctx).Info().Msgf("DeleteNode request received for node ID: %s", request.NodeId)
-
 	err := s.RegistryService.DeleteNode(ctx, s.Client, request.NodeId)
 	if err != nil && !ent.IsNotFound(err) {
 		log.Ctx(ctx).Error().Msgf("Failed to delete node %s w/ err: %v", request.NodeId, err)
@@ -400,7 +384,6 @@ func (s *DripStrictServerImplementation) DeleteNode(
 
 func (s *DripStrictServerImplementation) GetNode(
 	ctx context.Context, request drip.GetNodeRequestObject) (drip.GetNodeResponseObject, error) {
-	log.Ctx(ctx).Info().Msgf("GetNode request received for node ID: %s", request.NodeId)
 
 	node, err := s.RegistryService.GetNode(ctx, s.Client, request.NodeId)
 	if ent.IsNotFound(err) {
@@ -429,8 +412,6 @@ func (s *DripStrictServerImplementation) GetNode(
 func (s *DripStrictServerImplementation) UpdateNode(
 	ctx context.Context, request drip.UpdateNodeRequestObject) (drip.UpdateNodeResponseObject, error) {
 
-	log.Ctx(ctx).Info().Msgf("UpdateNode request received for node ID: %s", request.NodeId)
-
 	updateOneFunc := func(client *ent.Client) *ent.NodeUpdateOne {
 		return mapper.ApiUpdateNodeToUpdateFields(request.NodeId, request.Body, client)
 	}
@@ -450,11 +431,10 @@ func (s *DripStrictServerImplementation) UpdateNode(
 
 func (s *DripStrictServerImplementation) ListNodeVersions(
 	ctx context.Context, request drip.ListNodeVersionsRequestObject) (drip.ListNodeVersionsResponseObject, error) {
-	log.Ctx(ctx).Info().Msgf("ListNodeVersions request received for node ID: %s", request.NodeId)
 
 	apiStatus := mapper.ApiNodeVersionStatusesToDbNodeVersionStatuses(request.Params.Statuses)
 
-	nodeVersionsResult, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &drip_services.NodeVersionFilter{
+	nodeVersionsResult, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &entity.NodeVersionFilter{
 		NodeId:              request.NodeId,
 		Status:              apiStatus,
 		IncludeStatusReason: mapper.BoolPtrToBool(request.Params.IncludeStatusReason),
@@ -475,7 +455,6 @@ func (s *DripStrictServerImplementation) ListNodeVersions(
 
 func (s *DripStrictServerImplementation) PublishNodeVersion(
 	ctx context.Context, request drip.PublishNodeVersionRequestObject) (drip.PublishNodeVersionResponseObject, error) {
-	log.Ctx(ctx).Info().Msgf("PublishNodeVersion request received for node ID: %s", request.NodeId)
 
 	// Check if node exists, create if not
 	node, err := s.RegistryService.GetNode(ctx, s.Client, request.NodeId)
@@ -532,9 +511,6 @@ func (s *DripStrictServerImplementation) PublishNodeVersion(
 func (s *DripStrictServerImplementation) UpdateNodeVersion(
 	ctx context.Context, request drip.UpdateNodeVersionRequestObject) (drip.UpdateNodeVersionResponseObject, error) {
 
-	log.Ctx(ctx).Info().Msgf("UpdateNodeVersion request received for node ID: "+
-		"%s, version ID: %s", request.NodeId, request.VersionId)
-
 	// Update node version
 	updateOne := mapper.ApiUpdateNodeVersionToUpdateFields(request.VersionId, request.Body, s.Client)
 	version, err := s.RegistryService.UpdateNodeVersion(ctx, s.Client, updateOne)
@@ -557,8 +533,6 @@ func (s *DripStrictServerImplementation) UpdateNodeVersion(
 
 // PostNodeVersionReview implements drip.StrictServerInterface.
 func (s *DripStrictServerImplementation) PostNodeReview(ctx context.Context, request drip.PostNodeReviewRequestObject) (drip.PostNodeReviewResponseObject, error) {
-	log.Ctx(ctx).Info().Msgf("PostNodeReview request received for "+
-		"node ID: %s", request.NodeId)
 
 	if request.Params.Star < 1 || request.Params.Star > 5 {
 		log.Ctx(ctx).Error().Msgf("Invalid star received: %d", request.Params.Star)
@@ -585,8 +559,6 @@ func (s *DripStrictServerImplementation) PostNodeReview(ctx context.Context, req
 
 func (s *DripStrictServerImplementation) DeleteNodeVersion(
 	ctx context.Context, request drip.DeleteNodeVersionRequestObject) (drip.DeleteNodeVersionResponseObject, error) {
-	log.Ctx(ctx).Info().Msgf("DeleteNodeVersion request received for node ID: "+
-		"%s, version ID: %s", request.NodeId, request.VersionId)
 
 	// Directly return the message that node versions cannot be deleted
 	errMessage := "Cannot delete node versions. Please deprecate it instead."
@@ -598,8 +570,6 @@ func (s *DripStrictServerImplementation) DeleteNodeVersion(
 
 func (s *DripStrictServerImplementation) GetNodeVersion(
 	ctx context.Context, request drip.GetNodeVersionRequestObject) (drip.GetNodeVersionResponseObject, error) {
-	log.Ctx(ctx).Info().Msgf("GetNodeVersion request received for "+
-		"node ID: %s, version ID: %s", request.NodeId, request.VersionId)
 
 	nodeVersion, err := s.RegistryService.GetNodeVersionByVersion(ctx, s.Client, request.NodeId, request.VersionId)
 	if ent.IsNotFound(err) {
@@ -622,7 +592,6 @@ func (s *DripStrictServerImplementation) GetNodeVersion(
 
 func (s *DripStrictServerImplementation) ListPersonalAccessTokens(
 	ctx context.Context, request drip.ListPersonalAccessTokensRequestObject) (drip.ListPersonalAccessTokensResponseObject, error) {
-	log.Ctx(ctx).Info().Msgf("ListPersonalAccessTokens request received for publisher ID: %s", request.PublisherId)
 
 	// List personal access tokens
 	personalAccessTokens, err := s.RegistryService.ListPersonalAccessTokens(ctx, s.Client, request.PublisherId)
@@ -644,9 +613,6 @@ func (s *DripStrictServerImplementation) ListPersonalAccessTokens(
 
 func (s *DripStrictServerImplementation) CreatePersonalAccessToken(
 	ctx context.Context, request drip.CreatePersonalAccessTokenRequestObject) (drip.CreatePersonalAccessTokenResponseObject, error) {
-
-	log.Ctx(ctx).Info().Msgf("CreatePersonalAccessToken request received "+
-		"for publisher ID: %s", request.PublisherId)
 
 	// Create personal access token
 	description := ""
@@ -671,8 +637,6 @@ func (s *DripStrictServerImplementation) CreatePersonalAccessToken(
 
 func (s *DripStrictServerImplementation) DeletePersonalAccessToken(
 	ctx context.Context, request drip.DeletePersonalAccessTokenRequestObject) (drip.DeletePersonalAccessTokenResponseObject, error) {
-
-	log.Ctx(ctx).Info().Msgf("DeletePersonalAccessToken request received for token ID: %s", request.TokenId)
 
 	// Retrieve user ID from context
 	userId, err := mapper.GetUserIDFromContext(ctx)
@@ -713,8 +677,6 @@ func (s *DripStrictServerImplementation) DeletePersonalAccessToken(
 func (s *DripStrictServerImplementation) InstallNode(
 	ctx context.Context, request drip.InstallNodeRequestObject) (drip.InstallNodeResponseObject, error) {
 	// TODO(robinhuang): Refactor to separate class
-	log.Ctx(ctx).Info().Msgf("InstallNode request received for node ID: %s", request.NodeId)
-
 	// Get node
 	node, err := s.RegistryService.GetNode(ctx, s.Client, request.NodeId)
 	if ent.IsNotFound(err) {
@@ -931,7 +893,7 @@ func (s *DripStrictServerImplementation) SecurityScan(
 		maxNodes = *request.Params.MaxNodes
 	}
 
-	nodeVersionsResult, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &drip_services.NodeVersionFilter{
+	nodeVersionsResult, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &entity.NodeVersionFilter{
 		Status:   []schema.NodeVersionStatus{schema.NodeVersionStatusPending},
 		MinAge:   minAge,
 		PageSize: maxNodes,
@@ -955,7 +917,6 @@ func (s *DripStrictServerImplementation) SecurityScan(
 
 func (s *DripStrictServerImplementation) ListAllNodeVersions(
 	ctx context.Context, request drip.ListAllNodeVersionsRequestObject) (drip.ListAllNodeVersionsResponseObject, error) {
-	log.Ctx(ctx).Info().Msgf("ListAllNodeVersions request received %+v", request.Params)
 
 	// Default values for pagination
 	page := 1
@@ -978,7 +939,7 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 		pageSize = *request.Params.PageSize
 	}
 
-	f := &drip_services.NodeVersionFilter{
+	f := &entity.NodeVersionFilter{
 		Page:                page,
 		PageSize:            pageSize,
 		IncludeStatusReason: mapper.BoolPtrToBool(request.Params.IncludeStatusReason),
@@ -1032,7 +993,6 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 }
 
 func (s *DripStrictServerImplementation) ReindexNodes(ctx context.Context, request drip.ReindexNodesRequestObject) (res drip.ReindexNodesResponseObject, err error) {
-	log.Ctx(ctx).Info().Msg("ReindexNodes request received")
 	err = s.RegistryService.ReindexAllNodes(ctx, s.Client)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to reindex all nodes w/ err: %v", err)
@@ -1045,7 +1005,6 @@ func (s *DripStrictServerImplementation) ReindexNodes(ctx context.Context, reque
 
 // CreateComfyNodes bulk-creates comfy-nodes for a node version
 func (impl *DripStrictServerImplementation) CreateComfyNodes(ctx context.Context, request drip.CreateComfyNodesRequestObject) (res drip.CreateComfyNodesResponseObject, err error) {
-	log.Ctx(ctx).Info().Msg("CreateComfyNodes request received")
 	err = impl.RegistryService.CreateComfyNodes(ctx, impl.Client, request.NodeId, request.Version, *request.Body.Nodes)
 	if ent.IsNotFound(err) {
 		log.Ctx(ctx).Error().Msgf("Node or node version not found w/ err: %v", err)
@@ -1066,7 +1025,6 @@ func (impl *DripStrictServerImplementation) CreateComfyNodes(ctx context.Context
 
 // GetComfyNode return a certain comfy-node of a certain node version
 func (impl *DripStrictServerImplementation) GetComfyNode(ctx context.Context, request drip.GetComfyNodeRequestObject) (res drip.GetComfyNodeResponseObject, err error) {
-	log.Ctx(ctx).Info().Msg("GetComfyNode request received")
 
 	n, err := impl.RegistryService.GetComfyNode(ctx, impl.Client, request.NodeId, request.Version, request.ComfyNodeId)
 	if ent.IsNotFound(err) {
@@ -1086,7 +1044,6 @@ func (impl *DripStrictServerImplementation) GetComfyNode(ctx context.Context, re
 }
 
 func (impl *DripStrictServerImplementation) ComfyNodesBackfill(ctx context.Context, request drip.ComfyNodesBackfillRequestObject) (drip.ComfyNodesBackfillResponseObject, error) {
-	log.Ctx(ctx).Info().Msg("ComfyNodesBackfill request received")
 	err := impl.RegistryService.TriggerComfyNodesBackfill(ctx, impl.Client, request.Params.MaxNode)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to trigger comfy nodes backfill w/ err: %v", err)
