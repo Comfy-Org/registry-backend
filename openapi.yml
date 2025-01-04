@@ -82,10 +82,10 @@ paths:
                   format: int64
                   description: The end time of the job as a Unix timestamp.
                 avg_vram:
-                  type: integer 
+                  type: integer
                   description: The average amount of VRAM used in the run.
                 peak_vram:
-                  type: integer 
+                  type: integer
                   description: The peak amount of VRAM used in the run.
                 pr_number:
                   type: string
@@ -1639,7 +1639,12 @@ paths:
                   totalPages:
                     type: integer
                     description: Total number of pages available
-
+        '400':
+          description: Invalid input, object invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Node banned
           content:
@@ -1677,7 +1682,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: 
+            schema:
               type: object
               properties:
                 status:
@@ -1760,7 +1765,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
   /nodes/{nodeId}/versions/{version}/comfy-nodes:
-    post: 
+    post:
       summary: create comfy-nodes for certain node
       operationId: CreateComfyNodes
       tags:
@@ -1780,7 +1785,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: 
+            schema:
               type: object
               properties:
                 nodes:
@@ -1899,7 +1904,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'  
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
     PersonalAccessToken:
@@ -2059,7 +2064,7 @@ components:
         git_repo:
           type: string
           description: The repository name
-        pr_number: 
+        pr_number:
           type: string
           description: The pull request number
         start_time:
@@ -2079,12 +2084,12 @@ components:
         job_trigger_user:
           type: string
           description: The user who triggered the job.
-        author: 
+        author:
           type: string
           description: The author of the commit
         machine_stats:
           $ref: "#/components/schemas/MachineStats"
-        status: 
+        status:
           $ref: "#/components/schemas/WorkflowRunStatus"
         storage_file:
           $ref: "#/components/schemas/StorageFile"
@@ -2224,7 +2229,7 @@ components:
           type: string
           description: The reason for the status change.
         comfy_nodes:
-          type: object 
+          type: object
           additionalProperties:
             $ref: "#/components/schemas/ComfyNode"
         node_id:
