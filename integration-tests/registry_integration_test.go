@@ -736,11 +736,13 @@ func TestRegistryNodeVersion(t *testing.T) {
 				Downloads:     &expDl,
 				Rating:        &expRate,
 				Status:        &nodeStatus,
+				StatusDetail:  proto.String(""),
 				Category:      proto.String(""),
 			}
 			expectedNode.LatestVersion.DownloadUrl = node.LatestVersion.DownloadUrl // generated
 			expectedNode.LatestVersion.Deprecated = node.LatestVersion.Deprecated   // generated
 			expectedNode.LatestVersion.CreatedAt = node.LatestVersion.CreatedAt     // generated
+			expectedNode.LatestVersion.StatusReason = nil                           // Filtered out
 			expectedNode.Publisher.CreatedAt = node.Publisher.CreatedAt
 			assert.Equal(t, expectedNode, node)
 		}
