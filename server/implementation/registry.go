@@ -289,6 +289,7 @@ func (s *DripStrictServerImplementation) ListAllNodes(
 		// attach information of latest version if available
 		if len(dbNode.Edges.Versions) > 0 {
 			apiNode.LatestVersion = mapper.DbNodeVersionToApiNodeVersion(dbNode.Edges.Versions[0])
+			apiNode.LatestVersion.StatusReason = nil
 		}
 
 		// Map publisher information

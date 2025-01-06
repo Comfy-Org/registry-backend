@@ -736,7 +736,6 @@ func TestRegistryNodeVersion(t *testing.T) {
 				Downloads:     &expDl,
 				Rating:        &expRate,
 				Status:        &nodeStatus,
-				StatusDetail:  proto.String(""),
 				Category:      proto.String(""),
 			}
 			expectedNode.LatestVersion.DownloadUrl = node.LatestVersion.DownloadUrl // generated
