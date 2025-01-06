@@ -13,7 +13,7 @@ provider "google" {
 }
 
 module "node_pack_extract_trigger" {
-  source    = "../modules/node-pack-extract-trigger"
+  source = "../modules/node-pack-extract-trigger"
   providers = {
     google = google
   }
@@ -21,7 +21,8 @@ module "node_pack_extract_trigger" {
   region                      = var.region
   bucket_name                 = "comfy-registry"
   cloud_build_service_account = "cloud-scheduler@dreamboothy.iam.gserviceaccount.com"
+  trigger_name                = "comfy-node-pack-extract-staging"
   topic_name                  = "comfy-registry-event-staging"
-  registry_backend_url        = "https://stagingapi.comfy.org"
   backfill_job_name           = "comfy-node-pack-backfill-staging"
+  registry_backend_url        = "https://stagingapi.comfy.org"
 }
