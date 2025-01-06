@@ -11,6 +11,8 @@ steps:
     args:
       - "run"
       - "--env"
+      - "AUTO_UPDATE=true"
+      - "--env"
       - "CUSTOM_NODE_URL=$_CUSTOM_NODE_URL"
       - "--env"
       - "CUSTOM_NODE_NAME=$_CUSTOM_NODE_NAME"
