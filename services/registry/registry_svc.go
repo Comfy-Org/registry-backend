@@ -120,8 +120,8 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 		WithVersions(func(q *ent.NodeVersionQuery) {
 			q.Modify(func(s *sql.Selector) {
 				s.Where(sql.ExprP(
-					`(node_id, create_time) IN (
-						SELECT node_id, MAX(create_time)
+					`(node_id, version) IN (
+						SELECT node_id, MAX(version)
 						FROM node_versions
 						GROUP BY node_id
 					)`,
@@ -557,7 +557,7 @@ func (s *RegistryService) GetLatestNodeVersion(ctx context.Context, client *ent.
 			schema.NodeVersionStatusFlagged,
 			schema.NodeVersionStatusPending,
 		)).
-		Order(ent.Desc(nodeversion.FieldCreateTime)).
+		Order(ent.Desc(nodeversion.FieldVersion)).
 		WithStorageFile().
 		WithComfyNodes().
 		First(ctx)
