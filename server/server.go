@@ -1,10 +1,7 @@
 package server
 
 import (
-	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 	"context"
-	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog/log"
 	"registry-backend/config"
 	generated "registry-backend/drip"
 	"registry-backend/ent"
@@ -17,8 +14,13 @@ import (
 	"registry-backend/server/implementation"
 	"registry-backend/server/middleware"
 	"registry-backend/server/middleware/authentication"
-	"registry-backend/server/middleware/authorization"
+	drip_authorization "registry-backend/server/middleware/authorization"
 	"registry-backend/server/middleware/metric"
+
+	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
+	"github.com/labstack/echo/v4"
+	labstack_middleware "github.com/labstack/echo/v4/middleware"
+	"github.com/rs/zerolog/log"
 )
 
 type ServerDependencies struct {
@@ -93,6 +95,15 @@ func (s *Server) Start() error {
 
 	// Apply middleware
 	e.Use(middleware.TracingMiddleware)
+	e.Use(labstack_middleware.CORSWithConfig(labstack_middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{"*"},
+		AllowHeaders: []string{"*"},
+		AllowOriginFunc: func(origin string) (bool, error) {
+			return true, nil
+		},
+		AllowCredentials: true,
+	}))
 	e.Use(middleware.RequestLoggerMiddleware())
 	e.Use(middleware.ResponseLoggerMiddleware())
 	e.Use(metric.MetricsMiddleware(&s.Dependencies.MonitoringClient, s.Config))
