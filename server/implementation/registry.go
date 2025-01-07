@@ -557,12 +557,20 @@ func (s *DripStrictServerImplementation) PostNodeReview(ctx context.Context, req
 func (s *DripStrictServerImplementation) DeleteNodeVersion(
 	ctx context.Context, request drip.DeleteNodeVersionRequestObject) (drip.DeleteNodeVersionResponseObject, error) {
 
-	// Directly return the message that node versions cannot be deleted
-	errMessage := "Cannot delete node versions. Please deprecate it instead."
-	log.Ctx(ctx).Warn().Msg(errMessage)
-	return drip.DeleteNodeVersion404JSONResponse{
-		Message: proto.String(errMessage),
-	}, nil
+	nodeVersion, err := s.RegistryService.GetNodeVersion(ctx, s.Client, request.VersionId)
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to get node version w/ err: %v", err)
+		return drip.DeleteNodeVersion404JSONResponse{Message: proto.String("Node version not found")}, nil
+	}
+
+	err = s.RegistryService.DeleteNodeVersion(ctx, s.Client, nodeVersion.ID.String())
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to delete node version w/ err: %v", err)
+		return drip.DeleteNodeVersion500JSONResponse{Message: "Failed to delete node version", Error: err.Error()}, err
+	}
+
+	log.Ctx(ctx).Info().Msgf("Node version %s deleted successfully", request.VersionId)
+	return drip.DeleteNodeVersion204Response{}, nil
 }
 
 func (s *DripStrictServerImplementation) GetNodeVersion(
