@@ -400,14 +400,14 @@ func (s *RegistryService) ListNodeVersions(
 	query := client.NodeVersion.Query().
 		WithStorageFile().
 		WithComfyNodes().
-		Order(ent.Desc(nodeversion.FieldCreateTime))
+		Order(ent.Desc(nodeversion.FieldVersion))
 
 	if filter.NodeId != "" {
 		log.Ctx(ctx).Info().Msgf("listing node versions: %v", filter.NodeId)
 		query.Where(nodeversion.NodeIDEQ(filter.NodeId))
 	}
 
-	if filter.Status != nil && len(filter.Status) > 0 {
+	if len(filter.Status) > 0 {
 		log.Ctx(ctx).Info().Msgf("listing node versions with status: %v", filter.Status)
 		query.Where(nodeversion.StatusIn(filter.Status...))
 	}
