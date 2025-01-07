@@ -12,7 +12,6 @@ import (
 	"registry-backend/ent/nodeversion"
 	"registry-backend/ent/schema"
 	drip_logging "registry-backend/logging"
-	"registry-backend/mapper"
 	"registry-backend/mock/gateways"
 	"registry-backend/server/implementation"
 	drip_authorization "registry-backend/server/middleware/authorization"
@@ -884,21 +883,31 @@ func TestRegistryComfyNode(t *testing.T) {
 
 	// create node version
 	node := randomNode()
+	nodeVersion := randomNodeVersion(0)
 	signedUrl := "test-url"
 	impl.mockStorageService.On("GenerateSignedURL", mock.Anything, mock.Anything).Return(signedUrl, nil)
 	impl.mockStorageService.On("GetFileUrl", mock.Anything, mock.Anything, mock.Anything).Return(signedUrl, nil)
 	impl.mockDiscordService.On("SendSecurityCouncilMessage", mock.Anything, mock.Anything).Return(nil)
+	_, err = withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
+		PublisherId: *pub.Id,
+		NodeId:      *node.Id,
+		Body: &drip.PublishNodeVersionJSONRequestBody{
+			PersonalAccessToken: token,
+			Node:                *node,
+			NodeVersion:         *nodeVersion,
+		},
+	})
+	require.NoError(t, err, "should not return error")
 
-	// create  node versions
-	nodeVersions := []*drip.NodeVersion{
-		randomNodeVersion(0),
+	// create another node versions
+	nodeVersionToBeBackfill := []*drip.NodeVersion{
 		randomNodeVersion(1),
 		randomNodeVersion(2),
 		randomNodeVersion(3),
 		randomNodeVersion(4),
 		randomNodeVersion(5),
 	}
-	for _, nv := range nodeVersions {
+	for _, nv := range nodeVersionToBeBackfill {
 		_, err = withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
 			PublisherId: *pub.Id,
 			NodeId:      *node.Id,
@@ -910,8 +919,6 @@ func TestRegistryComfyNode(t *testing.T) {
 		})
 		require.NoError(t, err, "should not return error")
 	}
-	nodeVersion := nodeVersions[len(nodeVersions)-1]
-	backfilledNodeVersions := nodeVersions[:len(nodeVersions)-1]
 
 	t.Run("NoComfyNode", func(t *testing.T) {
 		res, err := withMiddleware(authz, impl.GetNodeVersion)(ctx, drip.GetNodeVersionRequestObject{
@@ -958,29 +965,6 @@ func TestRegistryComfyNode(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.IsType(t, drip.CreateComfyNodes204Response{}, res)
-
-	t.Run("AssertAlgolia", func(t *testing.T) {
-		indexed := impl.mockAlgolia.LastIndexedNodes
-		require.Len(t, impl.mockAlgolia.LastIndexedNodes, 1)
-
-		node, err := client.Node.Get(ctx, *node.Id)
-		require.NoError(t, err)
-		nodeVersion, err := client.NodeVersion.Query().Where(nodeversion.Version(*nodeVersion.Version)).WithComfyNodes().Only(ctx)
-		require.NoError(t, err)
-		node.Edges.Versions = append(node.Edges.Versions, nodeVersion)
-
-		assert.Equal(t, node.ID, indexed[0].ID)
-		assert.Equal(t, node.Edges.Versions[0].ID, indexed[0].Edges.Versions[0].ID)
-		indexedComfyNodes := drip.CreateComfyNodesJSONRequestBody{
-			Nodes: &map[string]drip.ComfyNode{},
-		}
-		for _, node := range indexed[0].Edges.Versions[0].Edges.ComfyNodes {
-			cn := *(mapper.DBComfyNodeToApiComfyNode(node))
-			cn.ComfyNodeId = nil
-			(*indexedComfyNodes.Nodes)[node.ID] = cn
-		}
-		assert.Equal(t, comfyNodes, indexedComfyNodes)
-	})
 
 	t.Run("GetComfyNodes", func(t *testing.T) {
 		for k, v := range *comfyNodes.Nodes {
@@ -1072,8 +1056,8 @@ func TestRegistryComfyNode(t *testing.T) {
 			res, err := withMiddleware(authz, impl.ComfyNodesBackfill)(ctx, drip.ComfyNodesBackfillRequestObject{})
 			require.NoError(t, err, "should return created node version")
 			require.IsType(t, drip.ComfyNodesBackfill204Response{}, res)
-			impl.mockPubsubService.AssertNumberOfCalls(t, "PublishNodePack", len(backfilledNodeVersions)+mockCalled)
-			mockCalled += len(backfilledNodeVersions)
+			impl.mockPubsubService.AssertNumberOfCalls(t, "PublishNodePack", len(nodeVersionToBeBackfill)+mockCalled)
+			mockCalled += len(nodeVersionToBeBackfill)
 		})
 
 		t.Run("Limited", func(t *testing.T) {

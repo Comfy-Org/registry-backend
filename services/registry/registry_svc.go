@@ -116,8 +116,21 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 	}
 
 	// Fetch nodes with pagination
-	query = s.decorateNodeQueryWithLatestVersion(query).Offset(offset).Limit(limit)
-	nodes, err := query.All(ctx)
+	nodes, err := query.
+		WithVersions(func(q *ent.NodeVersionQuery) {
+			q.Modify(func(s *sql.Selector) {
+				s.Where(sql.ExprP(
+					`(node_id, create_time) IN (
+						SELECT node_id, MAX(create_time)
+						FROM node_versions
+						GROUP BY node_id
+					)`,
+				))
+			})
+		}).
+		Offset(offset).
+		Limit(limit).
+		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list nodes: %w", err)
 	}
@@ -282,28 +295,25 @@ func (s *RegistryService) CreateNode(ctx context.Context, client *ent.Client, pu
 	return createdNode, err
 }
 
-func (s *RegistryService) UpdateNode(
-	ctx context.Context,
-	client *ent.Client,
-	updateFunc func(client *ent.Client) *ent.NodeUpdateOne) (*ent.Node, error) {
-	var n *ent.Node
+func (s *RegistryService) UpdateNode(ctx context.Context, client *ent.Client, updateFunc func(client *ent.Client) *ent.NodeUpdateOne) (*ent.Node, error) {
+	var node *ent.Node
 	err := db.WithTx(ctx, client, func(tx *ent.Tx) (err error) {
 		update := updateFunc(tx.Client())
 		log.Ctx(ctx).Info().Msgf("updating node fields: %v", update.Mutation().Fields())
 
-		n, err = update.Save(ctx)
+		node, err = update.Save(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to update node: %w", err)
 		}
 
-		_, err = s.indexNodeWithLatestVersion(ctx, tx.Client(), n.ID)
+		err = s.algolia.IndexNodes(ctx, node)
 		if err != nil {
 			return fmt.Errorf("failed to index node: %w", err)
 		}
 
 		return err
 	})
-	return n, err
+	return node, err
 }
 
 func (s *RegistryService) GetNode(ctx context.Context, client *ent.Client, nodeID string) (*ent.Node, error) {
@@ -454,7 +464,7 @@ func (s *RegistryService) ListNodeVersions(
 	}, nil
 }
 
-func (s *RegistryService) AddNodeReview(ctx context.Context, client *ent.Client, nodeId, userID string, star int) (n *ent.Node, err error) {
+func (s *RegistryService) AddNodeReview(ctx context.Context, client *ent.Client, nodeId, userID string, star int) (nv *ent.Node, err error) {
 	log.Ctx(ctx).Info().Msgf("add review to node: %v ", nodeId)
 
 	err = db.WithTx(ctx, client, func(tx *ent.Tx) error {
@@ -477,11 +487,16 @@ func (s *RegistryService) AddNodeReview(ctx context.Context, client *ent.Client,
 			return fmt.Errorf("fail to add review: %w", err)
 		}
 
-		n, err = s.indexNodeWithLatestVersion(ctx, tx.Client(), nodeId)
+		nv, err = s.GetNode(ctx, tx.Client(), nodeId)
+		if err != nil {
+			return fmt.Errorf("fail to fetch node s")
+		}
+
+		err = s.algolia.IndexNodes(ctx, nv)
 		if err != nil {
 			return fmt.Errorf("failed to index node: %w", err)
 		}
-		n.Edges.Versions = nil
+
 		return nil
 	})
 
@@ -519,12 +534,11 @@ func (s *RegistryService) UpdateNodeVersion(ctx context.Context, client *ent.Cli
 func (s *RegistryService) RecordNodeInstallation(ctx context.Context, client *ent.Client, node *ent.Node) (*ent.Node, error) {
 	var n *ent.Node
 	err := db.WithTx(ctx, client, func(tx *ent.Tx) (err error) {
-		n, err = tx.Node.UpdateOne(node).AddTotalInstall(1).Save(ctx)
+		node, err = tx.Node.UpdateOne(node).AddTotalInstall(1).Save(ctx)
 		if err != nil {
 			return err
 		}
-
-		_, err = s.indexNodeWithLatestVersion(ctx, tx.Client(), n.ID)
+		err = s.algolia.IndexNodes(ctx, node)
 		if err != nil {
 			return fmt.Errorf("failed to index node: %w", err)
 		}
@@ -566,7 +580,7 @@ var ErrComfyNodesAlreadyExist = errors.New("comfy nodes already exist")
 
 func (s *RegistryService) CreateComfyNodes(ctx context.Context, client *ent.Client, nodeID string, nodeVersion string, comfyNodes map[string]drip.ComfyNode) (err error) {
 	return db.WithTx(ctx, client, func(tx *ent.Tx) error {
-		nv, err := tx.NodeVersion.Query().
+		nv, err := client.NodeVersion.Query().
 			Where(nodeversion.VersionEQ(nodeVersion)).
 			Where(nodeversion.NodeIDEQ(nodeID)).
 			WithComfyNodes().
@@ -582,7 +596,7 @@ func (s *RegistryService) CreateComfyNodes(ctx context.Context, client *ent.Clie
 
 		comfyNodesCreates := make([]*ent.ComfyNodeCreate, 0, len(comfyNodes))
 		for k, n := range comfyNodes {
-			comfyNodeCreate := tx.ComfyNode.Create().
+			comfyNodeCreate := client.ComfyNode.Create().
 				SetID(k).
 				SetNodeVersionID(nv.ID)
 
@@ -615,19 +629,9 @@ func (s *RegistryService) CreateComfyNodes(ctx context.Context, client *ent.Clie
 			}
 			comfyNodesCreates = append(comfyNodesCreates, comfyNodeCreate)
 		}
-
-		err = tx.ComfyNode.
+		return client.ComfyNode.
 			CreateBulk(comfyNodesCreates...).
 			Exec(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to update comfy nodes: %w", err)
-		}
-
-		if _, err := s.indexNodeWithLatestVersion(ctx, tx.Client(), nodeID); err != nil {
-			return fmt.Errorf("failed to update node index")
-		}
-
-		return nil
 	})
 
 }
@@ -855,10 +859,7 @@ func (s *RegistryService) BanPublisher(ctx context.Context, client *ent.Client, 
 			return fmt.Errorf("fail to update users: %w", err)
 		}
 
-		nodes, err := s.decorateNodeQueryWithLatestVersion(
-			tx.Node.Query().
-				Where(node.PublisherID(id)),
-		).All(ctx)
+		nodes, err := tx.Node.Query().Where(node.PublisherID(id)).All(ctx)
 		if len(nodes) == 0 || ent.IsNotFound(err) {
 			return nil
 		}
@@ -881,13 +882,10 @@ func (s *RegistryService) BanNode(ctx context.Context, client *ent.Client, publi
 	log.Ctx(ctx).Info().Msgf("banning publisher node: %v %v", publisherid, id)
 
 	return db.WithTx(ctx, client, func(tx *ent.Tx) error {
-		n, err := s.decorateNodeQueryWithLatestVersion(
-			tx.Node.Query().
-				Where(node.And(
-					node.IDEQ(id),
-					node.PublisherIDEQ(publisherid),
-				))).
-			Only(ctx)
+		n, err := tx.Node.Query().Where(node.And(
+			node.IDEQ(id),
+			node.PublisherIDEQ(publisherid),
+		)).Only(ctx)
 		if ent.IsNotFound(err) {
 			return nil
 		}
@@ -942,9 +940,25 @@ func (s *RegistryService) AssertPublisherBanned(ctx context.Context, client *ent
 
 func (s *RegistryService) ReindexAllNodes(ctx context.Context, client *ent.Client) error {
 	log.Ctx(ctx).Info().Msgf("reindexing nodes")
-	nodes, err := s.decorateNodeQueryWithLatestVersion(client.Node.Query()).All(ctx)
+	nodes, err := client.Node.Query().
+		WithVersions(func(q *ent.NodeVersionQuery) {
+			q.Modify(func(s *sql.Selector) {
+				s.Where(sql.ExprP(
+					`(node_id, create_time) IN (
+						SELECT node_id, MAX(create_time)
+						FROM node_versions
+						GROUP BY node_id
+					)`,
+				))
+			})
+		}).All(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch all nodes: %w", err)
+	}
+
+	nvs := []*ent.NodeVersion{}
+	for _, node := range nodes {
+		nvs = append(nvs, node.Edges.Versions...)
 	}
 
 	log.Ctx(ctx).Info().Msgf("reindexing %d number of nodes", len(nodes))
@@ -953,54 +967,15 @@ func (s *RegistryService) ReindexAllNodes(ctx context.Context, client *ent.Clien
 		return fmt.Errorf("failed to reindex all nodes: %w", err)
 	}
 
-	var nvs []*ent.NodeVersion
-	for _, n := range nodes {
-		nvs = append(nvs, n.Edges.Versions...)
-	}
-
-	log.Ctx(ctx).Info().Msgf("reindexing %d number of n versions", len(nvs))
+	log.Ctx(ctx).Info().Msgf("reindexing %d number of node versions", len(nvs))
 	err = s.algolia.IndexNodeVersions(ctx, nvs...)
 	if err != nil {
-		return fmt.Errorf("failed to reindex all n versions: %w", err)
+		return fmt.Errorf("failed to reindex all node versions: %w", err)
 	}
 	return nil
 }
 
-// indexNodeWithLatestVersion re-indexes a single node and its latest version
-func (s *RegistryService) indexNodeWithLatestVersion(
-	ctx context.Context,
-	client *ent.Client,
-	nodeID string) (*ent.Node, error) {
-	n, err := s.decorateNodeQueryWithLatestVersion(
-		client.Node.Query().
-			Where(node.IDEQ(nodeID)),
-	).Only(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query node: %w", err)
-	}
-	if err := s.algolia.IndexNodes(ctx, n); err != nil {
-		return nil, fmt.Errorf("failed to update node")
-	}
-	return n, nil
-}
-
-func (s *RegistryService) decorateNodeQueryWithLatestVersion(q *ent.NodeQuery) *ent.NodeQuery {
-	return q.WithVersions(func(q *ent.NodeVersionQuery) {
-		q.WithComfyNodes().
-			Modify(func(s *sql.Selector) {
-				s.Where(sql.ExprP(
-					`(node_id, create_time) IN (
-					SELECT node_id, MAX(create_time)
-					FROM node_versions
-					GROUP BY node_id
-				)`,
-				))
-			})
-	})
-}
-
-func (s *RegistryService) PerformSecurityCheck(
-	ctx context.Context, client *ent.Client, nodeVersion *ent.NodeVersion) error {
+func (s *RegistryService) PerformSecurityCheck(ctx context.Context, client *ent.Client, nodeVersion *ent.NodeVersion) error {
 	log.Ctx(ctx).Info().Msgf("Scanning node %s@%s w/ version ID: %s",
 		nodeVersion.NodeID, nodeVersion.Version, nodeVersion.ID)
 

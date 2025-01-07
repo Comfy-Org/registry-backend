@@ -12,13 +12,10 @@ var _ algolia.AlgoliaService = &MockAlgoliaService{}
 
 type MockAlgoliaService struct {
 	mock.Mock
-
-	LastIndexedNodes []*ent.Node
 }
 
 // IndexNodes implements algolia.AlgoliaService.
 func (m *MockAlgoliaService) IndexNodes(ctx context.Context, n ...*ent.Node) error {
-	m.LastIndexedNodes = n
 	args := m.Called(ctx, n)
 	return args.Error(0)
 }
