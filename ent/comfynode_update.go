@@ -264,7 +264,7 @@ func (cnu *ComfyNodeUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (cnu *ComfyNodeUpdate) check() error {
-	if _, ok := cnu.mutation.VersionsID(); cnu.mutation.VersionsCleared() && !ok {
+	if cnu.mutation.VersionsCleared() && len(cnu.mutation.VersionsIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "ComfyNode.versions"`)
 	}
 	return nil
@@ -639,7 +639,7 @@ func (cnuo *ComfyNodeUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (cnuo *ComfyNodeUpdateOne) check() error {
-	if _, ok := cnuo.mutation.VersionsID(); cnuo.mutation.VersionsCleared() && !ok {
+	if cnuo.mutation.VersionsCleared() && len(cnuo.mutation.VersionsIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "ComfyNode.versions"`)
 	}
 	return nil

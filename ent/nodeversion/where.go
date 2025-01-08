@@ -92,6 +92,12 @@ func StatusReason(v string) predicate.NodeVersion {
 	return predicate.NodeVersion(sql.FieldEQ(FieldStatusReason, v))
 }
 
+// ComfyNodeExtractStatus applies equality check predicate on the "comfy_node_extract_status" field. It's identical to ComfyNodeExtractStatusEQ.
+func ComfyNodeExtractStatus(v schema.ComfyNodeExtractStatus) predicate.NodeVersion {
+	vc := string(v)
+	return predicate.NodeVersion(sql.FieldEQ(FieldComfyNodeExtractStatus, vc))
+}
+
 // CreateTimeEQ applies the EQ predicate on the "create_time" field.
 func CreateTimeEQ(v time.Time) predicate.NodeVersion {
 	return predicate.NodeVersion(sql.FieldEQ(FieldCreateTime, v))
@@ -480,6 +486,90 @@ func StatusReasonEqualFold(v string) predicate.NodeVersion {
 // StatusReasonContainsFold applies the ContainsFold predicate on the "status_reason" field.
 func StatusReasonContainsFold(v string) predicate.NodeVersion {
 	return predicate.NodeVersion(sql.FieldContainsFold(FieldStatusReason, v))
+}
+
+// ComfyNodeExtractStatusEQ applies the EQ predicate on the "comfy_node_extract_status" field.
+func ComfyNodeExtractStatusEQ(v schema.ComfyNodeExtractStatus) predicate.NodeVersion {
+	vc := string(v)
+	return predicate.NodeVersion(sql.FieldEQ(FieldComfyNodeExtractStatus, vc))
+}
+
+// ComfyNodeExtractStatusNEQ applies the NEQ predicate on the "comfy_node_extract_status" field.
+func ComfyNodeExtractStatusNEQ(v schema.ComfyNodeExtractStatus) predicate.NodeVersion {
+	vc := string(v)
+	return predicate.NodeVersion(sql.FieldNEQ(FieldComfyNodeExtractStatus, vc))
+}
+
+// ComfyNodeExtractStatusIn applies the In predicate on the "comfy_node_extract_status" field.
+func ComfyNodeExtractStatusIn(vs ...schema.ComfyNodeExtractStatus) predicate.NodeVersion {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = string(vs[i])
+	}
+	return predicate.NodeVersion(sql.FieldIn(FieldComfyNodeExtractStatus, v...))
+}
+
+// ComfyNodeExtractStatusNotIn applies the NotIn predicate on the "comfy_node_extract_status" field.
+func ComfyNodeExtractStatusNotIn(vs ...schema.ComfyNodeExtractStatus) predicate.NodeVersion {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = string(vs[i])
+	}
+	return predicate.NodeVersion(sql.FieldNotIn(FieldComfyNodeExtractStatus, v...))
+}
+
+// ComfyNodeExtractStatusGT applies the GT predicate on the "comfy_node_extract_status" field.
+func ComfyNodeExtractStatusGT(v schema.ComfyNodeExtractStatus) predicate.NodeVersion {
+	vc := string(v)
+	return predicate.NodeVersion(sql.FieldGT(FieldComfyNodeExtractStatus, vc))
+}
+
+// ComfyNodeExtractStatusGTE applies the GTE predicate on the "comfy_node_extract_status" field.
+func ComfyNodeExtractStatusGTE(v schema.ComfyNodeExtractStatus) predicate.NodeVersion {
+	vc := string(v)
+	return predicate.NodeVersion(sql.FieldGTE(FieldComfyNodeExtractStatus, vc))
+}
+
+// ComfyNodeExtractStatusLT applies the LT predicate on the "comfy_node_extract_status" field.
+func ComfyNodeExtractStatusLT(v schema.ComfyNodeExtractStatus) predicate.NodeVersion {
+	vc := string(v)
+	return predicate.NodeVersion(sql.FieldLT(FieldComfyNodeExtractStatus, vc))
+}
+
+// ComfyNodeExtractStatusLTE applies the LTE predicate on the "comfy_node_extract_status" field.
+func ComfyNodeExtractStatusLTE(v schema.ComfyNodeExtractStatus) predicate.NodeVersion {
+	vc := string(v)
+	return predicate.NodeVersion(sql.FieldLTE(FieldComfyNodeExtractStatus, vc))
+}
+
+// ComfyNodeExtractStatusContains applies the Contains predicate on the "comfy_node_extract_status" field.
+func ComfyNodeExtractStatusContains(v schema.ComfyNodeExtractStatus) predicate.NodeVersion {
+	vc := string(v)
+	return predicate.NodeVersion(sql.FieldContains(FieldComfyNodeExtractStatus, vc))
+}
+
+// ComfyNodeExtractStatusHasPrefix applies the HasPrefix predicate on the "comfy_node_extract_status" field.
+func ComfyNodeExtractStatusHasPrefix(v schema.ComfyNodeExtractStatus) predicate.NodeVersion {
+	vc := string(v)
+	return predicate.NodeVersion(sql.FieldHasPrefix(FieldComfyNodeExtractStatus, vc))
+}
+
+// ComfyNodeExtractStatusHasSuffix applies the HasSuffix predicate on the "comfy_node_extract_status" field.
+func ComfyNodeExtractStatusHasSuffix(v schema.ComfyNodeExtractStatus) predicate.NodeVersion {
+	vc := string(v)
+	return predicate.NodeVersion(sql.FieldHasSuffix(FieldComfyNodeExtractStatus, vc))
+}
+
+// ComfyNodeExtractStatusEqualFold applies the EqualFold predicate on the "comfy_node_extract_status" field.
+func ComfyNodeExtractStatusEqualFold(v schema.ComfyNodeExtractStatus) predicate.NodeVersion {
+	vc := string(v)
+	return predicate.NodeVersion(sql.FieldEqualFold(FieldComfyNodeExtractStatus, vc))
+}
+
+// ComfyNodeExtractStatusContainsFold applies the ContainsFold predicate on the "comfy_node_extract_status" field.
+func ComfyNodeExtractStatusContainsFold(v schema.ComfyNodeExtractStatus) predicate.NodeVersion {
+	vc := string(v)
+	return predicate.NodeVersion(sql.FieldContainsFold(FieldComfyNodeExtractStatus, vc))
 }
 
 // HasNode applies the HasEdge predicate on the "node" edge.

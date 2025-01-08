@@ -165,7 +165,7 @@ func (patc *PersonalAccessTokenCreate) check() error {
 	if _, ok := patc.mutation.Token(); !ok {
 		return &ValidationError{Name: "token", err: errors.New(`ent: missing required field "PersonalAccessToken.token"`)}
 	}
-	if _, ok := patc.mutation.PublisherID(); !ok {
+	if len(patc.mutation.PublisherIDs()) == 0 {
 		return &ValidationError{Name: "publisher", err: errors.New(`ent: missing required edge "PersonalAccessToken.publisher"`)}
 	}
 	return nil

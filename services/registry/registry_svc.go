@@ -570,6 +570,17 @@ func (s *RegistryService) GetLatestNodeVersion(ctx context.Context, client *ent.
 
 var ErrComfyNodesAlreadyExist = errors.New("comfy nodes already exist")
 
+func (s *RegistryService) MarKComfyNodeExtractionFailed(ctx context.Context, client *ent.Client, nodeID string, nodeVersion string) error {
+	return client.NodeVersion.
+		Update().
+		Where(
+			nodeversion.NodeIDEQ(nodeID),
+			nodeversion.VersionEQ(nodeVersion),
+		).
+		SetComfyNodeExtractStatus(schema.ComfyNodeExtractStatusFailed).
+		Exec(ctx)
+}
+
 func (s *RegistryService) CreateComfyNodes(ctx context.Context, client *ent.Client, nodeID string, nodeVersion string, comfyNodes map[string]drip.ComfyNode) (err error) {
 	return db.WithTx(ctx, client, func(tx *ent.Tx) error {
 		nv, err := tx.NodeVersion.Query().
@@ -629,6 +640,11 @@ func (s *RegistryService) CreateComfyNodes(ctx context.Context, client *ent.Clie
 			return fmt.Errorf("failed to update comfy nodes: %w", err)
 		}
 
+		err = nv.Update().SetComfyNodeExtractStatus(schema.ComfyNodeExtractStatusSuccess).Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update comfy nodes extraction status: %w", err)
+		}
+
 		if _, err := s.indexNodeWithLatestVersion(ctx, tx.Client(), nodeID); err != nil {
 			return fmt.Errorf("failed to update node index")
 		}
@@ -642,6 +658,7 @@ func (s *RegistryService) GetComfyNode(ctx context.Context, client *ent.Client, 
 	nv, err := client.NodeVersion.Query().
 		Where(nodeversion.VersionEQ(nodeVersion)).
 		Where(nodeversion.NodeIDEQ(nodeID)).
+		Where(nodeversion.ComfyNodeExtractStatusEQ(schema.ComfyNodeExtractStatusSuccess)).
 		WithComfyNodes(func(cnq *ent.ComfyNodeQuery) {
 			cnq.Where(comfynode.IDEQ(comfyNodeID))
 		}).
@@ -656,7 +673,7 @@ func (s *RegistryService) TriggerComfyNodesBackfill(ctx context.Context, client 
 	q := client.NodeVersion.
 		Query().
 		WithStorageFile().
-		Where(nodeversion.Not(nodeversion.HasComfyNodes()))
+		Where(nodeversion.ComfyNodeExtractStatusEQ(schema.ComfyNodeExtractStatusPending))
 	if max != nil {
 		q.Limit(*max)
 	}

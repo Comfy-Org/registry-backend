@@ -146,7 +146,7 @@ func (patu *PersonalAccessTokenUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (patu *PersonalAccessTokenUpdate) check() error {
-	if _, ok := patu.mutation.PublisherID(); patu.mutation.PublisherCleared() && !ok {
+	if patu.mutation.PublisherCleared() && len(patu.mutation.PublisherIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "PersonalAccessToken.publisher"`)
 	}
 	return nil
@@ -362,7 +362,7 @@ func (patuo *PersonalAccessTokenUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (patuo *PersonalAccessTokenUpdateOne) check() error {
-	if _, ok := patuo.mutation.PublisherID(); patuo.mutation.PublisherCleared() && !ok {
+	if patuo.mutation.PublisherCleared() && len(patuo.mutation.PublisherIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "PersonalAccessToken.publisher"`)
 	}
 	return nil

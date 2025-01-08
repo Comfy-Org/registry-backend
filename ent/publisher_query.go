@@ -13,6 +13,7 @@ import (
 	"registry-backend/ent/publisher"
 	"registry-backend/ent/publisherpermission"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -135,7 +136,7 @@ func (pq *PublisherQuery) QueryPersonalAccessTokens() *PersonalAccessTokenQuery 
 // First returns the first Publisher entity from the query.
 // Returns a *NotFoundError when no Publisher was found.
 func (pq *PublisherQuery) First(ctx context.Context) (*Publisher, error) {
-	nodes, err := pq.Limit(1).All(setContextOp(ctx, pq.ctx, "First"))
+	nodes, err := pq.Limit(1).All(setContextOp(ctx, pq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +159,7 @@ func (pq *PublisherQuery) FirstX(ctx context.Context) *Publisher {
 // Returns a *NotFoundError when no Publisher ID was found.
 func (pq *PublisherQuery) FirstID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = pq.Limit(1).IDs(setContextOp(ctx, pq.ctx, "FirstID")); err != nil {
+	if ids, err = pq.Limit(1).IDs(setContextOp(ctx, pq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -181,7 +182,7 @@ func (pq *PublisherQuery) FirstIDX(ctx context.Context) string {
 // Returns a *NotSingularError when more than one Publisher entity is found.
 // Returns a *NotFoundError when no Publisher entities are found.
 func (pq *PublisherQuery) Only(ctx context.Context) (*Publisher, error) {
-	nodes, err := pq.Limit(2).All(setContextOp(ctx, pq.ctx, "Only"))
+	nodes, err := pq.Limit(2).All(setContextOp(ctx, pq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +210,7 @@ func (pq *PublisherQuery) OnlyX(ctx context.Context) *Publisher {
 // Returns a *NotFoundError when no entities are found.
 func (pq *PublisherQuery) OnlyID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = pq.Limit(2).IDs(setContextOp(ctx, pq.ctx, "OnlyID")); err != nil {
+	if ids, err = pq.Limit(2).IDs(setContextOp(ctx, pq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -234,7 +235,7 @@ func (pq *PublisherQuery) OnlyIDX(ctx context.Context) string {
 
 // All executes the query and returns a list of Publishers.
 func (pq *PublisherQuery) All(ctx context.Context) ([]*Publisher, error) {
-	ctx = setContextOp(ctx, pq.ctx, "All")
+	ctx = setContextOp(ctx, pq.ctx, ent.OpQueryAll)
 	if err := pq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -256,7 +257,7 @@ func (pq *PublisherQuery) IDs(ctx context.Context) (ids []string, err error) {
 	if pq.ctx.Unique == nil && pq.path != nil {
 		pq.Unique(true)
 	}
-	ctx = setContextOp(ctx, pq.ctx, "IDs")
+	ctx = setContextOp(ctx, pq.ctx, ent.OpQueryIDs)
 	if err = pq.Select(publisher.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -274,7 +275,7 @@ func (pq *PublisherQuery) IDsX(ctx context.Context) []string {
 
 // Count returns the count of the given query.
 func (pq *PublisherQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, pq.ctx, "Count")
+	ctx = setContextOp(ctx, pq.ctx, ent.OpQueryCount)
 	if err := pq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -292,7 +293,7 @@ func (pq *PublisherQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (pq *PublisherQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, pq.ctx, "Exist")
+	ctx = setContextOp(ctx, pq.ctx, ent.OpQueryExist)
 	switch _, err := pq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -328,8 +329,9 @@ func (pq *PublisherQuery) Clone() *PublisherQuery {
 		withNodes:                pq.withNodes.Clone(),
 		withPersonalAccessTokens: pq.withPersonalAccessTokens.Clone(),
 		// clone intermediate query.
-		sql:  pq.sql.Clone(),
-		path: pq.path,
+		sql:       pq.sql.Clone(),
+		path:      pq.path,
+		modifiers: append([]func(*sql.Selector){}, pq.modifiers...),
 	}
 }
 
@@ -723,7 +725,7 @@ func (pgb *PublisherGroupBy) Aggregate(fns ...AggregateFunc) *PublisherGroupBy {
 
 // Scan applies the selector query and scans the result into the given value.
 func (pgb *PublisherGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, pgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, pgb.build.ctx, ent.OpQueryGroupBy)
 	if err := pgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -771,7 +773,7 @@ func (ps *PublisherSelect) Aggregate(fns ...AggregateFunc) *PublisherSelect {
 
 // Scan applies the selector query and scans the result into the given value.
 func (ps *PublisherSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, ps.ctx, "Select")
+	ctx = setContextOp(ctx, ps.ctx, ent.OpQuerySelect)
 	if err := ps.prepareQuery(ctx); err != nil {
 		return err
 	}

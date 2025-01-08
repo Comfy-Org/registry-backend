@@ -12,6 +12,7 @@ import (
 	"registry-backend/ent/predicate"
 	"registry-backend/ent/storagefile"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -113,7 +114,7 @@ func (cwrq *CIWorkflowResultQuery) QueryStorageFile() *StorageFileQuery {
 // First returns the first CIWorkflowResult entity from the query.
 // Returns a *NotFoundError when no CIWorkflowResult was found.
 func (cwrq *CIWorkflowResultQuery) First(ctx context.Context) (*CIWorkflowResult, error) {
-	nodes, err := cwrq.Limit(1).All(setContextOp(ctx, cwrq.ctx, "First"))
+	nodes, err := cwrq.Limit(1).All(setContextOp(ctx, cwrq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +137,7 @@ func (cwrq *CIWorkflowResultQuery) FirstX(ctx context.Context) *CIWorkflowResult
 // Returns a *NotFoundError when no CIWorkflowResult ID was found.
 func (cwrq *CIWorkflowResultQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = cwrq.Limit(1).IDs(setContextOp(ctx, cwrq.ctx, "FirstID")); err != nil {
+	if ids, err = cwrq.Limit(1).IDs(setContextOp(ctx, cwrq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -159,7 +160,7 @@ func (cwrq *CIWorkflowResultQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Returns a *NotSingularError when more than one CIWorkflowResult entity is found.
 // Returns a *NotFoundError when no CIWorkflowResult entities are found.
 func (cwrq *CIWorkflowResultQuery) Only(ctx context.Context) (*CIWorkflowResult, error) {
-	nodes, err := cwrq.Limit(2).All(setContextOp(ctx, cwrq.ctx, "Only"))
+	nodes, err := cwrq.Limit(2).All(setContextOp(ctx, cwrq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +188,7 @@ func (cwrq *CIWorkflowResultQuery) OnlyX(ctx context.Context) *CIWorkflowResult 
 // Returns a *NotFoundError when no entities are found.
 func (cwrq *CIWorkflowResultQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = cwrq.Limit(2).IDs(setContextOp(ctx, cwrq.ctx, "OnlyID")); err != nil {
+	if ids, err = cwrq.Limit(2).IDs(setContextOp(ctx, cwrq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -212,7 +213,7 @@ func (cwrq *CIWorkflowResultQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 
 // All executes the query and returns a list of CIWorkflowResults.
 func (cwrq *CIWorkflowResultQuery) All(ctx context.Context) ([]*CIWorkflowResult, error) {
-	ctx = setContextOp(ctx, cwrq.ctx, "All")
+	ctx = setContextOp(ctx, cwrq.ctx, ent.OpQueryAll)
 	if err := cwrq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -234,7 +235,7 @@ func (cwrq *CIWorkflowResultQuery) IDs(ctx context.Context) (ids []uuid.UUID, er
 	if cwrq.ctx.Unique == nil && cwrq.path != nil {
 		cwrq.Unique(true)
 	}
-	ctx = setContextOp(ctx, cwrq.ctx, "IDs")
+	ctx = setContextOp(ctx, cwrq.ctx, ent.OpQueryIDs)
 	if err = cwrq.Select(ciworkflowresult.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -252,7 +253,7 @@ func (cwrq *CIWorkflowResultQuery) IDsX(ctx context.Context) []uuid.UUID {
 
 // Count returns the count of the given query.
 func (cwrq *CIWorkflowResultQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, cwrq.ctx, "Count")
+	ctx = setContextOp(ctx, cwrq.ctx, ent.OpQueryCount)
 	if err := cwrq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -270,7 +271,7 @@ func (cwrq *CIWorkflowResultQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (cwrq *CIWorkflowResultQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, cwrq.ctx, "Exist")
+	ctx = setContextOp(ctx, cwrq.ctx, ent.OpQueryExist)
 	switch _, err := cwrq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -305,8 +306,9 @@ func (cwrq *CIWorkflowResultQuery) Clone() *CIWorkflowResultQuery {
 		withGitcommit:   cwrq.withGitcommit.Clone(),
 		withStorageFile: cwrq.withStorageFile.Clone(),
 		// clone intermediate query.
-		sql:  cwrq.sql.Clone(),
-		path: cwrq.path,
+		sql:       cwrq.sql.Clone(),
+		path:      cwrq.path,
+		modifiers: append([]func(*sql.Selector){}, cwrq.modifiers...),
 	}
 }
 
@@ -656,7 +658,7 @@ func (cwrgb *CIWorkflowResultGroupBy) Aggregate(fns ...AggregateFunc) *CIWorkflo
 
 // Scan applies the selector query and scans the result into the given value.
 func (cwrgb *CIWorkflowResultGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, cwrgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, cwrgb.build.ctx, ent.OpQueryGroupBy)
 	if err := cwrgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -704,7 +706,7 @@ func (cwrs *CIWorkflowResultSelect) Aggregate(fns ...AggregateFunc) *CIWorkflowR
 
 // Scan applies the selector query and scans the result into the given value.
 func (cwrs *CIWorkflowResultSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, cwrs.ctx, "Select")
+	ctx = setContextOp(ctx, cwrs.ctx, ent.OpQuerySelect)
 	if err := cwrs.prepareQuery(ctx); err != nil {
 		return err
 	}

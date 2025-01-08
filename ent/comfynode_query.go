@@ -10,6 +10,7 @@ import (
 	"registry-backend/ent/nodeversion"
 	"registry-backend/ent/predicate"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -87,7 +88,7 @@ func (cnq *ComfyNodeQuery) QueryVersions() *NodeVersionQuery {
 // First returns the first ComfyNode entity from the query.
 // Returns a *NotFoundError when no ComfyNode was found.
 func (cnq *ComfyNodeQuery) First(ctx context.Context) (*ComfyNode, error) {
-	nodes, err := cnq.Limit(1).All(setContextOp(ctx, cnq.ctx, "First"))
+	nodes, err := cnq.Limit(1).All(setContextOp(ctx, cnq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +111,7 @@ func (cnq *ComfyNodeQuery) FirstX(ctx context.Context) *ComfyNode {
 // Returns a *NotFoundError when no ComfyNode ID was found.
 func (cnq *ComfyNodeQuery) FirstID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = cnq.Limit(1).IDs(setContextOp(ctx, cnq.ctx, "FirstID")); err != nil {
+	if ids, err = cnq.Limit(1).IDs(setContextOp(ctx, cnq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -133,7 +134,7 @@ func (cnq *ComfyNodeQuery) FirstIDX(ctx context.Context) string {
 // Returns a *NotSingularError when more than one ComfyNode entity is found.
 // Returns a *NotFoundError when no ComfyNode entities are found.
 func (cnq *ComfyNodeQuery) Only(ctx context.Context) (*ComfyNode, error) {
-	nodes, err := cnq.Limit(2).All(setContextOp(ctx, cnq.ctx, "Only"))
+	nodes, err := cnq.Limit(2).All(setContextOp(ctx, cnq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +162,7 @@ func (cnq *ComfyNodeQuery) OnlyX(ctx context.Context) *ComfyNode {
 // Returns a *NotFoundError when no entities are found.
 func (cnq *ComfyNodeQuery) OnlyID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = cnq.Limit(2).IDs(setContextOp(ctx, cnq.ctx, "OnlyID")); err != nil {
+	if ids, err = cnq.Limit(2).IDs(setContextOp(ctx, cnq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -186,7 +187,7 @@ func (cnq *ComfyNodeQuery) OnlyIDX(ctx context.Context) string {
 
 // All executes the query and returns a list of ComfyNodes.
 func (cnq *ComfyNodeQuery) All(ctx context.Context) ([]*ComfyNode, error) {
-	ctx = setContextOp(ctx, cnq.ctx, "All")
+	ctx = setContextOp(ctx, cnq.ctx, ent.OpQueryAll)
 	if err := cnq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -208,7 +209,7 @@ func (cnq *ComfyNodeQuery) IDs(ctx context.Context) (ids []string, err error) {
 	if cnq.ctx.Unique == nil && cnq.path != nil {
 		cnq.Unique(true)
 	}
-	ctx = setContextOp(ctx, cnq.ctx, "IDs")
+	ctx = setContextOp(ctx, cnq.ctx, ent.OpQueryIDs)
 	if err = cnq.Select(comfynode.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -226,7 +227,7 @@ func (cnq *ComfyNodeQuery) IDsX(ctx context.Context) []string {
 
 // Count returns the count of the given query.
 func (cnq *ComfyNodeQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, cnq.ctx, "Count")
+	ctx = setContextOp(ctx, cnq.ctx, ent.OpQueryCount)
 	if err := cnq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -244,7 +245,7 @@ func (cnq *ComfyNodeQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (cnq *ComfyNodeQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, cnq.ctx, "Exist")
+	ctx = setContextOp(ctx, cnq.ctx, ent.OpQueryExist)
 	switch _, err := cnq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -278,8 +279,9 @@ func (cnq *ComfyNodeQuery) Clone() *ComfyNodeQuery {
 		predicates:   append([]predicate.ComfyNode{}, cnq.predicates...),
 		withVersions: cnq.withVersions.Clone(),
 		// clone intermediate query.
-		sql:  cnq.sql.Clone(),
-		path: cnq.path,
+		sql:       cnq.sql.Clone(),
+		path:      cnq.path,
+		modifiers: append([]func(*sql.Selector){}, cnq.modifiers...),
 	}
 }
 
@@ -572,7 +574,7 @@ func (cngb *ComfyNodeGroupBy) Aggregate(fns ...AggregateFunc) *ComfyNodeGroupBy 
 
 // Scan applies the selector query and scans the result into the given value.
 func (cngb *ComfyNodeGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, cngb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, cngb.build.ctx, ent.OpQueryGroupBy)
 	if err := cngb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -620,7 +622,7 @@ func (cns *ComfyNodeSelect) Aggregate(fns ...AggregateFunc) *ComfyNodeSelect {
 
 // Scan applies the selector query and scans the result into the given value.
 func (cns *ComfyNodeSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, cns.ctx, "Select")
+	ctx = setContextOp(ctx, cns.ctx, ent.OpQuerySelect)
 	if err := cns.prepareQuery(ctx); err != nil {
 		return err
 	}

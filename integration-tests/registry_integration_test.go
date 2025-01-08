@@ -838,7 +838,8 @@ func TestRegistryComfyNode(t *testing.T) {
 		require.NoError(t, err, "should not return error")
 	}
 	nodeVersion := nodeVersions[len(nodeVersions)-1]
-	backfilledNodeVersions := nodeVersions[:len(nodeVersions)-1]
+	nodeVersionExtractionFailed := nodeVersions[len(nodeVersions)-2]
+	backfilledNodeVersions := nodeVersions[:len(nodeVersions)-2]
 
 	t.Run("NoComfyNode", func(t *testing.T) {
 		res, err := withMiddleware(authz, impl.GetNodeVersion)(ctx, drip.GetNodeVersionRequestObject{
@@ -877,14 +878,50 @@ func TestRegistryComfyNode(t *testing.T) {
 		}}
 
 	// create comfy nodes
-	body := drip.CreateComfyNodesJSONRequestBody(comfyNodes)
-	res, err := withMiddleware(authz, impl.CreateComfyNodes)(ctx, drip.CreateComfyNodesRequestObject{
-		NodeId:  *node.Id,
-		Version: *nodeVersion.Version,
-		Body:    &body,
+	{
+		body := drip.CreateComfyNodesJSONRequestBody(comfyNodes)
+		res, err := withMiddleware(authz, impl.CreateComfyNodes)(ctx, drip.CreateComfyNodesRequestObject{
+			NodeId:  *node.Id,
+			Version: *nodeVersion.Version,
+			Body:    &body,
+		})
+		require.NoError(t, err)
+		require.IsType(t, drip.CreateComfyNodes204Response{}, res)
+	}
+
+	// mark comfy nodes extraction as failed
+	{
+		res, err := withMiddleware(authz, impl.CreateComfyNodes)(ctx, drip.CreateComfyNodesRequestObject{
+			NodeId:  *node.Id,
+			Version: *nodeVersionExtractionFailed.Version,
+			Body:    &drip.CreateComfyNodesJSONRequestBody{Success: proto.Bool(false)},
+		})
+		require.NoError(t, err)
+		require.IsType(t, drip.CreateComfyNodes204Response{}, res)
+	}
+
+	t.Run("AssertAlgolia", func(t *testing.T) {
+		indexed := impl.mockAlgolia.LastIndexedNodes
+		require.Len(t, impl.mockAlgolia.LastIndexedNodes, 1)
+
+		node, err := client.Node.Get(ctx, *node.Id)
+		require.NoError(t, err)
+		nodeVersion, err := client.NodeVersion.Query().Where(nodeversion.Version(*nodeVersion.Version)).WithComfyNodes().Only(ctx)
+		require.NoError(t, err)
+		node.Edges.Versions = append(node.Edges.Versions, nodeVersion)
+
+		assert.Equal(t, node.ID, indexed[0].ID)
+		assert.Equal(t, node.Edges.Versions[0].ID, indexed[0].Edges.Versions[0].ID)
+		indexedComfyNodes := drip.CreateComfyNodesJSONRequestBody{
+			Nodes: &map[string]drip.ComfyNode{},
+		}
+		for _, node := range indexed[0].Edges.Versions[0].Edges.ComfyNodes {
+			cn := *(mapper.DBComfyNodeToApiComfyNode(node))
+			cn.ComfyNodeId = nil
+			(*indexedComfyNodes.Nodes)[node.ID] = cn
+		}
+		assert.Equal(t, comfyNodes, indexedComfyNodes)
 	})
-	require.NoError(t, err)
-	require.IsType(t, drip.CreateComfyNodes204Response{}, res)
 
 	t.Run("AssertAlgolia", func(t *testing.T) {
 		indexed := impl.mockAlgolia.LastIndexedNodes
