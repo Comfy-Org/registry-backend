@@ -19,7 +19,7 @@ module "node_pack_extract_trigger" {
   }
   project_id                  = var.project_id
   region                      = var.region
-  bucket_name                 = "comfy-registry"
+  bucket_name                 = "staging-comfy-registry"
   cloud_build_service_account = "cloud-scheduler@dreamboothy.iam.gserviceaccount.com"
   trigger_name                = "comfy-node-pack-extract-staging"
   topic_name                  = "comfy-registry-event-staging"
