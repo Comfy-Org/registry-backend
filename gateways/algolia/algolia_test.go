@@ -32,12 +32,69 @@ func TestIndex(t *testing.T) {
 
 	t.Run("node", func(t *testing.T) {
 		ctx := context.Background()
+		id := uuid.New()
+		version := "v1.0.0-" + uuid.NewString()
 		node := &ent.Node{
-			ID:          uuid.NewString(),
-			Name:        t.Name() + "-" + uuid.NewString(),
-			TotalStar:   98,
-			TotalReview: 20,
+			ID:            id.String(),
+			CreateTime:    time.Time{},
+			UpdateTime:    time.Time{},
+			PublisherID:   "id",
+			Name:          t.Name() + "-" + uuid.NewString(),
+			Description:   "desc",
+			Category:      "cat",
+			Author:        "au",
+			License:       "license",
+			RepositoryURL: "somerepo",
+			IconURL:       "someicon",
+			Tags:          []string{"tags"},
+			TotalInstall:  10,
+			TotalStar:     98,
+			TotalReview:   20,
+			Status:        "status",
+			StatusDetail:  "status detail",
+			Edges: ent.NodeEdges{Versions: []*ent.NodeVersion{
+				{
+					ID:              id,
+					NodeID:          id.String(),
+					Version:         version,
+					Changelog:       "test",
+					Status:          schema.NodeVersionStatusActive,
+					StatusReason:    "test",
+					PipDependencies: []string{"test"},
+					Edges: ent.NodeVersionEdges{ComfyNodes: []*ent.ComfyNode{
+						{
+							ID:            "node1",
+							NodeVersionID: id,
+							Category:      "test",
+							Function:      "test",
+							Description:   "test",
+							Deprecated:    false,
+							Experimental:  false,
+							InputTypes:    "test",
+							OutputIsList:  []bool{true},
+							ReturnNames:   []string{"test"},
+							ReturnTypes:   "test",
+							CreateTime:    time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
+						},
+						{
+							ID:            "node2",
+							NodeVersionID: id,
+							Category:      "test",
+							Function:      "test",
+							Description:   "test",
+							Deprecated:    false,
+							Experimental:  false,
+							InputTypes:    "test",
+							OutputIsList:  []bool{true},
+							ReturnNames:   []string{"test"},
+							ReturnTypes:   "test",
+							CreateTime:    time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
+						},
+					}},
+				},
+			}},
 		}
+
 		for i := 0; i < 10; i++ {
 			err = algolia.IndexNodes(ctx, node)
 			require.NoError(t, err)
@@ -47,6 +104,20 @@ func TestIndex(t *testing.T) {
 		nodes, err := algolia.SearchNodes(ctx, node.Name)
 		require.NoError(t, err)
 		require.Len(t, nodes, 1)
+		// partial information
+		node.Edges = ent.NodeEdges{
+			Versions: []*ent.NodeVersion{
+				{
+					NodeID:  id.String(),
+					Version: version,
+					Status:  schema.NodeVersionStatusActive,
+					Edges: ent.NodeVersionEdges{ComfyNodes: []*ent.ComfyNode{
+						{ID: "node1"},
+						{ID: "node2"},
+					}},
+				},
+			},
+		}
 		assert.Equal(t, node, nodes[0])
 	})
 
