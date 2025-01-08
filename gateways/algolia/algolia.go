@@ -3,10 +3,13 @@ package algolia
 import (
 	"context"
 	"fmt"
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
-	"github.com/rs/zerolog/log"
 	"registry-backend/config" // assuming a config package exists to hold config values
 	"registry-backend/ent"
+	"registry-backend/entity"
+	"registry-backend/mapper"
+
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+	"github.com/rs/zerolog/log"
 )
 
 // AlgoliaService defines the interface for interacting with Algolia search.
@@ -47,27 +50,10 @@ func NewAlgoliaService(cfg *config.Config) (AlgoliaService, error) {
 // IndexNodes indexes the provided nodes in Algolia.
 func (a *algolia) IndexNodes(ctx context.Context, nodes ...*ent.Node) error {
 	index := a.client.InitIndex("nodes_index")
-	objects := make([]map[string]interface{}, len(nodes))
+	objects := make([]entity.AlgoliaNode, len(nodes))
 
 	for i, n := range nodes {
-		o := map[string]interface{}{
-			"objectID":       n.ID,
-			"name":           n.Name,
-			"publisher_id":   n.PublisherID,
-			"description":    n.Description,
-			"id":             n.ID,
-			"create_time":    n.CreateTime,
-			"update_time":    n.UpdateTime,
-			"license":        n.License,
-			"repository_url": n.RepositoryURL,
-			"total_install":  n.TotalInstall,
-			"status":         n.Status,
-			"author":         n.Author,
-			"category":       n.Category,
-			"total_star":     n.TotalStar,
-			"total_review":   n.TotalReview,
-		}
-		objects[i] = o
+		objects[i] = mapper.AlgoliaNodeFromEntNode(n)
 	}
 
 	res, err := index.SaveObjects(objects)
@@ -79,18 +65,21 @@ func (a *algolia) IndexNodes(ctx context.Context, nodes ...*ent.Node) error {
 }
 
 // SearchNodes searches for nodes in Algolia matching the query.
-func (a *algolia) SearchNodes(ctx context.Context, query string, opts ...interface{}) ([]*ent.Node, error) {
+func (a *algolia) SearchNodes(ctx context.Context, query string, opts ...interface{}) (nodes []*ent.Node, err error) {
 	index := a.client.InitIndex("nodes_index")
 	res, err := index.Search(query, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search nodes: %w", err)
 	}
 
-	var nodes []*ent.Node
-	if err := res.UnmarshalHits(&nodes); err != nil {
+	var algoliaNodes []entity.AlgoliaNode
+	if err := res.UnmarshalHits(&algoliaNodes); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal search results: %w", err)
 	}
-	return nodes, nil
+	for _, n := range algoliaNodes {
+		nodes = append(nodes, n.ToEntNode())
+	}
+	return
 }
 
 // DeleteNode deletes the specified node from Algolia.
