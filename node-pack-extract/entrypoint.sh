@@ -8,6 +8,7 @@ init.sh &
 OUTPUTFILE=${1:-"/tmp/output.json"}
 echo -n > "$OUTPUTFILE"
 until cat "$OUTPUTFILE" | grep ''; do
+    sleep 1
     curl -sf localhost:8188/object_info |
         jq -c '
             to_entries |
@@ -24,11 +25,10 @@ until cat "$OUTPUTFILE" | grep ''; do
                     output_is_list : .output_is_list,
                 }
             ) |
-            if length > 0 then {nodes: from_entries} else "" end' | 
+            if length > 0 then 
+                {success: true, nodes: from_entries} 
+            else 
+                {success: false} 
+            end' |
         tee "$OUTPUTFILE" 
-
-    sleep 1
 done
-
-# make sure its json or we fail
-grep '{' "$OUTPUTFILE"

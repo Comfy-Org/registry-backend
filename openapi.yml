@@ -947,7 +947,7 @@ paths:
         '204':
           description: Version unpublished (deleted) successfully
         '403':
-          description: Version does not belong to the publisher
+          description: Version not found
           content:
             application/json:
               schema:
@@ -1788,6 +1788,8 @@ paths:
             schema:
               type: object
               properties:
+                success:
+                  type: boolean
                 nodes:
                   additionalProperties:
                     $ref: '#/components/schemas/ComfyNode'

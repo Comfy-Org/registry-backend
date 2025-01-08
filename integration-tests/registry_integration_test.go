@@ -12,6 +12,7 @@ import (
 	"registry-backend/ent/nodeversion"
 	"registry-backend/ent/schema"
 	drip_logging "registry-backend/logging"
+	"registry-backend/mapper"
 	"registry-backend/mock/gateways"
 	"registry-backend/server/implementation"
 	drip_authorization "registry-backend/server/middleware/authorization"
@@ -23,11 +24,84 @@ import (
 	"github.com/labstack/echo/v4"
 	strictecho "github.com/oapi-codegen/runtime/strictmiddleware/echo"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )
+
+func setUpTest(client *ent.Client) (context.Context, *ent.User) {
+	ctx := context.Background()
+	// create a User and attach to context
+	testUser := createTestUser(ctx, client)
+	ctx = decorateUserInContext(ctx, testUser)
+	return ctx, testUser
+}
+
+func setUpAdminTest(client *ent.Client) (context.Context, *ent.User) {
+	ctx := context.Background()
+	testUser := createAdminUser(ctx, client)
+	ctx = decorateUserInContext(ctx, testUser)
+	return ctx, testUser
+}
+
+func randomPublisher() *drip.Publisher {
+	suffix := uuid.New().String()
+	publisherId := "test-publisher-" + suffix
+	description := "test-description" + suffix
+	source_code_repo := "test-source-code-repo" + suffix
+	website := "test-website" + suffix
+	support := "test-support" + suffix
+	logo := "test-logo" + suffix
+	name := "test-name" + suffix
+
+	return &drip.Publisher{
+		Id:             &publisherId,
+		Description:    &description,
+		SourceCodeRepo: &source_code_repo,
+		Website:        &website,
+		Support:        &support,
+		Logo:           &logo,
+		Name:           &name,
+	}
+}
+
+func randomNode() *drip.Node {
+	suffix := uuid.New().String()
+	nodeId := "test-node" + suffix
+	nodeDescription := "test-node-description" + suffix
+	nodeAuthor := "test-node-author" + suffix
+	nodeLicense := "test-node-license" + suffix
+	nodeName := "test-node-name" + suffix
+	nodeTags := []string{"test-node-tag"}
+	icon := "https://wwww.github.com/test-icon-" + suffix + ".svg"
+	githubUrl := "https://www.github.com/test-github-url-" + suffix
+
+	return &drip.Node{
+		Id:          &nodeId,
+		Name:        &nodeName,
+		Description: &nodeDescription,
+		Author:      &nodeAuthor,
+		License:     &nodeLicense,
+		Tags:        &nodeTags,
+		Icon:        &icon,
+		Repository:  &githubUrl,
+	}
+}
+
+func randomNodeVersion(revision int) *drip.NodeVersion {
+	suffix := uuid.New().String()
+
+	version := fmt.Sprintf("1.0.%d", revision)
+	changelog := "test-changelog-" + suffix
+	dependencies := []string{"test-dependency" + suffix}
+	return &drip.NodeVersion{
+		Version:      &version,
+		Changelog:    &changelog,
+		Dependencies: &dependencies,
+	}
+}
 
 type mockedImpl struct {
 	*implementation.DripStrictServerImplementation
@@ -83,7 +157,7 @@ func TestRegistryPublisher(t *testing.T) {
 	defer cleanup()
 	impl, authz := newMockedImpl(client, &config.Config{})
 
-	ctx, testUser := setupTestUser(client)
+	ctx, testUser := setUpTest(client)
 	pub := randomPublisher()
 
 	createPublisherResponse, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{
@@ -206,7 +280,7 @@ func TestRegistryPersonalAccessToken(t *testing.T) {
 	defer cleanup()
 	impl, authz := newMockedImpl(client, &config.Config{})
 
-	ctx, _ := setupTestUser(client)
+	ctx, _ := setUpTest(client)
 	pub := randomPublisher()
 	_, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{
 		Body: pub,
@@ -247,7 +321,7 @@ func TestRegistryNode(t *testing.T) {
 	defer cleanup()
 	impl, authz := newMockedImpl(client, &config.Config{})
 
-	ctx, _ := setupTestUser(client)
+	ctx, _ := setUpTest(client)
 	pub := randomPublisher()
 
 	_, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{
@@ -405,7 +479,7 @@ func TestRegistryNodeVersion(t *testing.T) {
 	defer cleanup()
 	impl, authz := newMockedImpl(client, &config.Config{})
 
-	ctx, _ := setupTestUser(client)
+	ctx, _ := setUpTest(client)
 	pub := randomPublisher()
 
 	respub, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{
@@ -454,7 +528,7 @@ func TestRegistryNodeVersion(t *testing.T) {
 	createdNodeVersion = *res.(drip.PublishNodeVersion201JSONResponse).NodeVersion // Needed for downstream tests.
 
 	t.Run("Admin Update", func(t *testing.T) {
-		adminCtx, _ := setupAdminUser(client)
+		adminCtx, _ := setUpAdminTest(client)
 		activeStatus := drip.NodeVersionStatusActive
 		adminUpdateNodeVersionResp, err := impl.AdminUpdateNodeVersion(adminCtx, drip.AdminUpdateNodeVersionRequestObject{
 			NodeId:        *node.Id,
@@ -669,7 +743,6 @@ func TestRegistryNodeVersion(t *testing.T) {
 			expectedNode.LatestVersion.DownloadUrl = node.LatestVersion.DownloadUrl // generated
 			expectedNode.LatestVersion.Deprecated = node.LatestVersion.Deprecated   // generated
 			expectedNode.LatestVersion.CreatedAt = node.LatestVersion.CreatedAt     // generated
-			expectedNode.LatestVersion.StatusReason = nil                           // Filtered out
 			expectedNode.Publisher.CreatedAt = node.Publisher.CreatedAt
 			assert.Equal(t, expectedNode, node)
 		}
@@ -787,7 +860,7 @@ func TestRegistryComfyNode(t *testing.T) {
 	defer cleanup()
 	impl, authz := newMockedImpl(client, &config.Config{})
 
-	ctx, _ := setupTestUser(client)
+	ctx, _ := setUpTest(client)
 	ctx = drip_logging.SetupLogger().WithContext(ctx)
 
 	pub := randomPublisher()
@@ -810,31 +883,21 @@ func TestRegistryComfyNode(t *testing.T) {
 
 	// create node version
 	node := randomNode()
-	nodeVersion := randomNodeVersion(0)
 	signedUrl := "test-url"
 	impl.mockStorageService.On("GenerateSignedURL", mock.Anything, mock.Anything).Return(signedUrl, nil)
 	impl.mockStorageService.On("GetFileUrl", mock.Anything, mock.Anything, mock.Anything).Return(signedUrl, nil)
 	impl.mockDiscordService.On("SendSecurityCouncilMessage", mock.Anything, mock.Anything).Return(nil)
-	_, err = withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
-		PublisherId: *pub.Id,
-		NodeId:      *node.Id,
-		Body: &drip.PublishNodeVersionJSONRequestBody{
-			PersonalAccessToken: token,
-			Node:                *node,
-			NodeVersion:         *nodeVersion,
-		},
-	})
-	require.NoError(t, err, "should not return error")
 
-	// create another node versions
-	nodeVersionToBeBackfill := []*drip.NodeVersion{
+	// create  node versions
+	nodeVersions := []*drip.NodeVersion{
+		randomNodeVersion(0),
 		randomNodeVersion(1),
 		randomNodeVersion(2),
 		randomNodeVersion(3),
 		randomNodeVersion(4),
 		randomNodeVersion(5),
 	}
-	for _, nv := range nodeVersionToBeBackfill {
+	for _, nv := range nodeVersions {
 		_, err = withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
 			PublisherId: *pub.Id,
 			NodeId:      *node.Id,
@@ -846,6 +909,9 @@ func TestRegistryComfyNode(t *testing.T) {
 		})
 		require.NoError(t, err, "should not return error")
 	}
+	nodeVersion := nodeVersions[len(nodeVersions)-1]
+	nodeVersionExtractionFailed := nodeVersions[len(nodeVersions)-2]
+	backfilledNodeVersions := nodeVersions[:len(nodeVersions)-2]
 
 	t.Run("NoComfyNode", func(t *testing.T) {
 		res, err := withMiddleware(authz, impl.GetNodeVersion)(ctx, drip.GetNodeVersionRequestObject{
@@ -884,14 +950,50 @@ func TestRegistryComfyNode(t *testing.T) {
 		}}
 
 	// create comfy nodes
-	body := drip.CreateComfyNodesJSONRequestBody(comfyNodes)
-	res, err := withMiddleware(authz, impl.CreateComfyNodes)(ctx, drip.CreateComfyNodesRequestObject{
-		NodeId:  *node.Id,
-		Version: *nodeVersion.Version,
-		Body:    &body,
+	{
+		body := drip.CreateComfyNodesJSONRequestBody(comfyNodes)
+		res, err := withMiddleware(authz, impl.CreateComfyNodes)(ctx, drip.CreateComfyNodesRequestObject{
+			NodeId:  *node.Id,
+			Version: *nodeVersion.Version,
+			Body:    &body,
+		})
+		require.NoError(t, err)
+		require.IsType(t, drip.CreateComfyNodes204Response{}, res)
+	}
+
+	// mark comfy nodes extraction as failed
+	{
+		res, err := withMiddleware(authz, impl.CreateComfyNodes)(ctx, drip.CreateComfyNodesRequestObject{
+			NodeId:  *node.Id,
+			Version: *nodeVersionExtractionFailed.Version,
+			Body:    &drip.CreateComfyNodesJSONRequestBody{Success: proto.Bool(false)},
+		})
+		require.NoError(t, err)
+		require.IsType(t, drip.CreateComfyNodes204Response{}, res)
+	}
+
+	t.Run("AssertAlgolia", func(t *testing.T) {
+		indexed := impl.mockAlgolia.LastIndexedNodes
+		require.Len(t, impl.mockAlgolia.LastIndexedNodes, 1)
+
+		node, err := client.Node.Get(ctx, *node.Id)
+		require.NoError(t, err)
+		nodeVersion, err := client.NodeVersion.Query().Where(nodeversion.Version(*nodeVersion.Version)).WithComfyNodes().Only(ctx)
+		require.NoError(t, err)
+		node.Edges.Versions = append(node.Edges.Versions, nodeVersion)
+
+		assert.Equal(t, node.ID, indexed[0].ID)
+		assert.Equal(t, node.Edges.Versions[0].ID, indexed[0].Edges.Versions[0].ID)
+		indexedComfyNodes := drip.CreateComfyNodesJSONRequestBody{
+			Nodes: &map[string]drip.ComfyNode{},
+		}
+		for _, node := range indexed[0].Edges.Versions[0].Edges.ComfyNodes {
+			cn := *(mapper.DBComfyNodeToApiComfyNode(node))
+			cn.ComfyNodeId = nil
+			(*indexedComfyNodes.Nodes)[node.ID] = cn
+		}
+		assert.Equal(t, comfyNodes, indexedComfyNodes)
 	})
-	require.NoError(t, err)
-	require.IsType(t, drip.CreateComfyNodes204Response{}, res)
 
 	t.Run("GetComfyNodes", func(t *testing.T) {
 		for k, v := range *comfyNodes.Nodes {
@@ -983,8 +1085,8 @@ func TestRegistryComfyNode(t *testing.T) {
 			res, err := withMiddleware(authz, impl.ComfyNodesBackfill)(ctx, drip.ComfyNodesBackfillRequestObject{})
 			require.NoError(t, err, "should return created node version")
 			require.IsType(t, drip.ComfyNodesBackfill204Response{}, res)
-			impl.mockPubsubService.AssertNumberOfCalls(t, "PublishNodePack", len(nodeVersionToBeBackfill)+mockCalled)
-			mockCalled += len(nodeVersionToBeBackfill)
+			impl.mockPubsubService.AssertNumberOfCalls(t, "PublishNodePack", len(backfilledNodeVersions)+mockCalled)
+			mockCalled += len(backfilledNodeVersions)
 		})
 
 		t.Run("Limited", func(t *testing.T) {

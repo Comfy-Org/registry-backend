@@ -40,6 +40,8 @@ type NodeVersion struct {
 	Status schema.NodeVersionStatus `json:"status,omitempty"`
 	// Give a reason for the status change. Eg. 'Banned due to security vulnerability'
 	StatusReason string `json:"status_reason,omitempty"`
+	// ComfyNodeExtractStatus holds the value of the "comfy_node_extract_status" field.
+	ComfyNodeExtractStatus schema.ComfyNodeExtractStatus `json:"comfy_node_extract_status,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the NodeVersionQuery when eager-loading is set.
 	Edges                     NodeVersionEdges `json:"edges"`
@@ -100,7 +102,7 @@ func (*NodeVersion) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case nodeversion.FieldDeprecated:
 			values[i] = new(sql.NullBool)
-		case nodeversion.FieldNodeID, nodeversion.FieldVersion, nodeversion.FieldChangelog, nodeversion.FieldStatus, nodeversion.FieldStatusReason:
+		case nodeversion.FieldNodeID, nodeversion.FieldVersion, nodeversion.FieldChangelog, nodeversion.FieldStatus, nodeversion.FieldStatusReason, nodeversion.FieldComfyNodeExtractStatus:
 			values[i] = new(sql.NullString)
 		case nodeversion.FieldCreateTime, nodeversion.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
@@ -184,6 +186,12 @@ func (nv *NodeVersion) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field status_reason", values[i])
 			} else if value.Valid {
 				nv.StatusReason = value.String
+			}
+		case nodeversion.FieldComfyNodeExtractStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field comfy_node_extract_status", values[i])
+			} else if value.Valid {
+				nv.ComfyNodeExtractStatus = schema.ComfyNodeExtractStatus(value.String)
 			}
 		case nodeversion.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -269,6 +277,9 @@ func (nv *NodeVersion) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("status_reason=")
 	builder.WriteString(nv.StatusReason)
+	builder.WriteString(", ")
+	builder.WriteString("comfy_node_extract_status=")
+	builder.WriteString(fmt.Sprintf("%v", nv.ComfyNodeExtractStatus))
 	builder.WriteByte(')')
 	return builder.String()
 }

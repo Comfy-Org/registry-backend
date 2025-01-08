@@ -289,7 +289,6 @@ func (s *DripStrictServerImplementation) ListAllNodes(
 		// attach information of latest version if available
 		if len(dbNode.Edges.Versions) > 0 {
 			apiNode.LatestVersion = mapper.DbNodeVersionToApiNodeVersion(dbNode.Edges.Versions[0])
-			apiNode.LatestVersion.StatusReason = nil
 		}
 
 		// Map publisher information
@@ -348,9 +347,13 @@ func (s *DripStrictServerImplementation) SearchNodes(ctx context.Context, reques
 	apiNodes := make([]drip.Node, 0, len(nodeResults.Nodes))
 	for _, dbNode := range nodeResults.Nodes {
 		apiNode := mapper.DbNodeToApiNode(dbNode)
-		if len(dbNode.Edges.Versions) > 0 {
-			latestVersion := dbNode.Edges.Versions[0]
-			apiNode.LatestVersion = mapper.DbNodeVersionToApiNodeVersion(latestVersion)
+		if dbNode.Edges.Versions != nil && len(dbNode.Edges.Versions) > 0 {
+			latestVersion, err := s.RegistryService.GetLatestNodeVersion(ctx, s.Client, dbNode.ID)
+			if err == nil {
+				apiNode.LatestVersion = mapper.DbNodeVersionToApiNodeVersion(latestVersion)
+			} else {
+				log.Ctx(ctx).Error().Msgf("Failed to get latest version for node %s w/ err: %v", dbNode.ID, err)
+			}
 		}
 		apiNode.Publisher = mapper.DbPublisherToApiPublisher(dbNode.Edges.Publisher, false)
 		apiNodes = append(apiNodes, *apiNode)
@@ -557,20 +560,12 @@ func (s *DripStrictServerImplementation) PostNodeReview(ctx context.Context, req
 func (s *DripStrictServerImplementation) DeleteNodeVersion(
 	ctx context.Context, request drip.DeleteNodeVersionRequestObject) (drip.DeleteNodeVersionResponseObject, error) {
 
-	nodeVersion, err := s.RegistryService.GetNodeVersion(ctx, s.Client, request.VersionId)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("Failed to get node version w/ err: %v", err)
-		return drip.DeleteNodeVersion404JSONResponse{Message: proto.String("Node version not found")}, nil
-	}
-
-	err = s.RegistryService.DeleteNodeVersion(ctx, s.Client, nodeVersion.ID.String())
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("Failed to delete node version w/ err: %v", err)
-		return drip.DeleteNodeVersion500JSONResponse{Message: "Failed to delete node version", Error: err.Error()}, err
-	}
-
-	log.Ctx(ctx).Info().Msgf("Node version %s deleted successfully", request.VersionId)
-	return drip.DeleteNodeVersion204Response{}, nil
+	// Directly return the message that node versions cannot be deleted
+	errMessage := "Cannot delete node versions. Please deprecate it instead."
+	log.Ctx(ctx).Warn().Msg(errMessage)
+	return drip.DeleteNodeVersion404JSONResponse{
+		Message: proto.String(errMessage),
+	}, nil
 }
 
 func (s *DripStrictServerImplementation) GetNodeVersion(
@@ -1008,20 +1003,25 @@ func (s *DripStrictServerImplementation) ReindexNodes(ctx context.Context, reque
 	return drip.ReindexNodes200Response{}, nil
 }
 
-// CreateComfyNodes bulk-creates comfy-nodes for a node version
+// CreateComfyNodes bulk-stores comfy-nodes extraction result for a node version
 func (impl *DripStrictServerImplementation) CreateComfyNodes(ctx context.Context, request drip.CreateComfyNodesRequestObject) (res drip.CreateComfyNodesResponseObject, err error) {
-	err = impl.RegistryService.CreateComfyNodes(ctx, impl.Client, request.NodeId, request.Version, *request.Body.Nodes)
+	if request.Body.Success != nil && !*request.Body.Success {
+		err = impl.RegistryService.MarKComfyNodeExtractionFailed(ctx, impl.Client, request.NodeId, request.Version)
+	} else {
+		err = impl.RegistryService.CreateComfyNodes(ctx, impl.Client, request.NodeId, request.Version, *request.Body.Nodes)
+	}
+
 	if ent.IsNotFound(err) {
 		log.Ctx(ctx).Error().Msgf("Node or node version not found w/ err: %v", err)
 		return drip.CreateComfyNodes404JSONResponse{Message: "Node or node version not found", Error: err.Error()}, nil
 	}
 	if errors.Is(err, drip_services.ErrComfyNodesAlreadyExist) {
-		log.Ctx(ctx).Error().Msgf("Comfy nodes for %s %s exist", request.NodeId, request.Version)
-		return drip.CreateComfyNodes409JSONResponse{Message: "Comfy nodes already exist", Error: err.Error()}, nil
+		log.Ctx(ctx).Error().Msgf("Comfy nodes extraction result for %s %s already set", request.NodeId, request.Version)
+		return drip.CreateComfyNodes409JSONResponse{Message: "Comfy nodes extraction result already set", Error: err.Error()}, nil
 	}
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("Failed to create comfy nodes w/ err: %v", err)
-		return drip.CreateComfyNodes500JSONResponse{Message: "Failed to create comfy nodes", Error: err.Error()}, nil
+		log.Ctx(ctx).Error().Msgf("Failed to store comfy nodes extraction w/ err: %v", err)
+		return drip.CreateComfyNodes500JSONResponse{Message: "Failed to store comfy nodes extraction", Error: err.Error()}, nil
 	}
 
 	log.Ctx(ctx).Info().Msgf("CreateComfyNodes successful")
