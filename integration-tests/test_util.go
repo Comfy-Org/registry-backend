@@ -3,11 +3,19 @@ package integration
 import (
 	"context"
 	"fmt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"regexp"
+	"registry-backend/config"
 	"registry-backend/drip"
+	"registry-backend/mock/gateways"
+	"registry-backend/server/implementation"
 	auth "registry-backend/server/middleware/authentication"
 	"runtime"
 	"strings"
@@ -26,6 +34,207 @@ import (
 
 	_ "github.com/lib/pq"
 )
+
+// NewStrictServerImplementationWithMocks initializes and returns the implementation with mock services.
+func NewStrictServerImplementationWithMocks(
+	client *ent.Client, config *config.Config) *implementation.DripStrictServerImplementation {
+	// Mock services setup
+	mockStorageService := new(gateways.MockStorageService)
+	mockPubsubService := new(gateways.MockPubSubService)
+	mockSlackService := new(gateways.MockSlackService)
+	mockDiscordService := new(gateways.MockDiscordService)
+	mockAlgolia := new(gateways.MockAlgoliaService)
+
+	// Mock service expectations
+	mockSlackService.On("SendRegistryMessageToSlack", mock.Anything).Return(nil)
+	mockAlgolia.On("IndexNodes", mock.Anything, mock.Anything).Return(nil)
+
+	// Return the new implementation with mocked services
+	return implementation.NewStrictServerImplementation(
+		client,
+		config,
+		mockStorageService,
+		mockPubsubService,
+		mockSlackService,
+		mockDiscordService,
+		mockAlgolia,
+	)
+}
+
+func setupTestUser(client *ent.Client) (context.Context, *ent.User) {
+	// Create a new context and a test user
+	ctx := context.Background()
+	testUser := createTestUser(ctx, client)
+
+	// Attach the test user to the context
+	ctx = decorateUserInContext(ctx, testUser)
+
+	// Return the context and the created test user
+	return ctx, testUser
+}
+
+func setupAdminUser(client *ent.Client) (context.Context, *ent.User) {
+	// Create a new context to isolate the test setup
+	ctx := context.Background()
+
+	// Attempt to create the admin user
+	testUser := createAdminUser(ctx, client)
+
+	// Decorate the user in the context
+	ctx = decorateUserInContext(ctx, testUser)
+
+	// Return the decorated context and the created user
+	return ctx, testUser
+}
+
+// Helper function to set up a personal access token
+func setupPersonalAccessToken(
+	ctx context.Context,
+	authz drip.StrictMiddlewareFunc,
+	impl *implementation.DripStrictServerImplementation,
+	publisherId string) (*string, error) {
+
+	tokenName := "test-token"
+	tokenDescription := "test-description"
+	res, err := withMiddleware(authz, impl.CreatePersonalAccessToken)(ctx, drip.CreatePersonalAccessTokenRequestObject{
+		PublisherId: publisherId,
+		Body: &drip.PersonalAccessToken{
+			Name:        &tokenName,
+			Description: &tokenDescription,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract the created token from the response
+	pat := res.(drip.CreatePersonalAccessToken201JSONResponse).Token
+	return pat, nil
+}
+
+// Helper function to generate a valid publisher ID based on the pattern "^[a-z][a-z0-9-]*$"
+func generatePublisherId() string {
+	// Generate a random UUID and use a portion of it for the publisher ID
+	rawId := uuid.New().String()
+	// Strip hyphens and convert to lowercase to fit the pattern
+	id := strings.ToLower(strings.ReplaceAll(rawId, "-", ""))
+	// Ensure the ID starts with a letter and follows the pattern
+	if match, _ := regexp.MatchString("^[a-z][a-z0-9-]*$", id); match {
+		return id
+	}
+	// If it doesn't match, regenerate a valid ID
+	return generatePublisherId()
+}
+
+// Helper function to generate a valid node ID based on the pattern "^[a-z][a-z0-9-_]+(\\.[a-z0-9-_]+)*$"
+func generateNodeId() string {
+	// Generate a random UUID and use a portion of it for the node ID
+	rawId := uuid.New().String()
+	// Strip hyphens and convert to lowercase to fit the pattern
+	id := strings.ToLower(strings.ReplaceAll(rawId, "-", ""))
+	// Ensure the ID starts with a letter and follows the pattern
+	if match, _ := regexp.MatchString("^[a-z][a-z0-9-_]+(\\.[a-z0-9-_]+)*$", id); match {
+		return id
+	}
+	// If it doesn't match, regenerate a valid ID
+	return generateNodeId()
+}
+
+// Helper function to generate a random Publisher for testing
+func randomPublisher() *drip.Publisher {
+	suffix := uuid.New().String()
+	publisherId := generatePublisherId()
+
+	description := "test-description-" + suffix
+	sourceCodeRepo := "https://github.com/test-repo-" + suffix
+	website := "https://test-website-" + suffix + ".com"
+	support := "test-support-" + suffix
+	logo := "https://test-logo-" + suffix + ".png"
+	name := "test-name-" + suffix
+
+	return &drip.Publisher{
+		Id:             &publisherId,
+		Name:           &name,
+		Description:    &description,
+		SourceCodeRepo: &sourceCodeRepo,
+		Website:        &website,
+		Support:        &support,
+		Logo:           &logo,
+	}
+}
+
+// Helper function to generate a random Node for testing
+func randomNode() *drip.Node {
+	suffix := uuid.New().String()
+	nodeId := generateNodeId()
+
+	description := "test-node-description-" + suffix
+	author := "test-node-author-" + suffix
+	license := "test-node-license-" + suffix
+	name := "test-node-name-" + suffix
+	tags := []string{"test-node-tag"}
+	icon := "https://www.github.com/test-icon-" + suffix + ".svg"
+	repository := "https://www.github.com/test-repo-" + suffix
+
+	return &drip.Node{
+		Id:          &nodeId,
+		Name:        &name,
+		Description: &description,
+		Author:      &author,
+		License:     &license,
+		Tags:        &tags,
+		Icon:        &icon,
+		Repository:  &repository,
+	}
+}
+
+// Helper function to generate a random NodeVersion for testing
+func randomNodeVersion(revision int) *drip.NodeVersion {
+	suffix := uuid.New().String()
+
+	version := fmt.Sprintf("1.0.%d", revision)
+	changelog := "test-changelog-" + suffix
+	dependencies := []string{"test-dependency-" + suffix}
+
+	return &drip.NodeVersion{
+		Version:      &version,
+		Changelog:    &changelog,
+		Dependencies: &dependencies,
+	}
+}
+
+// Helper function to set up a publisher with a random ID
+func setupPublisher(
+	ctx context.Context,
+	authz drip.StrictMiddlewareFunc,
+	impl *implementation.DripStrictServerImplementation) (string, error) {
+
+	publisher := randomPublisher()
+
+	_, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{
+		Body: publisher,
+	})
+	return *publisher.Id, err
+}
+
+// Helper function to set up a node with a random ID
+func setupNode(
+	ctx context.Context,
+	authz drip.StrictMiddlewareFunc,
+	impl *implementation.DripStrictServerImplementation, publisherId string) (string, error) {
+
+	node := randomNode()
+	node.Id = proto.String(generateNodeId())
+	node.Publisher = &drip.Publisher{
+		Id: proto.String(publisherId),
+	}
+
+	_, err := withMiddleware(authz, impl.CreateNode)(ctx, drip.CreateNodeRequestObject{
+		PublisherId: publisherId,
+		Body:        node,
+	})
+	return *node.Id, err
+}
 
 func createTestUser(ctx context.Context, client *ent.Client) *ent.User {
 	return client.User.Create().
@@ -133,24 +342,41 @@ func waitPortOpen(t *testing.T, host string, port string, timeout time.Duration)
 }
 
 func withMiddleware[R any, S any](mw drip.StrictMiddlewareFunc, h func(ctx context.Context, req R) (res S, err error)) func(ctx context.Context, req R) (res S, err error) {
+	// Adapt the provided handler `h` to the signature expected by the middleware.
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		// Convert the `echo.Context` to a standard `context.Context` and cast the request to the expected type.
 		return h(ctx.Request().Context(), request.(R))
 	}
 
-	nameA := strings.Split(runtime.FuncForPC(reflect.ValueOf(h).Pointer()).Name(), ".")
-	nameA = strings.Split(nameA[len(nameA)-1], "-")
-	opname := nameA[0]
+	// Use reflection to extract the operation name (function name) of the handler for logging or debugging purposes.
+	nameParts := strings.Split(runtime.FuncForPC(reflect.ValueOf(h).Pointer()).Name(), ".")
+	nameParts = strings.Split(nameParts[len(nameParts)-1], "-")
+	opname := nameParts[0] // Isolate the operation name.
 
 	return func(ctx context.Context, req R) (res S, err error) {
+		// Create a simulated echo.Context with fake HTTP request and response.
 		fakeReq := httptest.NewRequest(http.MethodGet, "/", nil).WithContext(ctx)
 		fakeRes := httptest.NewRecorder()
 		fakeCtx := echo.New().NewContext(fakeReq, fakeRes)
 
-		f := mw(handler, opname)
-		r, err := f(fakeCtx, req)
-		if r == nil {
+		// Wrap the adapted handler with the middleware.
+		wrappedHandler := mw(handler, opname)
+
+		// Invoke the middleware-wrapped handler and cast the result to the expected response type.
+		result, err := wrappedHandler(fakeCtx, req)
+		if result == nil {
+			// Return a zero-value of type S if the result is nil.
 			return *new(S), err
 		}
-		return r.(S), err
+
+		// Type assert the result to the expected response type S and return.
+		return result.(S), err
 	}
+}
+
+// Helper function for checking error type and code
+func assertHTTPError(t *testing.T, err error, expectedCode int) {
+	require.IsType(t, &echo.HTTPError{}, err)
+	echoErr := err.(*echo.HTTPError)
+	assert.Equal(t, expectedCode, echoErr.Code, "should return correct HTTP error code")
 }

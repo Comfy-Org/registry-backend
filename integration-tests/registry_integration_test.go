@@ -23,84 +23,11 @@ import (
 	"github.com/labstack/echo/v4"
 	strictecho "github.com/oapi-codegen/runtime/strictmiddleware/echo"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )
-
-func setUpTest(client *ent.Client) (context.Context, *ent.User) {
-	ctx := context.Background()
-	// create a User and attach to context
-	testUser := createTestUser(ctx, client)
-	ctx = decorateUserInContext(ctx, testUser)
-	return ctx, testUser
-}
-
-func setUpAdminTest(client *ent.Client) (context.Context, *ent.User) {
-	ctx := context.Background()
-	testUser := createAdminUser(ctx, client)
-	ctx = decorateUserInContext(ctx, testUser)
-	return ctx, testUser
-}
-
-func randomPublisher() *drip.Publisher {
-	suffix := uuid.New().String()
-	publisherId := "test-publisher-" + suffix
-	description := "test-description" + suffix
-	source_code_repo := "test-source-code-repo" + suffix
-	website := "test-website" + suffix
-	support := "test-support" + suffix
-	logo := "test-logo" + suffix
-	name := "test-name" + suffix
-
-	return &drip.Publisher{
-		Id:             &publisherId,
-		Description:    &description,
-		SourceCodeRepo: &source_code_repo,
-		Website:        &website,
-		Support:        &support,
-		Logo:           &logo,
-		Name:           &name,
-	}
-}
-
-func randomNode() *drip.Node {
-	suffix := uuid.New().String()
-	nodeId := "test-node" + suffix
-	nodeDescription := "test-node-description" + suffix
-	nodeAuthor := "test-node-author" + suffix
-	nodeLicense := "test-node-license" + suffix
-	nodeName := "test-node-name" + suffix
-	nodeTags := []string{"test-node-tag"}
-	icon := "https://wwww.github.com/test-icon-" + suffix + ".svg"
-	githubUrl := "https://www.github.com/test-github-url-" + suffix
-
-	return &drip.Node{
-		Id:          &nodeId,
-		Name:        &nodeName,
-		Description: &nodeDescription,
-		Author:      &nodeAuthor,
-		License:     &nodeLicense,
-		Tags:        &nodeTags,
-		Icon:        &icon,
-		Repository:  &githubUrl,
-	}
-}
-
-func randomNodeVersion(revision int) *drip.NodeVersion {
-	suffix := uuid.New().String()
-
-	version := fmt.Sprintf("1.0.%d", revision)
-	changelog := "test-changelog-" + suffix
-	dependencies := []string{"test-dependency" + suffix}
-	return &drip.NodeVersion{
-		Version:      &version,
-		Changelog:    &changelog,
-		Dependencies: &dependencies,
-	}
-}
 
 type mockedImpl struct {
 	*implementation.DripStrictServerImplementation
@@ -156,7 +83,7 @@ func TestRegistryPublisher(t *testing.T) {
 	defer cleanup()
 	impl, authz := newMockedImpl(client, &config.Config{})
 
-	ctx, testUser := setUpTest(client)
+	ctx, testUser := setupTestUser(client)
 	pub := randomPublisher()
 
 	createPublisherResponse, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{
@@ -279,7 +206,7 @@ func TestRegistryPersonalAccessToken(t *testing.T) {
 	defer cleanup()
 	impl, authz := newMockedImpl(client, &config.Config{})
 
-	ctx, _ := setUpTest(client)
+	ctx, _ := setupTestUser(client)
 	pub := randomPublisher()
 	_, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{
 		Body: pub,
@@ -320,7 +247,7 @@ func TestRegistryNode(t *testing.T) {
 	defer cleanup()
 	impl, authz := newMockedImpl(client, &config.Config{})
 
-	ctx, _ := setUpTest(client)
+	ctx, _ := setupTestUser(client)
 	pub := randomPublisher()
 
 	_, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{
@@ -478,7 +405,7 @@ func TestRegistryNodeVersion(t *testing.T) {
 	defer cleanup()
 	impl, authz := newMockedImpl(client, &config.Config{})
 
-	ctx, _ := setUpTest(client)
+	ctx, _ := setupTestUser(client)
 	pub := randomPublisher()
 
 	respub, err := withMiddleware(authz, impl.CreatePublisher)(ctx, drip.CreatePublisherRequestObject{
@@ -527,7 +454,7 @@ func TestRegistryNodeVersion(t *testing.T) {
 	createdNodeVersion = *res.(drip.PublishNodeVersion201JSONResponse).NodeVersion // Needed for downstream tests.
 
 	t.Run("Admin Update", func(t *testing.T) {
-		adminCtx, _ := setUpAdminTest(client)
+		adminCtx, _ := setupAdminUser(client)
 		activeStatus := drip.NodeVersionStatusActive
 		adminUpdateNodeVersionResp, err := impl.AdminUpdateNodeVersion(adminCtx, drip.AdminUpdateNodeVersionRequestObject{
 			NodeId:        *node.Id,
@@ -860,7 +787,7 @@ func TestRegistryComfyNode(t *testing.T) {
 	defer cleanup()
 	impl, authz := newMockedImpl(client, &config.Config{})
 
-	ctx, _ := setUpTest(client)
+	ctx, _ := setupTestUser(client)
 	ctx = drip_logging.SetupLogger().WithContext(ctx)
 
 	pub := randomPublisher()
