@@ -133,6 +133,20 @@ func (m *AuthorizationManager) AuthorizationMiddleware() drip.StrictMiddlewareFu
 					return req.(drip.DeleteNodeVersionRequestObject).NodeId
 				},
 			),
+			m.assertPublisherPermission(
+				[]schema.PublisherPermissionType{schema.PublisherPermissionTypeOwner},
+				func(req interface{}) (publisherID string) {
+					return req.(drip.DeleteNodeVersionRequestObject).PublisherId
+				},
+			),
+			m.assertNodeBelongsToPublisher(
+				func(req interface{}) (publisherID string) {
+					return req.(drip.DeleteNodeVersionRequestObject).PublisherId
+				},
+				func(req interface{}) (publisherID string) {
+					return req.(drip.DeleteNodeVersionRequestObject).NodeId
+				},
+			),
 		},
 		"GetNodeVersion": {
 			m.assertNodeBanned(

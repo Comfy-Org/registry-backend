@@ -514,6 +514,12 @@ func (s *RegistryService) GetNodeVersionByVersion(ctx context.Context, client *e
 		Only(ctx)
 }
 
+func (s *RegistryService) GetNodeVersion(ctx context.Context, client *ent.Client, nodeVersionId string) (*ent.NodeVersion, error) {
+	log.Ctx(ctx).Info().Msgf("getting node version %v", nodeVersionId)
+	return client.NodeVersion.
+		Get(ctx, uuid.MustParse(nodeVersionId))
+}
+
 func (s *RegistryService) UpdateNodeVersion(ctx context.Context, client *ent.Client, update *ent.NodeVersionUpdateOne) (*ent.NodeVersion, error) {
 	log.Ctx(ctx).Info().Msgf("updating node version fields: %v", update.Mutation().Fields())
 	return db.WithTxResult(ctx, client, func(tx *ent.Tx) (*ent.NodeVersion, error) {
@@ -801,6 +807,30 @@ func (s *RegistryService) DeleteNode(ctx context.Context, client *ent.Client, no
 		}
 
 		if err = s.algolia.DeleteNodeVersions(ctx, nv...); err != nil {
+			return fmt.Errorf("fail to delete node version from algolia: %w", err)
+		}
+
+		return nil
+	})
+	return nil
+}
+
+func (s *RegistryService) DeleteNodeVersion(ctx context.Context, client *ent.Client, nodeIDVersion string) error {
+	log.Ctx(ctx).Info().Msgf("deleting node version: %v", nodeIDVersion)
+	db.WithTx(ctx, client, func(tx *ent.Tx) error {
+		nv, err := tx.Client().NodeVersion.Get(ctx, uuid.MustParse(nodeIDVersion))
+		if err != nil {
+			return fmt.Errorf("fail to fetch node version while deleting node version: %w", err)
+		}
+
+		err = tx.Client().NodeVersion.UpdateOneID(nv.ID).
+			SetStatus(schema.NodeVersionStatusDeleted).
+			Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update node version status: %w", err)
+		}
+
+		if err = s.algolia.DeleteNodeVersions(ctx, nv); err != nil {
 			return fmt.Errorf("fail to delete node version from algolia: %w", err)
 		}
 
