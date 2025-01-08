@@ -390,14 +390,14 @@ func (s *RegistryService) ListNodeVersions(
 	query := client.NodeVersion.Query().
 		WithStorageFile().
 		WithComfyNodes().
-		Order(ent.Desc(nodeversion.FieldCreateTime))
+		Order(ent.Desc(nodeversion.FieldVersion))
 
 	if filter.NodeId != "" {
 		log.Ctx(ctx).Info().Msgf("listing node versions: %v", filter.NodeId)
 		query.Where(nodeversion.NodeIDEQ(filter.NodeId))
 	}
 
-	if filter.Status != nil && len(filter.Status) > 0 {
+	if len(filter.Status) > 0 {
 		log.Ctx(ctx).Info().Msgf("listing node versions with status: %v", filter.Status)
 		query.Where(nodeversion.StatusIn(filter.Status...))
 	}
@@ -499,6 +499,12 @@ func (s *RegistryService) GetNodeVersionByVersion(ctx context.Context, client *e
 		Only(ctx)
 }
 
+func (s *RegistryService) GetNodeVersion(ctx context.Context, client *ent.Client, nodeVersionId string) (*ent.NodeVersion, error) {
+	log.Ctx(ctx).Info().Msgf("getting node version %v", nodeVersionId)
+	return client.NodeVersion.
+		Get(ctx, uuid.MustParse(nodeVersionId))
+}
+
 func (s *RegistryService) UpdateNodeVersion(ctx context.Context, client *ent.Client, update *ent.NodeVersionUpdateOne) (*ent.NodeVersion, error) {
 	log.Ctx(ctx).Info().Msgf("updating node version fields: %v", update.Mutation().Fields())
 	return db.WithTxResult(ctx, client, func(tx *ent.Tx) (*ent.NodeVersion, error) {
@@ -538,8 +544,12 @@ func (s *RegistryService) GetLatestNodeVersion(ctx context.Context, client *ent.
 	nodeVersion, err := client.NodeVersion.
 		Query().
 		Where(nodeversion.NodeIDEQ(nodeId)).
-		//Where(nodeversion.StatusEQ(schema.NodeVersionStatusActive)).
-		Order(ent.Desc(nodeversion.FieldCreateTime)).
+		Where(nodeversion.StatusIn(
+			schema.NodeVersionStatusActive,
+			schema.NodeVersionStatusFlagged,
+			schema.NodeVersionStatusPending,
+		)).
+		Order(ent.Desc(nodeversion.FieldVersion)).
 		WithStorageFile().
 		WithComfyNodes().
 		First(ctx)
@@ -818,6 +828,30 @@ func (s *RegistryService) DeleteNode(ctx context.Context, client *ent.Client, no
 	return nil
 }
 
+func (s *RegistryService) DeleteNodeVersion(ctx context.Context, client *ent.Client, nodeIDVersion string) error {
+	log.Ctx(ctx).Info().Msgf("deleting node version: %v", nodeIDVersion)
+	db.WithTx(ctx, client, func(tx *ent.Tx) error {
+		nv, err := tx.Client().NodeVersion.Get(ctx, uuid.MustParse(nodeIDVersion))
+		if err != nil {
+			return fmt.Errorf("fail to fetch node version while deleting node version: %w", err)
+		}
+
+		err = tx.Client().NodeVersion.UpdateOneID(nv.ID).
+			SetStatus(schema.NodeVersionStatusDeleted).
+			Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to update node version status: %w", err)
+		}
+
+		if err = s.algolia.DeleteNodeVersions(ctx, nv); err != nil {
+			return fmt.Errorf("fail to delete node version from algolia: %w", err)
+		}
+
+		return nil
+	})
+	return nil
+}
+
 type errorPermission string
 
 // Error implements error.
@@ -992,7 +1026,7 @@ func (s *RegistryService) indexNodeWithLatestVersion(
 		return nil, fmt.Errorf("failed to query node: %w", err)
 	}
 	if err := s.algolia.IndexNodes(ctx, n); err != nil {
-		return nil, fmt.Errorf("failed to update node")
+		return nil, fmt.Errorf("failed to update node: %w", err)
 	}
 	return n, nil
 }

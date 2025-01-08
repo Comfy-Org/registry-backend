@@ -947,7 +947,7 @@ paths:
         '204':
           description: Version unpublished (deleted) successfully
         '403':
-          description: Version not found
+          description: Version does not belong to the publisher
           content:
             application/json:
               schema:
