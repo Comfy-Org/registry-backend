@@ -13,6 +13,7 @@ import (
 	"registry-backend/ent/predicate"
 	"registry-backend/ent/storagefile"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -137,7 +138,7 @@ func (nvq *NodeVersionQuery) QueryComfyNodes() *ComfyNodeQuery {
 // First returns the first NodeVersion entity from the query.
 // Returns a *NotFoundError when no NodeVersion was found.
 func (nvq *NodeVersionQuery) First(ctx context.Context) (*NodeVersion, error) {
-	nodes, err := nvq.Limit(1).All(setContextOp(ctx, nvq.ctx, "First"))
+	nodes, err := nvq.Limit(1).All(setContextOp(ctx, nvq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +161,7 @@ func (nvq *NodeVersionQuery) FirstX(ctx context.Context) *NodeVersion {
 // Returns a *NotFoundError when no NodeVersion ID was found.
 func (nvq *NodeVersionQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = nvq.Limit(1).IDs(setContextOp(ctx, nvq.ctx, "FirstID")); err != nil {
+	if ids, err = nvq.Limit(1).IDs(setContextOp(ctx, nvq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -183,7 +184,7 @@ func (nvq *NodeVersionQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Returns a *NotSingularError when more than one NodeVersion entity is found.
 // Returns a *NotFoundError when no NodeVersion entities are found.
 func (nvq *NodeVersionQuery) Only(ctx context.Context) (*NodeVersion, error) {
-	nodes, err := nvq.Limit(2).All(setContextOp(ctx, nvq.ctx, "Only"))
+	nodes, err := nvq.Limit(2).All(setContextOp(ctx, nvq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +212,7 @@ func (nvq *NodeVersionQuery) OnlyX(ctx context.Context) *NodeVersion {
 // Returns a *NotFoundError when no entities are found.
 func (nvq *NodeVersionQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = nvq.Limit(2).IDs(setContextOp(ctx, nvq.ctx, "OnlyID")); err != nil {
+	if ids, err = nvq.Limit(2).IDs(setContextOp(ctx, nvq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -236,7 +237,7 @@ func (nvq *NodeVersionQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 
 // All executes the query and returns a list of NodeVersions.
 func (nvq *NodeVersionQuery) All(ctx context.Context) ([]*NodeVersion, error) {
-	ctx = setContextOp(ctx, nvq.ctx, "All")
+	ctx = setContextOp(ctx, nvq.ctx, ent.OpQueryAll)
 	if err := nvq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -258,7 +259,7 @@ func (nvq *NodeVersionQuery) IDs(ctx context.Context) (ids []uuid.UUID, err erro
 	if nvq.ctx.Unique == nil && nvq.path != nil {
 		nvq.Unique(true)
 	}
-	ctx = setContextOp(ctx, nvq.ctx, "IDs")
+	ctx = setContextOp(ctx, nvq.ctx, ent.OpQueryIDs)
 	if err = nvq.Select(nodeversion.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -276,7 +277,7 @@ func (nvq *NodeVersionQuery) IDsX(ctx context.Context) []uuid.UUID {
 
 // Count returns the count of the given query.
 func (nvq *NodeVersionQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, nvq.ctx, "Count")
+	ctx = setContextOp(ctx, nvq.ctx, ent.OpQueryCount)
 	if err := nvq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -294,7 +295,7 @@ func (nvq *NodeVersionQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (nvq *NodeVersionQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, nvq.ctx, "Exist")
+	ctx = setContextOp(ctx, nvq.ctx, ent.OpQueryExist)
 	switch _, err := nvq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -330,8 +331,9 @@ func (nvq *NodeVersionQuery) Clone() *NodeVersionQuery {
 		withStorageFile: nvq.withStorageFile.Clone(),
 		withComfyNodes:  nvq.withComfyNodes.Clone(),
 		// clone intermediate query.
-		sql:  nvq.sql.Clone(),
-		path: nvq.path,
+		sql:       nvq.sql.Clone(),
+		path:      nvq.path,
+		modifiers: append([]func(*sql.Selector){}, nvq.modifiers...),
 	}
 }
 
@@ -730,7 +732,7 @@ func (nvgb *NodeVersionGroupBy) Aggregate(fns ...AggregateFunc) *NodeVersionGrou
 
 // Scan applies the selector query and scans the result into the given value.
 func (nvgb *NodeVersionGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, nvgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, nvgb.build.ctx, ent.OpQueryGroupBy)
 	if err := nvgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -778,7 +780,7 @@ func (nvs *NodeVersionSelect) Aggregate(fns ...AggregateFunc) *NodeVersionSelect
 
 // Scan applies the selector query and scans the result into the given value.
 func (nvs *NodeVersionSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, nvs.ctx, "Select")
+	ctx = setContextOp(ctx, nvs.ctx, ent.OpQuerySelect)
 	if err := nvs.prepareQuery(ctx); err != nil {
 		return err
 	}

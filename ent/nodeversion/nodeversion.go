@@ -35,6 +35,8 @@ const (
 	FieldStatus = "status"
 	// FieldStatusReason holds the string denoting the status_reason field in the database.
 	FieldStatusReason = "status_reason"
+	// FieldComfyNodeExtractStatus holds the string denoting the comfy_node_extract_status field in the database.
+	FieldComfyNodeExtractStatus = "comfy_node_extract_status"
 	// EdgeNode holds the string denoting the node edge name in mutations.
 	EdgeNode = "node"
 	// EdgeStorageFile holds the string denoting the storage_file edge name in mutations.
@@ -78,6 +80,7 @@ var Columns = []string{
 	FieldDeprecated,
 	FieldStatus,
 	FieldStatusReason,
+	FieldComfyNodeExtractStatus,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "node_versions"
@@ -112,6 +115,8 @@ var (
 	DefaultDeprecated bool
 	// DefaultStatusReason holds the default value on creation for the "status_reason" field.
 	DefaultStatusReason string
+	// DefaultComfyNodeExtractStatus holds the default value on creation for the "comfy_node_extract_status" field.
+	DefaultComfyNodeExtractStatus schema.ComfyNodeExtractStatus
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -174,6 +179,11 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByStatusReason orders the results by the status_reason field.
 func ByStatusReason(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatusReason, opts...).ToFunc()
+}
+
+// ByComfyNodeExtractStatus orders the results by the comfy_node_extract_status field.
+func ByComfyNodeExtractStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldComfyNodeExtractStatus, opts...).ToFunc()
 }
 
 // ByNodeField orders the results by node field.

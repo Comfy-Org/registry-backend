@@ -270,7 +270,7 @@ func (cnc *ComfyNodeCreate) check() error {
 	if _, ok := cnc.mutation.ReturnNames(); !ok {
 		return &ValidationError{Name: "return_names", err: errors.New(`ent: missing required field "ComfyNode.return_names"`)}
 	}
-	if _, ok := cnc.mutation.VersionsID(); !ok {
+	if len(cnc.mutation.VersionsIDs()) == 0 {
 		return &ValidationError{Name: "versions", err: errors.New(`ent: missing required edge "ComfyNode.versions"`)}
 	}
 	return nil
