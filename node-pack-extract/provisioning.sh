@@ -1,6 +1,14 @@
 #!/bin/bash
 set -e
 
+source /opt/environments/python/comfyui/bin/activate
+
+echo "=========================="
+echo "=== Pinning Dependencies ==="
+echo "=========================="
+
+pip install "numpy<2"
+
 echo "==========================================="
 echo "=== Downloading the custom node archive ==="
 echo "==========================================="
@@ -14,7 +22,6 @@ echo "=== Installing the custom node ==="
 echo "=================================="
 unzip "${CUSTOM_NODE_NAME}.zip" -d "$CUSTOM_NODE_NAME"
 cd "$CUSTOM_NODE_NAME"
-source /opt/environments/python/comfyui/bin/activate
 if [ -f "requirements.txt" ]; then
     echo "=== installing dependencies from requirements.txt"
     pip install -r requirements.txt 
