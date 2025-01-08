@@ -1,6 +1,6 @@
 # Start from the official Go image to build the binary.
 # Use the same version of Go as your project (1.21.5).
-FROM golang:1.21.5 AS builder
+FROM golang:1.23.0 AS builder
 
 # Set the working directory inside the container.
 WORKDIR /go/src/app
