@@ -5,23 +5,12 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	metricpb "google.golang.org/genproto/googleapis/api/metric"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
-
-func (c *CounterMetric) Increment(key any, i int64) int64 {
-	v, _ := c.LoadOrStore(key, new(atomic.Int64))
-	ai, ok := v.(*atomic.Int64)
-	if !ok {
-		ai = new(atomic.Int64)
-	}
-	ai.Add(i) // Initialize and increment atomically
-	return ai.Load()
-}
 
 type customCounterKey struct {
 	t string

@@ -56,12 +56,13 @@ func MetricsMiddleware(client *monitoring.MetricClient, config *config.Config) e
 // CounterMetric safely increments counters using concurrent maps and atomic operations.
 type CounterMetric struct{ sync.Map }
 
-func (c *CounterMetric) increment(key any, i int64) int64 {
-	v, loaded := c.LoadOrStore(key, new(atomic.Int64))
-	ai := v.(*atomic.Int64)
-	if !loaded {
-		ai.Add(i) // Initialize and increment atomically
+func (c *CounterMetric) Increment(key any, i int64) int64 {
+	v, _ := c.LoadOrStore(key, new(atomic.Int64))
+	ai, ok := v.(*atomic.Int64)
+	if !ok {
+		ai = new(atomic.Int64)
 	}
+	ai.Add(i) // Initialize and increment atomically
 	return ai.Load()
 }
 
@@ -172,7 +173,7 @@ var reqCountMetric = CounterMetric{Map: sync.Map{}}
 // createRequestMetric constructs a cumulative metric for counting requests.
 func createRequestMetric(c echo.Context) *monitoringpb.TimeSeries {
 	key := endpointMetricKeyFromEcho(c)
-	val := reqCountMetric.increment(key, 1)
+	val := reqCountMetric.Increment(key, 1)
 	return &monitoringpb.TimeSeries{
 		Metric: &metricpb.Metric{
 			Type:   MetricTypePrefix + "/request_count",
@@ -204,7 +205,7 @@ func createErrorMetric(c echo.Context, err error) *monitoringpb.TimeSeries {
 	}
 
 	key := endpointMetricKeyFromEcho(c)
-	val := reqErrCountMetric.increment(key, 1)
+	val := reqErrCountMetric.Increment(key, 1)
 	return &monitoringpb.TimeSeries{
 		Metric: &metricpb.Metric{
 			Type:   MetricTypePrefix + "/request_errors",
