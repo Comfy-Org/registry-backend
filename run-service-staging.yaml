@@ -13,6 +13,7 @@ spec:
         autoscaling.knative.dev/maxScale: '2'
         run.googleapis.com/cpu-throttling: 'false'
         run.googleapis.com/startup-cpu-boost: 'false'
+        run.googleapis.com/minScale: '1'
     spec:
       containers:
         - image: registry-backend-image-substitute
