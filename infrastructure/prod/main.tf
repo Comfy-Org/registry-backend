@@ -13,7 +13,7 @@ provider "google" {
 }
 
 module "node_pack_extract_trigger" {
-  source    = "../modules/node-pack-extract-trigger"
+  source = "../modules/node-pack-extract-trigger"
   providers = {
     google = google
   }
@@ -24,4 +24,11 @@ module "node_pack_extract_trigger" {
   topic_name                  = "comfy-registry-event"
   registry_backend_url        = "https://api.comfy.org"
   backfill_job_name           = "comfy-node-pack-backfill"
+}
+
+module "alert" {
+  source = "../modules/alert"
+  providers = {
+    google = google
+  }
 }
