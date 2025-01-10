@@ -2,20 +2,52 @@ package middleware
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"io"
+
 	"github.com/labstack/echo/v4"
 	echo_middleware "github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog/log"
-	"io"
 )
 
+type teeReader struct {
+	buf bytes.Buffer
+	io.ReadCloser
+}
+
+func (tr *teeReader) Read(p []byte) (n int, err error) {
+	n, err = tr.ReadCloser.Read(p)
+	if err != nil || n == 0 {
+		return
+	}
+
+	tr.buf.Write(p[:n])
+	return
+}
+
+func (tr *teeReader) bytes() ([]byte, error) {
+	if tr.buf.Len() == 0 {
+		return io.ReadAll(tr.ReadCloser)
+	}
+	return tr.buf.Bytes(), nil
+}
+
 func RequestLoggerMiddleware() echo.MiddlewareFunc {
-	return echo_middleware.RequestLoggerWithConfig(echo_middleware.RequestLoggerConfig{
+	ctxKey := struct{}{}
+
+	rlw := echo_middleware.RequestLoggerWithConfig(echo_middleware.RequestLoggerConfig{
 		LogURI:    true,
 		LogStatus: true,
 		LogValuesFunc: func(c echo.Context, v echo_middleware.RequestLoggerValues) error {
+			// Get the teeReader
+			reader, ok := c.Request().Context().Value(ctxKey).(*teeReader)
+			if !ok {
+				reader = &teeReader{ReadCloser: c.Request().Body}
+			}
+
 			// Read the request body for logging
-			requestBody, err := io.ReadAll(c.Request().Body)
+			requestBody, err := reader.bytes()
 			if err != nil {
 				log.Ctx(c.Request().Context()).Error().Err(err).Msg("Failed to read request body")
 				return err
@@ -35,4 +67,16 @@ func RequestLoggerMiddleware() echo.MiddlewareFunc {
 			return nil
 		},
 	})
+
+	mw := func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			req := c.Request()
+			reader := &teeReader{ReadCloser: req.Body}
+			req.Body = io.NopCloser(reader)
+			c.SetRequest(req.WithContext(context.WithValue(req.Context(), ctxKey, reader)))
+			return rlw(next)(c)
+		}
+	}
+
+	return mw
 }
