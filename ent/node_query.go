@@ -13,7 +13,6 @@ import (
 	"registry-backend/ent/predicate"
 	"registry-backend/ent/publisher"
 
-	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -136,7 +135,7 @@ func (nq *NodeQuery) QueryReviews() *NodeReviewQuery {
 // First returns the first Node entity from the query.
 // Returns a *NotFoundError when no Node was found.
 func (nq *NodeQuery) First(ctx context.Context) (*Node, error) {
-	nodes, err := nq.Limit(1).All(setContextOp(ctx, nq.ctx, ent.OpQueryFirst))
+	nodes, err := nq.Limit(1).All(setContextOp(ctx, nq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +158,7 @@ func (nq *NodeQuery) FirstX(ctx context.Context) *Node {
 // Returns a *NotFoundError when no Node ID was found.
 func (nq *NodeQuery) FirstID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = nq.Limit(1).IDs(setContextOp(ctx, nq.ctx, ent.OpQueryFirstID)); err != nil {
+	if ids, err = nq.Limit(1).IDs(setContextOp(ctx, nq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -182,7 +181,7 @@ func (nq *NodeQuery) FirstIDX(ctx context.Context) string {
 // Returns a *NotSingularError when more than one Node entity is found.
 // Returns a *NotFoundError when no Node entities are found.
 func (nq *NodeQuery) Only(ctx context.Context) (*Node, error) {
-	nodes, err := nq.Limit(2).All(setContextOp(ctx, nq.ctx, ent.OpQueryOnly))
+	nodes, err := nq.Limit(2).All(setContextOp(ctx, nq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +209,7 @@ func (nq *NodeQuery) OnlyX(ctx context.Context) *Node {
 // Returns a *NotFoundError when no entities are found.
 func (nq *NodeQuery) OnlyID(ctx context.Context) (id string, err error) {
 	var ids []string
-	if ids, err = nq.Limit(2).IDs(setContextOp(ctx, nq.ctx, ent.OpQueryOnlyID)); err != nil {
+	if ids, err = nq.Limit(2).IDs(setContextOp(ctx, nq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -235,7 +234,7 @@ func (nq *NodeQuery) OnlyIDX(ctx context.Context) string {
 
 // All executes the query and returns a list of Nodes.
 func (nq *NodeQuery) All(ctx context.Context) ([]*Node, error) {
-	ctx = setContextOp(ctx, nq.ctx, ent.OpQueryAll)
+	ctx = setContextOp(ctx, nq.ctx, "All")
 	if err := nq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -257,7 +256,7 @@ func (nq *NodeQuery) IDs(ctx context.Context) (ids []string, err error) {
 	if nq.ctx.Unique == nil && nq.path != nil {
 		nq.Unique(true)
 	}
-	ctx = setContextOp(ctx, nq.ctx, ent.OpQueryIDs)
+	ctx = setContextOp(ctx, nq.ctx, "IDs")
 	if err = nq.Select(node.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -275,7 +274,7 @@ func (nq *NodeQuery) IDsX(ctx context.Context) []string {
 
 // Count returns the count of the given query.
 func (nq *NodeQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, nq.ctx, ent.OpQueryCount)
+	ctx = setContextOp(ctx, nq.ctx, "Count")
 	if err := nq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -293,7 +292,7 @@ func (nq *NodeQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (nq *NodeQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, nq.ctx, ent.OpQueryExist)
+	ctx = setContextOp(ctx, nq.ctx, "Exist")
 	switch _, err := nq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -329,9 +328,8 @@ func (nq *NodeQuery) Clone() *NodeQuery {
 		withVersions:  nq.withVersions.Clone(),
 		withReviews:   nq.withReviews.Clone(),
 		// clone intermediate query.
-		sql:       nq.sql.Clone(),
-		path:      nq.path,
-		modifiers: append([]func(*sql.Selector){}, nq.modifiers...),
+		sql:  nq.sql.Clone(),
+		path: nq.path,
 	}
 }
 
@@ -723,7 +721,7 @@ func (ngb *NodeGroupBy) Aggregate(fns ...AggregateFunc) *NodeGroupBy {
 
 // Scan applies the selector query and scans the result into the given value.
 func (ngb *NodeGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, ngb.build.ctx, ent.OpQueryGroupBy)
+	ctx = setContextOp(ctx, ngb.build.ctx, "GroupBy")
 	if err := ngb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -771,7 +769,7 @@ func (ns *NodeSelect) Aggregate(fns ...AggregateFunc) *NodeSelect {
 
 // Scan applies the selector query and scans the result into the given value.
 func (ns *NodeSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, ns.ctx, ent.OpQuerySelect)
+	ctx = setContextOp(ctx, ns.ctx, "Select")
 	if err := ns.prepareQuery(ctx); err != nil {
 		return err
 	}

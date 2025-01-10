@@ -100,10 +100,10 @@ func (ppc *PublisherPermissionCreate) check() error {
 	if _, ok := ppc.mutation.PublisherID(); !ok {
 		return &ValidationError{Name: "publisher_id", err: errors.New(`ent: missing required field "PublisherPermission.publisher_id"`)}
 	}
-	if len(ppc.mutation.UserIDs()) == 0 {
+	if _, ok := ppc.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "PublisherPermission.user"`)}
 	}
-	if len(ppc.mutation.PublisherIDs()) == 0 {
+	if _, ok := ppc.mutation.PublisherID(); !ok {
 		return &ValidationError{Name: "publisher", err: errors.New(`ent: missing required edge "PublisherPermission.publisher"`)}
 	}
 	return nil

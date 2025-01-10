@@ -135,10 +135,10 @@ func (nru *NodeReviewUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (nru *NodeReviewUpdate) check() error {
-	if nru.mutation.UserCleared() && len(nru.mutation.UserIDs()) > 0 {
+	if _, ok := nru.mutation.UserID(); nru.mutation.UserCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "NodeReview.user"`)
 	}
-	if nru.mutation.NodeCleared() && len(nru.mutation.NodeIDs()) > 0 {
+	if _, ok := nru.mutation.NodeID(); nru.mutation.NodeCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "NodeReview.node"`)
 	}
 	return nil
@@ -366,10 +366,10 @@ func (nruo *NodeReviewUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (nruo *NodeReviewUpdateOne) check() error {
-	if nruo.mutation.UserCleared() && len(nruo.mutation.UserIDs()) > 0 {
+	if _, ok := nruo.mutation.UserID(); nruo.mutation.UserCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "NodeReview.user"`)
 	}
-	if nruo.mutation.NodeCleared() && len(nruo.mutation.NodeIDs()) > 0 {
+	if _, ok := nruo.mutation.NodeID(); nruo.mutation.NodeCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "NodeReview.node"`)
 	}
 	return nil

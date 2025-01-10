@@ -358,7 +358,7 @@ func (nc *NodeCreate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Node.status": %w`, err)}
 		}
 	}
-	if len(nc.mutation.PublisherIDs()) == 0 {
+	if _, ok := nc.mutation.PublisherID(); !ok {
 		return &ValidationError{Name: "publisher", err: errors.New(`ent: missing required edge "Node.publisher"`)}
 	}
 	return nil

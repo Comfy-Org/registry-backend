@@ -1,5 +1,7 @@
 
 resource "google_monitoring_alert_policy" "quota_usage_compute_engine_api" {
+  count = local.is_prod ? 1 : 0
+
   display_name = "${local.prefix}Quota usage - Compute Engine API - NVIDIA T4 GPUs - compute.googleapis.com/nvidia_t4_gpus (${var.environment})"
 
   conditions {

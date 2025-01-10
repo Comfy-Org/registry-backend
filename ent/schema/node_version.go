@@ -38,9 +38,6 @@ func (NodeVersion) Fields() []ent.Field {
 		field.String("status_reason").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}).Default("").Comment("Give a reason for the status change. Eg. 'Banned due to security vulnerability'"),
-		field.String("comfy_node_extract_status").
-			GoType(ComfyNodeExtractStatus("")).
-			Default(string(ComfyNodeExtractStatusPending)),
 	}
 }
 
@@ -83,19 +80,3 @@ func (NodeVersionStatus) Values() (types []string) {
 		string(NodeVersionStatusFlagged),
 	}
 }
-
-type ComfyNodeExtractStatus string
-
-func (ComfyNodeExtractStatus) Values() (types []string) {
-	return []string{
-		string(ComfyNodeExtractStatusPending),
-		string(ComfyNodeExtractStatusFailed),
-		string(ComfyNodeExtractStatusSuccess),
-	}
-}
-
-const (
-	ComfyNodeExtractStatusPending = "pending"
-	ComfyNodeExtractStatusFailed  = "failed"
-	ComfyNodeExtractStatusSuccess = "success"
-)

@@ -9,7 +9,6 @@ import (
 	"registry-backend/ent/predicate"
 	"registry-backend/ent/storagefile"
 
-	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -65,7 +64,7 @@ func (sfq *StorageFileQuery) Order(o ...storagefile.OrderOption) *StorageFileQue
 // First returns the first StorageFile entity from the query.
 // Returns a *NotFoundError when no StorageFile was found.
 func (sfq *StorageFileQuery) First(ctx context.Context) (*StorageFile, error) {
-	nodes, err := sfq.Limit(1).All(setContextOp(ctx, sfq.ctx, ent.OpQueryFirst))
+	nodes, err := sfq.Limit(1).All(setContextOp(ctx, sfq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +87,7 @@ func (sfq *StorageFileQuery) FirstX(ctx context.Context) *StorageFile {
 // Returns a *NotFoundError when no StorageFile ID was found.
 func (sfq *StorageFileQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = sfq.Limit(1).IDs(setContextOp(ctx, sfq.ctx, ent.OpQueryFirstID)); err != nil {
+	if ids, err = sfq.Limit(1).IDs(setContextOp(ctx, sfq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -111,7 +110,7 @@ func (sfq *StorageFileQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Returns a *NotSingularError when more than one StorageFile entity is found.
 // Returns a *NotFoundError when no StorageFile entities are found.
 func (sfq *StorageFileQuery) Only(ctx context.Context) (*StorageFile, error) {
-	nodes, err := sfq.Limit(2).All(setContextOp(ctx, sfq.ctx, ent.OpQueryOnly))
+	nodes, err := sfq.Limit(2).All(setContextOp(ctx, sfq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +138,7 @@ func (sfq *StorageFileQuery) OnlyX(ctx context.Context) *StorageFile {
 // Returns a *NotFoundError when no entities are found.
 func (sfq *StorageFileQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = sfq.Limit(2).IDs(setContextOp(ctx, sfq.ctx, ent.OpQueryOnlyID)); err != nil {
+	if ids, err = sfq.Limit(2).IDs(setContextOp(ctx, sfq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -164,7 +163,7 @@ func (sfq *StorageFileQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 
 // All executes the query and returns a list of StorageFiles.
 func (sfq *StorageFileQuery) All(ctx context.Context) ([]*StorageFile, error) {
-	ctx = setContextOp(ctx, sfq.ctx, ent.OpQueryAll)
+	ctx = setContextOp(ctx, sfq.ctx, "All")
 	if err := sfq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -186,7 +185,7 @@ func (sfq *StorageFileQuery) IDs(ctx context.Context) (ids []uuid.UUID, err erro
 	if sfq.ctx.Unique == nil && sfq.path != nil {
 		sfq.Unique(true)
 	}
-	ctx = setContextOp(ctx, sfq.ctx, ent.OpQueryIDs)
+	ctx = setContextOp(ctx, sfq.ctx, "IDs")
 	if err = sfq.Select(storagefile.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -204,7 +203,7 @@ func (sfq *StorageFileQuery) IDsX(ctx context.Context) []uuid.UUID {
 
 // Count returns the count of the given query.
 func (sfq *StorageFileQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, sfq.ctx, ent.OpQueryCount)
+	ctx = setContextOp(ctx, sfq.ctx, "Count")
 	if err := sfq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -222,7 +221,7 @@ func (sfq *StorageFileQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (sfq *StorageFileQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, sfq.ctx, ent.OpQueryExist)
+	ctx = setContextOp(ctx, sfq.ctx, "Exist")
 	switch _, err := sfq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -255,9 +254,8 @@ func (sfq *StorageFileQuery) Clone() *StorageFileQuery {
 		inters:     append([]Interceptor{}, sfq.inters...),
 		predicates: append([]predicate.StorageFile{}, sfq.predicates...),
 		// clone intermediate query.
-		sql:       sfq.sql.Clone(),
-		path:      sfq.path,
-		modifiers: append([]func(*sql.Selector){}, sfq.modifiers...),
+		sql:  sfq.sql.Clone(),
+		path: sfq.path,
 	}
 }
 
@@ -500,7 +498,7 @@ func (sfgb *StorageFileGroupBy) Aggregate(fns ...AggregateFunc) *StorageFileGrou
 
 // Scan applies the selector query and scans the result into the given value.
 func (sfgb *StorageFileGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, sfgb.build.ctx, ent.OpQueryGroupBy)
+	ctx = setContextOp(ctx, sfgb.build.ctx, "GroupBy")
 	if err := sfgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -548,7 +546,7 @@ func (sfs *StorageFileSelect) Aggregate(fns ...AggregateFunc) *StorageFileSelect
 
 // Scan applies the selector query and scans the result into the given value.
 func (sfs *StorageFileSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, sfs.ctx, ent.OpQuerySelect)
+	ctx = setContextOp(ctx, sfs.ctx, "Select")
 	if err := sfs.prepareQuery(ctx); err != nil {
 		return err
 	}

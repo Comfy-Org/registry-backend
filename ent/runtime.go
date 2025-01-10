@@ -160,10 +160,6 @@ func init() {
 	nodeversionDescStatusReason := nodeversionFields[7].Descriptor()
 	// nodeversion.DefaultStatusReason holds the default value on creation for the status_reason field.
 	nodeversion.DefaultStatusReason = nodeversionDescStatusReason.Default.(string)
-	// nodeversionDescComfyNodeExtractStatus is the schema descriptor for comfy_node_extract_status field.
-	nodeversionDescComfyNodeExtractStatus := nodeversionFields[8].Descriptor()
-	// nodeversion.DefaultComfyNodeExtractStatus holds the default value on creation for the comfy_node_extract_status field.
-	nodeversion.DefaultComfyNodeExtractStatus = schema.ComfyNodeExtractStatus(nodeversionDescComfyNodeExtractStatus.Default.(string))
 	// nodeversionDescID is the schema descriptor for id field.
 	nodeversionDescID := nodeversionFields[0].Descriptor()
 	// nodeversion.DefaultID holds the default value on creation for the id field.

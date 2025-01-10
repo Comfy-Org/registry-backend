@@ -187,7 +187,6 @@ var (
 		{Name: "deprecated", Type: field.TypeBool, Default: false},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "banned", "deleted", "pending", "flagged"}, Default: "pending"},
 		{Name: "status_reason", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
-		{Name: "comfy_node_extract_status", Type: field.TypeString, Default: "pending"},
 		{Name: "node_id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "node_version_storage_file", Type: field.TypeUUID, Nullable: true},
 	}
@@ -199,13 +198,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "node_versions_nodes_versions",
-				Columns:    []*schema.Column{NodeVersionsColumns[10]},
+				Columns:    []*schema.Column{NodeVersionsColumns[9]},
 				RefColumns: []*schema.Column{NodesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "node_versions_storage_files_storage_file",
-				Columns:    []*schema.Column{NodeVersionsColumns[11]},
+				Columns:    []*schema.Column{NodeVersionsColumns[10]},
 				RefColumns: []*schema.Column{StorageFilesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -214,7 +213,7 @@ var (
 			{
 				Name:    "nodeversion_node_id_version",
 				Unique:  true,
-				Columns: []*schema.Column{NodeVersionsColumns[10], NodeVersionsColumns[3]},
+				Columns: []*schema.Column{NodeVersionsColumns[9], NodeVersionsColumns[3]},
 			},
 		},
 	}

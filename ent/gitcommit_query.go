@@ -11,7 +11,6 @@ import (
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/predicate"
 
-	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -89,7 +88,7 @@ func (gcq *GitCommitQuery) QueryResults() *CIWorkflowResultQuery {
 // First returns the first GitCommit entity from the query.
 // Returns a *NotFoundError when no GitCommit was found.
 func (gcq *GitCommitQuery) First(ctx context.Context) (*GitCommit, error) {
-	nodes, err := gcq.Limit(1).All(setContextOp(ctx, gcq.ctx, ent.OpQueryFirst))
+	nodes, err := gcq.Limit(1).All(setContextOp(ctx, gcq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +111,7 @@ func (gcq *GitCommitQuery) FirstX(ctx context.Context) *GitCommit {
 // Returns a *NotFoundError when no GitCommit ID was found.
 func (gcq *GitCommitQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = gcq.Limit(1).IDs(setContextOp(ctx, gcq.ctx, ent.OpQueryFirstID)); err != nil {
+	if ids, err = gcq.Limit(1).IDs(setContextOp(ctx, gcq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -135,7 +134,7 @@ func (gcq *GitCommitQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Returns a *NotSingularError when more than one GitCommit entity is found.
 // Returns a *NotFoundError when no GitCommit entities are found.
 func (gcq *GitCommitQuery) Only(ctx context.Context) (*GitCommit, error) {
-	nodes, err := gcq.Limit(2).All(setContextOp(ctx, gcq.ctx, ent.OpQueryOnly))
+	nodes, err := gcq.Limit(2).All(setContextOp(ctx, gcq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +162,7 @@ func (gcq *GitCommitQuery) OnlyX(ctx context.Context) *GitCommit {
 // Returns a *NotFoundError when no entities are found.
 func (gcq *GitCommitQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = gcq.Limit(2).IDs(setContextOp(ctx, gcq.ctx, ent.OpQueryOnlyID)); err != nil {
+	if ids, err = gcq.Limit(2).IDs(setContextOp(ctx, gcq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -188,7 +187,7 @@ func (gcq *GitCommitQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 
 // All executes the query and returns a list of GitCommits.
 func (gcq *GitCommitQuery) All(ctx context.Context) ([]*GitCommit, error) {
-	ctx = setContextOp(ctx, gcq.ctx, ent.OpQueryAll)
+	ctx = setContextOp(ctx, gcq.ctx, "All")
 	if err := gcq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -210,7 +209,7 @@ func (gcq *GitCommitQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error)
 	if gcq.ctx.Unique == nil && gcq.path != nil {
 		gcq.Unique(true)
 	}
-	ctx = setContextOp(ctx, gcq.ctx, ent.OpQueryIDs)
+	ctx = setContextOp(ctx, gcq.ctx, "IDs")
 	if err = gcq.Select(gitcommit.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -228,7 +227,7 @@ func (gcq *GitCommitQuery) IDsX(ctx context.Context) []uuid.UUID {
 
 // Count returns the count of the given query.
 func (gcq *GitCommitQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, gcq.ctx, ent.OpQueryCount)
+	ctx = setContextOp(ctx, gcq.ctx, "Count")
 	if err := gcq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -246,7 +245,7 @@ func (gcq *GitCommitQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (gcq *GitCommitQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, gcq.ctx, ent.OpQueryExist)
+	ctx = setContextOp(ctx, gcq.ctx, "Exist")
 	switch _, err := gcq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -280,9 +279,8 @@ func (gcq *GitCommitQuery) Clone() *GitCommitQuery {
 		predicates:  append([]predicate.GitCommit{}, gcq.predicates...),
 		withResults: gcq.withResults.Clone(),
 		// clone intermediate query.
-		sql:       gcq.sql.Clone(),
-		path:      gcq.path,
-		modifiers: append([]func(*sql.Selector){}, gcq.modifiers...),
+		sql:  gcq.sql.Clone(),
+		path: gcq.path,
 	}
 }
 
@@ -575,7 +573,7 @@ func (gcgb *GitCommitGroupBy) Aggregate(fns ...AggregateFunc) *GitCommitGroupBy 
 
 // Scan applies the selector query and scans the result into the given value.
 func (gcgb *GitCommitGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, gcgb.build.ctx, ent.OpQueryGroupBy)
+	ctx = setContextOp(ctx, gcgb.build.ctx, "GroupBy")
 	if err := gcgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -623,7 +621,7 @@ func (gcs *GitCommitSelect) Aggregate(fns ...AggregateFunc) *GitCommitSelect {
 
 // Scan applies the selector query and scans the result into the given value.
 func (gcs *GitCommitSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, gcs.ctx, ent.OpQuerySelect)
+	ctx = setContextOp(ctx, gcs.ctx, "Select")
 	if err := gcs.prepareQuery(ctx); err != nil {
 		return err
 	}

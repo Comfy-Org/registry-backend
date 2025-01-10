@@ -1008,25 +1008,20 @@ func (s *DripStrictServerImplementation) ReindexNodes(ctx context.Context, reque
 	return drip.ReindexNodes200Response{}, nil
 }
 
-// CreateComfyNodes bulk-stores comfy-nodes extraction result for a node version
+// CreateComfyNodes bulk-creates comfy-nodes for a node version
 func (impl *DripStrictServerImplementation) CreateComfyNodes(ctx context.Context, request drip.CreateComfyNodesRequestObject) (res drip.CreateComfyNodesResponseObject, err error) {
-	if request.Body.Success != nil && !*request.Body.Success {
-		err = impl.RegistryService.MarKComfyNodeExtractionFailed(ctx, impl.Client, request.NodeId, request.Version)
-	} else {
-		err = impl.RegistryService.CreateComfyNodes(ctx, impl.Client, request.NodeId, request.Version, *request.Body.Nodes)
-	}
-
+	err = impl.RegistryService.CreateComfyNodes(ctx, impl.Client, request.NodeId, request.Version, *request.Body.Nodes)
 	if ent.IsNotFound(err) {
 		log.Ctx(ctx).Error().Msgf("Node or node version not found w/ err: %v", err)
 		return drip.CreateComfyNodes404JSONResponse{Message: "Node or node version not found", Error: err.Error()}, nil
 	}
 	if errors.Is(err, drip_services.ErrComfyNodesAlreadyExist) {
-		log.Ctx(ctx).Error().Msgf("Comfy nodes extraction result for %s %s already set", request.NodeId, request.Version)
-		return drip.CreateComfyNodes409JSONResponse{Message: "Comfy nodes extraction result already set", Error: err.Error()}, nil
+		log.Ctx(ctx).Error().Msgf("Comfy nodes for %s %s exist", request.NodeId, request.Version)
+		return drip.CreateComfyNodes409JSONResponse{Message: "Comfy nodes already exist", Error: err.Error()}, nil
 	}
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("Failed to store comfy nodes extraction w/ err: %v", err)
-		return drip.CreateComfyNodes500JSONResponse{Message: "Failed to store comfy nodes extraction", Error: err.Error()}, nil
+		log.Ctx(ctx).Error().Msgf("Failed to create comfy nodes w/ err: %v", err)
+		return drip.CreateComfyNodes500JSONResponse{Message: "Failed to create comfy nodes", Error: err.Error()}, nil
 	}
 
 	log.Ctx(ctx).Info().Msgf("CreateComfyNodes successful")

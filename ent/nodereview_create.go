@@ -131,10 +131,10 @@ func (nrc *NodeReviewCreate) check() error {
 	if _, ok := nrc.mutation.Star(); !ok {
 		return &ValidationError{Name: "star", err: errors.New(`ent: missing required field "NodeReview.star"`)}
 	}
-	if len(nrc.mutation.UserIDs()) == 0 {
+	if _, ok := nrc.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "NodeReview.user"`)}
 	}
-	if len(nrc.mutation.NodeIDs()) == 0 {
+	if _, ok := nrc.mutation.NodeID(); !ok {
 		return &ValidationError{Name: "node", err: errors.New(`ent: missing required edge "NodeReview.node"`)}
 	}
 	return nil

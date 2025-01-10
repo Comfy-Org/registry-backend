@@ -1,4 +1,6 @@
 resource "google_monitoring_alert_policy" "cloud_deploy_release_render_failure" {
+  count = local.is_prod ? 1 : 0
+
   display_name = "${local.prefix}Cloud Deploy - Release Render Failure (comfy-backend-api-pipeline pipeline) (${var.environment})"
 
   conditions {
@@ -30,6 +32,8 @@ resource "google_monitoring_alert_policy" "cloud_deploy_release_render_failure" 
 
 
 resource "google_monitoring_alert_policy" "cloud_deploy_rollout_failure" {
+  count = local.is_prod ? 1 : 0
+
   display_name = "${local.prefix}Cloud Deploy - Rollout Failure (comfy-backend-api-pipeline pipeline) (${var.environment})"
 
   conditions {

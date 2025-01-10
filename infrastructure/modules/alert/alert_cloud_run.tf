@@ -1,4 +1,6 @@
 resource "google_monitoring_alert_policy" "cloud_run_uptime_check_comfy_backend" {
+  count = local.is_prod ? 1 : 0
+
   display_name = "${local.prefix}comfy-backend Cloud Run Uptime Check uptime failure (${var.environment})"
 
   conditions {
@@ -34,6 +36,8 @@ resource "google_monitoring_alert_policy" "cloud_run_uptime_check_comfy_backend"
 }
 
 resource "google_monitoring_alert_policy" "cloud_run_uptime_check_uptime_check" {
+  count = local.is_prod ? 1 : 0
+
   display_name = "${local.prefix}electron-updater Cloud Run Uptime Check uptime failure (${var.environment})"
 
   conditions {
@@ -70,6 +74,8 @@ resource "google_monitoring_alert_policy" "cloud_run_uptime_check_uptime_check" 
 
 
 resource "google_monitoring_alert_policy" "mixpanel_tracking_proxy_uptime_check" {
+  count = local.is_prod ? 1 : 0
+
   display_name = "${local.prefix}mixpanel-tracking-proxy Cloud Run Uptime Check uptime failure (${var.environment})"
 
   conditions {

@@ -1,4 +1,6 @@
 resource "google_monitoring_alert_policy" "cloud_scheduler_job_error" {
+  count = local.is_prod ? 1 : 0
+
   display_name = "${local.prefix}Cloud Scheduler Job Error (${var.environment})"
 
   conditions {

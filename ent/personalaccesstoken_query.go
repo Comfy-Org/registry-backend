@@ -10,7 +10,6 @@ import (
 	"registry-backend/ent/predicate"
 	"registry-backend/ent/publisher"
 
-	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -88,7 +87,7 @@ func (patq *PersonalAccessTokenQuery) QueryPublisher() *PublisherQuery {
 // First returns the first PersonalAccessToken entity from the query.
 // Returns a *NotFoundError when no PersonalAccessToken was found.
 func (patq *PersonalAccessTokenQuery) First(ctx context.Context) (*PersonalAccessToken, error) {
-	nodes, err := patq.Limit(1).All(setContextOp(ctx, patq.ctx, ent.OpQueryFirst))
+	nodes, err := patq.Limit(1).All(setContextOp(ctx, patq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +110,7 @@ func (patq *PersonalAccessTokenQuery) FirstX(ctx context.Context) *PersonalAcces
 // Returns a *NotFoundError when no PersonalAccessToken ID was found.
 func (patq *PersonalAccessTokenQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = patq.Limit(1).IDs(setContextOp(ctx, patq.ctx, ent.OpQueryFirstID)); err != nil {
+	if ids, err = patq.Limit(1).IDs(setContextOp(ctx, patq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -134,7 +133,7 @@ func (patq *PersonalAccessTokenQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Returns a *NotSingularError when more than one PersonalAccessToken entity is found.
 // Returns a *NotFoundError when no PersonalAccessToken entities are found.
 func (patq *PersonalAccessTokenQuery) Only(ctx context.Context) (*PersonalAccessToken, error) {
-	nodes, err := patq.Limit(2).All(setContextOp(ctx, patq.ctx, ent.OpQueryOnly))
+	nodes, err := patq.Limit(2).All(setContextOp(ctx, patq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +161,7 @@ func (patq *PersonalAccessTokenQuery) OnlyX(ctx context.Context) *PersonalAccess
 // Returns a *NotFoundError when no entities are found.
 func (patq *PersonalAccessTokenQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = patq.Limit(2).IDs(setContextOp(ctx, patq.ctx, ent.OpQueryOnlyID)); err != nil {
+	if ids, err = patq.Limit(2).IDs(setContextOp(ctx, patq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -187,7 +186,7 @@ func (patq *PersonalAccessTokenQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 
 // All executes the query and returns a list of PersonalAccessTokens.
 func (patq *PersonalAccessTokenQuery) All(ctx context.Context) ([]*PersonalAccessToken, error) {
-	ctx = setContextOp(ctx, patq.ctx, ent.OpQueryAll)
+	ctx = setContextOp(ctx, patq.ctx, "All")
 	if err := patq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -209,7 +208,7 @@ func (patq *PersonalAccessTokenQuery) IDs(ctx context.Context) (ids []uuid.UUID,
 	if patq.ctx.Unique == nil && patq.path != nil {
 		patq.Unique(true)
 	}
-	ctx = setContextOp(ctx, patq.ctx, ent.OpQueryIDs)
+	ctx = setContextOp(ctx, patq.ctx, "IDs")
 	if err = patq.Select(personalaccesstoken.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -227,7 +226,7 @@ func (patq *PersonalAccessTokenQuery) IDsX(ctx context.Context) []uuid.UUID {
 
 // Count returns the count of the given query.
 func (patq *PersonalAccessTokenQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, patq.ctx, ent.OpQueryCount)
+	ctx = setContextOp(ctx, patq.ctx, "Count")
 	if err := patq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -245,7 +244,7 @@ func (patq *PersonalAccessTokenQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (patq *PersonalAccessTokenQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, patq.ctx, ent.OpQueryExist)
+	ctx = setContextOp(ctx, patq.ctx, "Exist")
 	switch _, err := patq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -279,9 +278,8 @@ func (patq *PersonalAccessTokenQuery) Clone() *PersonalAccessTokenQuery {
 		predicates:    append([]predicate.PersonalAccessToken{}, patq.predicates...),
 		withPublisher: patq.withPublisher.Clone(),
 		// clone intermediate query.
-		sql:       patq.sql.Clone(),
-		path:      patq.path,
-		modifiers: append([]func(*sql.Selector){}, patq.modifiers...),
+		sql:  patq.sql.Clone(),
+		path: patq.path,
 	}
 }
 
@@ -574,7 +572,7 @@ func (patgb *PersonalAccessTokenGroupBy) Aggregate(fns ...AggregateFunc) *Person
 
 // Scan applies the selector query and scans the result into the given value.
 func (patgb *PersonalAccessTokenGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, patgb.build.ctx, ent.OpQueryGroupBy)
+	ctx = setContextOp(ctx, patgb.build.ctx, "GroupBy")
 	if err := patgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -622,7 +620,7 @@ func (pats *PersonalAccessTokenSelect) Aggregate(fns ...AggregateFunc) *Personal
 
 // Scan applies the selector query and scans the result into the given value.
 func (pats *PersonalAccessTokenSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, pats.ctx, ent.OpQuerySelect)
+	ctx = setContextOp(ctx, pats.ctx, "Select")
 	if err := pats.prepareQuery(ctx); err != nil {
 		return err
 	}

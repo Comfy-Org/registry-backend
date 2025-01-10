@@ -417,7 +417,7 @@ func (nu *NodeUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Node.status": %w`, err)}
 		}
 	}
-	if nu.mutation.PublisherCleared() && len(nu.mutation.PublisherIDs()) > 0 {
+	if _, ok := nu.mutation.PublisherID(); nu.mutation.PublisherCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Node.publisher"`)
 	}
 	return nil
@@ -1048,7 +1048,7 @@ func (nuo *NodeUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Node.status": %w`, err)}
 		}
 	}
-	if nuo.mutation.PublisherCleared() && len(nuo.mutation.PublisherIDs()) > 0 {
+	if _, ok := nuo.mutation.PublisherID(); nuo.mutation.PublisherCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Node.publisher"`)
 	}
 	return nil

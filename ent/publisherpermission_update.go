@@ -134,10 +134,10 @@ func (ppu *PublisherPermissionUpdate) check() error {
 			return &ValidationError{Name: "permission", err: fmt.Errorf(`ent: validator failed for field "PublisherPermission.permission": %w`, err)}
 		}
 	}
-	if ppu.mutation.UserCleared() && len(ppu.mutation.UserIDs()) > 0 {
+	if _, ok := ppu.mutation.UserID(); ppu.mutation.UserCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "PublisherPermission.user"`)
 	}
-	if ppu.mutation.PublisherCleared() && len(ppu.mutation.PublisherIDs()) > 0 {
+	if _, ok := ppu.mutation.PublisherID(); ppu.mutation.PublisherCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "PublisherPermission.publisher"`)
 	}
 	return nil
@@ -360,10 +360,10 @@ func (ppuo *PublisherPermissionUpdateOne) check() error {
 			return &ValidationError{Name: "permission", err: fmt.Errorf(`ent: validator failed for field "PublisherPermission.permission": %w`, err)}
 		}
 	}
-	if ppuo.mutation.UserCleared() && len(ppuo.mutation.UserIDs()) > 0 {
+	if _, ok := ppuo.mutation.UserID(); ppuo.mutation.UserCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "PublisherPermission.user"`)
 	}
-	if ppuo.mutation.PublisherCleared() && len(ppuo.mutation.PublisherIDs()) > 0 {
+	if _, ok := ppuo.mutation.PublisherID(); ppuo.mutation.PublisherCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "PublisherPermission.publisher"`)
 	}
 	return nil

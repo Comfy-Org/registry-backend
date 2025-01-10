@@ -143,20 +143,6 @@ func (nvu *NodeVersionUpdate) SetNillableStatusReason(s *string) *NodeVersionUpd
 	return nvu
 }
 
-// SetComfyNodeExtractStatus sets the "comfy_node_extract_status" field.
-func (nvu *NodeVersionUpdate) SetComfyNodeExtractStatus(snes schema.ComfyNodeExtractStatus) *NodeVersionUpdate {
-	nvu.mutation.SetComfyNodeExtractStatus(snes)
-	return nvu
-}
-
-// SetNillableComfyNodeExtractStatus sets the "comfy_node_extract_status" field if the given value is not nil.
-func (nvu *NodeVersionUpdate) SetNillableComfyNodeExtractStatus(snes *schema.ComfyNodeExtractStatus) *NodeVersionUpdate {
-	if snes != nil {
-		nvu.SetComfyNodeExtractStatus(*snes)
-	}
-	return nvu
-}
-
 // SetNode sets the "node" edge to the Node entity.
 func (nvu *NodeVersionUpdate) SetNode(n *Node) *NodeVersionUpdate {
 	return nvu.SetNodeID(n.ID)
@@ -277,7 +263,7 @@ func (nvu *NodeVersionUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "NodeVersion.status": %w`, err)}
 		}
 	}
-	if nvu.mutation.NodeCleared() && len(nvu.mutation.NodeIDs()) > 0 {
+	if _, ok := nvu.mutation.NodeID(); nvu.mutation.NodeCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "NodeVersion.node"`)
 	}
 	return nil
@@ -329,9 +315,6 @@ func (nvu *NodeVersionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := nvu.mutation.StatusReason(); ok {
 		_spec.SetField(nodeversion.FieldStatusReason, field.TypeString, value)
-	}
-	if value, ok := nvu.mutation.ComfyNodeExtractStatus(); ok {
-		_spec.SetField(nodeversion.FieldComfyNodeExtractStatus, field.TypeString, value)
 	}
 	if nvu.mutation.NodeCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -566,20 +549,6 @@ func (nvuo *NodeVersionUpdateOne) SetNillableStatusReason(s *string) *NodeVersio
 	return nvuo
 }
 
-// SetComfyNodeExtractStatus sets the "comfy_node_extract_status" field.
-func (nvuo *NodeVersionUpdateOne) SetComfyNodeExtractStatus(snes schema.ComfyNodeExtractStatus) *NodeVersionUpdateOne {
-	nvuo.mutation.SetComfyNodeExtractStatus(snes)
-	return nvuo
-}
-
-// SetNillableComfyNodeExtractStatus sets the "comfy_node_extract_status" field if the given value is not nil.
-func (nvuo *NodeVersionUpdateOne) SetNillableComfyNodeExtractStatus(snes *schema.ComfyNodeExtractStatus) *NodeVersionUpdateOne {
-	if snes != nil {
-		nvuo.SetComfyNodeExtractStatus(*snes)
-	}
-	return nvuo
-}
-
 // SetNode sets the "node" edge to the Node entity.
 func (nvuo *NodeVersionUpdateOne) SetNode(n *Node) *NodeVersionUpdateOne {
 	return nvuo.SetNodeID(n.ID)
@@ -713,7 +682,7 @@ func (nvuo *NodeVersionUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "NodeVersion.status": %w`, err)}
 		}
 	}
-	if nvuo.mutation.NodeCleared() && len(nvuo.mutation.NodeIDs()) > 0 {
+	if _, ok := nvuo.mutation.NodeID(); nvuo.mutation.NodeCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "NodeVersion.node"`)
 	}
 	return nil
@@ -782,9 +751,6 @@ func (nvuo *NodeVersionUpdateOne) sqlSave(ctx context.Context) (_node *NodeVersi
 	}
 	if value, ok := nvuo.mutation.StatusReason(); ok {
 		_spec.SetField(nodeversion.FieldStatusReason, field.TypeString, value)
-	}
-	if value, ok := nvuo.mutation.ComfyNodeExtractStatus(); ok {
-		_spec.SetField(nodeversion.FieldComfyNodeExtractStatus, field.TypeString, value)
 	}
 	if nvuo.mutation.NodeCleared() {
 		edge := &sqlgraph.EdgeSpec{

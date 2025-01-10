@@ -4,7 +4,6 @@ package enttest
 
 import (
 	"context"
-
 	"registry-backend/ent"
 	// required by schema hooks.
 	_ "registry-backend/ent/runtime"

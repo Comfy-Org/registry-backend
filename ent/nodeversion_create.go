@@ -130,20 +130,6 @@ func (nvc *NodeVersionCreate) SetNillableStatusReason(s *string) *NodeVersionCre
 	return nvc
 }
 
-// SetComfyNodeExtractStatus sets the "comfy_node_extract_status" field.
-func (nvc *NodeVersionCreate) SetComfyNodeExtractStatus(snes schema.ComfyNodeExtractStatus) *NodeVersionCreate {
-	nvc.mutation.SetComfyNodeExtractStatus(snes)
-	return nvc
-}
-
-// SetNillableComfyNodeExtractStatus sets the "comfy_node_extract_status" field if the given value is not nil.
-func (nvc *NodeVersionCreate) SetNillableComfyNodeExtractStatus(snes *schema.ComfyNodeExtractStatus) *NodeVersionCreate {
-	if snes != nil {
-		nvc.SetComfyNodeExtractStatus(*snes)
-	}
-	return nvc
-}
-
 // SetID sets the "id" field.
 func (nvc *NodeVersionCreate) SetID(u uuid.UUID) *NodeVersionCreate {
 	nvc.mutation.SetID(u)
@@ -252,10 +238,6 @@ func (nvc *NodeVersionCreate) defaults() {
 		v := nodeversion.DefaultStatusReason
 		nvc.mutation.SetStatusReason(v)
 	}
-	if _, ok := nvc.mutation.ComfyNodeExtractStatus(); !ok {
-		v := nodeversion.DefaultComfyNodeExtractStatus
-		nvc.mutation.SetComfyNodeExtractStatus(v)
-	}
 	if _, ok := nvc.mutation.ID(); !ok {
 		v := nodeversion.DefaultID()
 		nvc.mutation.SetID(v)
@@ -293,10 +275,7 @@ func (nvc *NodeVersionCreate) check() error {
 	if _, ok := nvc.mutation.StatusReason(); !ok {
 		return &ValidationError{Name: "status_reason", err: errors.New(`ent: missing required field "NodeVersion.status_reason"`)}
 	}
-	if _, ok := nvc.mutation.ComfyNodeExtractStatus(); !ok {
-		return &ValidationError{Name: "comfy_node_extract_status", err: errors.New(`ent: missing required field "NodeVersion.comfy_node_extract_status"`)}
-	}
-	if len(nvc.mutation.NodeIDs()) == 0 {
+	if _, ok := nvc.mutation.NodeID(); !ok {
 		return &ValidationError{Name: "node", err: errors.New(`ent: missing required edge "NodeVersion.node"`)}
 	}
 	return nil
@@ -366,10 +345,6 @@ func (nvc *NodeVersionCreate) createSpec() (*NodeVersion, *sqlgraph.CreateSpec) 
 	if value, ok := nvc.mutation.StatusReason(); ok {
 		_spec.SetField(nodeversion.FieldStatusReason, field.TypeString, value)
 		_node.StatusReason = value
-	}
-	if value, ok := nvc.mutation.ComfyNodeExtractStatus(); ok {
-		_spec.SetField(nodeversion.FieldComfyNodeExtractStatus, field.TypeString, value)
-		_node.ComfyNodeExtractStatus = value
 	}
 	if nodes := nvc.mutation.NodeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -575,18 +550,6 @@ func (u *NodeVersionUpsert) UpdateStatusReason() *NodeVersionUpsert {
 	return u
 }
 
-// SetComfyNodeExtractStatus sets the "comfy_node_extract_status" field.
-func (u *NodeVersionUpsert) SetComfyNodeExtractStatus(v schema.ComfyNodeExtractStatus) *NodeVersionUpsert {
-	u.Set(nodeversion.FieldComfyNodeExtractStatus, v)
-	return u
-}
-
-// UpdateComfyNodeExtractStatus sets the "comfy_node_extract_status" field to the value that was provided on create.
-func (u *NodeVersionUpsert) UpdateComfyNodeExtractStatus() *NodeVersionUpsert {
-	u.SetExcluded(nodeversion.FieldComfyNodeExtractStatus)
-	return u
-}
-
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -754,20 +717,6 @@ func (u *NodeVersionUpsertOne) SetStatusReason(v string) *NodeVersionUpsertOne {
 func (u *NodeVersionUpsertOne) UpdateStatusReason() *NodeVersionUpsertOne {
 	return u.Update(func(s *NodeVersionUpsert) {
 		s.UpdateStatusReason()
-	})
-}
-
-// SetComfyNodeExtractStatus sets the "comfy_node_extract_status" field.
-func (u *NodeVersionUpsertOne) SetComfyNodeExtractStatus(v schema.ComfyNodeExtractStatus) *NodeVersionUpsertOne {
-	return u.Update(func(s *NodeVersionUpsert) {
-		s.SetComfyNodeExtractStatus(v)
-	})
-}
-
-// UpdateComfyNodeExtractStatus sets the "comfy_node_extract_status" field to the value that was provided on create.
-func (u *NodeVersionUpsertOne) UpdateComfyNodeExtractStatus() *NodeVersionUpsertOne {
-	return u.Update(func(s *NodeVersionUpsert) {
-		s.UpdateComfyNodeExtractStatus()
 	})
 }
 
@@ -1105,20 +1054,6 @@ func (u *NodeVersionUpsertBulk) SetStatusReason(v string) *NodeVersionUpsertBulk
 func (u *NodeVersionUpsertBulk) UpdateStatusReason() *NodeVersionUpsertBulk {
 	return u.Update(func(s *NodeVersionUpsert) {
 		s.UpdateStatusReason()
-	})
-}
-
-// SetComfyNodeExtractStatus sets the "comfy_node_extract_status" field.
-func (u *NodeVersionUpsertBulk) SetComfyNodeExtractStatus(v schema.ComfyNodeExtractStatus) *NodeVersionUpsertBulk {
-	return u.Update(func(s *NodeVersionUpsert) {
-		s.SetComfyNodeExtractStatus(v)
-	})
-}
-
-// UpdateComfyNodeExtractStatus sets the "comfy_node_extract_status" field to the value that was provided on create.
-func (u *NodeVersionUpsertBulk) UpdateComfyNodeExtractStatus() *NodeVersionUpsertBulk {
-	return u.Update(func(s *NodeVersionUpsert) {
-		s.UpdateComfyNodeExtractStatus()
 	})
 }
 

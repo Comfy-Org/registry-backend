@@ -11,7 +11,6 @@ import (
 	"registry-backend/ent/publisherpermission"
 	"registry-backend/ent/user"
 
-	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -111,7 +110,7 @@ func (ppq *PublisherPermissionQuery) QueryPublisher() *PublisherQuery {
 // First returns the first PublisherPermission entity from the query.
 // Returns a *NotFoundError when no PublisherPermission was found.
 func (ppq *PublisherPermissionQuery) First(ctx context.Context) (*PublisherPermission, error) {
-	nodes, err := ppq.Limit(1).All(setContextOp(ctx, ppq.ctx, ent.OpQueryFirst))
+	nodes, err := ppq.Limit(1).All(setContextOp(ctx, ppq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +133,7 @@ func (ppq *PublisherPermissionQuery) FirstX(ctx context.Context) *PublisherPermi
 // Returns a *NotFoundError when no PublisherPermission ID was found.
 func (ppq *PublisherPermissionQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = ppq.Limit(1).IDs(setContextOp(ctx, ppq.ctx, ent.OpQueryFirstID)); err != nil {
+	if ids, err = ppq.Limit(1).IDs(setContextOp(ctx, ppq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -157,7 +156,7 @@ func (ppq *PublisherPermissionQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one PublisherPermission entity is found.
 // Returns a *NotFoundError when no PublisherPermission entities are found.
 func (ppq *PublisherPermissionQuery) Only(ctx context.Context) (*PublisherPermission, error) {
-	nodes, err := ppq.Limit(2).All(setContextOp(ctx, ppq.ctx, ent.OpQueryOnly))
+	nodes, err := ppq.Limit(2).All(setContextOp(ctx, ppq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +184,7 @@ func (ppq *PublisherPermissionQuery) OnlyX(ctx context.Context) *PublisherPermis
 // Returns a *NotFoundError when no entities are found.
 func (ppq *PublisherPermissionQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = ppq.Limit(2).IDs(setContextOp(ctx, ppq.ctx, ent.OpQueryOnlyID)); err != nil {
+	if ids, err = ppq.Limit(2).IDs(setContextOp(ctx, ppq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -210,7 +209,7 @@ func (ppq *PublisherPermissionQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of PublisherPermissions.
 func (ppq *PublisherPermissionQuery) All(ctx context.Context) ([]*PublisherPermission, error) {
-	ctx = setContextOp(ctx, ppq.ctx, ent.OpQueryAll)
+	ctx = setContextOp(ctx, ppq.ctx, "All")
 	if err := ppq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -232,7 +231,7 @@ func (ppq *PublisherPermissionQuery) IDs(ctx context.Context) (ids []int, err er
 	if ppq.ctx.Unique == nil && ppq.path != nil {
 		ppq.Unique(true)
 	}
-	ctx = setContextOp(ctx, ppq.ctx, ent.OpQueryIDs)
+	ctx = setContextOp(ctx, ppq.ctx, "IDs")
 	if err = ppq.Select(publisherpermission.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -250,7 +249,7 @@ func (ppq *PublisherPermissionQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (ppq *PublisherPermissionQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, ppq.ctx, ent.OpQueryCount)
+	ctx = setContextOp(ctx, ppq.ctx, "Count")
 	if err := ppq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -268,7 +267,7 @@ func (ppq *PublisherPermissionQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (ppq *PublisherPermissionQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, ppq.ctx, ent.OpQueryExist)
+	ctx = setContextOp(ctx, ppq.ctx, "Exist")
 	switch _, err := ppq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -303,9 +302,8 @@ func (ppq *PublisherPermissionQuery) Clone() *PublisherPermissionQuery {
 		withUser:      ppq.withUser.Clone(),
 		withPublisher: ppq.withPublisher.Clone(),
 		// clone intermediate query.
-		sql:       ppq.sql.Clone(),
-		path:      ppq.path,
-		modifiers: append([]func(*sql.Selector){}, ppq.modifiers...),
+		sql:  ppq.sql.Clone(),
+		path: ppq.path,
 	}
 }
 
@@ -648,7 +646,7 @@ func (ppgb *PublisherPermissionGroupBy) Aggregate(fns ...AggregateFunc) *Publish
 
 // Scan applies the selector query and scans the result into the given value.
 func (ppgb *PublisherPermissionGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, ppgb.build.ctx, ent.OpQueryGroupBy)
+	ctx = setContextOp(ctx, ppgb.build.ctx, "GroupBy")
 	if err := ppgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -696,7 +694,7 @@ func (pps *PublisherPermissionSelect) Aggregate(fns ...AggregateFunc) *Publisher
 
 // Scan applies the selector query and scans the result into the given value.
 func (pps *PublisherPermissionSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, pps.ctx, ent.OpQuerySelect)
+	ctx = setContextOp(ctx, pps.ctx, "Select")
 	if err := pps.prepareQuery(ctx); err != nil {
 		return err
 	}

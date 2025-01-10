@@ -11,7 +11,6 @@ import (
 	"registry-backend/ent/predicate"
 	"registry-backend/ent/user"
 
-	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -112,7 +111,7 @@ func (nrq *NodeReviewQuery) QueryNode() *NodeQuery {
 // First returns the first NodeReview entity from the query.
 // Returns a *NotFoundError when no NodeReview was found.
 func (nrq *NodeReviewQuery) First(ctx context.Context) (*NodeReview, error) {
-	nodes, err := nrq.Limit(1).All(setContextOp(ctx, nrq.ctx, ent.OpQueryFirst))
+	nodes, err := nrq.Limit(1).All(setContextOp(ctx, nrq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +134,7 @@ func (nrq *NodeReviewQuery) FirstX(ctx context.Context) *NodeReview {
 // Returns a *NotFoundError when no NodeReview ID was found.
 func (nrq *NodeReviewQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = nrq.Limit(1).IDs(setContextOp(ctx, nrq.ctx, ent.OpQueryFirstID)); err != nil {
+	if ids, err = nrq.Limit(1).IDs(setContextOp(ctx, nrq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -158,7 +157,7 @@ func (nrq *NodeReviewQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Returns a *NotSingularError when more than one NodeReview entity is found.
 // Returns a *NotFoundError when no NodeReview entities are found.
 func (nrq *NodeReviewQuery) Only(ctx context.Context) (*NodeReview, error) {
-	nodes, err := nrq.Limit(2).All(setContextOp(ctx, nrq.ctx, ent.OpQueryOnly))
+	nodes, err := nrq.Limit(2).All(setContextOp(ctx, nrq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +185,7 @@ func (nrq *NodeReviewQuery) OnlyX(ctx context.Context) *NodeReview {
 // Returns a *NotFoundError when no entities are found.
 func (nrq *NodeReviewQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = nrq.Limit(2).IDs(setContextOp(ctx, nrq.ctx, ent.OpQueryOnlyID)); err != nil {
+	if ids, err = nrq.Limit(2).IDs(setContextOp(ctx, nrq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -211,7 +210,7 @@ func (nrq *NodeReviewQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 
 // All executes the query and returns a list of NodeReviews.
 func (nrq *NodeReviewQuery) All(ctx context.Context) ([]*NodeReview, error) {
-	ctx = setContextOp(ctx, nrq.ctx, ent.OpQueryAll)
+	ctx = setContextOp(ctx, nrq.ctx, "All")
 	if err := nrq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -233,7 +232,7 @@ func (nrq *NodeReviewQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error
 	if nrq.ctx.Unique == nil && nrq.path != nil {
 		nrq.Unique(true)
 	}
-	ctx = setContextOp(ctx, nrq.ctx, ent.OpQueryIDs)
+	ctx = setContextOp(ctx, nrq.ctx, "IDs")
 	if err = nrq.Select(nodereview.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -251,7 +250,7 @@ func (nrq *NodeReviewQuery) IDsX(ctx context.Context) []uuid.UUID {
 
 // Count returns the count of the given query.
 func (nrq *NodeReviewQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, nrq.ctx, ent.OpQueryCount)
+	ctx = setContextOp(ctx, nrq.ctx, "Count")
 	if err := nrq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -269,7 +268,7 @@ func (nrq *NodeReviewQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (nrq *NodeReviewQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, nrq.ctx, ent.OpQueryExist)
+	ctx = setContextOp(ctx, nrq.ctx, "Exist")
 	switch _, err := nrq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -304,9 +303,8 @@ func (nrq *NodeReviewQuery) Clone() *NodeReviewQuery {
 		withUser:   nrq.withUser.Clone(),
 		withNode:   nrq.withNode.Clone(),
 		// clone intermediate query.
-		sql:       nrq.sql.Clone(),
-		path:      nrq.path,
-		modifiers: append([]func(*sql.Selector){}, nrq.modifiers...),
+		sql:  nrq.sql.Clone(),
+		path: nrq.path,
 	}
 }
 
@@ -649,7 +647,7 @@ func (nrgb *NodeReviewGroupBy) Aggregate(fns ...AggregateFunc) *NodeReviewGroupB
 
 // Scan applies the selector query and scans the result into the given value.
 func (nrgb *NodeReviewGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, nrgb.build.ctx, ent.OpQueryGroupBy)
+	ctx = setContextOp(ctx, nrgb.build.ctx, "GroupBy")
 	if err := nrgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -697,7 +695,7 @@ func (nrs *NodeReviewSelect) Aggregate(fns ...AggregateFunc) *NodeReviewSelect {
 
 // Scan applies the selector query and scans the result into the given value.
 func (nrs *NodeReviewSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, nrs.ctx, ent.OpQuerySelect)
+	ctx = setContextOp(ctx, nrs.ctx, "Select")
 	if err := nrs.prepareQuery(ctx); err != nil {
 		return err
 	}

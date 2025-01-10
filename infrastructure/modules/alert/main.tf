@@ -4,5 +4,6 @@ data "google_monitoring_notification_channel" "slack" {
 }
 
 locals {
-  prefix = var.prefix != "" ? join("", [var.prefix, " "]) : ""
+  prefix  = var.prefix != "" ? join("", [var.prefix, " "]) : ""
+  is_prod = var.environment == "prod"
 }

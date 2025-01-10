@@ -1788,8 +1788,6 @@ paths:
             schema:
               type: object
               properties:
-                success:
-                  type: boolean
                 nodes:
                   additionalProperties:
                     $ref: '#/components/schemas/ComfyNode'

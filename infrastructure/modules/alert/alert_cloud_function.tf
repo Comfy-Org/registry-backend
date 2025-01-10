@@ -1,4 +1,6 @@
 resource "google_monitoring_alert_policy" "cloud_function_security_scan_error" {
+  count = local.is_prod ? 1 : 0
+
   display_name = "${local.prefix}Cloud Function - Security Scan Error (${var.environment})"
 
   conditions {
@@ -43,6 +45,8 @@ resource "google_monitoring_alert_policy" "cloud_function_security_scan_error" {
 }
 
 resource "google_monitoring_alert_policy" "cloud_function_security_scan_high_latency" {
+  count = local.is_prod ? 1 : 0
+
   display_name = "${local.prefix}Cloud Function - Security Scan High Latency (${var.environment})"
 
   conditions {
