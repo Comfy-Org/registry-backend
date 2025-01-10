@@ -26,3 +26,11 @@ module "node_pack_extract_trigger" {
   backfill_job_name           = "comfy-node-pack-backfill-staging"
   registry_backend_url        = "https://stagingapi.comfy.org"
 }
+
+module "alert" {
+  source = "../modules/alert"
+  providers = {
+    google = google
+  }
+  environment = "staging"
+}
