@@ -140,6 +140,12 @@ func (cnu *ComfyNodeUpdate) SetNillableDeprecated(b *bool) *ComfyNodeUpdate {
 	return cnu
 }
 
+// ClearDeprecated clears the value of the "deprecated" field.
+func (cnu *ComfyNodeUpdate) ClearDeprecated() *ComfyNodeUpdate {
+	cnu.mutation.ClearDeprecated()
+	return cnu
+}
+
 // SetExperimental sets the "experimental" field.
 func (cnu *ComfyNodeUpdate) SetExperimental(b bool) *ComfyNodeUpdate {
 	cnu.mutation.SetExperimental(b)
@@ -151,6 +157,12 @@ func (cnu *ComfyNodeUpdate) SetNillableExperimental(b *bool) *ComfyNodeUpdate {
 	if b != nil {
 		cnu.SetExperimental(*b)
 	}
+	return cnu
+}
+
+// ClearExperimental clears the value of the "experimental" field.
+func (cnu *ComfyNodeUpdate) ClearExperimental() *ComfyNodeUpdate {
+	cnu.mutation.ClearExperimental()
 	return cnu
 }
 
@@ -166,15 +178,29 @@ func (cnu *ComfyNodeUpdate) AppendOutputIsList(b []bool) *ComfyNodeUpdate {
 	return cnu
 }
 
+// ClearOutputIsList clears the value of the "output_is_list" field.
+func (cnu *ComfyNodeUpdate) ClearOutputIsList() *ComfyNodeUpdate {
+	cnu.mutation.ClearOutputIsList()
+	return cnu
+}
+
 // SetReturnNames sets the "return_names" field.
-func (cnu *ComfyNodeUpdate) SetReturnNames(s []string) *ComfyNodeUpdate {
+func (cnu *ComfyNodeUpdate) SetReturnNames(s string) *ComfyNodeUpdate {
 	cnu.mutation.SetReturnNames(s)
 	return cnu
 }
 
-// AppendReturnNames appends s to the "return_names" field.
-func (cnu *ComfyNodeUpdate) AppendReturnNames(s []string) *ComfyNodeUpdate {
-	cnu.mutation.AppendReturnNames(s)
+// SetNillableReturnNames sets the "return_names" field if the given value is not nil.
+func (cnu *ComfyNodeUpdate) SetNillableReturnNames(s *string) *ComfyNodeUpdate {
+	if s != nil {
+		cnu.SetReturnNames(*s)
+	}
+	return cnu
+}
+
+// ClearReturnNames clears the value of the "return_names" field.
+func (cnu *ComfyNodeUpdate) ClearReturnNames() *ComfyNodeUpdate {
+	cnu.mutation.ClearReturnNames()
 	return cnu
 }
 
@@ -329,8 +355,14 @@ func (cnu *ComfyNodeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := cnu.mutation.Deprecated(); ok {
 		_spec.SetField(comfynode.FieldDeprecated, field.TypeBool, value)
 	}
+	if cnu.mutation.DeprecatedCleared() {
+		_spec.ClearField(comfynode.FieldDeprecated, field.TypeBool)
+	}
 	if value, ok := cnu.mutation.Experimental(); ok {
 		_spec.SetField(comfynode.FieldExperimental, field.TypeBool, value)
+	}
+	if cnu.mutation.ExperimentalCleared() {
+		_spec.ClearField(comfynode.FieldExperimental, field.TypeBool)
 	}
 	if value, ok := cnu.mutation.OutputIsList(); ok {
 		_spec.SetField(comfynode.FieldOutputIsList, field.TypeJSON, value)
@@ -340,13 +372,14 @@ func (cnu *ComfyNodeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			sqljson.Append(u, comfynode.FieldOutputIsList, value)
 		})
 	}
-	if value, ok := cnu.mutation.ReturnNames(); ok {
-		_spec.SetField(comfynode.FieldReturnNames, field.TypeJSON, value)
+	if cnu.mutation.OutputIsListCleared() {
+		_spec.ClearField(comfynode.FieldOutputIsList, field.TypeJSON)
 	}
-	if value, ok := cnu.mutation.AppendedReturnNames(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, comfynode.FieldReturnNames, value)
-		})
+	if value, ok := cnu.mutation.ReturnNames(); ok {
+		_spec.SetField(comfynode.FieldReturnNames, field.TypeString, value)
+	}
+	if cnu.mutation.ReturnNamesCleared() {
+		_spec.ClearField(comfynode.FieldReturnNames, field.TypeString)
 	}
 	if value, ok := cnu.mutation.ReturnTypes(); ok {
 		_spec.SetField(comfynode.FieldReturnTypes, field.TypeString, value)
@@ -519,6 +552,12 @@ func (cnuo *ComfyNodeUpdateOne) SetNillableDeprecated(b *bool) *ComfyNodeUpdateO
 	return cnuo
 }
 
+// ClearDeprecated clears the value of the "deprecated" field.
+func (cnuo *ComfyNodeUpdateOne) ClearDeprecated() *ComfyNodeUpdateOne {
+	cnuo.mutation.ClearDeprecated()
+	return cnuo
+}
+
 // SetExperimental sets the "experimental" field.
 func (cnuo *ComfyNodeUpdateOne) SetExperimental(b bool) *ComfyNodeUpdateOne {
 	cnuo.mutation.SetExperimental(b)
@@ -530,6 +569,12 @@ func (cnuo *ComfyNodeUpdateOne) SetNillableExperimental(b *bool) *ComfyNodeUpdat
 	if b != nil {
 		cnuo.SetExperimental(*b)
 	}
+	return cnuo
+}
+
+// ClearExperimental clears the value of the "experimental" field.
+func (cnuo *ComfyNodeUpdateOne) ClearExperimental() *ComfyNodeUpdateOne {
+	cnuo.mutation.ClearExperimental()
 	return cnuo
 }
 
@@ -545,15 +590,29 @@ func (cnuo *ComfyNodeUpdateOne) AppendOutputIsList(b []bool) *ComfyNodeUpdateOne
 	return cnuo
 }
 
+// ClearOutputIsList clears the value of the "output_is_list" field.
+func (cnuo *ComfyNodeUpdateOne) ClearOutputIsList() *ComfyNodeUpdateOne {
+	cnuo.mutation.ClearOutputIsList()
+	return cnuo
+}
+
 // SetReturnNames sets the "return_names" field.
-func (cnuo *ComfyNodeUpdateOne) SetReturnNames(s []string) *ComfyNodeUpdateOne {
+func (cnuo *ComfyNodeUpdateOne) SetReturnNames(s string) *ComfyNodeUpdateOne {
 	cnuo.mutation.SetReturnNames(s)
 	return cnuo
 }
 
-// AppendReturnNames appends s to the "return_names" field.
-func (cnuo *ComfyNodeUpdateOne) AppendReturnNames(s []string) *ComfyNodeUpdateOne {
-	cnuo.mutation.AppendReturnNames(s)
+// SetNillableReturnNames sets the "return_names" field if the given value is not nil.
+func (cnuo *ComfyNodeUpdateOne) SetNillableReturnNames(s *string) *ComfyNodeUpdateOne {
+	if s != nil {
+		cnuo.SetReturnNames(*s)
+	}
+	return cnuo
+}
+
+// ClearReturnNames clears the value of the "return_names" field.
+func (cnuo *ComfyNodeUpdateOne) ClearReturnNames() *ComfyNodeUpdateOne {
+	cnuo.mutation.ClearReturnNames()
 	return cnuo
 }
 
@@ -738,8 +797,14 @@ func (cnuo *ComfyNodeUpdateOne) sqlSave(ctx context.Context) (_node *ComfyNode, 
 	if value, ok := cnuo.mutation.Deprecated(); ok {
 		_spec.SetField(comfynode.FieldDeprecated, field.TypeBool, value)
 	}
+	if cnuo.mutation.DeprecatedCleared() {
+		_spec.ClearField(comfynode.FieldDeprecated, field.TypeBool)
+	}
 	if value, ok := cnuo.mutation.Experimental(); ok {
 		_spec.SetField(comfynode.FieldExperimental, field.TypeBool, value)
+	}
+	if cnuo.mutation.ExperimentalCleared() {
+		_spec.ClearField(comfynode.FieldExperimental, field.TypeBool)
 	}
 	if value, ok := cnuo.mutation.OutputIsList(); ok {
 		_spec.SetField(comfynode.FieldOutputIsList, field.TypeJSON, value)
@@ -749,13 +814,14 @@ func (cnuo *ComfyNodeUpdateOne) sqlSave(ctx context.Context) (_node *ComfyNode, 
 			sqljson.Append(u, comfynode.FieldOutputIsList, value)
 		})
 	}
-	if value, ok := cnuo.mutation.ReturnNames(); ok {
-		_spec.SetField(comfynode.FieldReturnNames, field.TypeJSON, value)
+	if cnuo.mutation.OutputIsListCleared() {
+		_spec.ClearField(comfynode.FieldOutputIsList, field.TypeJSON)
 	}
-	if value, ok := cnuo.mutation.AppendedReturnNames(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, comfynode.FieldReturnNames, value)
-		})
+	if value, ok := cnuo.mutation.ReturnNames(); ok {
+		_spec.SetField(comfynode.FieldReturnNames, field.TypeString, value)
+	}
+	if cnuo.mutation.ReturnNamesCleared() {
+		_spec.ClearField(comfynode.FieldReturnNames, field.TypeString)
 	}
 	if value, ok := cnuo.mutation.ReturnTypes(); ok {
 		_spec.SetField(comfynode.FieldReturnTypes, field.TypeString, value)

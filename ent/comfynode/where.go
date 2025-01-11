@@ -101,6 +101,11 @@ func Experimental(v bool) predicate.ComfyNode {
 	return predicate.ComfyNode(sql.FieldEQ(FieldExperimental, v))
 }
 
+// ReturnNames applies equality check predicate on the "return_names" field. It's identical to ReturnNamesEQ.
+func ReturnNames(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldEQ(FieldReturnNames, v))
+}
+
 // ReturnTypes applies equality check predicate on the "return_types" field. It's identical to ReturnTypesEQ.
 func ReturnTypes(v string) predicate.ComfyNode {
 	return predicate.ComfyNode(sql.FieldEQ(FieldReturnTypes, v))
@@ -511,6 +516,16 @@ func DeprecatedNEQ(v bool) predicate.ComfyNode {
 	return predicate.ComfyNode(sql.FieldNEQ(FieldDeprecated, v))
 }
 
+// DeprecatedIsNil applies the IsNil predicate on the "deprecated" field.
+func DeprecatedIsNil() predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldIsNull(FieldDeprecated))
+}
+
+// DeprecatedNotNil applies the NotNil predicate on the "deprecated" field.
+func DeprecatedNotNil() predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldNotNull(FieldDeprecated))
+}
+
 // ExperimentalEQ applies the EQ predicate on the "experimental" field.
 func ExperimentalEQ(v bool) predicate.ComfyNode {
 	return predicate.ComfyNode(sql.FieldEQ(FieldExperimental, v))
@@ -519,6 +534,101 @@ func ExperimentalEQ(v bool) predicate.ComfyNode {
 // ExperimentalNEQ applies the NEQ predicate on the "experimental" field.
 func ExperimentalNEQ(v bool) predicate.ComfyNode {
 	return predicate.ComfyNode(sql.FieldNEQ(FieldExperimental, v))
+}
+
+// ExperimentalIsNil applies the IsNil predicate on the "experimental" field.
+func ExperimentalIsNil() predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldIsNull(FieldExperimental))
+}
+
+// ExperimentalNotNil applies the NotNil predicate on the "experimental" field.
+func ExperimentalNotNil() predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldNotNull(FieldExperimental))
+}
+
+// OutputIsListIsNil applies the IsNil predicate on the "output_is_list" field.
+func OutputIsListIsNil() predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldIsNull(FieldOutputIsList))
+}
+
+// OutputIsListNotNil applies the NotNil predicate on the "output_is_list" field.
+func OutputIsListNotNil() predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldNotNull(FieldOutputIsList))
+}
+
+// ReturnNamesEQ applies the EQ predicate on the "return_names" field.
+func ReturnNamesEQ(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldEQ(FieldReturnNames, v))
+}
+
+// ReturnNamesNEQ applies the NEQ predicate on the "return_names" field.
+func ReturnNamesNEQ(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldNEQ(FieldReturnNames, v))
+}
+
+// ReturnNamesIn applies the In predicate on the "return_names" field.
+func ReturnNamesIn(vs ...string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldIn(FieldReturnNames, vs...))
+}
+
+// ReturnNamesNotIn applies the NotIn predicate on the "return_names" field.
+func ReturnNamesNotIn(vs ...string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldNotIn(FieldReturnNames, vs...))
+}
+
+// ReturnNamesGT applies the GT predicate on the "return_names" field.
+func ReturnNamesGT(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldGT(FieldReturnNames, v))
+}
+
+// ReturnNamesGTE applies the GTE predicate on the "return_names" field.
+func ReturnNamesGTE(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldGTE(FieldReturnNames, v))
+}
+
+// ReturnNamesLT applies the LT predicate on the "return_names" field.
+func ReturnNamesLT(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldLT(FieldReturnNames, v))
+}
+
+// ReturnNamesLTE applies the LTE predicate on the "return_names" field.
+func ReturnNamesLTE(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldLTE(FieldReturnNames, v))
+}
+
+// ReturnNamesContains applies the Contains predicate on the "return_names" field.
+func ReturnNamesContains(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldContains(FieldReturnNames, v))
+}
+
+// ReturnNamesHasPrefix applies the HasPrefix predicate on the "return_names" field.
+func ReturnNamesHasPrefix(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldHasPrefix(FieldReturnNames, v))
+}
+
+// ReturnNamesHasSuffix applies the HasSuffix predicate on the "return_names" field.
+func ReturnNamesHasSuffix(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldHasSuffix(FieldReturnNames, v))
+}
+
+// ReturnNamesIsNil applies the IsNil predicate on the "return_names" field.
+func ReturnNamesIsNil() predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldIsNull(FieldReturnNames))
+}
+
+// ReturnNamesNotNil applies the NotNil predicate on the "return_names" field.
+func ReturnNamesNotNil() predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldNotNull(FieldReturnNames))
+}
+
+// ReturnNamesEqualFold applies the EqualFold predicate on the "return_names" field.
+func ReturnNamesEqualFold(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldEqualFold(FieldReturnNames, v))
+}
+
+// ReturnNamesContainsFold applies the ContainsFold predicate on the "return_names" field.
+func ReturnNamesContainsFold(v string) predicate.ComfyNode {
+	return predicate.ComfyNode(sql.FieldContainsFold(FieldReturnNames, v))
 }
 
 // ReturnTypesEQ applies the EQ predicate on the "return_types" field.

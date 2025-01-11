@@ -142,8 +142,16 @@ func (cnc *ComfyNodeCreate) SetOutputIsList(b []bool) *ComfyNodeCreate {
 }
 
 // SetReturnNames sets the "return_names" field.
-func (cnc *ComfyNodeCreate) SetReturnNames(s []string) *ComfyNodeCreate {
+func (cnc *ComfyNodeCreate) SetReturnNames(s string) *ComfyNodeCreate {
 	cnc.mutation.SetReturnNames(s)
+	return cnc
+}
+
+// SetNillableReturnNames sets the "return_names" field if the given value is not nil.
+func (cnc *ComfyNodeCreate) SetNillableReturnNames(s *string) *ComfyNodeCreate {
+	if s != nil {
+		cnc.SetReturnNames(*s)
+	}
 	return cnc
 }
 
@@ -255,10 +263,6 @@ func (cnc *ComfyNodeCreate) defaults() {
 		v := comfynode.DefaultOutputIsList
 		cnc.mutation.SetOutputIsList(v)
 	}
-	if _, ok := cnc.mutation.ReturnNames(); !ok {
-		v := comfynode.DefaultReturnNames
-		cnc.mutation.SetReturnNames(v)
-	}
 	if _, ok := cnc.mutation.ID(); !ok {
 		v := comfynode.DefaultID()
 		cnc.mutation.SetID(v)
@@ -278,18 +282,6 @@ func (cnc *ComfyNodeCreate) check() error {
 	}
 	if _, ok := cnc.mutation.NodeVersionID(); !ok {
 		return &ValidationError{Name: "node_version_id", err: errors.New(`ent: missing required field "ComfyNode.node_version_id"`)}
-	}
-	if _, ok := cnc.mutation.Deprecated(); !ok {
-		return &ValidationError{Name: "deprecated", err: errors.New(`ent: missing required field "ComfyNode.deprecated"`)}
-	}
-	if _, ok := cnc.mutation.Experimental(); !ok {
-		return &ValidationError{Name: "experimental", err: errors.New(`ent: missing required field "ComfyNode.experimental"`)}
-	}
-	if _, ok := cnc.mutation.OutputIsList(); !ok {
-		return &ValidationError{Name: "output_is_list", err: errors.New(`ent: missing required field "ComfyNode.output_is_list"`)}
-	}
-	if _, ok := cnc.mutation.ReturnNames(); !ok {
-		return &ValidationError{Name: "return_names", err: errors.New(`ent: missing required field "ComfyNode.return_names"`)}
 	}
 	if len(cnc.mutation.VersionsIDs()) == 0 {
 		return &ValidationError{Name: "versions", err: errors.New(`ent: missing required edge "ComfyNode.versions"`)}
@@ -367,7 +359,7 @@ func (cnc *ComfyNodeCreate) createSpec() (*ComfyNode, *sqlgraph.CreateSpec) {
 		_node.OutputIsList = value
 	}
 	if value, ok := cnc.mutation.ReturnNames(); ok {
-		_spec.SetField(comfynode.FieldReturnNames, field.TypeJSON, value)
+		_spec.SetField(comfynode.FieldReturnNames, field.TypeString, value)
 		_node.ReturnNames = value
 	}
 	if value, ok := cnc.mutation.ReturnTypes(); ok {
@@ -549,6 +541,12 @@ func (u *ComfyNodeUpsert) UpdateDeprecated() *ComfyNodeUpsert {
 	return u
 }
 
+// ClearDeprecated clears the value of the "deprecated" field.
+func (u *ComfyNodeUpsert) ClearDeprecated() *ComfyNodeUpsert {
+	u.SetNull(comfynode.FieldDeprecated)
+	return u
+}
+
 // SetExperimental sets the "experimental" field.
 func (u *ComfyNodeUpsert) SetExperimental(v bool) *ComfyNodeUpsert {
 	u.Set(comfynode.FieldExperimental, v)
@@ -558,6 +556,12 @@ func (u *ComfyNodeUpsert) SetExperimental(v bool) *ComfyNodeUpsert {
 // UpdateExperimental sets the "experimental" field to the value that was provided on create.
 func (u *ComfyNodeUpsert) UpdateExperimental() *ComfyNodeUpsert {
 	u.SetExcluded(comfynode.FieldExperimental)
+	return u
+}
+
+// ClearExperimental clears the value of the "experimental" field.
+func (u *ComfyNodeUpsert) ClearExperimental() *ComfyNodeUpsert {
+	u.SetNull(comfynode.FieldExperimental)
 	return u
 }
 
@@ -573,8 +577,14 @@ func (u *ComfyNodeUpsert) UpdateOutputIsList() *ComfyNodeUpsert {
 	return u
 }
 
+// ClearOutputIsList clears the value of the "output_is_list" field.
+func (u *ComfyNodeUpsert) ClearOutputIsList() *ComfyNodeUpsert {
+	u.SetNull(comfynode.FieldOutputIsList)
+	return u
+}
+
 // SetReturnNames sets the "return_names" field.
-func (u *ComfyNodeUpsert) SetReturnNames(v []string) *ComfyNodeUpsert {
+func (u *ComfyNodeUpsert) SetReturnNames(v string) *ComfyNodeUpsert {
 	u.Set(comfynode.FieldReturnNames, v)
 	return u
 }
@@ -582,6 +592,12 @@ func (u *ComfyNodeUpsert) SetReturnNames(v []string) *ComfyNodeUpsert {
 // UpdateReturnNames sets the "return_names" field to the value that was provided on create.
 func (u *ComfyNodeUpsert) UpdateReturnNames() *ComfyNodeUpsert {
 	u.SetExcluded(comfynode.FieldReturnNames)
+	return u
+}
+
+// ClearReturnNames clears the value of the "return_names" field.
+func (u *ComfyNodeUpsert) ClearReturnNames() *ComfyNodeUpsert {
+	u.SetNull(comfynode.FieldReturnNames)
 	return u
 }
 
@@ -791,6 +807,13 @@ func (u *ComfyNodeUpsertOne) UpdateDeprecated() *ComfyNodeUpsertOne {
 	})
 }
 
+// ClearDeprecated clears the value of the "deprecated" field.
+func (u *ComfyNodeUpsertOne) ClearDeprecated() *ComfyNodeUpsertOne {
+	return u.Update(func(s *ComfyNodeUpsert) {
+		s.ClearDeprecated()
+	})
+}
+
 // SetExperimental sets the "experimental" field.
 func (u *ComfyNodeUpsertOne) SetExperimental(v bool) *ComfyNodeUpsertOne {
 	return u.Update(func(s *ComfyNodeUpsert) {
@@ -802,6 +825,13 @@ func (u *ComfyNodeUpsertOne) SetExperimental(v bool) *ComfyNodeUpsertOne {
 func (u *ComfyNodeUpsertOne) UpdateExperimental() *ComfyNodeUpsertOne {
 	return u.Update(func(s *ComfyNodeUpsert) {
 		s.UpdateExperimental()
+	})
+}
+
+// ClearExperimental clears the value of the "experimental" field.
+func (u *ComfyNodeUpsertOne) ClearExperimental() *ComfyNodeUpsertOne {
+	return u.Update(func(s *ComfyNodeUpsert) {
+		s.ClearExperimental()
 	})
 }
 
@@ -819,8 +849,15 @@ func (u *ComfyNodeUpsertOne) UpdateOutputIsList() *ComfyNodeUpsertOne {
 	})
 }
 
+// ClearOutputIsList clears the value of the "output_is_list" field.
+func (u *ComfyNodeUpsertOne) ClearOutputIsList() *ComfyNodeUpsertOne {
+	return u.Update(func(s *ComfyNodeUpsert) {
+		s.ClearOutputIsList()
+	})
+}
+
 // SetReturnNames sets the "return_names" field.
-func (u *ComfyNodeUpsertOne) SetReturnNames(v []string) *ComfyNodeUpsertOne {
+func (u *ComfyNodeUpsertOne) SetReturnNames(v string) *ComfyNodeUpsertOne {
 	return u.Update(func(s *ComfyNodeUpsert) {
 		s.SetReturnNames(v)
 	})
@@ -830,6 +867,13 @@ func (u *ComfyNodeUpsertOne) SetReturnNames(v []string) *ComfyNodeUpsertOne {
 func (u *ComfyNodeUpsertOne) UpdateReturnNames() *ComfyNodeUpsertOne {
 	return u.Update(func(s *ComfyNodeUpsert) {
 		s.UpdateReturnNames()
+	})
+}
+
+// ClearReturnNames clears the value of the "return_names" field.
+func (u *ComfyNodeUpsertOne) ClearReturnNames() *ComfyNodeUpsertOne {
+	return u.Update(func(s *ComfyNodeUpsert) {
+		s.ClearReturnNames()
 	})
 }
 
@@ -1212,6 +1256,13 @@ func (u *ComfyNodeUpsertBulk) UpdateDeprecated() *ComfyNodeUpsertBulk {
 	})
 }
 
+// ClearDeprecated clears the value of the "deprecated" field.
+func (u *ComfyNodeUpsertBulk) ClearDeprecated() *ComfyNodeUpsertBulk {
+	return u.Update(func(s *ComfyNodeUpsert) {
+		s.ClearDeprecated()
+	})
+}
+
 // SetExperimental sets the "experimental" field.
 func (u *ComfyNodeUpsertBulk) SetExperimental(v bool) *ComfyNodeUpsertBulk {
 	return u.Update(func(s *ComfyNodeUpsert) {
@@ -1223,6 +1274,13 @@ func (u *ComfyNodeUpsertBulk) SetExperimental(v bool) *ComfyNodeUpsertBulk {
 func (u *ComfyNodeUpsertBulk) UpdateExperimental() *ComfyNodeUpsertBulk {
 	return u.Update(func(s *ComfyNodeUpsert) {
 		s.UpdateExperimental()
+	})
+}
+
+// ClearExperimental clears the value of the "experimental" field.
+func (u *ComfyNodeUpsertBulk) ClearExperimental() *ComfyNodeUpsertBulk {
+	return u.Update(func(s *ComfyNodeUpsert) {
+		s.ClearExperimental()
 	})
 }
 
@@ -1240,8 +1298,15 @@ func (u *ComfyNodeUpsertBulk) UpdateOutputIsList() *ComfyNodeUpsertBulk {
 	})
 }
 
+// ClearOutputIsList clears the value of the "output_is_list" field.
+func (u *ComfyNodeUpsertBulk) ClearOutputIsList() *ComfyNodeUpsertBulk {
+	return u.Update(func(s *ComfyNodeUpsert) {
+		s.ClearOutputIsList()
+	})
+}
+
 // SetReturnNames sets the "return_names" field.
-func (u *ComfyNodeUpsertBulk) SetReturnNames(v []string) *ComfyNodeUpsertBulk {
+func (u *ComfyNodeUpsertBulk) SetReturnNames(v string) *ComfyNodeUpsertBulk {
 	return u.Update(func(s *ComfyNodeUpsert) {
 		s.SetReturnNames(v)
 	})
@@ -1251,6 +1316,13 @@ func (u *ComfyNodeUpsertBulk) SetReturnNames(v []string) *ComfyNodeUpsertBulk {
 func (u *ComfyNodeUpsertBulk) UpdateReturnNames() *ComfyNodeUpsertBulk {
 	return u.Update(func(s *ComfyNodeUpsert) {
 		s.UpdateReturnNames()
+	})
+}
+
+// ClearReturnNames clears the value of the "return_names" field.
+func (u *ComfyNodeUpsertBulk) ClearReturnNames() *ComfyNodeUpsertBulk {
+	return u.Update(func(s *ComfyNodeUpsert) {
+		s.ClearReturnNames()
 	})
 }
 

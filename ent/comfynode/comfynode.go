@@ -95,8 +95,6 @@ var (
 	DefaultExperimental bool
 	// DefaultOutputIsList holds the default value on creation for the "output_is_list" field.
 	DefaultOutputIsList []bool
-	// DefaultReturnNames holds the default value on creation for the "return_names" field.
-	DefaultReturnNames []string
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -152,6 +150,11 @@ func ByDeprecated(opts ...sql.OrderTermOption) OrderOption {
 // ByExperimental orders the results by the experimental field.
 func ByExperimental(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldExperimental, opts...).ToFunc()
+}
+
+// ByReturnNames orders the results by the return_names field.
+func ByReturnNames(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReturnNames, opts...).ToFunc()
 }
 
 // ByReturnTypes orders the results by the return_types field.

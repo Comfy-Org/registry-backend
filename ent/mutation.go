@@ -1802,8 +1802,7 @@ type ComfyNodeMutation struct {
 	experimental         *bool
 	output_is_list       *[]bool
 	appendoutput_is_list []bool
-	return_names         *[]string
-	appendreturn_names   []string
+	return_names         *string
 	return_types         *string
 	function             *string
 	clearedFields        map[string]struct{}
@@ -2240,9 +2239,22 @@ func (m *ComfyNodeMutation) OldDeprecated(ctx context.Context) (v bool, err erro
 	return oldValue.Deprecated, nil
 }
 
+// ClearDeprecated clears the value of the "deprecated" field.
+func (m *ComfyNodeMutation) ClearDeprecated() {
+	m.deprecated = nil
+	m.clearedFields[comfynode.FieldDeprecated] = struct{}{}
+}
+
+// DeprecatedCleared returns if the "deprecated" field was cleared in this mutation.
+func (m *ComfyNodeMutation) DeprecatedCleared() bool {
+	_, ok := m.clearedFields[comfynode.FieldDeprecated]
+	return ok
+}
+
 // ResetDeprecated resets all changes to the "deprecated" field.
 func (m *ComfyNodeMutation) ResetDeprecated() {
 	m.deprecated = nil
+	delete(m.clearedFields, comfynode.FieldDeprecated)
 }
 
 // SetExperimental sets the "experimental" field.
@@ -2276,9 +2288,22 @@ func (m *ComfyNodeMutation) OldExperimental(ctx context.Context) (v bool, err er
 	return oldValue.Experimental, nil
 }
 
+// ClearExperimental clears the value of the "experimental" field.
+func (m *ComfyNodeMutation) ClearExperimental() {
+	m.experimental = nil
+	m.clearedFields[comfynode.FieldExperimental] = struct{}{}
+}
+
+// ExperimentalCleared returns if the "experimental" field was cleared in this mutation.
+func (m *ComfyNodeMutation) ExperimentalCleared() bool {
+	_, ok := m.clearedFields[comfynode.FieldExperimental]
+	return ok
+}
+
 // ResetExperimental resets all changes to the "experimental" field.
 func (m *ComfyNodeMutation) ResetExperimental() {
 	m.experimental = nil
+	delete(m.clearedFields, comfynode.FieldExperimental)
 }
 
 // SetOutputIsList sets the "output_is_list" field.
@@ -2326,20 +2351,33 @@ func (m *ComfyNodeMutation) AppendedOutputIsList() ([]bool, bool) {
 	return m.appendoutput_is_list, true
 }
 
+// ClearOutputIsList clears the value of the "output_is_list" field.
+func (m *ComfyNodeMutation) ClearOutputIsList() {
+	m.output_is_list = nil
+	m.appendoutput_is_list = nil
+	m.clearedFields[comfynode.FieldOutputIsList] = struct{}{}
+}
+
+// OutputIsListCleared returns if the "output_is_list" field was cleared in this mutation.
+func (m *ComfyNodeMutation) OutputIsListCleared() bool {
+	_, ok := m.clearedFields[comfynode.FieldOutputIsList]
+	return ok
+}
+
 // ResetOutputIsList resets all changes to the "output_is_list" field.
 func (m *ComfyNodeMutation) ResetOutputIsList() {
 	m.output_is_list = nil
 	m.appendoutput_is_list = nil
+	delete(m.clearedFields, comfynode.FieldOutputIsList)
 }
 
 // SetReturnNames sets the "return_names" field.
-func (m *ComfyNodeMutation) SetReturnNames(s []string) {
+func (m *ComfyNodeMutation) SetReturnNames(s string) {
 	m.return_names = &s
-	m.appendreturn_names = nil
 }
 
 // ReturnNames returns the value of the "return_names" field in the mutation.
-func (m *ComfyNodeMutation) ReturnNames() (r []string, exists bool) {
+func (m *ComfyNodeMutation) ReturnNames() (r string, exists bool) {
 	v := m.return_names
 	if v == nil {
 		return
@@ -2350,7 +2388,7 @@ func (m *ComfyNodeMutation) ReturnNames() (r []string, exists bool) {
 // OldReturnNames returns the old "return_names" field's value of the ComfyNode entity.
 // If the ComfyNode object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ComfyNodeMutation) OldReturnNames(ctx context.Context) (v []string, err error) {
+func (m *ComfyNodeMutation) OldReturnNames(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldReturnNames is only allowed on UpdateOne operations")
 	}
@@ -2364,23 +2402,22 @@ func (m *ComfyNodeMutation) OldReturnNames(ctx context.Context) (v []string, err
 	return oldValue.ReturnNames, nil
 }
 
-// AppendReturnNames adds s to the "return_names" field.
-func (m *ComfyNodeMutation) AppendReturnNames(s []string) {
-	m.appendreturn_names = append(m.appendreturn_names, s...)
+// ClearReturnNames clears the value of the "return_names" field.
+func (m *ComfyNodeMutation) ClearReturnNames() {
+	m.return_names = nil
+	m.clearedFields[comfynode.FieldReturnNames] = struct{}{}
 }
 
-// AppendedReturnNames returns the list of values that were appended to the "return_names" field in this mutation.
-func (m *ComfyNodeMutation) AppendedReturnNames() ([]string, bool) {
-	if len(m.appendreturn_names) == 0 {
-		return nil, false
-	}
-	return m.appendreturn_names, true
+// ReturnNamesCleared returns if the "return_names" field was cleared in this mutation.
+func (m *ComfyNodeMutation) ReturnNamesCleared() bool {
+	_, ok := m.clearedFields[comfynode.FieldReturnNames]
+	return ok
 }
 
 // ResetReturnNames resets all changes to the "return_names" field.
 func (m *ComfyNodeMutation) ResetReturnNames() {
 	m.return_names = nil
-	m.appendreturn_names = nil
+	delete(m.clearedFields, comfynode.FieldReturnNames)
 }
 
 // SetReturnTypes sets the "return_types" field.
@@ -2744,7 +2781,7 @@ func (m *ComfyNodeMutation) SetField(name string, value ent.Value) error {
 		m.SetOutputIsList(v)
 		return nil
 	case comfynode.FieldReturnNames:
-		v, ok := value.([]string)
+		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -2803,6 +2840,18 @@ func (m *ComfyNodeMutation) ClearedFields() []string {
 	if m.FieldCleared(comfynode.FieldInputTypes) {
 		fields = append(fields, comfynode.FieldInputTypes)
 	}
+	if m.FieldCleared(comfynode.FieldDeprecated) {
+		fields = append(fields, comfynode.FieldDeprecated)
+	}
+	if m.FieldCleared(comfynode.FieldExperimental) {
+		fields = append(fields, comfynode.FieldExperimental)
+	}
+	if m.FieldCleared(comfynode.FieldOutputIsList) {
+		fields = append(fields, comfynode.FieldOutputIsList)
+	}
+	if m.FieldCleared(comfynode.FieldReturnNames) {
+		fields = append(fields, comfynode.FieldReturnNames)
+	}
 	if m.FieldCleared(comfynode.FieldReturnTypes) {
 		fields = append(fields, comfynode.FieldReturnTypes)
 	}
@@ -2831,6 +2880,18 @@ func (m *ComfyNodeMutation) ClearField(name string) error {
 		return nil
 	case comfynode.FieldInputTypes:
 		m.ClearInputTypes()
+		return nil
+	case comfynode.FieldDeprecated:
+		m.ClearDeprecated()
+		return nil
+	case comfynode.FieldExperimental:
+		m.ClearExperimental()
+		return nil
+	case comfynode.FieldOutputIsList:
+		m.ClearOutputIsList()
+		return nil
+	case comfynode.FieldReturnNames:
+		m.ClearReturnNames()
 		return nil
 	case comfynode.FieldReturnTypes:
 		m.ClearReturnTypes()
