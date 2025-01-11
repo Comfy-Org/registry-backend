@@ -183,14 +183,14 @@ func (nvc *NodeVersionCreate) SetStorageFile(s *StorageFile) *NodeVersionCreate 
 }
 
 // AddComfyNodeIDs adds the "comfy_nodes" edge to the ComfyNode entity by IDs.
-func (nvc *NodeVersionCreate) AddComfyNodeIDs(ids ...string) *NodeVersionCreate {
+func (nvc *NodeVersionCreate) AddComfyNodeIDs(ids ...uuid.UUID) *NodeVersionCreate {
 	nvc.mutation.AddComfyNodeIDs(ids...)
 	return nvc
 }
 
 // AddComfyNodes adds the "comfy_nodes" edges to the ComfyNode entity.
 func (nvc *NodeVersionCreate) AddComfyNodes(c ...*ComfyNode) *NodeVersionCreate {
-	ids := make([]string, len(c))
+	ids := make([]uuid.UUID, len(c))
 	for i := range c {
 		ids[i] = c[i].ID
 	}
@@ -413,7 +413,7 @@ func (nvc *NodeVersionCreate) createSpec() (*NodeVersion, *sqlgraph.CreateSpec) 
 			Columns: []string{nodeversion.ComfyNodesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeString),
+				IDSpec: sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

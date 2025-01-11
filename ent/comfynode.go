@@ -19,11 +19,13 @@ import (
 type ComfyNode struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID string `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
 	// CreateTime holds the value of the "create_time" field.
 	CreateTime time.Time `json:"create_time,omitempty"`
 	// UpdateTime holds the value of the "update_time" field.
 	UpdateTime time.Time `json:"update_time,omitempty"`
+	// Name holds the value of the "name" field.
+	Name string `json:"name,omitempty"`
 	// NodeVersionID holds the value of the "node_version_id" field.
 	NodeVersionID uuid.UUID `json:"node_version_id,omitempty"`
 	// Category holds the value of the "category" field.
@@ -79,11 +81,11 @@ func (*ComfyNode) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case comfynode.FieldDeprecated, comfynode.FieldExperimental:
 			values[i] = new(sql.NullBool)
-		case comfynode.FieldID, comfynode.FieldCategory, comfynode.FieldDescription, comfynode.FieldInputTypes, comfynode.FieldReturnTypes, comfynode.FieldFunction:
+		case comfynode.FieldName, comfynode.FieldCategory, comfynode.FieldDescription, comfynode.FieldInputTypes, comfynode.FieldReturnTypes, comfynode.FieldFunction:
 			values[i] = new(sql.NullString)
 		case comfynode.FieldCreateTime, comfynode.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
-		case comfynode.FieldNodeVersionID:
+		case comfynode.FieldID, comfynode.FieldNodeVersionID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -101,10 +103,10 @@ func (cn *ComfyNode) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case comfynode.FieldID:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
-			} else if value.Valid {
-				cn.ID = value.String
+			} else if value != nil {
+				cn.ID = *value
 			}
 		case comfynode.FieldCreateTime:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -117,6 +119,12 @@ func (cn *ComfyNode) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field update_time", values[i])
 			} else if value.Valid {
 				cn.UpdateTime = value.Time
+			}
+		case comfynode.FieldName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field name", values[i])
+			} else if value.Valid {
+				cn.Name = value.String
 			}
 		case comfynode.FieldNodeVersionID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
@@ -228,6 +236,9 @@ func (cn *ComfyNode) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("update_time=")
 	builder.WriteString(cn.UpdateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("name=")
+	builder.WriteString(cn.Name)
 	builder.WriteString(", ")
 	builder.WriteString("node_version_id=")
 	builder.WriteString(fmt.Sprintf("%v", cn.NodeVersionID))

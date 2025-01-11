@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 )
 
 const (
@@ -18,6 +19,8 @@ const (
 	FieldCreateTime = "create_time"
 	// FieldUpdateTime holds the string denoting the update_time field in the database.
 	FieldUpdateTime = "update_time"
+	// FieldName holds the string denoting the name field in the database.
+	FieldName = "name"
 	// FieldNodeVersionID holds the string denoting the node_version_id field in the database.
 	FieldNodeVersionID = "node_version_id"
 	// FieldCategory holds the string denoting the category field in the database.
@@ -56,6 +59,7 @@ var Columns = []string{
 	FieldID,
 	FieldCreateTime,
 	FieldUpdateTime,
+	FieldName,
 	FieldNodeVersionID,
 	FieldCategory,
 	FieldDescription,
@@ -93,6 +97,8 @@ var (
 	DefaultOutputIsList []bool
 	// DefaultReturnNames holds the default value on creation for the "return_names" field.
 	DefaultReturnNames []string
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() uuid.UUID
 )
 
 // OrderOption defines the ordering options for the ComfyNode queries.
@@ -111,6 +117,11 @@ func ByCreateTime(opts ...sql.OrderTermOption) OrderOption {
 // ByUpdateTime orders the results by the update_time field.
 func ByUpdateTime(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdateTime, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
 }
 
 // ByNodeVersionID orders the results by the node_version_id field.

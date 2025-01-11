@@ -72,7 +72,7 @@ func (n *AlgoliaNode) ToEntNode() *ent.Node {
 	}
 	for _, name := range n.ComfyNodeNames {
 		node.Edges.Versions[0].Edges.ComfyNodes = append(node.Edges.Versions[0].Edges.ComfyNodes, &ent.ComfyNode{
-			ID: name,
+			Name: name,
 		})
 	}
 	return node

@@ -46,9 +46,10 @@ var (
 	}
 	// ComfyNodesColumns holds the columns for the "comfy_nodes" table.
 	ComfyNodesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "id", Type: field.TypeUUID},
 		{Name: "create_time", Type: field.TypeTime},
 		{Name: "update_time", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "category", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "description", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "input_types", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
@@ -68,16 +69,9 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "comfy_nodes_node_versions_comfy_nodes",
-				Columns:    []*schema.Column{ComfyNodesColumns[12]},
+				Columns:    []*schema.Column{ComfyNodesColumns[13]},
 				RefColumns: []*schema.Column{NodeVersionsColumns[0]},
 				OnDelete:   schema.NoAction,
-			},
-		},
-		Indexes: []*schema.Index{
-			{
-				Name:    "comfynode_id_node_version_id",
-				Unique:  true,
-				Columns: []*schema.Column{ComfyNodesColumns[0], ComfyNodesColumns[12]},
 			},
 		},
 	}

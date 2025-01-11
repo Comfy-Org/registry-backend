@@ -46,7 +46,7 @@ func AlgoliaNodeFromEntNode(node *ent.Node) entity.AlgoliaNode {
 	n.LatestVersionStatus = lv.Status
 	n.ComfyNodeNames = make([]string, 0, len(lv.Edges.ComfyNodes))
 	for _, v := range lv.Edges.ComfyNodes {
-		n.ComfyNodeNames = append(n.ComfyNodeNames, v.ID)
+		n.ComfyNodeNames = append(n.ComfyNodeNames, v.Name)
 	}
 
 	return n

@@ -837,14 +837,15 @@ func TestRegistryComfyNode(t *testing.T) {
 		})
 		require.NoError(t, err, "should not return error")
 	}
-	nodeVersion := nodeVersions[len(nodeVersions)-1]
-	nodeVersionExtractionFailed := nodeVersions[len(nodeVersions)-2]
-	backfilledNodeVersions := nodeVersions[:len(nodeVersions)-2]
+	nodeVersionExtractionSucceeded := nodeVersions[len(nodeVersions)-1]
+	nodeVersionExtractionSucceeded1 := nodeVersions[len(nodeVersions)-2]
+	nodeVersionExtractionFailed := nodeVersions[len(nodeVersions)-3]
+	backfilledNodeVersions := nodeVersions[:len(nodeVersions)-3]
 
 	t.Run("NoComfyNode", func(t *testing.T) {
 		res, err := withMiddleware(authz, impl.GetNodeVersion)(ctx, drip.GetNodeVersionRequestObject{
 			NodeId:    *node.Id,
-			VersionId: *nodeVersion.Version,
+			VersionId: *nodeVersionExtractionSucceeded.Version,
 		})
 		require.NoError(t, err, "should not return error")
 		require.IsType(t, drip.GetNodeVersion200JSONResponse{}, res)
@@ -879,14 +880,16 @@ func TestRegistryComfyNode(t *testing.T) {
 
 	// create comfy nodes
 	{
-		body := drip.CreateComfyNodesJSONRequestBody(comfyNodes)
-		res, err := withMiddleware(authz, impl.CreateComfyNodes)(ctx, drip.CreateComfyNodesRequestObject{
-			NodeId:  *node.Id,
-			Version: *nodeVersion.Version,
-			Body:    &body,
-		})
-		require.NoError(t, err)
-		require.IsType(t, drip.CreateComfyNodes204Response{}, res)
+		for _, nv := range []*drip.NodeVersion{nodeVersionExtractionSucceeded, nodeVersionExtractionSucceeded1} {
+			body := drip.CreateComfyNodesJSONRequestBody(comfyNodes)
+			res, err := withMiddleware(authz, impl.CreateComfyNodes)(ctx, drip.CreateComfyNodesRequestObject{
+				NodeId:  *node.Id,
+				Version: *nv.Version,
+				Body:    &body,
+			})
+			require.NoError(t, err)
+			require.IsType(t, drip.CreateComfyNodes204Response{}, res)
+		}
 	}
 
 	// mark comfy nodes extraction as failed
@@ -906,7 +909,7 @@ func TestRegistryComfyNode(t *testing.T) {
 
 		node, err := client.Node.Get(ctx, *node.Id)
 		require.NoError(t, err)
-		nodeVersion, err := client.NodeVersion.Query().Where(nodeversion.Version(*nodeVersion.Version)).WithComfyNodes().Only(ctx)
+		nodeVersion, err := client.NodeVersion.Query().Where(nodeversion.Version(*nodeVersionExtractionSucceeded.Version)).WithComfyNodes().Only(ctx)
 		require.NoError(t, err)
 		node.Edges.Versions = append(node.Edges.Versions, nodeVersion)
 
@@ -918,7 +921,7 @@ func TestRegistryComfyNode(t *testing.T) {
 		for _, node := range indexed[0].Edges.Versions[0].Edges.ComfyNodes {
 			cn := *(mapper.DBComfyNodeToApiComfyNode(node))
 			cn.ComfyNodeId = nil
-			(*indexedComfyNodes.Nodes)[node.ID] = cn
+			(*indexedComfyNodes.Nodes)[node.Name] = cn
 		}
 		assert.Equal(t, comfyNodes, indexedComfyNodes)
 	})
@@ -929,7 +932,7 @@ func TestRegistryComfyNode(t *testing.T) {
 
 		node, err := client.Node.Get(ctx, *node.Id)
 		require.NoError(t, err)
-		nodeVersion, err := client.NodeVersion.Query().Where(nodeversion.Version(*nodeVersion.Version)).WithComfyNodes().Only(ctx)
+		nodeVersion, err := client.NodeVersion.Query().Where(nodeversion.Version(*nodeVersionExtractionSucceeded.Version)).WithComfyNodes().Only(ctx)
 		require.NoError(t, err)
 		node.Edges.Versions = append(node.Edges.Versions, nodeVersion)
 
@@ -941,7 +944,7 @@ func TestRegistryComfyNode(t *testing.T) {
 		for _, node := range indexed[0].Edges.Versions[0].Edges.ComfyNodes {
 			cn := *(mapper.DBComfyNodeToApiComfyNode(node))
 			cn.ComfyNodeId = nil
-			(*indexedComfyNodes.Nodes)[node.ID] = cn
+			(*indexedComfyNodes.Nodes)[node.Name] = cn
 		}
 		assert.Equal(t, comfyNodes, indexedComfyNodes)
 	})
@@ -952,7 +955,7 @@ func TestRegistryComfyNode(t *testing.T) {
 			t.Run(k, func(t *testing.T) {
 				res, err := withMiddleware(authz, impl.GetComfyNode)(ctx, drip.GetComfyNodeRequestObject{
 					NodeId:      *node.Id,
-					Version:     *nodeVersion.Version,
+					Version:     *nodeVersionExtractionSucceeded.Version,
 					ComfyNodeId: k,
 				})
 				require.NoError(t, err, "should return created node version")
@@ -966,7 +969,7 @@ func TestRegistryComfyNode(t *testing.T) {
 		body := drip.CreateComfyNodesJSONRequestBody(comfyNodes)
 		res, err := withMiddleware(authz, impl.CreateComfyNodes)(ctx, drip.CreateComfyNodesRequestObject{
 			NodeId:  *node.Id,
-			Version: *nodeVersion.Version,
+			Version: *nodeVersionExtractionSucceeded.Version,
 			Body:    &body,
 		})
 		require.NoError(t, err)
@@ -976,7 +979,7 @@ func TestRegistryComfyNode(t *testing.T) {
 	t.Run("GetNodeVersion", func(t *testing.T) {
 		res, err := withMiddleware(authz, impl.GetNodeVersion)(ctx, drip.GetNodeVersionRequestObject{
 			NodeId:    *node.Id,
-			VersionId: *nodeVersion.Version,
+			VersionId: *nodeVersionExtractionSucceeded.Version,
 		})
 		require.NoError(t, err, "should return created node version")
 		require.IsType(t, drip.GetNodeVersion200JSONResponse{}, res)
@@ -995,7 +998,7 @@ func TestRegistryComfyNode(t *testing.T) {
 		require.IsType(t, drip.ListNodeVersions200JSONResponse{}, res)
 		found := false
 		for _, nv := range res.(drip.ListNodeVersions200JSONResponse) {
-			if *nv.Version == *nodeVersion.Version {
+			if *nv.Version == *nodeVersionExtractionSucceeded.Version || *nv.Version == *nodeVersionExtractionSucceeded1.Version {
 				for k, v := range *nv.ComfyNodes {
 					found = true
 					ev := (*comfyNodes.Nodes)[k]
@@ -1015,7 +1018,7 @@ func TestRegistryComfyNode(t *testing.T) {
 		require.IsType(t, drip.ListAllNodeVersions200JSONResponse{}, res)
 		found := false
 		for _, nv := range *res.(drip.ListAllNodeVersions200JSONResponse).Versions {
-			if *nv.Version == *nodeVersion.Version {
+			if *nv.Version == *nodeVersionExtractionSucceeded.Version || *nv.Version == *nodeVersionExtractionSucceeded1.Version {
 				for k, v := range *nv.ComfyNodes {
 					found = true
 					ev := (*comfyNodes.Nodes)[k]

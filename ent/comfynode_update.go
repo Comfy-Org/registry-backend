@@ -38,6 +38,20 @@ func (cnu *ComfyNodeUpdate) SetUpdateTime(t time.Time) *ComfyNodeUpdate {
 	return cnu
 }
 
+// SetName sets the "name" field.
+func (cnu *ComfyNodeUpdate) SetName(s string) *ComfyNodeUpdate {
+	cnu.mutation.SetName(s)
+	return cnu
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (cnu *ComfyNodeUpdate) SetNillableName(s *string) *ComfyNodeUpdate {
+	if s != nil {
+		cnu.SetName(*s)
+	}
+	return cnu
+}
+
 // SetNodeVersionID sets the "node_version_id" field.
 func (cnu *ComfyNodeUpdate) SetNodeVersionID(u uuid.UUID) *ComfyNodeUpdate {
 	cnu.mutation.SetNodeVersionID(u)
@@ -280,7 +294,7 @@ func (cnu *ComfyNodeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := cnu.check(); err != nil {
 		return n, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(comfynode.Table, comfynode.Columns, sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeString))
+	_spec := sqlgraph.NewUpdateSpec(comfynode.Table, comfynode.Columns, sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeUUID))
 	if ps := cnu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -290,6 +304,9 @@ func (cnu *ComfyNodeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := cnu.mutation.UpdateTime(); ok {
 		_spec.SetField(comfynode.FieldUpdateTime, field.TypeTime, value)
+	}
+	if value, ok := cnu.mutation.Name(); ok {
+		_spec.SetField(comfynode.FieldName, field.TypeString, value)
 	}
 	if value, ok := cnu.mutation.Category(); ok {
 		_spec.SetField(comfynode.FieldCategory, field.TypeString, value)
@@ -397,6 +414,20 @@ type ComfyNodeUpdateOne struct {
 // SetUpdateTime sets the "update_time" field.
 func (cnuo *ComfyNodeUpdateOne) SetUpdateTime(t time.Time) *ComfyNodeUpdateOne {
 	cnuo.mutation.SetUpdateTime(t)
+	return cnuo
+}
+
+// SetName sets the "name" field.
+func (cnuo *ComfyNodeUpdateOne) SetName(s string) *ComfyNodeUpdateOne {
+	cnuo.mutation.SetName(s)
+	return cnuo
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (cnuo *ComfyNodeUpdateOne) SetNillableName(s *string) *ComfyNodeUpdateOne {
+	if s != nil {
+		cnuo.SetName(*s)
+	}
 	return cnuo
 }
 
@@ -655,7 +686,7 @@ func (cnuo *ComfyNodeUpdateOne) sqlSave(ctx context.Context) (_node *ComfyNode, 
 	if err := cnuo.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(comfynode.Table, comfynode.Columns, sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeString))
+	_spec := sqlgraph.NewUpdateSpec(comfynode.Table, comfynode.Columns, sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeUUID))
 	id, ok := cnuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "ComfyNode.id" for update`)}
@@ -682,6 +713,9 @@ func (cnuo *ComfyNodeUpdateOne) sqlSave(ctx context.Context) (_node *ComfyNode, 
 	}
 	if value, ok := cnuo.mutation.UpdateTime(); ok {
 		_spec.SetField(comfynode.FieldUpdateTime, field.TypeTime, value)
+	}
+	if value, ok := cnuo.mutation.Name(); ok {
+		_spec.SetField(comfynode.FieldName, field.TypeString, value)
 	}
 	if value, ok := cnuo.mutation.Category(); ok {
 		_spec.SetField(comfynode.FieldCategory, field.TypeString, value)

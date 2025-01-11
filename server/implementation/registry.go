@@ -1009,57 +1009,80 @@ func (s *DripStrictServerImplementation) ReindexNodes(ctx context.Context, reque
 }
 
 // CreateComfyNodes bulk-stores comfy-nodes extraction result for a node version
-func (impl *DripStrictServerImplementation) CreateComfyNodes(ctx context.Context, request drip.CreateComfyNodesRequestObject) (res drip.CreateComfyNodesResponseObject, err error) {
+func (impl *DripStrictServerImplementation) CreateComfyNodes(
+	ctx context.Context, request drip.CreateComfyNodesRequestObject) (res drip.CreateComfyNodesResponseObject, err error) {
+
+	// Check if extraction was marked as unsuccessful
 	if request.Body.Success != nil && !*request.Body.Success {
-		err = impl.RegistryService.MarKComfyNodeExtractionFailed(ctx, impl.Client, request.NodeId, request.Version)
+		err = impl.RegistryService.MarkComfyNodeExtractionFailed(ctx, impl.Client, request.NodeId, request.Version)
 	} else {
-		err = impl.RegistryService.CreateComfyNodes(ctx, impl.Client, request.NodeId, request.Version, *request.Body.Nodes)
+		// Attempt to create comfy nodes in the registry
+		err = impl.RegistryService.CreateComfyNodes(
+			ctx, impl.Client, request.NodeId, request.Version, *request.Body.Nodes)
 	}
 
+	// Handle specific error scenarios
 	if ent.IsNotFound(err) {
 		log.Ctx(ctx).Error().Msgf("Node or node version not found w/ err: %v", err)
-		return drip.CreateComfyNodes404JSONResponse{Message: "Node or node version not found", Error: err.Error()}, nil
-	}
-	if errors.Is(err, drip_services.ErrComfyNodesAlreadyExist) {
-		log.Ctx(ctx).Error().Msgf("Comfy nodes extraction result for %s %s already set", request.NodeId, request.Version)
-		return drip.CreateComfyNodes409JSONResponse{Message: "Comfy nodes extraction result already set", Error: err.Error()}, nil
-	}
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("Failed to store comfy nodes extraction w/ err: %v", err)
-		return drip.CreateComfyNodes500JSONResponse{Message: "Failed to store comfy nodes extraction", Error: err.Error()}, nil
+		return drip.CreateComfyNodes404JSONResponse{
+			Message: "Node or node version not found", Error: err.Error()}, nil
 	}
 
-	log.Ctx(ctx).Info().Msgf("CreateComfyNodes successful")
+	if errors.Is(err, drip_services.ErrComfyNodesAlreadyExist) {
+		log.Ctx(ctx).Error().Msgf(
+			"Comfy nodes extraction result for %s %s already set", request.NodeId, request.Version)
+		return drip.CreateComfyNodes409JSONResponse{
+			Message: "Comfy nodes extraction result already set", Error: err.Error()}, nil
+	}
+
+	if err != nil {
+		log.Ctx(ctx).Error().Msgf("Failed to store comfy nodes extraction w/ err: %v", err)
+		return drip.CreateComfyNodes500JSONResponse{
+			Message: "Failed to store comfy nodes extraction", Error: err.Error()}, nil
+	}
+
+	log.Ctx(ctx).Info().Msg("CreateComfyNodes successful")
 	return drip.CreateComfyNodes204Response{}, nil
 }
 
-// GetComfyNode return a certain comfy-node of a certain node version
-func (impl *DripStrictServerImplementation) GetComfyNode(ctx context.Context, request drip.GetComfyNodeRequestObject) (res drip.GetComfyNodeResponseObject, err error) {
+// GetComfyNode returns a specific comfy-node of a certain node version
+func (impl *DripStrictServerImplementation) GetComfyNode(
+	ctx context.Context, request drip.GetComfyNodeRequestObject) (res drip.GetComfyNodeResponseObject, err error) {
 
+	// Retrieve the comfy-node from the registry
 	n, err := impl.RegistryService.GetComfyNode(ctx, impl.Client, request.NodeId, request.Version, request.ComfyNodeId)
+
+	// Handle node or version not found
 	if ent.IsNotFound(err) {
 		log.Ctx(ctx).Error().Msgf("Node or node version or comfy node not found w/ err: %v", err)
-		return drip.GetComfyNode404JSONResponse{Message: "Node or node version or comfy node not found", Error: err.Error()}, nil
+		return drip.GetComfyNode404JSONResponse{
+			Message: "Node or node version or comfy node not found", Error: err.Error()}, nil
 	}
 
+	// Map database comfy-node to API representation
 	cn := mapper.DBComfyNodeToApiComfyNode(n)
 	if cn == nil {
-		log.Ctx(ctx).Error().Msgf("Comfy Node not found")
+		log.Ctx(ctx).Error().Msg("Comfy Node not found")
 		return drip.GetComfyNode404JSONResponse{Message: "Comfy Node not found"}, nil
 	}
 
-	log.Ctx(ctx).Info().Msgf("GetComfyNode successful")
+	log.Ctx(ctx).Info().Msg("GetComfyNode successful")
 	res = drip.GetComfyNode200JSONResponse(*cn)
 	return
 }
 
-func (impl *DripStrictServerImplementation) ComfyNodesBackfill(ctx context.Context, request drip.ComfyNodesBackfillRequestObject) (drip.ComfyNodesBackfillResponseObject, error) {
+// ComfyNodesBackfill triggers a backfill process for comfy-nodes
+func (impl *DripStrictServerImplementation) ComfyNodesBackfill(
+	ctx context.Context, request drip.ComfyNodesBackfillRequestObject) (drip.ComfyNodesBackfillResponseObject, error) {
+
+	// Trigger the backfill process with a specified maximum node
 	err := impl.RegistryService.TriggerComfyNodesBackfill(ctx, impl.Client, request.Params.MaxNode)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to trigger comfy nodes backfill w/ err: %v", err)
-		return drip.ComfyNodesBackfill500JSONResponse{Message: "Failed to trigger comfy nodes backfill", Error: err.Error()}, nil
+		return drip.ComfyNodesBackfill500JSONResponse{
+			Message: "Failed to trigger comfy nodes backfill", Error: err.Error()}, nil
 	}
 
-	log.Ctx(ctx).Info().Msgf("ComfyNodesBackfill successful")
+	log.Ctx(ctx).Info().Msg("ComfyNodesBackfill successful")
 	return drip.ComfyNodesBackfill204Response{}, nil
 }

@@ -5,7 +5,6 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	"entgo.io/ent/schema/index"
 	"entgo.io/ent/schema/mixin"
 	"github.com/google/uuid"
 )
@@ -16,7 +15,8 @@ type ComfyNode struct {
 
 func (ComfyNode) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("id").SchemaType(map[string]string{
+		field.UUID("id", uuid.UUID{}).Default(uuid.New),
+		field.String("name").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}),
 		field.UUID("node_version_id", uuid.UUID{}),
@@ -45,12 +45,6 @@ func (ComfyNode) Fields() []ent.Field {
 func (ComfyNode) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		mixin.Time{},
-	}
-}
-
-func (ComfyNode) Indexes() []ent.Index {
-	return []ent.Index{
-		index.Fields("id", "node_version_id").Unique(),
 	}
 }
 

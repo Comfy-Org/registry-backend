@@ -53,6 +53,12 @@ func (cnc *ComfyNodeCreate) SetNillableUpdateTime(t *time.Time) *ComfyNodeCreate
 	return cnc
 }
 
+// SetName sets the "name" field.
+func (cnc *ComfyNodeCreate) SetName(s string) *ComfyNodeCreate {
+	cnc.mutation.SetName(s)
+	return cnc
+}
+
 // SetNodeVersionID sets the "node_version_id" field.
 func (cnc *ComfyNodeCreate) SetNodeVersionID(u uuid.UUID) *ComfyNodeCreate {
 	cnc.mutation.SetNodeVersionID(u)
@@ -170,8 +176,16 @@ func (cnc *ComfyNodeCreate) SetNillableFunction(s *string) *ComfyNodeCreate {
 }
 
 // SetID sets the "id" field.
-func (cnc *ComfyNodeCreate) SetID(s string) *ComfyNodeCreate {
-	cnc.mutation.SetID(s)
+func (cnc *ComfyNodeCreate) SetID(u uuid.UUID) *ComfyNodeCreate {
+	cnc.mutation.SetID(u)
+	return cnc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (cnc *ComfyNodeCreate) SetNillableID(u *uuid.UUID) *ComfyNodeCreate {
+	if u != nil {
+		cnc.SetID(*u)
+	}
 	return cnc
 }
 
@@ -245,6 +259,10 @@ func (cnc *ComfyNodeCreate) defaults() {
 		v := comfynode.DefaultReturnNames
 		cnc.mutation.SetReturnNames(v)
 	}
+	if _, ok := cnc.mutation.ID(); !ok {
+		v := comfynode.DefaultID()
+		cnc.mutation.SetID(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -254,6 +272,9 @@ func (cnc *ComfyNodeCreate) check() error {
 	}
 	if _, ok := cnc.mutation.UpdateTime(); !ok {
 		return &ValidationError{Name: "update_time", err: errors.New(`ent: missing required field "ComfyNode.update_time"`)}
+	}
+	if _, ok := cnc.mutation.Name(); !ok {
+		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "ComfyNode.name"`)}
 	}
 	if _, ok := cnc.mutation.NodeVersionID(); !ok {
 		return &ValidationError{Name: "node_version_id", err: errors.New(`ent: missing required field "ComfyNode.node_version_id"`)}
@@ -288,10 +309,10 @@ func (cnc *ComfyNodeCreate) sqlSave(ctx context.Context) (*ComfyNode, error) {
 		return nil, err
 	}
 	if _spec.ID.Value != nil {
-		if id, ok := _spec.ID.Value.(string); ok {
-			_node.ID = id
-		} else {
-			return nil, fmt.Errorf("unexpected ComfyNode.ID type: %T", _spec.ID.Value)
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
 		}
 	}
 	cnc.mutation.id = &_node.ID
@@ -302,12 +323,12 @@ func (cnc *ComfyNodeCreate) sqlSave(ctx context.Context) (*ComfyNode, error) {
 func (cnc *ComfyNodeCreate) createSpec() (*ComfyNode, *sqlgraph.CreateSpec) {
 	var (
 		_node = &ComfyNode{config: cnc.config}
-		_spec = sqlgraph.NewCreateSpec(comfynode.Table, sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeString))
+		_spec = sqlgraph.NewCreateSpec(comfynode.Table, sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeUUID))
 	)
 	_spec.OnConflict = cnc.conflict
 	if id, ok := cnc.mutation.ID(); ok {
 		_node.ID = id
-		_spec.ID.Value = id
+		_spec.ID.Value = &id
 	}
 	if value, ok := cnc.mutation.CreateTime(); ok {
 		_spec.SetField(comfynode.FieldCreateTime, field.TypeTime, value)
@@ -316,6 +337,10 @@ func (cnc *ComfyNodeCreate) createSpec() (*ComfyNode, *sqlgraph.CreateSpec) {
 	if value, ok := cnc.mutation.UpdateTime(); ok {
 		_spec.SetField(comfynode.FieldUpdateTime, field.TypeTime, value)
 		_node.UpdateTime = value
+	}
+	if value, ok := cnc.mutation.Name(); ok {
+		_spec.SetField(comfynode.FieldName, field.TypeString, value)
+		_node.Name = value
 	}
 	if value, ok := cnc.mutation.Category(); ok {
 		_spec.SetField(comfynode.FieldCategory, field.TypeString, value)
@@ -431,6 +456,18 @@ func (u *ComfyNodeUpsert) SetUpdateTime(v time.Time) *ComfyNodeUpsert {
 // UpdateUpdateTime sets the "update_time" field to the value that was provided on create.
 func (u *ComfyNodeUpsert) UpdateUpdateTime() *ComfyNodeUpsert {
 	u.SetExcluded(comfynode.FieldUpdateTime)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *ComfyNodeUpsert) SetName(v string) *ComfyNodeUpsert {
+	u.Set(comfynode.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ComfyNodeUpsert) UpdateName() *ComfyNodeUpsert {
+	u.SetExcluded(comfynode.FieldName)
 	return u
 }
 
@@ -649,6 +686,20 @@ func (u *ComfyNodeUpsertOne) UpdateUpdateTime() *ComfyNodeUpsertOne {
 	})
 }
 
+// SetName sets the "name" field.
+func (u *ComfyNodeUpsertOne) SetName(v string) *ComfyNodeUpsertOne {
+	return u.Update(func(s *ComfyNodeUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ComfyNodeUpsertOne) UpdateName() *ComfyNodeUpsertOne {
+	return u.Update(func(s *ComfyNodeUpsert) {
+		s.UpdateName()
+	})
+}
+
 // SetNodeVersionID sets the "node_version_id" field.
 func (u *ComfyNodeUpsertOne) SetNodeVersionID(v uuid.UUID) *ComfyNodeUpsertOne {
 	return u.Update(func(s *ComfyNodeUpsert) {
@@ -840,7 +891,7 @@ func (u *ComfyNodeUpsertOne) ExecX(ctx context.Context) {
 }
 
 // Exec executes the UPSERT query and returns the inserted/updated ID.
-func (u *ComfyNodeUpsertOne) ID(ctx context.Context) (id string, err error) {
+func (u *ComfyNodeUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
 	if u.create.driver.Dialect() == dialect.MySQL {
 		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
 		// fields from the database since MySQL does not support the RETURNING clause.
@@ -854,7 +905,7 @@ func (u *ComfyNodeUpsertOne) ID(ctx context.Context) (id string, err error) {
 }
 
 // IDX is like ID, but panics if an error occurs.
-func (u *ComfyNodeUpsertOne) IDX(ctx context.Context) string {
+func (u *ComfyNodeUpsertOne) IDX(ctx context.Context) uuid.UUID {
 	id, err := u.ID(ctx)
 	if err != nil {
 		panic(err)
@@ -1053,6 +1104,20 @@ func (u *ComfyNodeUpsertBulk) SetUpdateTime(v time.Time) *ComfyNodeUpsertBulk {
 func (u *ComfyNodeUpsertBulk) UpdateUpdateTime() *ComfyNodeUpsertBulk {
 	return u.Update(func(s *ComfyNodeUpsert) {
 		s.UpdateUpdateTime()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *ComfyNodeUpsertBulk) SetName(v string) *ComfyNodeUpsertBulk {
+	return u.Update(func(s *ComfyNodeUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ComfyNodeUpsertBulk) UpdateName() *ComfyNodeUpsertBulk {
+	return u.Update(func(s *ComfyNodeUpsert) {
+		s.UpdateName()
 	})
 }
 
