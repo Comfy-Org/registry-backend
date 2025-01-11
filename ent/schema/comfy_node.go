@@ -29,10 +29,12 @@ func (ComfyNode) Fields() []ent.Field {
 		field.String("input_types").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}).Optional(),
-		field.Bool("deprecated").Default(false),
-		field.Bool("experimental").Default(false),
-		field.JSON("output_is_list", []bool{}).Default([]bool{}),
-		field.Strings("return_names").Default([]string{}),
+		field.Bool("deprecated").Default(false).Optional(),
+		field.Bool("experimental").Default(false).Optional(),
+		field.JSON("output_is_list", []bool{}).Default([]bool{}).Optional(),
+		field.String("return_names").SchemaType(map[string]string{
+			dialect.Postgres: "text",
+		}).Optional(),
 		field.String("return_types").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}).Optional(),

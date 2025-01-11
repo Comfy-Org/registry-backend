@@ -2264,9 +2264,7 @@ components:
             type: boolean
           description: Boolean values indicating if each output is a list.
         return_names:
-          type: array
-          items:
-            type: string
+          type: string
           description: Names of the outputs for clarity in workflows.
         return_types:
           type: string

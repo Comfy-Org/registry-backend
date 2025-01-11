@@ -73,10 +73,6 @@ func init() {
 	comfynodeDescOutputIsList := comfynodeFields[8].Descriptor()
 	// comfynode.DefaultOutputIsList holds the default value on creation for the output_is_list field.
 	comfynode.DefaultOutputIsList = comfynodeDescOutputIsList.Default.([]bool)
-	// comfynodeDescReturnNames is the schema descriptor for return_names field.
-	comfynodeDescReturnNames := comfynodeFields[9].Descriptor()
-	// comfynode.DefaultReturnNames holds the default value on creation for the return_names field.
-	comfynode.DefaultReturnNames = comfynodeDescReturnNames.Default.([]string)
 	// comfynodeDescID is the schema descriptor for id field.
 	comfynodeDescID := comfynodeFields[0].Descriptor()
 	// comfynode.DefaultID holds the default value on creation for the id field.

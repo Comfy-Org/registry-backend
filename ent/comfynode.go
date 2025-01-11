@@ -41,7 +41,7 @@ type ComfyNode struct {
 	// OutputIsList holds the value of the "output_is_list" field.
 	OutputIsList []bool `json:"output_is_list,omitempty"`
 	// ReturnNames holds the value of the "return_names" field.
-	ReturnNames []string `json:"return_names,omitempty"`
+	ReturnNames string `json:"return_names,omitempty"`
 	// ReturnTypes holds the value of the "return_types" field.
 	ReturnTypes string `json:"return_types,omitempty"`
 	// Function holds the value of the "function" field.
@@ -77,11 +77,11 @@ func (*ComfyNode) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case comfynode.FieldOutputIsList, comfynode.FieldReturnNames:
+		case comfynode.FieldOutputIsList:
 			values[i] = new([]byte)
 		case comfynode.FieldDeprecated, comfynode.FieldExperimental:
 			values[i] = new(sql.NullBool)
-		case comfynode.FieldName, comfynode.FieldCategory, comfynode.FieldDescription, comfynode.FieldInputTypes, comfynode.FieldReturnTypes, comfynode.FieldFunction:
+		case comfynode.FieldName, comfynode.FieldCategory, comfynode.FieldDescription, comfynode.FieldInputTypes, comfynode.FieldReturnNames, comfynode.FieldReturnTypes, comfynode.FieldFunction:
 			values[i] = new(sql.NullString)
 		case comfynode.FieldCreateTime, comfynode.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
@@ -171,12 +171,10 @@ func (cn *ComfyNode) assignValues(columns []string, values []any) error {
 				}
 			}
 		case comfynode.FieldReturnNames:
-			if value, ok := values[i].(*[]byte); !ok {
+			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field return_names", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &cn.ReturnNames); err != nil {
-					return fmt.Errorf("unmarshal field return_names: %w", err)
-				}
+			} else if value.Valid {
+				cn.ReturnNames = value.String
 			}
 		case comfynode.FieldReturnTypes:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -262,7 +260,7 @@ func (cn *ComfyNode) String() string {
 	builder.WriteString(fmt.Sprintf("%v", cn.OutputIsList))
 	builder.WriteString(", ")
 	builder.WriteString("return_names=")
-	builder.WriteString(fmt.Sprintf("%v", cn.ReturnNames))
+	builder.WriteString(cn.ReturnNames)
 	builder.WriteString(", ")
 	builder.WriteString("return_types=")
 	builder.WriteString(cn.ReturnTypes)
