@@ -63,7 +63,7 @@ func DbNodeVersionToApiNodeVersion(dbNodeVersion *ent.NodeVersion) *drip.NodeVer
 	if len(dbNodeVersion.Edges.ComfyNodes) > 0 {
 		cn := make(map[string]drip.ComfyNode, len(dbNodeVersion.Edges.ComfyNodes))
 		for _, v := range dbNodeVersion.Edges.ComfyNodes {
-			cn[v.ID] = *DBComfyNodeToApiComfyNode(v)
+			cn[v.Name] = *DBComfyNodeToApiComfyNode(v)
 		}
 		comfyNodes = &cn
 	}
@@ -90,7 +90,7 @@ func DBComfyNodeToApiComfyNode(dbComfyNode *ent.ComfyNode) *drip.ComfyNode {
 	}
 
 	return &drip.ComfyNode{
-		ComfyNodeId:  &dbComfyNode.ID,
+		ComfyNodeId:  &dbComfyNode.Name,
 		Category:     &dbComfyNode.Category,
 		Function:     &dbComfyNode.Function,
 		Description:  &dbComfyNode.Description,

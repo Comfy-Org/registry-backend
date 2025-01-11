@@ -1791,9 +1791,10 @@ type ComfyNodeMutation struct {
 	config
 	op                   Op
 	typ                  string
-	id                   *string
+	id                   *uuid.UUID
 	create_time          *time.Time
 	update_time          *time.Time
+	name                 *string
 	category             *string
 	description          *string
 	input_types          *string
@@ -1833,7 +1834,7 @@ func newComfyNodeMutation(c config, op Op, opts ...comfynodeOption) *ComfyNodeMu
 }
 
 // withComfyNodeID sets the ID field of the mutation.
-func withComfyNodeID(id string) comfynodeOption {
+func withComfyNodeID(id uuid.UUID) comfynodeOption {
 	return func(m *ComfyNodeMutation) {
 		var (
 			err   error
@@ -1885,13 +1886,13 @@ func (m ComfyNodeMutation) Tx() (*Tx, error) {
 
 // SetID sets the value of the id field. Note that this
 // operation is only accepted on creation of ComfyNode entities.
-func (m *ComfyNodeMutation) SetID(id string) {
+func (m *ComfyNodeMutation) SetID(id uuid.UUID) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *ComfyNodeMutation) ID() (id string, exists bool) {
+func (m *ComfyNodeMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -1902,12 +1903,12 @@ func (m *ComfyNodeMutation) ID() (id string, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *ComfyNodeMutation) IDs(ctx context.Context) ([]string, error) {
+func (m *ComfyNodeMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []string{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -1987,6 +1988,42 @@ func (m *ComfyNodeMutation) OldUpdateTime(ctx context.Context) (v time.Time, err
 // ResetUpdateTime resets all changes to the "update_time" field.
 func (m *ComfyNodeMutation) ResetUpdateTime() {
 	m.update_time = nil
+}
+
+// SetName sets the "name" field.
+func (m *ComfyNodeMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *ComfyNodeMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the ComfyNode entity.
+// If the ComfyNode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ComfyNodeMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *ComfyNodeMutation) ResetName() {
+	m.name = nil
 }
 
 // SetNodeVersionID sets the "node_version_id" field.
@@ -2518,12 +2555,15 @@ func (m *ComfyNodeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ComfyNodeMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.create_time != nil {
 		fields = append(fields, comfynode.FieldCreateTime)
 	}
 	if m.update_time != nil {
 		fields = append(fields, comfynode.FieldUpdateTime)
+	}
+	if m.name != nil {
+		fields = append(fields, comfynode.FieldName)
 	}
 	if m.versions != nil {
 		fields = append(fields, comfynode.FieldNodeVersionID)
@@ -2567,6 +2607,8 @@ func (m *ComfyNodeMutation) Field(name string) (ent.Value, bool) {
 		return m.CreateTime()
 	case comfynode.FieldUpdateTime:
 		return m.UpdateTime()
+	case comfynode.FieldName:
+		return m.Name()
 	case comfynode.FieldNodeVersionID:
 		return m.NodeVersionID()
 	case comfynode.FieldCategory:
@@ -2600,6 +2642,8 @@ func (m *ComfyNodeMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldCreateTime(ctx)
 	case comfynode.FieldUpdateTime:
 		return m.OldUpdateTime(ctx)
+	case comfynode.FieldName:
+		return m.OldName(ctx)
 	case comfynode.FieldNodeVersionID:
 		return m.OldNodeVersionID(ctx)
 	case comfynode.FieldCategory:
@@ -2642,6 +2686,13 @@ func (m *ComfyNodeMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdateTime(v)
+		return nil
+	case comfynode.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
 		return nil
 	case comfynode.FieldNodeVersionID:
 		v, ok := value.(uuid.UUID)
@@ -2800,6 +2851,9 @@ func (m *ComfyNodeMutation) ResetField(name string) error {
 		return nil
 	case comfynode.FieldUpdateTime:
 		m.ResetUpdateTime()
+		return nil
+	case comfynode.FieldName:
+		m.ResetName()
 		return nil
 	case comfynode.FieldNodeVersionID:
 		m.ResetNodeVersionID()
@@ -6057,8 +6111,8 @@ type NodeVersionMutation struct {
 	clearednode               bool
 	storage_file              *uuid.UUID
 	clearedstorage_file       bool
-	comfy_nodes               map[string]struct{}
-	removedcomfy_nodes        map[string]struct{}
+	comfy_nodes               map[uuid.UUID]struct{}
+	removedcomfy_nodes        map[uuid.UUID]struct{}
 	clearedcomfy_nodes        bool
 	done                      bool
 	oldValue                  func(context.Context) (*NodeVersion, error)
@@ -6624,9 +6678,9 @@ func (m *NodeVersionMutation) ResetStorageFile() {
 }
 
 // AddComfyNodeIDs adds the "comfy_nodes" edge to the ComfyNode entity by ids.
-func (m *NodeVersionMutation) AddComfyNodeIDs(ids ...string) {
+func (m *NodeVersionMutation) AddComfyNodeIDs(ids ...uuid.UUID) {
 	if m.comfy_nodes == nil {
-		m.comfy_nodes = make(map[string]struct{})
+		m.comfy_nodes = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		m.comfy_nodes[ids[i]] = struct{}{}
@@ -6644,9 +6698,9 @@ func (m *NodeVersionMutation) ComfyNodesCleared() bool {
 }
 
 // RemoveComfyNodeIDs removes the "comfy_nodes" edge to the ComfyNode entity by IDs.
-func (m *NodeVersionMutation) RemoveComfyNodeIDs(ids ...string) {
+func (m *NodeVersionMutation) RemoveComfyNodeIDs(ids ...uuid.UUID) {
 	if m.removedcomfy_nodes == nil {
-		m.removedcomfy_nodes = make(map[string]struct{})
+		m.removedcomfy_nodes = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
 		delete(m.comfy_nodes, ids[i])
@@ -6655,7 +6709,7 @@ func (m *NodeVersionMutation) RemoveComfyNodeIDs(ids ...string) {
 }
 
 // RemovedComfyNodes returns the removed IDs of the "comfy_nodes" edge to the ComfyNode entity.
-func (m *NodeVersionMutation) RemovedComfyNodesIDs() (ids []string) {
+func (m *NodeVersionMutation) RemovedComfyNodesIDs() (ids []uuid.UUID) {
 	for id := range m.removedcomfy_nodes {
 		ids = append(ids, id)
 	}
@@ -6663,7 +6717,7 @@ func (m *NodeVersionMutation) RemovedComfyNodesIDs() (ids []string) {
 }
 
 // ComfyNodesIDs returns the "comfy_nodes" edge IDs in the mutation.
-func (m *NodeVersionMutation) ComfyNodesIDs() (ids []string) {
+func (m *NodeVersionMutation) ComfyNodesIDs() (ids []uuid.UUID) {
 	for id := range m.comfy_nodes {
 		ids = append(ids, id)
 	}

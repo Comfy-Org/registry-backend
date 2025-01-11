@@ -109,8 +109,8 @@ func (cnq *ComfyNodeQuery) FirstX(ctx context.Context) *ComfyNode {
 
 // FirstID returns the first ComfyNode ID from the query.
 // Returns a *NotFoundError when no ComfyNode ID was found.
-func (cnq *ComfyNodeQuery) FirstID(ctx context.Context) (id string, err error) {
-	var ids []string
+func (cnq *ComfyNodeQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = cnq.Limit(1).IDs(setContextOp(ctx, cnq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
@@ -122,7 +122,7 @@ func (cnq *ComfyNodeQuery) FirstID(ctx context.Context) (id string, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (cnq *ComfyNodeQuery) FirstIDX(ctx context.Context) string {
+func (cnq *ComfyNodeQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := cnq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -160,8 +160,8 @@ func (cnq *ComfyNodeQuery) OnlyX(ctx context.Context) *ComfyNode {
 // OnlyID is like Only, but returns the only ComfyNode ID in the query.
 // Returns a *NotSingularError when more than one ComfyNode ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (cnq *ComfyNodeQuery) OnlyID(ctx context.Context) (id string, err error) {
-	var ids []string
+func (cnq *ComfyNodeQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = cnq.Limit(2).IDs(setContextOp(ctx, cnq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
@@ -177,7 +177,7 @@ func (cnq *ComfyNodeQuery) OnlyID(ctx context.Context) (id string, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (cnq *ComfyNodeQuery) OnlyIDX(ctx context.Context) string {
+func (cnq *ComfyNodeQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := cnq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -205,7 +205,7 @@ func (cnq *ComfyNodeQuery) AllX(ctx context.Context) []*ComfyNode {
 }
 
 // IDs executes the query and returns a list of ComfyNode IDs.
-func (cnq *ComfyNodeQuery) IDs(ctx context.Context) (ids []string, err error) {
+func (cnq *ComfyNodeQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if cnq.ctx.Unique == nil && cnq.path != nil {
 		cnq.Unique(true)
 	}
@@ -217,7 +217,7 @@ func (cnq *ComfyNodeQuery) IDs(ctx context.Context) (ids []string, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (cnq *ComfyNodeQuery) IDsX(ctx context.Context) []string {
+func (cnq *ComfyNodeQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := cnq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -451,7 +451,7 @@ func (cnq *ComfyNodeQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (cnq *ComfyNodeQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(comfynode.Table, comfynode.Columns, sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeString))
+	_spec := sqlgraph.NewQuerySpec(comfynode.Table, comfynode.Columns, sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeUUID))
 	_spec.From = cnq.sql
 	if unique := cnq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

@@ -62,21 +62,25 @@ func init() {
 	// comfynode.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
 	comfynode.UpdateDefaultUpdateTime = comfynodeDescUpdateTime.UpdateDefault.(func() time.Time)
 	// comfynodeDescDeprecated is the schema descriptor for deprecated field.
-	comfynodeDescDeprecated := comfynodeFields[5].Descriptor()
+	comfynodeDescDeprecated := comfynodeFields[6].Descriptor()
 	// comfynode.DefaultDeprecated holds the default value on creation for the deprecated field.
 	comfynode.DefaultDeprecated = comfynodeDescDeprecated.Default.(bool)
 	// comfynodeDescExperimental is the schema descriptor for experimental field.
-	comfynodeDescExperimental := comfynodeFields[6].Descriptor()
+	comfynodeDescExperimental := comfynodeFields[7].Descriptor()
 	// comfynode.DefaultExperimental holds the default value on creation for the experimental field.
 	comfynode.DefaultExperimental = comfynodeDescExperimental.Default.(bool)
 	// comfynodeDescOutputIsList is the schema descriptor for output_is_list field.
-	comfynodeDescOutputIsList := comfynodeFields[7].Descriptor()
+	comfynodeDescOutputIsList := comfynodeFields[8].Descriptor()
 	// comfynode.DefaultOutputIsList holds the default value on creation for the output_is_list field.
 	comfynode.DefaultOutputIsList = comfynodeDescOutputIsList.Default.([]bool)
 	// comfynodeDescReturnNames is the schema descriptor for return_names field.
-	comfynodeDescReturnNames := comfynodeFields[8].Descriptor()
+	comfynodeDescReturnNames := comfynodeFields[9].Descriptor()
 	// comfynode.DefaultReturnNames holds the default value on creation for the return_names field.
 	comfynode.DefaultReturnNames = comfynodeDescReturnNames.Default.([]string)
+	// comfynodeDescID is the schema descriptor for id field.
+	comfynodeDescID := comfynodeFields[0].Descriptor()
+	// comfynode.DefaultID holds the default value on creation for the id field.
+	comfynode.DefaultID = comfynodeDescID.Default.(func() uuid.UUID)
 	gitcommitMixin := schema.GitCommit{}.Mixin()
 	gitcommitMixinFields0 := gitcommitMixin[0].Fields()
 	_ = gitcommitMixinFields0

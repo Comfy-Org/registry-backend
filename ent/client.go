@@ -517,7 +517,7 @@ func (c *ComfyNodeClient) UpdateOne(cn *ComfyNode) *ComfyNodeUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *ComfyNodeClient) UpdateOneID(id string) *ComfyNodeUpdateOne {
+func (c *ComfyNodeClient) UpdateOneID(id uuid.UUID) *ComfyNodeUpdateOne {
 	mutation := newComfyNodeMutation(c.config, OpUpdateOne, withComfyNodeID(id))
 	return &ComfyNodeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -534,7 +534,7 @@ func (c *ComfyNodeClient) DeleteOne(cn *ComfyNode) *ComfyNodeDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *ComfyNodeClient) DeleteOneID(id string) *ComfyNodeDeleteOne {
+func (c *ComfyNodeClient) DeleteOneID(id uuid.UUID) *ComfyNodeDeleteOne {
 	builder := c.Delete().Where(comfynode.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -551,12 +551,12 @@ func (c *ComfyNodeClient) Query() *ComfyNodeQuery {
 }
 
 // Get returns a ComfyNode entity by its id.
-func (c *ComfyNodeClient) Get(ctx context.Context, id string) (*ComfyNode, error) {
+func (c *ComfyNodeClient) Get(ctx context.Context, id uuid.UUID) (*ComfyNode, error) {
 	return c.Query().Where(comfynode.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *ComfyNodeClient) GetX(ctx context.Context, id string) *ComfyNode {
+func (c *ComfyNodeClient) GetX(ctx context.Context, id uuid.UUID) *ComfyNode {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)

@@ -40,7 +40,7 @@ func (cnd *ComfyNodeDelete) ExecX(ctx context.Context) int {
 }
 
 func (cnd *ComfyNodeDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(comfynode.Table, sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeString))
+	_spec := sqlgraph.NewDeleteSpec(comfynode.Table, sqlgraph.NewFieldSpec(comfynode.FieldID, field.TypeUUID))
 	if ps := cnd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

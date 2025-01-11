@@ -63,7 +63,8 @@ func TestIndex(t *testing.T) {
 					PipDependencies: []string{"test"},
 					Edges: ent.NodeVersionEdges{ComfyNodes: []*ent.ComfyNode{
 						{
-							ID:            "node1",
+							ID:            uuid.New(),
+							Name:          "node1",
 							NodeVersionID: id,
 							Category:      "test",
 							Function:      "test",
@@ -77,7 +78,8 @@ func TestIndex(t *testing.T) {
 							CreateTime:    time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
 						},
 						{
-							ID:            "node2",
+							ID:            uuid.New(),
+							Name:          "node2",
 							NodeVersionID: id,
 							Category:      "test",
 							Function:      "test",
@@ -112,8 +114,8 @@ func TestIndex(t *testing.T) {
 					Version: version,
 					Status:  schema.NodeVersionStatusActive,
 					Edges: ent.NodeVersionEdges{ComfyNodes: []*ent.ComfyNode{
-						{ID: "node1"},
-						{ID: "node2"},
+						{Name: "node1"},
+						{Name: "node2"},
 					}},
 				},
 			},
