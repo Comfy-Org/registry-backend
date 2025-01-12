@@ -35,30 +35,50 @@ import (
 	_ "github.com/lib/pq"
 )
 
+type MockedServerImplementation struct {
+	*implementation.DripStrictServerImplementation
+
+	mockStorageService *gateways.MockStorageService
+	mockSlackService   *gateways.MockSlackService
+	mockDiscordService *gateways.MockDiscordService
+	mockAlgolia        *gateways.MockAlgoliaService
+	mockPubsubService  *gateways.MockPubSubService
+}
+
 // NewStrictServerImplementationWithMocks initializes and returns the implementation with mock services.
 func NewStrictServerImplementationWithMocks(
-	client *ent.Client, config *config.Config) *implementation.DripStrictServerImplementation {
-	// Mock services setup
+	client *ent.Client, config *config.Config) *MockedServerImplementation {
+	// Create mock services for dependencies.
 	mockStorageService := new(gateways.MockStorageService)
 	mockPubsubService := new(gateways.MockPubSubService)
 	mockSlackService := new(gateways.MockSlackService)
 	mockDiscordService := new(gateways.MockDiscordService)
 	mockAlgolia := new(gateways.MockAlgoliaService)
 
-	// Mock service expectations
-	mockSlackService.On("SendRegistryMessageToSlack", mock.Anything).Return(nil)
-	mockAlgolia.On("IndexNodes", mock.Anything, mock.Anything).Return(nil)
+	// Set up mock service expectations.
+	mockDiscordService.On("SendSecurityCouncilMessage", mock.Anything, mock.Anything).
+		Return(nil) // Accept both string and bool parameters.
+	mockSlackService.On("SendRegistryMessageToSlack", mock.Anything).
+		Return(nil) // Do nothing for all Slack message calls.
+	mockAlgolia.On("IndexNodes", mock.Anything, mock.Anything).
+		Return(nil).
+		On("DeleteNode", mock.Anything, mock.Anything).
+		Return(nil).
+		On("IndexNodeVersions", mock.Anything, mock.Anything).
+		Return(nil).
+		On("DeleteNodeVersions", mock.Anything, mock.Anything).
+		Return(nil)
 
-	// Return the new implementation with mocked services
-	return implementation.NewStrictServerImplementation(
-		client,
-		config,
-		mockStorageService,
-		mockPubsubService,
-		mockSlackService,
-		mockDiscordService,
-		mockAlgolia,
-	)
+	// Initialize the mocked implementation with mocked services.
+	return &MockedServerImplementation{
+		DripStrictServerImplementation: implementation.NewStrictServerImplementation(
+			client, config, mockStorageService, mockPubsubService, mockSlackService, mockDiscordService, mockAlgolia),
+		mockStorageService: mockStorageService,
+		mockSlackService:   mockSlackService,
+		mockDiscordService: mockDiscordService,
+		mockAlgolia:        mockAlgolia,
+		mockPubsubService:  mockPubsubService,
+	}
 }
 
 func setupTestUser(client *ent.Client) (context.Context, *ent.User) {
@@ -91,7 +111,7 @@ func setupAdminUser(client *ent.Client) (context.Context, *ent.User) {
 func setupPersonalAccessToken(
 	ctx context.Context,
 	authz drip.StrictMiddlewareFunc,
-	impl *implementation.DripStrictServerImplementation,
+	impl *MockedServerImplementation,
 	publisherId string) (*string, error) {
 
 	tokenName := "test-token"
@@ -203,11 +223,27 @@ func randomNodeVersion(revision int) *drip.NodeVersion {
 	}
 }
 
+// Helper function to generate a random comfy node with a random name
+func randomComfyNode() drip.ComfyNode {
+	return drip.ComfyNode{
+		ComfyNodeId:  proto.String(uuid.New().String()),
+		InputTypes:   proto.String(`{"required":{"param":"string"}}`),
+		Function:     proto.String("test Func"),
+		Category:     proto.String("test Category"),
+		Description:  proto.String("test Description"),
+		Deprecated:   proto.Bool(false),
+		Experimental: proto.Bool(false),
+		ReturnNames:  proto.String(`["result1", "result2"]`),
+		ReturnTypes:  proto.String(`["string", "string"]`),
+		OutputIsList: &[]bool{false, false},
+	}
+}
+
 // Helper function to set up a publisher with a random ID
 func setupPublisher(
 	ctx context.Context,
 	authz drip.StrictMiddlewareFunc,
-	impl *implementation.DripStrictServerImplementation) (string, error) {
+	impl *MockedServerImplementation) (string, error) {
 
 	publisher := randomPublisher()
 
@@ -221,7 +257,7 @@ func setupPublisher(
 func setupNode(
 	ctx context.Context,
 	authz drip.StrictMiddlewareFunc,
-	impl *implementation.DripStrictServerImplementation, publisherId string) (string, error) {
+	impl *MockedServerImplementation, publisherId string) (*drip.Node, error) {
 
 	node := randomNode()
 	node.Id = proto.String(generateNodeId())
@@ -233,7 +269,7 @@ func setupNode(
 		PublisherId: publisherId,
 		Body:        node,
 	})
-	return *node.Id, err
+	return node, err
 }
 
 func createTestUser(ctx context.Context, client *ent.Client) *ent.User {

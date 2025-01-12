@@ -32,8 +32,9 @@ func TestNodeBan(t *testing.T) {
 		require.NoError(t, err, "should set up publisher")
 
 		// Setup a test node
-		nodeId, err := setupNode(userCtx, authz, impl, publisherId)
+		node, err := setupNode(userCtx, authz, impl, publisherId)
 		require.NoError(t, err, "should set up node")
+		nodeId := *node.Id
 
 		// Setup a personal access token
 		pat, err := setupPersonalAccessToken(userCtx, authz, impl, publisherId)
