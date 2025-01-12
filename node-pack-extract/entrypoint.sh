@@ -20,7 +20,7 @@ until cat "$OUTPUTFILE" | grep ''; do
                     deprecated : .deprecated,
                     experimental : .experimental,
                     input_types : (.input | tojson),
-                    return_names : .output_name,
+                    return_names : (.output_name | tojson),
                     return_types : (.output | tojson),
                     output_is_list : .output_is_list,
                 }
