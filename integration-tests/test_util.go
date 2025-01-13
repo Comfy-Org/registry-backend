@@ -3,10 +3,6 @@ package integration
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -19,6 +15,11 @@ import (
 	auth "registry-backend/server/middleware/authentication"
 	"runtime"
 	"strings"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 
 	"registry-backend/ent"
 	"registry-backend/ent/migrate"

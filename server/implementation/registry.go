@@ -9,6 +9,7 @@ import (
 	"registry-backend/ent/publisher"
 	"registry-backend/ent/schema"
 	"registry-backend/entity"
+	drip_logging "registry-backend/logging"
 	"registry-backend/mapper"
 	drip_services "registry-backend/services/registry"
 	"time"
@@ -998,13 +999,14 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 }
 
 func (s *DripStrictServerImplementation) ReindexNodes(ctx context.Context, request drip.ReindexNodesRequestObject) (res drip.ReindexNodesResponseObject, err error) {
-	err = s.RegistryService.ReindexAllNodes(ctx, s.Client)
+	reindexCtx := drip_logging.ReuseContextLogger(ctx, context.Background())
+	err = s.RegistryService.ReindexAllNodesBackground(reindexCtx, s.Client)
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("Failed to reindex all nodes w/ err: %v", err)
-		return drip.ReindexNodes500JSONResponse{Message: "Failed to reindex nodes", Error: err.Error()}, nil
+		log.Ctx(ctx).Error().Msgf("Failed to trigger reindex all nodes w/ err: %v", err)
+		return drip.ReindexNodes500JSONResponse{Message: "Failed to trigger reindex nodes", Error: err.Error()}, nil
 	}
 
-	log.Ctx(ctx).Info().Msgf("Reindex nodes successful")
+	log.Ctx(ctx).Info().Msgf("Triggering Reindex nodes successful")
 	return drip.ReindexNodes200Response{}, nil
 }
 
