@@ -157,6 +157,26 @@ func (nvu *NodeVersionUpdate) SetNillableComfyNodeExtractStatus(snes *schema.Com
 	return nvu
 }
 
+// SetComfyNodeCloudBuildInfo sets the "comfy_node_cloud_build_info" field.
+func (nvu *NodeVersionUpdate) SetComfyNodeCloudBuildInfo(sncbi schema.ComfyNodeCloudBuildInfo) *NodeVersionUpdate {
+	nvu.mutation.SetComfyNodeCloudBuildInfo(sncbi)
+	return nvu
+}
+
+// SetNillableComfyNodeCloudBuildInfo sets the "comfy_node_cloud_build_info" field if the given value is not nil.
+func (nvu *NodeVersionUpdate) SetNillableComfyNodeCloudBuildInfo(sncbi *schema.ComfyNodeCloudBuildInfo) *NodeVersionUpdate {
+	if sncbi != nil {
+		nvu.SetComfyNodeCloudBuildInfo(*sncbi)
+	}
+	return nvu
+}
+
+// ClearComfyNodeCloudBuildInfo clears the value of the "comfy_node_cloud_build_info" field.
+func (nvu *NodeVersionUpdate) ClearComfyNodeCloudBuildInfo() *NodeVersionUpdate {
+	nvu.mutation.ClearComfyNodeCloudBuildInfo()
+	return nvu
+}
+
 // SetNode sets the "node" edge to the Node entity.
 func (nvu *NodeVersionUpdate) SetNode(n *Node) *NodeVersionUpdate {
 	return nvu.SetNodeID(n.ID)
@@ -332,6 +352,12 @@ func (nvu *NodeVersionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := nvu.mutation.ComfyNodeExtractStatus(); ok {
 		_spec.SetField(nodeversion.FieldComfyNodeExtractStatus, field.TypeString, value)
+	}
+	if value, ok := nvu.mutation.ComfyNodeCloudBuildInfo(); ok {
+		_spec.SetField(nodeversion.FieldComfyNodeCloudBuildInfo, field.TypeJSON, value)
+	}
+	if nvu.mutation.ComfyNodeCloudBuildInfoCleared() {
+		_spec.ClearField(nodeversion.FieldComfyNodeCloudBuildInfo, field.TypeJSON)
 	}
 	if nvu.mutation.NodeCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -580,6 +606,26 @@ func (nvuo *NodeVersionUpdateOne) SetNillableComfyNodeExtractStatus(snes *schema
 	return nvuo
 }
 
+// SetComfyNodeCloudBuildInfo sets the "comfy_node_cloud_build_info" field.
+func (nvuo *NodeVersionUpdateOne) SetComfyNodeCloudBuildInfo(sncbi schema.ComfyNodeCloudBuildInfo) *NodeVersionUpdateOne {
+	nvuo.mutation.SetComfyNodeCloudBuildInfo(sncbi)
+	return nvuo
+}
+
+// SetNillableComfyNodeCloudBuildInfo sets the "comfy_node_cloud_build_info" field if the given value is not nil.
+func (nvuo *NodeVersionUpdateOne) SetNillableComfyNodeCloudBuildInfo(sncbi *schema.ComfyNodeCloudBuildInfo) *NodeVersionUpdateOne {
+	if sncbi != nil {
+		nvuo.SetComfyNodeCloudBuildInfo(*sncbi)
+	}
+	return nvuo
+}
+
+// ClearComfyNodeCloudBuildInfo clears the value of the "comfy_node_cloud_build_info" field.
+func (nvuo *NodeVersionUpdateOne) ClearComfyNodeCloudBuildInfo() *NodeVersionUpdateOne {
+	nvuo.mutation.ClearComfyNodeCloudBuildInfo()
+	return nvuo
+}
+
 // SetNode sets the "node" edge to the Node entity.
 func (nvuo *NodeVersionUpdateOne) SetNode(n *Node) *NodeVersionUpdateOne {
 	return nvuo.SetNodeID(n.ID)
@@ -785,6 +831,12 @@ func (nvuo *NodeVersionUpdateOne) sqlSave(ctx context.Context) (_node *NodeVersi
 	}
 	if value, ok := nvuo.mutation.ComfyNodeExtractStatus(); ok {
 		_spec.SetField(nodeversion.FieldComfyNodeExtractStatus, field.TypeString, value)
+	}
+	if value, ok := nvuo.mutation.ComfyNodeCloudBuildInfo(); ok {
+		_spec.SetField(nodeversion.FieldComfyNodeCloudBuildInfo, field.TypeJSON, value)
+	}
+	if nvuo.mutation.ComfyNodeCloudBuildInfoCleared() {
+		_spec.ClearField(nodeversion.FieldComfyNodeCloudBuildInfo, field.TypeJSON)
 	}
 	if nvuo.mutation.NodeCleared() {
 		edge := &sqlgraph.EdgeSpec{

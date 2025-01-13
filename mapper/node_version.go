@@ -164,3 +164,23 @@ func ApiNodeVersionStatusToDbNodeVersionStatus(status drip.NodeVersionStatus) sc
 
 	return nodeVersionStatus
 }
+
+func ApiComfyNodeCloudBuildToDbComfyNodeCloudBuild(cloudBuild *drip.ComfyNodeCloudBuildInfo) *schema.ComfyNodeCloudBuildInfo {
+	if cloudBuild == nil {
+		return nil
+	}
+	i := &schema.ComfyNodeCloudBuildInfo{}
+	if *cloudBuild.ProjectId != "" {
+		i.ProjectID = *cloudBuild.ProjectId
+	}
+	if *cloudBuild.BuildId != "" {
+		i.BuildID = *cloudBuild.BuildId
+	}
+	if *cloudBuild.ProjectNumber != "" {
+		i.ProjectNumber = *cloudBuild.ProjectNumber
+	}
+	if *cloudBuild.Location != "" {
+		i.Location = *cloudBuild.Location
+	}
+	return i
+}

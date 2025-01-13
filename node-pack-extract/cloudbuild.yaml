@@ -30,18 +30,24 @@ steps:
       - gcloud auth print-identity-token --audiences="$_REGISTRY_BACKEND_URL" | tee /workspace/token
     waitFor: ["-"]
 
-  - name: "curlimages/curl"
+  - name: "badouralix/curl-jq"
     entrypoint: "sh"
     args:
       - -c
       - |
+        jq -c '. += {"cloud_build_info": {
+            "project_id": "$PROJECT_ID",
+            "project_number": "$PROJECT_NUMBER",
+            "location": "$LOCATION",
+            "build_id": "$BUILD_ID"
+          }}' "/workspace/$_CUSTOM_NODE_NAME.json" | tee "/workspace/curl-payload.json" 
+
         NODE="$(basename $(dirname $(dirname '$_CUSTOM_NODE_URL')))"
         VERSION="$(basename $(dirname '$_CUSTOM_NODE_URL'))"
-        cat "/workspace/$_CUSTOM_NODE_NAME.json"
         curl -vsS --fail-with-body \
           -H "Authorization: Bearer $(cat /workspace/token)" \
           -H "Content-Type: application/json" \
-          -X "POST" "-d" "@/workspace/$_CUSTOM_NODE_NAME.json" \
+          -X "POST" "-d" "@/workspace/curl-payload.json" \
           "$_REGISTRY_BACKEND_URL/nodes/$$NODE/versions/$$VERSION/comfy-nodes"
 
 substitutions:

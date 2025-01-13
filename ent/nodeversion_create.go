@@ -144,6 +144,20 @@ func (nvc *NodeVersionCreate) SetNillableComfyNodeExtractStatus(snes *schema.Com
 	return nvc
 }
 
+// SetComfyNodeCloudBuildInfo sets the "comfy_node_cloud_build_info" field.
+func (nvc *NodeVersionCreate) SetComfyNodeCloudBuildInfo(sncbi schema.ComfyNodeCloudBuildInfo) *NodeVersionCreate {
+	nvc.mutation.SetComfyNodeCloudBuildInfo(sncbi)
+	return nvc
+}
+
+// SetNillableComfyNodeCloudBuildInfo sets the "comfy_node_cloud_build_info" field if the given value is not nil.
+func (nvc *NodeVersionCreate) SetNillableComfyNodeCloudBuildInfo(sncbi *schema.ComfyNodeCloudBuildInfo) *NodeVersionCreate {
+	if sncbi != nil {
+		nvc.SetComfyNodeCloudBuildInfo(*sncbi)
+	}
+	return nvc
+}
+
 // SetID sets the "id" field.
 func (nvc *NodeVersionCreate) SetID(u uuid.UUID) *NodeVersionCreate {
 	nvc.mutation.SetID(u)
@@ -371,6 +385,10 @@ func (nvc *NodeVersionCreate) createSpec() (*NodeVersion, *sqlgraph.CreateSpec) 
 		_spec.SetField(nodeversion.FieldComfyNodeExtractStatus, field.TypeString, value)
 		_node.ComfyNodeExtractStatus = value
 	}
+	if value, ok := nvc.mutation.ComfyNodeCloudBuildInfo(); ok {
+		_spec.SetField(nodeversion.FieldComfyNodeCloudBuildInfo, field.TypeJSON, value)
+		_node.ComfyNodeCloudBuildInfo = value
+	}
 	if nodes := nvc.mutation.NodeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -587,6 +605,24 @@ func (u *NodeVersionUpsert) UpdateComfyNodeExtractStatus() *NodeVersionUpsert {
 	return u
 }
 
+// SetComfyNodeCloudBuildInfo sets the "comfy_node_cloud_build_info" field.
+func (u *NodeVersionUpsert) SetComfyNodeCloudBuildInfo(v schema.ComfyNodeCloudBuildInfo) *NodeVersionUpsert {
+	u.Set(nodeversion.FieldComfyNodeCloudBuildInfo, v)
+	return u
+}
+
+// UpdateComfyNodeCloudBuildInfo sets the "comfy_node_cloud_build_info" field to the value that was provided on create.
+func (u *NodeVersionUpsert) UpdateComfyNodeCloudBuildInfo() *NodeVersionUpsert {
+	u.SetExcluded(nodeversion.FieldComfyNodeCloudBuildInfo)
+	return u
+}
+
+// ClearComfyNodeCloudBuildInfo clears the value of the "comfy_node_cloud_build_info" field.
+func (u *NodeVersionUpsert) ClearComfyNodeCloudBuildInfo() *NodeVersionUpsert {
+	u.SetNull(nodeversion.FieldComfyNodeCloudBuildInfo)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -768,6 +804,27 @@ func (u *NodeVersionUpsertOne) SetComfyNodeExtractStatus(v schema.ComfyNodeExtra
 func (u *NodeVersionUpsertOne) UpdateComfyNodeExtractStatus() *NodeVersionUpsertOne {
 	return u.Update(func(s *NodeVersionUpsert) {
 		s.UpdateComfyNodeExtractStatus()
+	})
+}
+
+// SetComfyNodeCloudBuildInfo sets the "comfy_node_cloud_build_info" field.
+func (u *NodeVersionUpsertOne) SetComfyNodeCloudBuildInfo(v schema.ComfyNodeCloudBuildInfo) *NodeVersionUpsertOne {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.SetComfyNodeCloudBuildInfo(v)
+	})
+}
+
+// UpdateComfyNodeCloudBuildInfo sets the "comfy_node_cloud_build_info" field to the value that was provided on create.
+func (u *NodeVersionUpsertOne) UpdateComfyNodeCloudBuildInfo() *NodeVersionUpsertOne {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.UpdateComfyNodeCloudBuildInfo()
+	})
+}
+
+// ClearComfyNodeCloudBuildInfo clears the value of the "comfy_node_cloud_build_info" field.
+func (u *NodeVersionUpsertOne) ClearComfyNodeCloudBuildInfo() *NodeVersionUpsertOne {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.ClearComfyNodeCloudBuildInfo()
 	})
 }
 
@@ -1119,6 +1176,27 @@ func (u *NodeVersionUpsertBulk) SetComfyNodeExtractStatus(v schema.ComfyNodeExtr
 func (u *NodeVersionUpsertBulk) UpdateComfyNodeExtractStatus() *NodeVersionUpsertBulk {
 	return u.Update(func(s *NodeVersionUpsert) {
 		s.UpdateComfyNodeExtractStatus()
+	})
+}
+
+// SetComfyNodeCloudBuildInfo sets the "comfy_node_cloud_build_info" field.
+func (u *NodeVersionUpsertBulk) SetComfyNodeCloudBuildInfo(v schema.ComfyNodeCloudBuildInfo) *NodeVersionUpsertBulk {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.SetComfyNodeCloudBuildInfo(v)
+	})
+}
+
+// UpdateComfyNodeCloudBuildInfo sets the "comfy_node_cloud_build_info" field to the value that was provided on create.
+func (u *NodeVersionUpsertBulk) UpdateComfyNodeCloudBuildInfo() *NodeVersionUpsertBulk {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.UpdateComfyNodeCloudBuildInfo()
+	})
+}
+
+// ClearComfyNodeCloudBuildInfo clears the value of the "comfy_node_cloud_build_info" field.
+func (u *NodeVersionUpsertBulk) ClearComfyNodeCloudBuildInfo() *NodeVersionUpsertBulk {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.ClearComfyNodeCloudBuildInfo()
 	})
 }
 

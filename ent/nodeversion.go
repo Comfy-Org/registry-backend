@@ -42,6 +42,8 @@ type NodeVersion struct {
 	StatusReason string `json:"status_reason,omitempty"`
 	// ComfyNodeExtractStatus holds the value of the "comfy_node_extract_status" field.
 	ComfyNodeExtractStatus schema.ComfyNodeExtractStatus `json:"comfy_node_extract_status,omitempty"`
+	// Stores the Google Cloud Build information that extracts the comfy node information.
+	ComfyNodeCloudBuildInfo schema.ComfyNodeCloudBuildInfo `json:"comfy_node_cloud_build_info,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the NodeVersionQuery when eager-loading is set.
 	Edges                     NodeVersionEdges `json:"edges"`
@@ -98,7 +100,7 @@ func (*NodeVersion) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case nodeversion.FieldPipDependencies:
+		case nodeversion.FieldPipDependencies, nodeversion.FieldComfyNodeCloudBuildInfo:
 			values[i] = new([]byte)
 		case nodeversion.FieldDeprecated:
 			values[i] = new(sql.NullBool)
@@ -193,6 +195,14 @@ func (nv *NodeVersion) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				nv.ComfyNodeExtractStatus = schema.ComfyNodeExtractStatus(value.String)
 			}
+		case nodeversion.FieldComfyNodeCloudBuildInfo:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field comfy_node_cloud_build_info", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &nv.ComfyNodeCloudBuildInfo); err != nil {
+					return fmt.Errorf("unmarshal field comfy_node_cloud_build_info: %w", err)
+				}
+			}
 		case nodeversion.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field node_version_storage_file", values[i])
@@ -280,6 +290,9 @@ func (nv *NodeVersion) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("comfy_node_extract_status=")
 	builder.WriteString(fmt.Sprintf("%v", nv.ComfyNodeExtractStatus))
+	builder.WriteString(", ")
+	builder.WriteString("comfy_node_cloud_build_info=")
+	builder.WriteString(fmt.Sprintf("%v", nv.ComfyNodeCloudBuildInfo))
 	builder.WriteByte(')')
 	return builder.String()
 }
