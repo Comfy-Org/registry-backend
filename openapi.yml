@@ -1790,6 +1790,8 @@ paths:
               properties:
                 success:
                   type: boolean
+                cloud_build_info:
+                  $ref: '#/components/schemas/ComfyNodeCloudBuildInfo'
                 nodes:
                   additionalProperties:
                     $ref: '#/components/schemas/ComfyNode'
@@ -2272,6 +2274,17 @@ components:
         function:
           type: string
           description: Name of the entry-point function to execute the node.
+    ComfyNodeCloudBuildInfo:
+      type: object
+      properties: 
+        project_id:
+          type: string
+        project_number:
+          type: string
+        location:
+          type: string
+        build_id:
+          type: string
     Error:
       type: object
       properties:

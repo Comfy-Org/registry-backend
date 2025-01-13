@@ -1012,36 +1012,37 @@ func (s *DripStrictServerImplementation) ReindexNodes(ctx context.Context, reque
 func (impl *DripStrictServerImplementation) CreateComfyNodes(
 	ctx context.Context, request drip.CreateComfyNodesRequestObject) (res drip.CreateComfyNodesResponseObject, err error) {
 
+	cb := mapper.ApiComfyNodeCloudBuildToDbComfyNodeCloudBuild(request.Body.CloudBuildInfo)
 	// Check if extraction was marked as unsuccessful
 	if request.Body.Success != nil && !*request.Body.Success {
-		err = impl.RegistryService.MarkComfyNodeExtractionFailed(ctx, impl.Client, request.NodeId, request.Version)
+		err = impl.RegistryService.MarkComfyNodeExtractionFailed(ctx, impl.Client, request.NodeId, request.Version, cb)
 	} else {
 		// Attempt to create comfy nodes in the registry
 		err = impl.RegistryService.CreateComfyNodes(
-			ctx, impl.Client, request.NodeId, request.Version, *request.Body.Nodes)
+			ctx, impl.Client, request.NodeId, request.Version, *request.Body.Nodes, cb)
 	}
 
 	// Handle specific error scenarios
 	if ent.IsNotFound(err) {
-		log.Ctx(ctx).Error().Msgf("Node or node version not found w/ err: %v", err)
+		log.Ctx(ctx).Error().Stringer("cloud_build_info", cb).Msgf("Node or node version not found w/ err: %v", err)
 		return drip.CreateComfyNodes404JSONResponse{
 			Message: "Node or node version not found", Error: err.Error()}, nil
 	}
 
 	if errors.Is(err, drip_services.ErrComfyNodesAlreadyExist) {
-		log.Ctx(ctx).Error().Msgf(
+		log.Ctx(ctx).Error().Stringer("cloud_build_info", cb).Msgf(
 			"Comfy nodes extraction result for %s %s already set", request.NodeId, request.Version)
 		return drip.CreateComfyNodes409JSONResponse{
 			Message: "Comfy nodes extraction result already set", Error: err.Error()}, nil
 	}
 
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("Failed to store comfy nodes extraction w/ err: %v", err)
+		log.Ctx(ctx).Error().Stringer("cloud_build_info", cb).Msgf("Failed to store comfy nodes extraction w/ err: %v", err)
 		return drip.CreateComfyNodes500JSONResponse{
 			Message: "Failed to store comfy nodes extraction", Error: err.Error()}, nil
 	}
 
-	log.Ctx(ctx).Info().Msg("CreateComfyNodes successful")
+	log.Ctx(ctx).Info().Stringer("cloud_build_info", cb).Msg("CreateComfyNodes successful")
 	return drip.CreateComfyNodes204Response{}, nil
 }
 

@@ -2,15 +2,17 @@ package integration
 
 import (
 	"context"
+	"registry-backend/config"
+	"registry-backend/drip"
+	"registry-backend/ent/nodeversion"
+	"registry-backend/mapper"
+	authorization "registry-backend/server/middleware/authorization"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
-	"registry-backend/config"
-	"registry-backend/drip"
-	"registry-backend/mapper"
-	authorization "registry-backend/server/middleware/authorization"
-	"testing"
 )
 
 func TestRegistryComfyNode(t *testing.T) {
@@ -60,10 +62,19 @@ func TestRegistryComfyNode(t *testing.T) {
 	nodeVersionExtractionFailed := nodeVersions[len(nodeVersions)-3]
 	backfilledNodeVersions := nodeVersions[:len(nodeVersions)-3]
 
+	// Cloud Build Info
+	cloudBuildInfo := &drip.ComfyNodeCloudBuildInfo{
+		BuildId:       proto.String("test-build-id"),
+		Location:      proto.String("test-location"),
+		ProjectId:     proto.String("test-project-id"),
+		ProjectNumber: proto.String("12345"),
+	}
+
 	// Create comfy nodes
 	comfyNode1 := randomComfyNode()
 	comfyNode2 := randomComfyNode()
 	comfyNodes := drip.CreateComfyNodesJSONRequestBody{
+		CloudBuildInfo: cloudBuildInfo,
 		Nodes: &map[string]drip.ComfyNode{
 			*comfyNode1.ComfyNodeId: comfyNode1,
 			*comfyNode2.ComfyNodeId: comfyNode1,
@@ -108,6 +119,10 @@ func TestRegistryComfyNode(t *testing.T) {
 			})
 			require.NoError(t, err)
 			require.IsType(t, drip.CreateComfyNodes204Response{}, res)
+
+			nv, err := client.NodeVersion.Query().Where(nodeversion.Version(*nv.Version)).Only(ctx)
+			require.NoError(t, err)
+			assert.Equal(t, mapper.ApiComfyNodeCloudBuildToDbComfyNodeCloudBuild(cloudBuildInfo), &nv.ComfyNodeCloudBuildInfo)
 		}
 	})
 
@@ -133,10 +148,14 @@ func TestRegistryComfyNode(t *testing.T) {
 		res, err := withMiddleware(authz, impl.CreateComfyNodes)(ctx, drip.CreateComfyNodesRequestObject{
 			NodeId:  *node.Id,
 			Version: *nodeVersionExtractionFailed.Version,
-			Body:    &drip.CreateComfyNodesJSONRequestBody{Success: proto.Bool(false)},
+			Body:    &drip.CreateComfyNodesJSONRequestBody{Success: proto.Bool(false), CloudBuildInfo: cloudBuildInfo},
 		})
 		require.NoError(t, err)
 		require.IsType(t, drip.CreateComfyNodes204Response{}, res)
+
+		nv, err := client.NodeVersion.Query().Where(nodeversion.Version(*nodeVersionExtractionFailed.Version)).Only(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, mapper.ApiComfyNodeCloudBuildToDbComfyNodeCloudBuild(cloudBuildInfo), &nv.ComfyNodeCloudBuildInfo)
 	})
 
 	// Test case: Conflict in creating comfy nodes

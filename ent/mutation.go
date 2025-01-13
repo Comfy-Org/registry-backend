@@ -6154,30 +6154,31 @@ func (m *NodeReviewMutation) ResetEdge(name string) error {
 // NodeVersionMutation represents an operation that mutates the NodeVersion nodes in the graph.
 type NodeVersionMutation struct {
 	config
-	op                        Op
-	typ                       string
-	id                        *uuid.UUID
-	create_time               *time.Time
-	update_time               *time.Time
-	version                   *string
-	changelog                 *string
-	pip_dependencies          *[]string
-	appendpip_dependencies    []string
-	deprecated                *bool
-	status                    *schema.NodeVersionStatus
-	status_reason             *string
-	comfy_node_extract_status *schema.ComfyNodeExtractStatus
-	clearedFields             map[string]struct{}
-	node                      *string
-	clearednode               bool
-	storage_file              *uuid.UUID
-	clearedstorage_file       bool
-	comfy_nodes               map[uuid.UUID]struct{}
-	removedcomfy_nodes        map[uuid.UUID]struct{}
-	clearedcomfy_nodes        bool
-	done                      bool
-	oldValue                  func(context.Context) (*NodeVersion, error)
-	predicates                []predicate.NodeVersion
+	op                          Op
+	typ                         string
+	id                          *uuid.UUID
+	create_time                 *time.Time
+	update_time                 *time.Time
+	version                     *string
+	changelog                   *string
+	pip_dependencies            *[]string
+	appendpip_dependencies      []string
+	deprecated                  *bool
+	status                      *schema.NodeVersionStatus
+	status_reason               *string
+	comfy_node_extract_status   *schema.ComfyNodeExtractStatus
+	comfy_node_cloud_build_info *schema.ComfyNodeCloudBuildInfo
+	clearedFields               map[string]struct{}
+	node                        *string
+	clearednode                 bool
+	storage_file                *uuid.UUID
+	clearedstorage_file         bool
+	comfy_nodes                 map[uuid.UUID]struct{}
+	removedcomfy_nodes          map[uuid.UUID]struct{}
+	clearedcomfy_nodes          bool
+	done                        bool
+	oldValue                    func(context.Context) (*NodeVersion, error)
+	predicates                  []predicate.NodeVersion
 }
 
 var _ ent.Mutation = (*NodeVersionMutation)(nil)
@@ -6672,6 +6673,55 @@ func (m *NodeVersionMutation) ResetComfyNodeExtractStatus() {
 	m.comfy_node_extract_status = nil
 }
 
+// SetComfyNodeCloudBuildInfo sets the "comfy_node_cloud_build_info" field.
+func (m *NodeVersionMutation) SetComfyNodeCloudBuildInfo(sncbi schema.ComfyNodeCloudBuildInfo) {
+	m.comfy_node_cloud_build_info = &sncbi
+}
+
+// ComfyNodeCloudBuildInfo returns the value of the "comfy_node_cloud_build_info" field in the mutation.
+func (m *NodeVersionMutation) ComfyNodeCloudBuildInfo() (r schema.ComfyNodeCloudBuildInfo, exists bool) {
+	v := m.comfy_node_cloud_build_info
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldComfyNodeCloudBuildInfo returns the old "comfy_node_cloud_build_info" field's value of the NodeVersion entity.
+// If the NodeVersion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NodeVersionMutation) OldComfyNodeCloudBuildInfo(ctx context.Context) (v schema.ComfyNodeCloudBuildInfo, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldComfyNodeCloudBuildInfo is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldComfyNodeCloudBuildInfo requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldComfyNodeCloudBuildInfo: %w", err)
+	}
+	return oldValue.ComfyNodeCloudBuildInfo, nil
+}
+
+// ClearComfyNodeCloudBuildInfo clears the value of the "comfy_node_cloud_build_info" field.
+func (m *NodeVersionMutation) ClearComfyNodeCloudBuildInfo() {
+	m.comfy_node_cloud_build_info = nil
+	m.clearedFields[nodeversion.FieldComfyNodeCloudBuildInfo] = struct{}{}
+}
+
+// ComfyNodeCloudBuildInfoCleared returns if the "comfy_node_cloud_build_info" field was cleared in this mutation.
+func (m *NodeVersionMutation) ComfyNodeCloudBuildInfoCleared() bool {
+	_, ok := m.clearedFields[nodeversion.FieldComfyNodeCloudBuildInfo]
+	return ok
+}
+
+// ResetComfyNodeCloudBuildInfo resets all changes to the "comfy_node_cloud_build_info" field.
+func (m *NodeVersionMutation) ResetComfyNodeCloudBuildInfo() {
+	m.comfy_node_cloud_build_info = nil
+	delete(m.clearedFields, nodeversion.FieldComfyNodeCloudBuildInfo)
+}
+
 // ClearNode clears the "node" edge to the Node entity.
 func (m *NodeVersionMutation) ClearNode() {
 	m.clearednode = true
@@ -6826,7 +6876,7 @@ func (m *NodeVersionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NodeVersionMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.create_time != nil {
 		fields = append(fields, nodeversion.FieldCreateTime)
 	}
@@ -6857,6 +6907,9 @@ func (m *NodeVersionMutation) Fields() []string {
 	if m.comfy_node_extract_status != nil {
 		fields = append(fields, nodeversion.FieldComfyNodeExtractStatus)
 	}
+	if m.comfy_node_cloud_build_info != nil {
+		fields = append(fields, nodeversion.FieldComfyNodeCloudBuildInfo)
+	}
 	return fields
 }
 
@@ -6885,6 +6938,8 @@ func (m *NodeVersionMutation) Field(name string) (ent.Value, bool) {
 		return m.StatusReason()
 	case nodeversion.FieldComfyNodeExtractStatus:
 		return m.ComfyNodeExtractStatus()
+	case nodeversion.FieldComfyNodeCloudBuildInfo:
+		return m.ComfyNodeCloudBuildInfo()
 	}
 	return nil, false
 }
@@ -6914,6 +6969,8 @@ func (m *NodeVersionMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldStatusReason(ctx)
 	case nodeversion.FieldComfyNodeExtractStatus:
 		return m.OldComfyNodeExtractStatus(ctx)
+	case nodeversion.FieldComfyNodeCloudBuildInfo:
+		return m.OldComfyNodeCloudBuildInfo(ctx)
 	}
 	return nil, fmt.Errorf("unknown NodeVersion field %s", name)
 }
@@ -6993,6 +7050,13 @@ func (m *NodeVersionMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetComfyNodeExtractStatus(v)
 		return nil
+	case nodeversion.FieldComfyNodeCloudBuildInfo:
+		v, ok := value.(schema.ComfyNodeCloudBuildInfo)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetComfyNodeCloudBuildInfo(v)
+		return nil
 	}
 	return fmt.Errorf("unknown NodeVersion field %s", name)
 }
@@ -7026,6 +7090,9 @@ func (m *NodeVersionMutation) ClearedFields() []string {
 	if m.FieldCleared(nodeversion.FieldChangelog) {
 		fields = append(fields, nodeversion.FieldChangelog)
 	}
+	if m.FieldCleared(nodeversion.FieldComfyNodeCloudBuildInfo) {
+		fields = append(fields, nodeversion.FieldComfyNodeCloudBuildInfo)
+	}
 	return fields
 }
 
@@ -7042,6 +7109,9 @@ func (m *NodeVersionMutation) ClearField(name string) error {
 	switch name {
 	case nodeversion.FieldChangelog:
 		m.ClearChangelog()
+		return nil
+	case nodeversion.FieldComfyNodeCloudBuildInfo:
+		m.ClearComfyNodeCloudBuildInfo()
 		return nil
 	}
 	return fmt.Errorf("unknown NodeVersion nullable field %s", name)
@@ -7080,6 +7150,9 @@ func (m *NodeVersionMutation) ResetField(name string) error {
 		return nil
 	case nodeversion.FieldComfyNodeExtractStatus:
 		m.ResetComfyNodeExtractStatus()
+		return nil
+	case nodeversion.FieldComfyNodeCloudBuildInfo:
+		m.ResetComfyNodeCloudBuildInfo()
 		return nil
 	}
 	return fmt.Errorf("unknown NodeVersion field %s", name)

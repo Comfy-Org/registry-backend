@@ -572,6 +572,16 @@ func ComfyNodeExtractStatusContainsFold(v schema.ComfyNodeExtractStatus) predica
 	return predicate.NodeVersion(sql.FieldContainsFold(FieldComfyNodeExtractStatus, vc))
 }
 
+// ComfyNodeCloudBuildInfoIsNil applies the IsNil predicate on the "comfy_node_cloud_build_info" field.
+func ComfyNodeCloudBuildInfoIsNil() predicate.NodeVersion {
+	return predicate.NodeVersion(sql.FieldIsNull(FieldComfyNodeCloudBuildInfo))
+}
+
+// ComfyNodeCloudBuildInfoNotNil applies the NotNil predicate on the "comfy_node_cloud_build_info" field.
+func ComfyNodeCloudBuildInfoNotNil() predicate.NodeVersion {
+	return predicate.NodeVersion(sql.FieldNotNull(FieldComfyNodeCloudBuildInfo))
+}
+
 // HasNode applies the HasEdge predicate on the "node" edge.
 func HasNode() predicate.NodeVersion {
 	return predicate.NodeVersion(func(s *sql.Selector) {

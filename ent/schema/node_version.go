@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"fmt"
+
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema/edge"
@@ -41,6 +43,9 @@ func (NodeVersion) Fields() []ent.Field {
 		field.String("comfy_node_extract_status").
 			GoType(ComfyNodeExtractStatus("")).
 			Default(string(ComfyNodeExtractStatusPending)),
+		field.JSON("comfy_node_cloud_build_info", ComfyNodeCloudBuildInfo{}).SchemaType(map[string]string{
+			dialect.Postgres: "jsonb",
+		}).Optional().Comment("Stores the Google Cloud Build information that extracts the comfy node information."),
 	}
 }
 
@@ -99,3 +104,17 @@ const (
 	ComfyNodeExtractStatusFailed  = "failed"
 	ComfyNodeExtractStatusSuccess = "success"
 )
+
+type ComfyNodeCloudBuildInfo struct {
+	ProjectID     string `json:"project_id"`
+	BuildID       string `json:"build_id"`
+	ProjectNumber string `json:"project_number"`
+	Location      string `json:"location"`
+}
+
+func (c *ComfyNodeCloudBuildInfo) String() string {
+	if c == nil {
+		return ""
+	}
+	return fmt.Sprintf("https://console.cloud.google.com/cloud-build/builds;region=%s/%s?project=%s", c.Location, c.BuildID, c.ProjectID)
+}

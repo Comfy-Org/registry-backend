@@ -37,6 +37,8 @@ const (
 	FieldStatusReason = "status_reason"
 	// FieldComfyNodeExtractStatus holds the string denoting the comfy_node_extract_status field in the database.
 	FieldComfyNodeExtractStatus = "comfy_node_extract_status"
+	// FieldComfyNodeCloudBuildInfo holds the string denoting the comfy_node_cloud_build_info field in the database.
+	FieldComfyNodeCloudBuildInfo = "comfy_node_cloud_build_info"
 	// EdgeNode holds the string denoting the node edge name in mutations.
 	EdgeNode = "node"
 	// EdgeStorageFile holds the string denoting the storage_file edge name in mutations.
@@ -81,6 +83,7 @@ var Columns = []string{
 	FieldStatus,
 	FieldStatusReason,
 	FieldComfyNodeExtractStatus,
+	FieldComfyNodeCloudBuildInfo,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "node_versions"

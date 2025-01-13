@@ -570,15 +570,24 @@ func (s *RegistryService) GetLatestNodeVersion(ctx context.Context, client *ent.
 
 var ErrComfyNodesAlreadyExist = errors.New("comfy nodes already exist")
 
-func (s *RegistryService) MarkComfyNodeExtractionFailed(ctx context.Context, client *ent.Client, nodeID string, nodeVersion string) error {
-	return client.NodeVersion.
+func (s *RegistryService) MarkComfyNodeExtractionFailed(
+	ctx context.Context,
+	client *ent.Client,
+	nodeID string,
+	nodeVersion string,
+	info *schema.ComfyNodeCloudBuildInfo,
+) error {
+	u := client.NodeVersion.
 		Update().
 		Where(
 			nodeversion.NodeIDEQ(nodeID),
 			nodeversion.VersionEQ(nodeVersion),
 		).
-		SetComfyNodeExtractStatus(schema.ComfyNodeExtractStatusFailed).
-		Exec(ctx)
+		SetComfyNodeExtractStatus(schema.ComfyNodeExtractStatusFailed)
+	if info != nil {
+		u = u.SetComfyNodeCloudBuildInfo(*info)
+	}
+	return u.Exec(ctx)
 }
 
 func (s *RegistryService) CreateComfyNodes(
@@ -586,6 +595,7 @@ func (s *RegistryService) CreateComfyNodes(
 	client *ent.Client,
 	nodeID, nodeVersion string,
 	comfyNodes map[string]drip.ComfyNode,
+	info *schema.ComfyNodeCloudBuildInfo,
 ) error {
 	return db.WithTx(ctx, client, func(tx *ent.Tx) error {
 		// Query the NodeVersion with the given nodeID and nodeVersion, lock it for updates
@@ -651,7 +661,12 @@ func (s *RegistryService) CreateComfyNodes(
 		}
 
 		// Update the comfy node extraction status to success
-		if err := nv.Update().SetComfyNodeExtractStatus(schema.ComfyNodeExtractStatusSuccess).Exec(ctx); err != nil {
+		u := nv.Update().
+			SetComfyNodeExtractStatus(schema.ComfyNodeExtractStatusSuccess)
+		if info != nil {
+			u = u.SetComfyNodeCloudBuildInfo(*info)
+		}
+		if err := u.Exec(ctx); err != nil {
 			return fmt.Errorf("failed to update comfy node extraction status: %w", err)
 		}
 
