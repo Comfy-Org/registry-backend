@@ -31,6 +31,7 @@ import (
 	"registry-backend/mapper"
 	drip_metric "registry-backend/server/middleware/metric"
 	"strings"
+	"sync"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -1055,11 +1056,31 @@ func (s *RegistryService) ReindexAllNodes(ctx context.Context, client *ent.Clien
 		nvs = append(nvs, n.Edges.Versions...)
 	}
 
-	log.Ctx(ctx).Info().Msgf("reindexing %d number of n versions", len(nvs))
+	log.Ctx(ctx).Info().Msgf("reindexing %d number of node versions", len(nvs))
 	err = s.algolia.IndexNodeVersions(ctx, nvs...)
 	if err != nil {
-		return fmt.Errorf("failed to reindex all n versions: %w", err)
+		return fmt.Errorf("failed to reindex all node versions: %w", err)
 	}
+
+	return nil
+}
+
+var reindexLock = sync.Mutex{}
+
+func (s *RegistryService) ReindexAllNodesBackground(ctx context.Context, client *ent.Client) (err error) {
+	if !reindexLock.TryLock() {
+		return fmt.Errorf("another reindex is in progress")
+	}
+	defer reindexLock.Unlock()
+
+	go func() {
+		err = s.ReindexAllNodes(ctx, client)
+		if err != nil {
+			log.Ctx(ctx).Err(err).Msg("failed to reindex all nodes in background")
+		}
+		log.Ctx(ctx).Info().Msg("reindexing nodes in background succesful")
+	}()
+
 	return nil
 }
 

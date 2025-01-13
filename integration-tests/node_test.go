@@ -3,12 +3,14 @@ package integration
 import (
 	"context"
 	"testing"
+	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"registry-backend/config"
 	"registry-backend/drip"
 	authorization "registry-backend/server/middleware/authorization"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRegistryNode(t *testing.T) {
@@ -116,6 +118,18 @@ func TestRegistryNode(t *testing.T) {
 		assert.Equal(t, node.Repository, updatedResponse.Repository)
 	})
 
+	// Test reindexing nodes
+	t.Run("Reindex Nodes", func(t *testing.T) {
+		res, err := withMiddleware(authz, impl.ReindexNodes)(ctx, drip.ReindexNodesRequestObject{})
+		require.NoError(t, err, "Node reindexing failed")
+		assert.IsType(t, drip.ReindexNodes200Response{}, res)
+
+		time.Sleep(1 * time.Second)
+		nodes := impl.mockAlgolia.LastIndexedNodes
+		require.Equal(t, 1, len(nodes))
+		assert.Equal(t, *node.Id, nodes[0].ID)
+	})
+
 	// Test deleting the node
 	t.Run("Delete Node", func(t *testing.T) {
 		res, err := withMiddleware(authz, impl.DeleteNode)(ctx, drip.DeleteNodeRequestObject{
@@ -136,10 +150,4 @@ func TestRegistryNode(t *testing.T) {
 		assert.IsType(t, drip.DeleteNode204Response{}, res)
 	})
 
-	// Test reindexing nodes
-	t.Run("Reindex Nodes", func(t *testing.T) {
-		res, err := withMiddleware(authz, impl.ReindexNodes)(ctx, drip.ReindexNodesRequestObject{})
-		require.NoError(t, err, "Node reindexing failed")
-		assert.IsType(t, drip.ReindexNodes200Response{}, res)
-	})
 }

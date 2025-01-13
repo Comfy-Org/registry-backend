@@ -1,9 +1,11 @@
 package drip_logging
 
 import (
-	"github.com/rs/zerolog/log"
+	"context"
 	"os"
 	"sync"
+
+	"github.com/rs/zerolog/log"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/pkgerrors"
@@ -43,6 +45,14 @@ func SetupLogger() zerolog.Logger {
 	})
 
 	return log
+}
+
+func ReuseContextLogger(ctx context.Context, newCtx context.Context) context.Context {
+	l := zerolog.Ctx(ctx)
+	if l == nil {
+		return newCtx
+	}
+	return l.WithContext(newCtx)
 }
 
 func SetGlobalLogLevel(logLevel string) {
