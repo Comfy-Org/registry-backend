@@ -1036,9 +1036,10 @@ func (s *RegistryService) decorateNodeQueryWithLatestVersion(q *ent.NodeQuery) *
 		q.WithComfyNodes().
 			Modify(func(s *sql.Selector) {
 				s.Where(sql.ExprP(
-					`(node_id, create_time) IN (
-					SELECT node_id, MAX(create_time)
+					`(node_id, version) IN (
+					SELECT node_id, MAX(version)
 					FROM node_versions
+					WHERE status IN ('active', 'flagged', 'pending')
 					GROUP BY node_id
 				)`,
 				))
