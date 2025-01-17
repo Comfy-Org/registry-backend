@@ -1790,6 +1790,8 @@ paths:
               properties:
                 success:
                   type: boolean
+                reason:
+                  type: string 
                 cloud_build_info:
                   $ref: '#/components/schemas/ComfyNodeCloudBuildInfo'
                 nodes:

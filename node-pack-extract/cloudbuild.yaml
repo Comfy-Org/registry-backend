@@ -13,6 +13,8 @@ steps:
       - "--env"
       - "AUTO_UPDATE=true"
       - "--env"
+      - "TIMEOUT=3600"
+      - "--env"
       - "CUSTOM_NODE_URL=$_CUSTOM_NODE_URL"
       - "--env"
       - "CUSTOM_NODE_NAME=$_CUSTOM_NODE_NAME"
@@ -22,6 +24,8 @@ steps:
       - "/workspace"
       - "gcr.io/$PROJECT_ID/comfyui-nodepack"
       - "$_CUSTOM_NODE_NAME.json"
+    timeout: 5400s # 90 minutes
+    allowFailure: true
 
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
     entrypoint: "bash"
@@ -57,3 +61,4 @@ substitutions:
 
 options:
   logging: CLOUD_LOGGING_ONLY
+timeout: 5400s # 90 minutes
