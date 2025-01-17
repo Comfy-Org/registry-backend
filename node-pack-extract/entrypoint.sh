@@ -1,14 +1,23 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
-# run the original endpoint 
+# run the original endpoint
 init.sh &
 
 # loop until we can extract the node information
+TIMEOUT=${TIMEOUT:-3600}
 OUTPUTFILE=${1:-"/tmp/output.json"}
-echo -n > "$OUTPUTFILE"
+echo -n >"$OUTPUTFILE"
 until cat "$OUTPUTFILE" | grep ''; do
     sleep 1
+
+    echo "$SECONDS $TIMEOUT"
+    if ((SECONDS >= TIMEOUT)); then
+        jq -n '{success: false, reason: "timeout"}' | tee "$OUTPUTFILE"
+        break
+    fi
+    echo "here"
+
     curl -sf localhost:8188/object_info |
         jq -c '
             to_entries |
@@ -28,7 +37,9 @@ until cat "$OUTPUTFILE" | grep ''; do
             if length > 0 then 
                 {success: true, nodes: from_entries} 
             else 
-                {success: false} 
+                {success: false, reason: "node cannot be loaded into comfy ui"} 
             end' |
-        tee "$OUTPUTFILE" 
+        tee "$OUTPUTFILE"
 done
+
+jq -e '.success' "$OUTPUTFILE"

@@ -1017,7 +1017,15 @@ func (impl *DripStrictServerImplementation) CreateComfyNodes(
 	cb := mapper.ApiComfyNodeCloudBuildToDbComfyNodeCloudBuild(request.Body.CloudBuildInfo)
 	// Check if extraction was marked as unsuccessful
 	if request.Body.Success != nil && !*request.Body.Success {
+		reason := "unknown"
+		if request.Body.Reason != nil {
+			reason = *request.Body.Reason
+		}
+		log.Ctx(ctx).Warn().Msgf(
+			"Comfy nodes extraction failed for %s %s: %s", request.NodeId, request.Version, reason)
+
 		err = impl.RegistryService.MarkComfyNodeExtractionFailed(ctx, impl.Client, request.NodeId, request.Version, cb)
+
 	} else {
 		// Attempt to create comfy nodes in the registry
 		err = impl.RegistryService.CreateComfyNodes(
