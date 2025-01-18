@@ -2,6 +2,7 @@ package authentication
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"regexp"
 	"registry-backend/db"
@@ -108,7 +109,8 @@ func FirebaseAuthMiddleware(entClient *ent.Client) echo.MiddlewareFunc {
 				return next(ctx)
 			}
 
-			return echo.NewHTTPError(http.StatusUnauthorized, "missing auth token")
+			return echo.NewHTTPError(http.StatusUnauthorized,
+				fmt.Sprintf("missing auth token for path: %s", reqPath))
 		}
 	}
 }
