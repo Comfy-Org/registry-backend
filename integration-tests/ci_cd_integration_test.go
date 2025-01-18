@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -28,6 +29,7 @@ func TestCICD(t *testing.T) {
 	mockSlackService := new(gateways.MockSlackService)
 	mockDiscordService := new(gateways.MockDiscordService)
 	mockPubsubService := new(gateways.MockPubSubService)
+	newRelicApp := new(newrelic.Application)
 	mockSlackService.
 		On("SendRegistryMessageToSlack", mock.Anything).
 		Return(nil) // Do nothing for all slack messsage calls.
@@ -36,7 +38,7 @@ func TestCICD(t *testing.T) {
 		On("IndexNodes", mock.Anything, mock.Anything).
 		Return(nil)
 	impl := implementation.NewStrictServerImplementation(
-		client, &config.Config{}, mockStorageService, mockPubsubService, mockSlackService, mockDiscordService, mockAlgolia)
+		client, &config.Config{}, mockStorageService, mockPubsubService, mockSlackService, mockDiscordService, mockAlgolia, newRelicApp)
 
 	ctx := context.Background()
 	now := time.Now()

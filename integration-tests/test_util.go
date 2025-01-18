@@ -34,6 +34,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	_ "github.com/lib/pq"
+	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
 type MockedServerImplementation struct {
@@ -55,6 +56,7 @@ func NewStrictServerImplementationWithMocks(
 	mockSlackService := new(gateways.MockSlackService)
 	mockDiscordService := new(gateways.MockDiscordService)
 	mockAlgolia := new(gateways.MockAlgoliaService)
+	newRelicApp := new(newrelic.Application)
 
 	// Set up mock service expectations.
 	mockDiscordService.On("SendSecurityCouncilMessage", mock.Anything, mock.Anything).
@@ -73,7 +75,7 @@ func NewStrictServerImplementationWithMocks(
 	// Initialize the mocked implementation with mocked services.
 	return &MockedServerImplementation{
 		DripStrictServerImplementation: implementation.NewStrictServerImplementation(
-			client, config, mockStorageService, mockPubsubService, mockSlackService, mockDiscordService, mockAlgolia),
+			client, config, mockStorageService, mockPubsubService, mockSlackService, mockDiscordService, mockAlgolia, newRelicApp),
 		mockStorageService: mockStorageService,
 		mockSlackService:   mockSlackService,
 		mockDiscordService: mockDiscordService,

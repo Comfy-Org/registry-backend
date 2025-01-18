@@ -36,10 +36,10 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/Masterminds/semver/v3"
-	"google.golang.org/protobuf/proto"
-
 	"github.com/google/uuid"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/protobuf/proto"
 )
 
 type RegistryService struct {
@@ -49,9 +49,10 @@ type RegistryService struct {
 	algolia        algolia.AlgoliaService
 	discordService discord.DiscordService
 	config         *config.Config
+	newRelicApp    *newrelic.Application
 }
 
-func NewRegistryService(storageSvc storage.StorageService, pubsubService pubsub.PubSubService, slackSvc gateway.SlackService, discordSvc discord.DiscordService, algoliaSvc algolia.AlgoliaService, config *config.Config) *RegistryService {
+func NewRegistryService(storageSvc storage.StorageService, pubsubService pubsub.PubSubService, slackSvc gateway.SlackService, discordSvc discord.DiscordService, algoliaSvc algolia.AlgoliaService, config *config.Config, newRelicApp *newrelic.Application) *RegistryService {
 	return &RegistryService{
 		storageService: storageSvc,
 		pubsubService:  pubsubService,
@@ -59,6 +60,7 @@ func NewRegistryService(storageSvc storage.StorageService, pubsubService pubsub.
 		discordService: discordSvc,
 		algolia:        algoliaSvc,
 		config:         config,
+		newRelicApp:    newRelicApp,
 	}
 }
 
@@ -308,6 +310,8 @@ func (s *RegistryService) UpdateNode(
 }
 
 func (s *RegistryService) GetNode(ctx context.Context, client *ent.Client, nodeID string) (*ent.Node, error) {
+	txn := s.newRelicApp.StartTransaction("RegistryService.GetNode")
+	defer txn.End()
 	log.Ctx(ctx).Info().Msgf("getting node: %v", nodeID)
 	node, err := client.Node.Get(ctx, nodeID)
 	if err != nil {
@@ -388,6 +392,8 @@ type NodeVersionCreation struct {
 
 func (s *RegistryService) ListNodeVersions(
 	ctx context.Context, client *ent.Client, filter *entity.NodeVersionFilter) (*entity.ListNodeVersionsResult, error) {
+	txn := s.newRelicApp.StartTransaction("RegistryService.ListNodeVersions")
+	defer txn.End()
 	query := client.NodeVersion.Query().
 		WithStorageFile().
 		Order(ent.Desc(nodeversion.FieldVersion))
@@ -489,6 +495,8 @@ func (s *RegistryService) AddNodeReview(ctx context.Context, client *ent.Client,
 }
 
 func (s *RegistryService) GetNodeVersionByVersion(ctx context.Context, client *ent.Client, nodeId, nodeVersion string) (*ent.NodeVersion, error) {
+	txn := s.newRelicApp.StartTransaction("RegistryService.GetNodeVersionByVersion")
+	defer txn.End()
 	log.Ctx(ctx).Info().Msgf("getting node version %v@%v", nodeId, nodeVersion)
 	return client.NodeVersion.
 		Query().
@@ -499,12 +507,16 @@ func (s *RegistryService) GetNodeVersionByVersion(ctx context.Context, client *e
 }
 
 func (s *RegistryService) GetNodeVersion(ctx context.Context, client *ent.Client, nodeVersionId string) (*ent.NodeVersion, error) {
+	txn := s.newRelicApp.StartTransaction("RegistryService.GetNodeVersion")
+	defer txn.End()
 	log.Ctx(ctx).Info().Msgf("getting node version %v", nodeVersionId)
 	return client.NodeVersion.
 		Get(ctx, uuid.MustParse(nodeVersionId))
 }
 
 func (s *RegistryService) UpdateNodeVersion(ctx context.Context, client *ent.Client, update *ent.NodeVersionUpdateOne) (*ent.NodeVersion, error) {
+	txn := s.newRelicApp.StartTransaction("RegistryService.UpdateNodeVersion")
+	defer txn.End()
 	log.Ctx(ctx).Info().Msgf("updating node version fields: %v", update.Mutation().Fields())
 	return db.WithTxResult(ctx, client, func(tx *ent.Tx) (*ent.NodeVersion, error) {
 		node, err := update.Save(ctx)
@@ -522,6 +534,8 @@ func (s *RegistryService) UpdateNodeVersion(ctx context.Context, client *ent.Cli
 }
 
 func (s *RegistryService) RecordNodeInstallation(ctx context.Context, client *ent.Client, node *ent.Node) (*ent.Node, error) {
+	txn := s.newRelicApp.StartTransaction("RegistryService.RecordNodeInstallation")
+	defer txn.End()
 	var n *ent.Node
 	err := db.WithTx(ctx, client, func(tx *ent.Tx) (err error) {
 		n, err = tx.Node.UpdateOne(node).AddTotalInstall(1).Save(ctx)
@@ -539,6 +553,8 @@ func (s *RegistryService) RecordNodeInstallation(ctx context.Context, client *en
 }
 
 func (s *RegistryService) GetLatestNodeVersion(ctx context.Context, client *ent.Client, nodeId string) (*ent.NodeVersion, error) {
+	txn := s.newRelicApp.StartTransaction("RegistryService.GetLatestNodeVersion")
+	defer txn.End()
 	log.Ctx(ctx).Info().Msgf("Getting latest version of node: %v", nodeId)
 	nodeVersion, err := client.NodeVersion.
 		Query().
@@ -595,6 +611,8 @@ func (s *RegistryService) CreateComfyNodes(
 	comfyNodes map[string]drip.ComfyNode,
 	info *schema.ComfyNodeCloudBuildInfo,
 ) error {
+	txn := s.newRelicApp.StartTransaction("RegistryService.CreateComfyNodes")
+	defer txn.End()
 	return db.WithTx(ctx, client, func(tx *ent.Tx) error {
 		// Query the NodeVersion with the given nodeID and nodeVersion, lock it for updates
 		nv, err := tx.NodeVersion.Query().
@@ -682,6 +700,8 @@ func (s *RegistryService) GetComfyNode(
 	nodeID, nodeVersion, comfyNodeName string,
 ) (*ent.ComfyNode, error) {
 	// Query the NodeVersion with the given nodeID and nodeVersion, ensuring extraction status is success
+	txn := s.newRelicApp.StartTransaction("RegistryService.GetComfyNode")
+	defer txn.End()
 	nv, err := client.NodeVersion.Query().
 		Where(nodeversion.VersionEQ(nodeVersion)).
 		Where(nodeversion.NodeIDEQ(nodeID)).
@@ -707,6 +727,8 @@ func (s *RegistryService) GetComfyNode(
 func (s *RegistryService) TriggerComfyNodesBackfill(
 	ctx context.Context, client *ent.Client, max *int) error {
 	// Query all NodeVersions with pending comfy node extraction status
+	txn := s.newRelicApp.StartTransaction("RegistryService.TriggerComfyNodesBackfill")
+	defer txn.End()
 	q := client.NodeVersion.
 		Query().
 		WithStorageFile().
@@ -748,6 +770,8 @@ func (s *RegistryService) AssertPublisherPermissions(ctx context.Context,
 	userID string,
 	permissions []schema.PublisherPermissionType,
 ) (err error) {
+	txn := s.newRelicApp.StartTransaction("RegistryService.AssertPublisherPermissions")
+	defer txn.End()
 	w, err := client.Publisher.Get(ctx, publisherID)
 	if err != nil {
 		return fmt.Errorf("fail to query publisher by id: %s %w", publisherID, err)
@@ -772,6 +796,8 @@ func (s *RegistryService) IsPersonalAccessTokenValidForPublisher(ctx context.Con
 	publisherID string,
 	accessToken string,
 ) (bool, error) {
+	txn := s.newRelicApp.StartTransaction("RegistryService.IsPersonalAccessTokenValidForPublisher")
+	defer txn.End()
 	w, err := client.Publisher.Get(ctx, publisherID)
 	if err != nil {
 		log.Ctx(ctx).Error().Err(err).Msgf("fail to find publisher by id: %s", publisherID)
@@ -792,6 +818,8 @@ func (s *RegistryService) IsPersonalAccessTokenValidForPublisher(ctx context.Con
 }
 
 func (s *RegistryService) AssertNodeBelongsToPublisher(ctx context.Context, client *ent.Client, publisherID string, nodeID string) error {
+	txn := s.newRelicApp.StartTransaction("RegistryService.AssertNodeBelongsToPublisher")
+	defer txn.End()
 	node, err := client.Node.Get(ctx, nodeID)
 	if err != nil {
 		return fmt.Errorf("failed to get node: %w", err)
@@ -803,6 +831,8 @@ func (s *RegistryService) AssertNodeBelongsToPublisher(ctx context.Context, clie
 }
 
 func (s *RegistryService) AssertAccessTokenBelongsToPublisher(ctx context.Context, client *ent.Client, publisherID string, tokenId uuid.UUID) error {
+	txn := s.newRelicApp.StartTransaction("RegistryService.AssertAccessTokenBelongsToPublisher")
+	defer txn.End()
 	pat, err := client.PersonalAccessToken.Query().Where(
 		personalaccesstoken.IDEQ(tokenId),
 		personalaccesstoken.PublisherIDEQ(publisherID),
@@ -817,6 +847,8 @@ func (s *RegistryService) AssertAccessTokenBelongsToPublisher(ctx context.Contex
 }
 
 func (s *RegistryService) DeletePublisher(ctx context.Context, client *ent.Client, publisherID string) error {
+	txn := s.newRelicApp.StartTransaction("RegistryService.DeletePublisher")
+	defer txn.End()
 	log.Ctx(ctx).Info().Msgf("deleting publisher: %v", publisherID)
 	return db.WithTx(ctx, client, func(tx *ent.Tx) error {
 		client = tx.Client()
@@ -850,6 +882,8 @@ func (s *RegistryService) DeletePublisher(ctx context.Context, client *ent.Clien
 }
 
 func (s *RegistryService) DeleteNode(ctx context.Context, client *ent.Client, nodeID string) error {
+	txn := s.newRelicApp.StartTransaction("RegistryService.DeleteNode")
+	defer txn.End()
 	log.Ctx(ctx).Info().Msgf("deleting node: %v", nodeID)
 	db.WithTx(ctx, client, func(tx *ent.Tx) error {
 		nv, err := tx.Client().NodeVersion.Query().Where(nodeversion.NodeID(nodeID)).All(ctx)
@@ -876,6 +910,8 @@ func (s *RegistryService) DeleteNode(ctx context.Context, client *ent.Client, no
 }
 
 func (s *RegistryService) DeleteNodeVersion(ctx context.Context, client *ent.Client, nodeIDVersion string) error {
+	txn := s.newRelicApp.StartTransaction("RegistryService.DeleteNodeVersion")
+	defer txn.End()
 	log.Ctx(ctx).Info().Msgf("deleting node version: %v", nodeIDVersion)
 	db.WithTx(ctx, client, func(tx *ent.Tx) error {
 		nv, err := tx.Client().NodeVersion.Get(ctx, uuid.MustParse(nodeIDVersion))
@@ -921,6 +957,8 @@ func IsPermissionError(err error) bool {
 }
 
 func (s *RegistryService) BanPublisher(ctx context.Context, client *ent.Client, id string) error {
+	txn := s.newRelicApp.StartTransaction("RegistryService.BanPublisher")
+	defer txn.End()
 	log.Ctx(ctx).Info().Msgf("banning publisher: %v", id)
 	pub, err := client.Publisher.Get(ctx, id)
 	if err != nil {
@@ -972,6 +1010,8 @@ func (s *RegistryService) BanPublisher(ctx context.Context, client *ent.Client, 
 }
 
 func (s *RegistryService) BanNode(ctx context.Context, client *ent.Client, publisherid, id string) error {
+	txn := s.newRelicApp.StartTransaction("RegistryService.BanNode")
+	defer txn.End()
 	log.Ctx(ctx).Info().Msgf("banning publisher node: %v %v", publisherid, id)
 
 	return db.WithTx(ctx, client, func(tx *ent.Tx) error {
@@ -1007,6 +1047,8 @@ func (s *RegistryService) BanNode(ctx context.Context, client *ent.Client, publi
 }
 
 func (s *RegistryService) AssertNodeBanned(ctx context.Context, client *ent.Client, nodeID string) error {
+	txn := s.newRelicApp.StartTransaction("RegistryService.AssertNodeBanned")
+	defer txn.End()
 	node, err := client.Node.Get(ctx, nodeID)
 	if ent.IsNotFound(err) {
 		return nil
@@ -1035,6 +1077,8 @@ func (s *RegistryService) AssertPublisherBanned(ctx context.Context, client *ent
 }
 
 func (s *RegistryService) ReindexAllNodes(ctx context.Context, client *ent.Client) error {
+	txn := s.newRelicApp.StartTransaction("RegistryService.ReindexAllNodes")
+	defer txn.End()
 	log.Ctx(ctx).Info().Msgf("reindexing nodes")
 	nodes, err := s.decorateNodeQueryWithLatestVersion(client.Node.Query()).All(ctx)
 	if err != nil {
@@ -1064,6 +1108,8 @@ func (s *RegistryService) ReindexAllNodes(ctx context.Context, client *ent.Clien
 var reindexLock = sync.Mutex{}
 
 func (s *RegistryService) ReindexAllNodesBackground(ctx context.Context, client *ent.Client) (err error) {
+	txn := s.newRelicApp.StartTransaction("RegistryService.ReindexAllNodesBackground")
+	defer txn.End()
 	if !reindexLock.TryLock() {
 		return fmt.Errorf("another reindex is in progress")
 	}

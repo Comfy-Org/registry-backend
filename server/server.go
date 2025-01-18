@@ -39,6 +39,7 @@ type Server struct {
 	Client       *ent.Client
 	Config       *config.Config
 	Dependencies *ServerDependencies
+	NewRelicApp  *newrelic.Application
 }
 
 func NewServer(client *ent.Client, config *config.Config) (*Server, error) {
@@ -46,10 +47,25 @@ func NewServer(client *ent.Client, config *config.Config) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	app, err := newrelic.NewApplication(
+		newrelic.ConfigAppName(fmt.Sprintf("registry-%s", config.DripEnv)),
+		newrelic.ConfigLicense(config.NewRelicLicenseKey),
+		newrelic.ConfigAppLogForwardingEnabled(true),
+		newrelic.ConfigDebugLogger(log.Logger),
+		newrelic.ConfigDistributedTracerEnabled(true),
+		newrelic.ConfigEnabled(true),
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to initialize NewRelic application")
+	}
+
 	return &Server{
 		Client:       client,
 		Config:       config,
 		Dependencies: deps,
+		NewRelicApp:  app,
 	}, nil
 }
 
@@ -93,23 +109,11 @@ func initializeDependencies(config *config.Config) (*ServerDependencies, error) 
 }
 
 func (s *Server) Start() error {
-	app, err := newrelic.NewApplication(
-		newrelic.ConfigAppName(fmt.Sprintf("registry-%s", s.Config.DripEnv)),
-		newrelic.ConfigLicense(s.Config.NewRelicLicenseKey),
-		newrelic.ConfigAppLogForwardingEnabled(true),
-		newrelic.ConfigDebugLogger(log.Logger),
-		newrelic.ConfigDistributedTracerEnabled(true),
-		newrelic.ConfigEnabled(true),
-	)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to initialize NewRelic application")
-	}
-
 	e := echo.New()
 	e.HideBanner = true
 
 	// Apply middleware
-	e.Use(nrecho.Middleware(app))
+	e.Use(nrecho.Middleware(s.NewRelicApp))
 	e.Use(middleware.TracingMiddleware)
 	e.Use(labstack_middleware.CORSWithConfig(labstack_middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
@@ -131,7 +135,7 @@ func (s *Server) Start() error {
 	impl := implementation.NewStrictServerImplementation(
 		s.Client, s.Config, s.Dependencies.StorageService, s.Dependencies.PubSubService,
 		s.Dependencies.SlackService,
-		s.Dependencies.DiscordService, s.Dependencies.AlgoliaService)
+		s.Dependencies.DiscordService, s.Dependencies.AlgoliaService, s.NewRelicApp)
 
 	// Define middleware for authorization
 	authorizationManager := drip_authorization.NewAuthorizationManager(s.Client, impl.RegistryService)
