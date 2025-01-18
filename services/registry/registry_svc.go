@@ -390,7 +390,6 @@ func (s *RegistryService) ListNodeVersions(
 	ctx context.Context, client *ent.Client, filter *entity.NodeVersionFilter) (*entity.ListNodeVersionsResult, error) {
 	query := client.NodeVersion.Query().
 		WithStorageFile().
-		WithComfyNodes().
 		Order(ent.Desc(nodeversion.FieldVersion))
 
 	if filter.NodeId != "" {
@@ -496,7 +495,6 @@ func (s *RegistryService) GetNodeVersionByVersion(ctx context.Context, client *e
 		Where(nodeversion.VersionEQ(nodeVersion)).
 		Where(nodeversion.NodeIDEQ(nodeId)).
 		WithStorageFile().
-		WithComfyNodes().
 		Only(ctx)
 }
 
@@ -552,7 +550,6 @@ func (s *RegistryService) GetLatestNodeVersion(ctx context.Context, client *ent.
 		)).
 		Order(ent.Desc(nodeversion.FieldVersion)).
 		WithStorageFile().
-		WithComfyNodes().
 		First(ctx)
 
 	if err != nil {
@@ -603,7 +600,6 @@ func (s *RegistryService) CreateComfyNodes(
 		nv, err := tx.NodeVersion.Query().
 			Where(nodeversion.VersionEQ(nodeVersion)).
 			Where(nodeversion.NodeIDEQ(nodeID)).
-			WithComfyNodes().
 			ForUpdate().
 			Only(ctx)
 		if err != nil {
@@ -1104,16 +1100,15 @@ func (s *RegistryService) indexNodeWithLatestVersion(
 
 func (s *RegistryService) decorateNodeQueryWithLatestVersion(q *ent.NodeQuery) *ent.NodeQuery {
 	return q.WithVersions(func(q *ent.NodeVersionQuery) {
-		q.WithComfyNodes().
-			Modify(func(s *sql.Selector) {
-				s.Where(sql.ExprP(
-					`(node_id, create_time) IN (
+		q.Modify(func(s *sql.Selector) {
+			s.Where(sql.ExprP(
+				`(node_id, create_time) IN (
 					SELECT node_id, MAX(create_time)
 					FROM node_versions
 					GROUP BY node_id
 				)`,
-				))
-			})
+			))
+		})
 	})
 }
 
