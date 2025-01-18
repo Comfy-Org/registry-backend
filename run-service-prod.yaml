@@ -13,6 +13,8 @@ spec:
         autoscaling.knative.dev/maxScale: '20'
         run.googleapis.com/minScale: '1'
     spec:
+      containerConcurrency: 100
+      timeoutSeconds: 300
       containers:
         - image: registry-backend-image-substitute
           env:
@@ -71,5 +73,5 @@ spec:
               value: comfy-registry-event
           resources:
             limits:
-              cpu: 2000m
-              memory: 8Gi
+              cpu: 4000m
+              memory: 16Gi
