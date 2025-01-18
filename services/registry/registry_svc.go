@@ -543,10 +543,10 @@ func (s *RegistryService) RecordNodeInstallation(ctx context.Context, client *en
 			return err
 		}
 
-		_, err = s.indexNodeWithLatestVersion(ctx, tx.Client(), n.ID)
-		if err != nil {
-			return fmt.Errorf("failed to index node: %w", err)
-		}
+		// _, err = s.indexNodeWithLatestVersion(ctx, tx.Client(), n.ID)
+		// if err != nil {
+		// 	return fmt.Errorf("failed to index node: %w", err)
+		// }
 		return
 	})
 	return n, err
