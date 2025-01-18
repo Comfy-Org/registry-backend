@@ -65,6 +65,11 @@ spec:
                 secretKeyRef:
                   key: 2
                   name: PROD_ALGOLIA_API_KEY
+            - name: NEW_RELIC_LICENSE_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: 1
+                  name: PROD_NEW_RELIC_LICENSE_KEY
             - name: ID_TOKEN_AUDIENCE
               value: https://api.comfy.org
             - name: CLOUD_STORAGE_BUCKET_NAME

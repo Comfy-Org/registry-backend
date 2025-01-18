@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"registry-backend/config"
 	generated "registry-backend/drip"
 	"registry-backend/ent"
@@ -20,6 +21,8 @@ import (
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 	"github.com/labstack/echo/v4"
 	labstack_middleware "github.com/labstack/echo/v4/middleware"
+	"github.com/newrelic/go-agent/v3/integrations/nrecho-v4"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/rs/zerolog/log"
 )
 
@@ -90,10 +93,23 @@ func initializeDependencies(config *config.Config) (*ServerDependencies, error) 
 }
 
 func (s *Server) Start() error {
+	app, err := newrelic.NewApplication(
+		newrelic.ConfigAppName(fmt.Sprintf("registry-%s", s.Config.DripEnv)),
+		newrelic.ConfigLicense(s.Config.NewRelicLicenseKey),
+		newrelic.ConfigAppLogForwardingEnabled(true),
+		newrelic.ConfigDebugLogger(log.Logger),
+		newrelic.ConfigDistributedTracerEnabled(true),
+		newrelic.ConfigEnabled(true),
+	)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to initialize NewRelic application")
+	}
+
 	e := echo.New()
 	e.HideBanner = true
 
 	// Apply middleware
+	e.Use(nrecho.Middleware(app))
 	e.Use(middleware.TracingMiddleware)
 	e.Use(labstack_middleware.CORSWithConfig(labstack_middleware.CORSConfig{
 		AllowOrigins: []string{"*"},

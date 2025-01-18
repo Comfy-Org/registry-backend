@@ -13,4 +13,5 @@ type Config struct {
 	AlgoliaAPIKey                        string
 	CloudStorageBucketName               string
 	PubSubTopic                          string
+	NewRelicLicenseKey                   string
 }

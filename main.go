@@ -90,6 +90,7 @@ func main() {
 		IDTokenAudience:                      os.Getenv("ID_TOKEN_AUDIENCE"),
 		CloudStorageBucketName:               os.Getenv("CLOUD_STORAGE_BUCKET_NAME"),
 		PubSubTopic:                          os.Getenv("PUBSUB_TOPIC"),
+		NewRelicLicenseKey:                   os.Getenv("NEW_RELIC_LICENSE_KEY"),
 	}
 
 	// Construct the database connection string
