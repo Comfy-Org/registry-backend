@@ -4,11 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/labstack/echo/v4"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
 	"net/http"
 	"net/http/httptest"
 	"registry-backend/config"
@@ -20,6 +15,12 @@ import (
 	registry "registry-backend/services/registry"
 	"testing"
 	"time"
+
+	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestRegistryNodeVersion(t *testing.T) {
@@ -28,7 +29,7 @@ func TestRegistryNodeVersion(t *testing.T) {
 
 	// Initialize server implementation and authorization middleware
 	impl := NewStrictServerImplementationWithMocks(client, &config.Config{})
-	authz := authorization.NewAuthorizationManager(client, impl.RegistryService).AuthorizationMiddleware()
+	authz := authorization.NewAuthorizationManager(client, impl.RegistryService, impl.NewRelicApp).AuthorizationMiddleware()
 
 	// Setup user context and publisher
 	ctx, _ := setupTestUser(client)

@@ -20,7 +20,7 @@ func TestPublisherBan(t *testing.T) {
 
 	// Setup the mock services and server
 	impl := NewStrictServerImplementationWithMocks(client, &config.Config{})
-	authz := authorization.NewAuthorizationManager(client, impl.RegistryService).AuthorizationMiddleware()
+	authz := authorization.NewAuthorizationManager(client, impl.RegistryService, impl.NewRelicApp).AuthorizationMiddleware()
 
 	t.Run("Publisher Ban Tests", func(t *testing.T) {
 		userCtx, _ := setupTestUser(client)

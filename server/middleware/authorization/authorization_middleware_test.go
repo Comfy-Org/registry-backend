@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,7 +52,7 @@ func (m mockAlwayErrorAssertor) IsPersonalAccessTokenValidForPublisher(ctx conte
 }
 
 func TestNoAuthz(t *testing.T) {
-	mw := NewAuthorizationManager(&ent.Client{}, mockAlwayErrorAssertor{}).AuthorizationMiddleware()
+	mw := NewAuthorizationManager(&ent.Client{}, mockAlwayErrorAssertor{}, &newrelic.Application{}).AuthorizationMiddleware()
 	req, res := httptest.NewRequest(http.MethodGet, "/", nil), httptest.NewRecorder()
 	ctx := echo.New().NewContext(req, res)
 

@@ -138,7 +138,7 @@ func (s *Server) Start() error {
 		s.Dependencies.DiscordService, s.Dependencies.AlgoliaService, s.NewRelicApp)
 
 	// Define middleware for authorization
-	authorizationManager := drip_authorization.NewAuthorizationManager(s.Client, impl.RegistryService)
+	authorizationManager := drip_authorization.NewAuthorizationManager(s.Client, impl.RegistryService, s.NewRelicApp)
 	middlewares := []generated.StrictMiddlewareFunc{
 		authorizationManager.AuthorizationMiddleware(),
 	}

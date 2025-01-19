@@ -2,13 +2,14 @@ package integration
 
 import (
 	"context"
-	"google.golang.org/protobuf/proto"
 	"net/http"
 	"registry-backend/config"
 	"registry-backend/drip"
 	"registry-backend/ent/schema"
 	drip_authorization "registry-backend/server/middleware/authorization"
 	"testing"
+
+	"google.golang.org/protobuf/proto"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,7 +22,7 @@ func TestNodeBan(t *testing.T) {
 
 	// Setup the mock services and server
 	impl := NewStrictServerImplementationWithMocks(client, &config.Config{})
-	authz := drip_authorization.NewAuthorizationManager(client, impl.RegistryService).AuthorizationMiddleware()
+	authz := drip_authorization.NewAuthorizationManager(client, impl.RegistryService, impl.NewRelicApp).AuthorizationMiddleware()
 
 	t.Run("Node Ban Tests", func(t *testing.T) {
 		userCtx, _ := setupTestUser(client)
