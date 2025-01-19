@@ -4,16 +4,13 @@ apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
   name: prod-comfy-backend
-  annotations:
-    run.googleapis.com/default-url-disabled: "true"
-    run.googleapis.com/launch-stage: BETA
 spec:
   template:
     metadata:
       annotations:
         autoscaling.knative.dev/min-scale: "1"
         autoscaling.knative.dev/minScale: '1'
-        autoscaling.knative.dev/maxScale: '20'
+        autoscaling.knative.dev/maxScale: '100'
         run.googleapis.com/minScale: '1'
     spec:
       containerConcurrency: 10
@@ -26,12 +23,12 @@ spec:
             - name: DB_CONNECTION_STRING
               valueFrom:
                 secretKeyRef:
-                  key: 1
+                  key: "1"
                   name: PROD_SUPABASE_CONNECTION_STRING
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  key: 1
+                  key: "1"
                   name: PROD_JWT_SECRET
             - name: SLACK_REGISTRY_CHANNEL_WEBHOOK
               valueFrom:
@@ -46,32 +43,32 @@ spec:
             - name: SECRET_SCANNER_URL
               valueFrom:
                 secretKeyRef:
-                  key: 1
+                  key: "1"
                   name: SECURITY_SCANNER_CLOUD_FUNCTION_URL
             - name: SECURITY_COUNCIL_DISCORD_WEBHOOK
               valueFrom:
                 secretKeyRef:
-                  key: 1
+                  key: "1"
                   name: SECURITY_COUNCIL_DISCORD_WEBHOOK
             - name: SECURITY_COUNCIL_DISCORD_PRIVATE_WEBHOOK
               valueFrom:
                   secretKeyRef:
-                      key: 1
+                      key: "1"
                       name: SECURITY_COUNCIL_DISCORD_PRIVATE_WEBHOOK
             - name: ALGOLIA_APP_ID
               valueFrom:
                 secretKeyRef:
-                  key: 2
+                  key: "2"
                   name: PROD_ALGOLIA_APP_ID
             - name: ALGOLIA_API_KEY
               valueFrom:
                 secretKeyRef:
-                  key: 2
+                  key: "2"
                   name: PROD_ALGOLIA_API_KEY
             - name: NEW_RELIC_LICENSE_KEY
               valueFrom:
                 secretKeyRef:
-                  key: 1
+                  key: "1"
                   name: PROD_NEW_RELIC_LICENSE_KEY
             - name: ID_TOKEN_AUDIENCE
               value: https://api.comfy.org
