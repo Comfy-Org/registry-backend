@@ -2,13 +2,14 @@ package integration
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"registry-backend/config"
 	"registry-backend/drip"
 	authorization "registry-backend/server/middleware/authorization"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRegistryPersonalAccessToken(t *testing.T) {
@@ -18,7 +19,7 @@ func TestRegistryPersonalAccessToken(t *testing.T) {
 
 	// Initialize server implementation and authorization middleware
 	impl := NewStrictServerImplementationWithMocks(client, &config.Config{})
-	authz := authorization.NewAuthorizationManager(client, impl.RegistryService).AuthorizationMiddleware()
+	authz := authorization.NewAuthorizationManager(client, impl.RegistryService, impl.NewRelicApp).AuthorizationMiddleware()
 
 	// Setup test user and publisher
 	ctx, _ := setupTestUser(client)

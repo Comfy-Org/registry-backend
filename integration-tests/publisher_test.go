@@ -2,12 +2,13 @@ package integration
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"registry-backend/config"
 	"registry-backend/drip"
 	authorization "registry-backend/server/middleware/authorization"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRegistryPublisher(t *testing.T) {
@@ -16,7 +17,7 @@ func TestRegistryPublisher(t *testing.T) {
 	defer cleanup()
 
 	impl := NewStrictServerImplementationWithMocks(client, &config.Config{})
-	authz := authorization.NewAuthorizationManager(client, impl.RegistryService).AuthorizationMiddleware()
+	authz := authorization.NewAuthorizationManager(client, impl.RegistryService, impl.NewRelicApp).AuthorizationMiddleware()
 
 	// Create a test user and a random publisher for testing
 	ctx, testUser := setupTestUser(client)

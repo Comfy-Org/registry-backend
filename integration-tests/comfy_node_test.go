@@ -22,7 +22,7 @@ func TestRegistryComfyNode(t *testing.T) {
 
 	// Initialize server implementation and authorization middleware
 	impl := NewStrictServerImplementationWithMocks(client, &config.Config{})
-	authz := authorization.NewAuthorizationManager(client, impl.RegistryService).AuthorizationMiddleware()
+	authz := authorization.NewAuthorizationManager(client, impl.RegistryService, impl.NewRelicApp).AuthorizationMiddleware()
 
 	// Setup test user context and publisher
 	ctx, _ := setupTestUser(client)
