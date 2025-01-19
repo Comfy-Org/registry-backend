@@ -6,6 +6,7 @@ metadata:
   name: prod-comfy-backend
   annotations:
     run.googleapis.com/default-url-disabled: "true"
+    run.googleapis.com/launch-stage: BETA
 spec:
   template:
     metadata:
