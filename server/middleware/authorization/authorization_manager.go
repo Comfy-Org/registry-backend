@@ -55,8 +55,10 @@ func (m *AuthorizationManager) assertUserBanned() drip.StrictMiddlewareFunc {
 	return func(f strictecho.StrictEchoHandlerFunc, operationID string) strictecho.StrictEchoHandlerFunc {
 		return func(c echo.Context, request interface{}) (response interface{}, err error) {
 			ctx := c.Request().Context()
-			txn := m.NewRelicApp.StartTransaction("AuthorizationManager.assertUserBanned")
-			defer txn.End()
+			if txn := newrelic.FromContext(ctx); txn != nil {
+				segment := txn.StartSegment("AuthorizationManager.assertUserBanned")
+				defer segment.End()
+			}
 			v := ctx.Value(drip_authentication.UserContextKey)
 			userDetails, ok := v.(*drip_authentication.UserDetails)
 			if !ok {
@@ -83,8 +85,10 @@ func (m *AuthorizationManager) assertPublisherPermission(
 	return func(f strictecho.StrictEchoHandlerFunc, operationID string) strictecho.StrictEchoHandlerFunc {
 		return func(c echo.Context, request interface{}) (response interface{}, err error) {
 			ctx := c.Request().Context()
-			txn := m.NewRelicApp.StartTransaction("AuthorizationManager.assertPublisherPermission")
-			defer txn.End()
+			if txn := newrelic.FromContext(ctx); txn != nil {
+				segment := txn.StartSegment("AuthorizationManager.assertPublisherPermission")
+				defer segment.End()
+			}
 			v := ctx.Value(drip_authentication.UserContextKey)
 			userDetails, ok := v.(*drip_authentication.UserDetails)
 			if !ok {
@@ -121,8 +125,10 @@ func (m *AuthorizationManager) assertNodeBanned(extractor func(req interface{}) 
 	return func(f strictecho.StrictEchoHandlerFunc, operationID string) strictecho.StrictEchoHandlerFunc {
 		return func(c echo.Context, request interface{}) (response interface{}, err error) {
 			ctx := c.Request().Context()
-			txn := m.NewRelicApp.StartTransaction("AuthorizationManager.assertNodeBanned")
-			defer txn.End()
+			if txn := newrelic.FromContext(ctx); txn != nil {
+				segment := txn.StartSegment("AuthorizationManager.assertNodeBanned")
+				defer segment.End()
+			}
 			nodeID := extractor(request)
 			err = m.Assertor.AssertNodeBanned(ctx, m.EntClient, nodeID)
 			switch {
@@ -145,8 +151,10 @@ func (m *AuthorizationManager) assertPublisherBanned(extractor func(req interfac
 	return func(f strictecho.StrictEchoHandlerFunc, operationID string) strictecho.StrictEchoHandlerFunc {
 		return func(c echo.Context, request interface{}) (response interface{}, err error) {
 			ctx := c.Request().Context()
-			txn := m.NewRelicApp.StartTransaction("AuthorizationManager.assertPublisherBanned")
-			defer txn.End()
+			if txn := newrelic.FromContext(ctx); txn != nil {
+				segment := txn.StartSegment("AuthorizationManager.assertPublisherBanned")
+				defer segment.End()
+			}
 			publisherID := extractor(request)
 
 			switch err = m.Assertor.AssertPublisherBanned(ctx, m.EntClient, publisherID); {
@@ -172,8 +180,10 @@ func (m *AuthorizationManager) assertPersonalAccessTokenValid(
 	return func(f strictecho.StrictEchoHandlerFunc, operationID string) strictecho.StrictEchoHandlerFunc {
 		return func(c echo.Context, request interface{}) (response interface{}, err error) {
 			ctx := c.Request().Context()
-			txn := m.NewRelicApp.StartTransaction("AuthorizationManager.assertPersonalAccessTokenValid")
-			defer txn.End()
+			if txn := newrelic.FromContext(ctx); txn != nil {
+				segment := txn.StartSegment("AuthorizationManager.assertPersonalAccessTokenValid")
+				defer segment.End()
+			}
 			pubID := extractorPublsherID(request)
 			pat := extractorPAT(request)
 			tokenValid, err := m.Assertor.IsPersonalAccessTokenValidForPublisher(
@@ -200,8 +210,10 @@ func (m *AuthorizationManager) assertNodeBelongsToPublisher(
 	return func(f strictecho.StrictEchoHandlerFunc, operationID string) strictecho.StrictEchoHandlerFunc {
 		return func(c echo.Context, request interface{}) (response interface{}, err error) {
 			ctx := c.Request().Context()
-			txn := m.NewRelicApp.StartTransaction("AuthorizationManager.assertNodeBelongsToPublisher")
-			defer txn.End()
+			if txn := newrelic.FromContext(ctx); txn != nil {
+				segment := txn.StartSegment("AuthorizationManager.assertNodeBelongsToPublisher")
+				defer segment.End()
+			}
 			pubID := extractorPublsherID(request)
 			nodeID := extractorNodeID(request)
 
