@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/api/idtoken"
 )
@@ -22,6 +23,10 @@ func ServiceAccountAuthMiddleware() echo.MiddlewareFunc {
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
+			if txn := newrelic.FromContext(ctx.Request().Context()); txn != nil {
+				segment := txn.StartSegment("ServiceAccountAuthMiddleware")
+				defer segment.End()
+			}
 			// Check if the request reqPath and method are in the checklist
 			reqPath := ctx.Request().URL.Path
 			reqMethod := ctx.Request().Method

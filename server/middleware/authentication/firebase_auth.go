@@ -9,6 +9,7 @@ import (
 	"registry-backend/ent"
 	"strings"
 
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/rs/zerolog/log"
 
 	firebase "firebase.google.com/go"
@@ -50,6 +51,10 @@ func FirebaseAuthMiddleware(entClient *ent.Client) echo.MiddlewareFunc {
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
+			if txn := newrelic.FromContext(ctx.Request().Context()); txn != nil {
+				segment := txn.StartSegment("FirebaseAuthMiddleware")
+				defer segment.End()
+			}
 			// Check if the request is in the allow list.
 			reqPath := ctx.Request().URL.Path
 			reqMethod := ctx.Request().Method
