@@ -8,6 +8,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	echo_middleware "github.com/labstack/echo/v4/middleware"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/rs/zerolog/log"
 )
 
@@ -40,6 +41,10 @@ func RequestLoggerMiddleware() echo.MiddlewareFunc {
 		LogURI:    true,
 		LogStatus: true,
 		LogValuesFunc: func(c echo.Context, v echo_middleware.RequestLoggerValues) error {
+			if txn := newrelic.FromContext(c.Request().Context()); txn != nil {
+				segment := txn.StartSegment("RequestLoggerMiddleware")
+				defer segment.End()
+			}
 			// Get the teeReader
 			reader, ok := c.Request().Context().Value(ctxKey).(*teeReader)
 			if !ok {

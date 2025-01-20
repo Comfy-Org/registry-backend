@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/rs/zerolog/log"
 )
 
@@ -29,6 +30,10 @@ func (rw *responseWriter) Write(p []byte) (n int, err error) {
 func ResponseLoggerMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			if txn := newrelic.FromContext(c.Request().Context()); txn != nil {
+				segment := txn.StartSegment("ResponseLoggerMiddleware")
+				defer segment.End()
+			}
 			// Create a custom response writer to capture the response body
 			rw := &responseWriter{
 				ResponseWriter: c.Response().Writer,

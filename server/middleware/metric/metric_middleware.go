@@ -14,6 +14,7 @@ import (
 
 	"cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	"github.com/labstack/echo/v4"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -36,6 +37,10 @@ func init() {
 func MetricsMiddleware(client *monitoring.MetricClient, config *config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			if txn := newrelic.FromContext(c.Request().Context()); txn != nil {
+				segment := txn.StartSegment("MetricsMiddleware")
+				defer segment.End()
+			}
 			startTime := time.Now()
 			err := next(c)
 			endTime := time.Now()
