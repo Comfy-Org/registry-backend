@@ -67,6 +67,10 @@ func NewRegistryService(storageSvc storage.StorageService, pubsubService pubsub.
 // ListNodes retrieves a paginated list of nodes with optional filtering.
 func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, page, limit int, filter *entity.NodeFilter) (*entity.ListNodesResult, error) {
 	if txn := newrelic.FromContext(ctx); txn != nil {
+		txn.Application().RecordCustomMetric(
+			"Custom/ListNodes/Limit",
+			float64(limit),
+		)
 		segment := txn.StartSegment("RegistryService.ListNodes")
 		defer segment.End()
 	}
