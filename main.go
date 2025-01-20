@@ -14,7 +14,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	_ "github.com/newrelic/go-agent/v3/integrations/nrpq"
+	_ "github.com/lib/pq"
 )
 
 // validateEnvVars ensures all required environment variables are set based on the environment.
@@ -104,7 +104,7 @@ func main() {
 	}
 
 	// Initialize the database client
-	client, err := ent.Open("nrpostgres", dsn)
+	client, err := ent.Open("postgres", dsn)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to establish a connection to the PostgreSQL database.")
 	}

@@ -54,7 +54,6 @@ func NewServer(client *ent.Client, config *config.Config) (*Server, error) {
 		newrelic.ConfigAppLogForwardingEnabled(true),
 		newrelic.ConfigDebugLogger(log.Logger),
 		newrelic.ConfigDistributedTracerEnabled(true),
-		newrelic.ConfigDatastoreRawQuery(true),
 		newrelic.ConfigEnabled(true),
 	)
 
