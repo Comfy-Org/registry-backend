@@ -66,7 +66,10 @@ func NewRegistryService(storageSvc storage.StorageService, pubsubService pubsub.
 
 // ListNodes retrieves a paginated list of nodes with optional filtering.
 func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, page, limit int, filter *entity.NodeFilter) (*entity.ListNodesResult, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
+	// Start New Relic transaction segment
+	var txn *newrelic.Transaction
+	if txnCtx := newrelic.FromContext(ctx); txnCtx != nil {
+		txn = txnCtx
 		txn.Application().RecordCustomMetric(
 			"Custom/ListNodes/Limit",
 			float64(limit),
@@ -74,6 +77,7 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 		segment := txn.StartSegment("RegistryService.ListNodes")
 		defer segment.End()
 	}
+
 	// Ensure valid pagination parameters
 	if page < 1 {
 		page = 1
@@ -120,15 +124,40 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 	// Calculate pagination offset
 	offset := (page - 1) * limit
 
-	// Count total nodes
-	total, err := query.Count(ctx)
+	// Count total nodes with New Relic datastore segment
+	var total int
+	var err error
+	if txn != nil {
+		segment := newrelic.DatastoreSegment{
+			Product:    newrelic.DatastorePostgres, // Change based on your DB
+			Collection: node.Table,                 // Table name
+			Operation:  "COUNT",
+			StartTime:  txn.StartSegmentNow(),
+		}
+		total, err = query.Count(ctx)
+		segment.End()
+	} else {
+		total, err = query.Count(ctx)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to count nodes: %w", err)
 	}
 
-	// Fetch nodes with pagination
+	// Fetch nodes with pagination and New Relic datastore segment
 	query = s.decorateNodeQueryWithLatestVersion(query).Offset(offset).Limit(limit)
-	nodes, err := query.All(ctx)
+	var nodes []*ent.Node
+	if txn != nil {
+		segment := newrelic.DatastoreSegment{
+			Product:    newrelic.DatastorePostgres,
+			Collection: node.Table,
+			Operation:  "SELECT",
+			StartTime:  txn.StartSegmentNow(),
+		}
+		nodes, err = query.All(ctx)
+		segment.End()
+	} else {
+		nodes, err = query.All(ctx)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to list nodes: %w", err)
 	}

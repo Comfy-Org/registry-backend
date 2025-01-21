@@ -56,7 +56,6 @@ func NewServer(client *ent.Client, config *config.Config) (*Server, error) {
 		newrelic.ConfigDistributedTracerEnabled(true),
 		newrelic.ConfigEnabled(true),
 	)
-
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to initialize NewRelic application")
 	}
