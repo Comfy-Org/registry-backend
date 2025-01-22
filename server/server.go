@@ -1,8 +1,14 @@
 package server
 
 import (
+	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 	"context"
 	"fmt"
+	"github.com/labstack/echo/v4"
+	labstack_middleware "github.com/labstack/echo/v4/middleware"
+	"github.com/newrelic/go-agent/v3/integrations/nrecho-v4"
+	"github.com/newrelic/go-agent/v3/newrelic"
+	"github.com/rs/zerolog/log"
 	"registry-backend/config"
 	generated "registry-backend/drip"
 	"registry-backend/ent"
@@ -16,14 +22,6 @@ import (
 	"registry-backend/server/middleware"
 	"registry-backend/server/middleware/authentication"
 	drip_authorization "registry-backend/server/middleware/authorization"
-	"registry-backend/server/middleware/metric"
-
-	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
-	"github.com/labstack/echo/v4"
-	labstack_middleware "github.com/labstack/echo/v4/middleware"
-	"github.com/newrelic/go-agent/v3/integrations/nrecho-v4"
-	"github.com/newrelic/go-agent/v3/newrelic"
-	"github.com/rs/zerolog/log"
 )
 
 type ServerDependencies struct {
@@ -125,7 +123,7 @@ func (s *Server) Start() error {
 	}))
 	e.Use(middleware.RequestLoggerMiddleware())
 	e.Use(middleware.ResponseLoggerMiddleware())
-	e.Use(metric.MetricsMiddleware(&s.Dependencies.MonitoringClient, s.Config))
+	//e.Use(metric.MetricsMiddleware(&s.Dependencies.MonitoringClient, s.Config))
 	e.Use(authentication.FirebaseAuthMiddleware(s.Client))
 	e.Use(authentication.ServiceAccountAuthMiddleware())
 	e.Use(authentication.JWTAdminAuthMiddleware(s.Client, s.Config.JWTSecret))
