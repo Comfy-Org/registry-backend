@@ -13,7 +13,7 @@ spec:
         autoscaling.knative.dev/maxScale: '100'
         run.googleapis.com/minScale: '1'
     spec:
-      containerConcurrency: 10
+      containerConcurrency: 50
       timeoutSeconds: 300
       containers:
         - image: registry-backend-image-substitute
