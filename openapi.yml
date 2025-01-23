@@ -1274,6 +1274,20 @@ paths:
       operationId: reindexNodes
       tags:
         - Nodes
+      parameters:
+        - in: query
+          name: max_batch
+          description: Maximum number of nodes to send to algolia at a time 
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: min_age
+          description: Minimum interval from the last time the nodes were indexed to algolia
+          required: false
+          schema:
+            type: string 
+            x-go-type: time.Duration
       responses:
         '200':
           description: Reindex completed successfully.

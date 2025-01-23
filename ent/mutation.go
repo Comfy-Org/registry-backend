@@ -3998,40 +3998,41 @@ func (m *GitCommitMutation) ResetEdge(name string) error {
 // NodeMutation represents an operation that mutates the Node nodes in the graph.
 type NodeMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *string
-	create_time      *time.Time
-	update_time      *time.Time
-	name             *string
-	description      *string
-	category         *string
-	author           *string
-	license          *string
-	repository_url   *string
-	icon_url         *string
-	tags             *[]string
-	appendtags       []string
-	total_install    *int64
-	addtotal_install *int64
-	total_star       *int64
-	addtotal_star    *int64
-	total_review     *int64
-	addtotal_review  *int64
-	status           *schema.NodeStatus
-	status_detail    *string
-	clearedFields    map[string]struct{}
-	publisher        *string
-	clearedpublisher bool
-	versions         map[uuid.UUID]struct{}
-	removedversions  map[uuid.UUID]struct{}
-	clearedversions  bool
-	reviews          map[uuid.UUID]struct{}
-	removedreviews   map[uuid.UUID]struct{}
-	clearedreviews   bool
-	done             bool
-	oldValue         func(context.Context) (*Node, error)
-	predicates       []predicate.Node
+	op                      Op
+	typ                     string
+	id                      *string
+	create_time             *time.Time
+	update_time             *time.Time
+	name                    *string
+	description             *string
+	category                *string
+	author                  *string
+	license                 *string
+	repository_url          *string
+	icon_url                *string
+	tags                    *[]string
+	appendtags              []string
+	total_install           *int64
+	addtotal_install        *int64
+	total_star              *int64
+	addtotal_star           *int64
+	total_review            *int64
+	addtotal_review         *int64
+	status                  *schema.NodeStatus
+	status_detail           *string
+	last_algolia_index_time *time.Time
+	clearedFields           map[string]struct{}
+	publisher               *string
+	clearedpublisher        bool
+	versions                map[uuid.UUID]struct{}
+	removedversions         map[uuid.UUID]struct{}
+	clearedversions         bool
+	reviews                 map[uuid.UUID]struct{}
+	removedreviews          map[uuid.UUID]struct{}
+	clearedreviews          bool
+	done                    bool
+	oldValue                func(context.Context) (*Node, error)
+	predicates              []predicate.Node
 }
 
 var _ ent.Mutation = (*NodeMutation)(nil)
@@ -4854,6 +4855,55 @@ func (m *NodeMutation) ResetStatusDetail() {
 	delete(m.clearedFields, node.FieldStatusDetail)
 }
 
+// SetLastAlgoliaIndexTime sets the "last_algolia_index_time" field.
+func (m *NodeMutation) SetLastAlgoliaIndexTime(t time.Time) {
+	m.last_algolia_index_time = &t
+}
+
+// LastAlgoliaIndexTime returns the value of the "last_algolia_index_time" field in the mutation.
+func (m *NodeMutation) LastAlgoliaIndexTime() (r time.Time, exists bool) {
+	v := m.last_algolia_index_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastAlgoliaIndexTime returns the old "last_algolia_index_time" field's value of the Node entity.
+// If the Node object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NodeMutation) OldLastAlgoliaIndexTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastAlgoliaIndexTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastAlgoliaIndexTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastAlgoliaIndexTime: %w", err)
+	}
+	return oldValue.LastAlgoliaIndexTime, nil
+}
+
+// ClearLastAlgoliaIndexTime clears the value of the "last_algolia_index_time" field.
+func (m *NodeMutation) ClearLastAlgoliaIndexTime() {
+	m.last_algolia_index_time = nil
+	m.clearedFields[node.FieldLastAlgoliaIndexTime] = struct{}{}
+}
+
+// LastAlgoliaIndexTimeCleared returns if the "last_algolia_index_time" field was cleared in this mutation.
+func (m *NodeMutation) LastAlgoliaIndexTimeCleared() bool {
+	_, ok := m.clearedFields[node.FieldLastAlgoliaIndexTime]
+	return ok
+}
+
+// ResetLastAlgoliaIndexTime resets all changes to the "last_algolia_index_time" field.
+func (m *NodeMutation) ResetLastAlgoliaIndexTime() {
+	m.last_algolia_index_time = nil
+	delete(m.clearedFields, node.FieldLastAlgoliaIndexTime)
+}
+
 // ClearPublisher clears the "publisher" edge to the Publisher entity.
 func (m *NodeMutation) ClearPublisher() {
 	m.clearedpublisher = true
@@ -5023,7 +5073,7 @@ func (m *NodeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NodeMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 17)
 	if m.create_time != nil {
 		fields = append(fields, node.FieldCreateTime)
 	}
@@ -5072,6 +5122,9 @@ func (m *NodeMutation) Fields() []string {
 	if m.status_detail != nil {
 		fields = append(fields, node.FieldStatusDetail)
 	}
+	if m.last_algolia_index_time != nil {
+		fields = append(fields, node.FieldLastAlgoliaIndexTime)
+	}
 	return fields
 }
 
@@ -5112,6 +5165,8 @@ func (m *NodeMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case node.FieldStatusDetail:
 		return m.StatusDetail()
+	case node.FieldLastAlgoliaIndexTime:
+		return m.LastAlgoliaIndexTime()
 	}
 	return nil, false
 }
@@ -5153,6 +5208,8 @@ func (m *NodeMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldStatus(ctx)
 	case node.FieldStatusDetail:
 		return m.OldStatusDetail(ctx)
+	case node.FieldLastAlgoliaIndexTime:
+		return m.OldLastAlgoliaIndexTime(ctx)
 	}
 	return nil, fmt.Errorf("unknown Node field %s", name)
 }
@@ -5274,6 +5331,13 @@ func (m *NodeMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetStatusDetail(v)
 		return nil
+	case node.FieldLastAlgoliaIndexTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastAlgoliaIndexTime(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Node field %s", name)
 }
@@ -5358,6 +5422,9 @@ func (m *NodeMutation) ClearedFields() []string {
 	if m.FieldCleared(node.FieldStatusDetail) {
 		fields = append(fields, node.FieldStatusDetail)
 	}
+	if m.FieldCleared(node.FieldLastAlgoliaIndexTime) {
+		fields = append(fields, node.FieldLastAlgoliaIndexTime)
+	}
 	return fields
 }
 
@@ -5386,6 +5453,9 @@ func (m *NodeMutation) ClearField(name string) error {
 		return nil
 	case node.FieldStatusDetail:
 		m.ClearStatusDetail()
+		return nil
+	case node.FieldLastAlgoliaIndexTime:
+		m.ClearLastAlgoliaIndexTime()
 		return nil
 	}
 	return fmt.Errorf("unknown Node nullable field %s", name)
@@ -5442,6 +5512,9 @@ func (m *NodeMutation) ResetField(name string) error {
 		return nil
 	case node.FieldStatusDetail:
 		m.ResetStatusDetail()
+		return nil
+	case node.FieldLastAlgoliaIndexTime:
+		m.ResetLastAlgoliaIndexTime()
 		return nil
 	}
 	return fmt.Errorf("unknown Node field %s", name)

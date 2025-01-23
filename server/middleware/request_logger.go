@@ -75,11 +75,6 @@ func RequestLoggerMiddleware() echo.MiddlewareFunc {
 
 	mw := func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			if txn := newrelic.FromContext(c.Request().Context()); txn != nil {
-				segment := txn.StartSegment("RequestLoggerMiddleware")
-				defer segment.End()
-			}
-
 			req := c.Request()
 			reader := &teeReader{ReadCloser: req.Body}
 			req.Body = io.NopCloser(reader)

@@ -55,6 +55,7 @@ func (Node) Fields() []ent.Field {
 		field.String("status_detail").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}).Optional(),
+		field.Time("last_algolia_index_time").Optional(),
 	}
 }
 

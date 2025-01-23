@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/newrelic/go-agent/v3/newrelic"
 	"registry-backend/drip"
 	"registry-backend/ent"
 	"registry-backend/ent/publisher"
@@ -238,11 +237,6 @@ func (s *DripStrictServerImplementation) ListNodesForPublisher(
 
 func (s *DripStrictServerImplementation) ListAllNodes(
 	ctx context.Context, request drip.ListAllNodesRequestObject) (drip.ListAllNodesResponseObject, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("DripStrictServerImplementation.ListAllNodes")
-		defer segment.End()
-	}
-
 	err := s.MixpanelService.Track(ctx, []*mixpanel.Event{
 		s.MixpanelService.NewEvent("List All Nodes", "", map[string]any{
 			"page":  request.Params.Page,
@@ -1005,8 +999,10 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 }
 
 func (s *DripStrictServerImplementation) ReindexNodes(ctx context.Context, request drip.ReindexNodesRequestObject) (res drip.ReindexNodesResponseObject, err error) {
+	// create new context with logger from original Context
 	reindexCtx := drip_logging.ReuseContextLogger(ctx, context.Background())
-	err = s.RegistryService.ReindexAllNodesBackground(reindexCtx, s.Client)
+
+	err = s.RegistryService.ReindexAllNodesBackground(reindexCtx, s.Client, request.Params.MaxBatch, request.Params.MinAge)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to trigger reindex all nodes w/ err: %v", err)
 		return drip.ReindexNodes500JSONResponse{Message: "Failed to trigger reindex nodes", Error: err.Error()}, nil
