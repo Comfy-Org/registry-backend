@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"regexp"
 	"registry-backend/ent"
+	"registry-backend/tracing"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
-	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
 // JWTAdminAuthMiddleware checks for a JWT token in the Authorization header,
@@ -34,10 +34,8 @@ func JWTAdminAuthMiddleware(entClient *ent.Client, secret string) echo.Middlewar
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			if txn := newrelic.FromContext(c.Request().Context()); txn != nil {
-				segment := txn.StartSegment("JWTAdminAuthMiddleware")
-				defer segment.End()
-			}
+			defer tracing.TraceDefaultSegment(c.Request().Context(), "JWTAdminAuthMiddleware")()
+
 			reqPath := c.Request().URL.Path
 
 			// Check if the request path matches any of the protected endpoints

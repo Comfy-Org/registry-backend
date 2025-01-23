@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/newrelic/go-agent/v3/newrelic"
 	"registry-backend/drip"
 	"registry-backend/ent"
 	"registry-backend/ent/publisher"
@@ -13,6 +12,7 @@ import (
 	drip_logging "registry-backend/logging"
 	"registry-backend/mapper"
 	drip_services "registry-backend/services/registry"
+	"registry-backend/tracing"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,6 +23,7 @@ import (
 
 func (impl *DripStrictServerImplementation) ListPublishersForUser(
 	ctx context.Context, request drip.ListPublishersForUserRequestObject) (drip.ListPublishersForUserResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.ListPublishersForUser")()
 
 	// Extract user ID from context
 	userId, err := mapper.GetUserIDFromContext(ctx)
@@ -55,6 +56,8 @@ func (impl *DripStrictServerImplementation) ListPublishersForUser(
 
 func (s *DripStrictServerImplementation) ValidatePublisher(
 	ctx context.Context, request drip.ValidatePublisherRequestObject) (drip.ValidatePublisherResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.ValidatePublisher")()
+
 	// Check if the username is empty
 	name := request.Params.Username
 	if name == "" {
@@ -91,6 +94,8 @@ func (s *DripStrictServerImplementation) ValidatePublisher(
 
 func (s *DripStrictServerImplementation) CreatePublisher(
 	ctx context.Context, request drip.CreatePublisherRequestObject) (drip.CreatePublisherResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.CreatePublisher")()
+
 	// Extract user ID from context
 	userId, err := mapper.GetUserIDFromContext(ctx)
 	if err != nil {
@@ -131,6 +136,8 @@ func (s *DripStrictServerImplementation) CreatePublisher(
 
 func (s *DripStrictServerImplementation) ListPublishers(
 	ctx context.Context, request drip.ListPublishersRequestObject) (drip.ListPublishersResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.ListPublishers")()
+
 	pubs, err := s.RegistryService.ListPublishers(ctx, s.Client, nil)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to retrieve list of publishers w/ err: %v", err)
@@ -148,6 +155,8 @@ func (s *DripStrictServerImplementation) ListPublishers(
 
 func (s *DripStrictServerImplementation) DeletePublisher(
 	ctx context.Context, request drip.DeletePublisherRequestObject) (drip.DeletePublisherResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.DeletePublisher")()
+
 	err := s.RegistryService.DeletePublisher(ctx, s.Client, request.PublisherId)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to delete publisher with ID %s w/ err: %v", request.PublisherId, err)
@@ -160,6 +169,7 @@ func (s *DripStrictServerImplementation) DeletePublisher(
 
 func (s *DripStrictServerImplementation) GetPublisher(
 	ctx context.Context, request drip.GetPublisherRequestObject) (drip.GetPublisherResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.GetPublisher")()
 
 	publisherId := request.PublisherId
 	publisher, err := s.RegistryService.GetPublisher(ctx, s.Client, request.PublisherId)
@@ -178,6 +188,7 @@ func (s *DripStrictServerImplementation) GetPublisher(
 
 func (s *DripStrictServerImplementation) UpdatePublisher(
 	ctx context.Context, request drip.UpdatePublisherRequestObject) (drip.UpdatePublisherResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.UpdatePublisher")()
 
 	updateOne := mapper.ApiUpdatePublisherToUpdateFields(request.PublisherId, request.Body, s.Client)
 	updatedPublisher, err := s.RegistryService.UpdatePublisher(ctx, s.Client, updateOne)
@@ -192,6 +203,7 @@ func (s *DripStrictServerImplementation) UpdatePublisher(
 
 func (s *DripStrictServerImplementation) CreateNode(
 	ctx context.Context, request drip.CreateNodeRequestObject) (drip.CreateNodeResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.CreateNode")()
 
 	node, err := s.RegistryService.CreateNode(ctx, s.Client, request.PublisherId, request.Body)
 	if mapper.IsErrorBadRequest(err) || ent.IsConstraintError(err) {
@@ -210,6 +222,7 @@ func (s *DripStrictServerImplementation) CreateNode(
 
 func (s *DripStrictServerImplementation) ListNodesForPublisher(
 	ctx context.Context, request drip.ListNodesForPublisherRequestObject) (drip.ListNodesForPublisherResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.ListNodesForPublisher")()
 
 	nodeResults, err := s.RegistryService.ListNodes(
 		ctx, s.Client /*page=*/, 1 /*limit=*/, 10, &entity.NodeFilter{
@@ -238,10 +251,7 @@ func (s *DripStrictServerImplementation) ListNodesForPublisher(
 
 func (s *DripStrictServerImplementation) ListAllNodes(
 	ctx context.Context, request drip.ListAllNodesRequestObject) (drip.ListAllNodesResponseObject, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("DripStrictServerImplementation.ListAllNodes")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.ListAllNodes")()
 
 	err := s.MixpanelService.Track(ctx, []*mixpanel.Event{
 		s.MixpanelService.NewEvent("List All Nodes", "", map[string]any{
@@ -316,6 +326,7 @@ func (s *DripStrictServerImplementation) ListAllNodes(
 
 // SearchNodes implements drip.StrictServerInterface.
 func (s *DripStrictServerImplementation) SearchNodes(ctx context.Context, request drip.SearchNodesRequestObject) (drip.SearchNodesResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.SearchNodes")()
 
 	// Set default values for pagination parameters
 	page := 1
@@ -375,6 +386,7 @@ func (s *DripStrictServerImplementation) SearchNodes(ctx context.Context, reques
 
 func (s *DripStrictServerImplementation) DeleteNode(
 	ctx context.Context, request drip.DeleteNodeRequestObject) (drip.DeleteNodeResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.DeleteNode")()
 
 	err := s.RegistryService.DeleteNode(ctx, s.Client, request.NodeId)
 	if err != nil && !ent.IsNotFound(err) {
@@ -388,6 +400,7 @@ func (s *DripStrictServerImplementation) DeleteNode(
 
 func (s *DripStrictServerImplementation) GetNode(
 	ctx context.Context, request drip.GetNodeRequestObject) (drip.GetNodeResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.GetNode")()
 
 	node, err := s.RegistryService.GetNode(ctx, s.Client, request.NodeId)
 	if ent.IsNotFound(err) {
@@ -415,6 +428,7 @@ func (s *DripStrictServerImplementation) GetNode(
 
 func (s *DripStrictServerImplementation) UpdateNode(
 	ctx context.Context, request drip.UpdateNodeRequestObject) (drip.UpdateNodeResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.UpdateNode")()
 
 	updateOneFunc := func(client *ent.Client) *ent.NodeUpdateOne {
 		return mapper.ApiUpdateNodeToUpdateFields(request.NodeId, request.Body, client)
@@ -435,6 +449,7 @@ func (s *DripStrictServerImplementation) UpdateNode(
 
 func (s *DripStrictServerImplementation) ListNodeVersions(
 	ctx context.Context, request drip.ListNodeVersionsRequestObject) (drip.ListNodeVersionsResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.ListNodeVersions")()
 
 	apiStatus := mapper.ApiNodeVersionStatusesToDbNodeVersionStatuses(request.Params.Statuses)
 
@@ -459,6 +474,7 @@ func (s *DripStrictServerImplementation) ListNodeVersions(
 
 func (s *DripStrictServerImplementation) PublishNodeVersion(
 	ctx context.Context, request drip.PublishNodeVersionRequestObject) (drip.PublishNodeVersionResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.PublishNodeVersion")()
 
 	// Check if node exists, create if not
 	node, err := s.RegistryService.GetNode(ctx, s.Client, request.NodeId)
@@ -514,6 +530,7 @@ func (s *DripStrictServerImplementation) PublishNodeVersion(
 
 func (s *DripStrictServerImplementation) UpdateNodeVersion(
 	ctx context.Context, request drip.UpdateNodeVersionRequestObject) (drip.UpdateNodeVersionResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.UpdateNodeVersion")()
 
 	// Update node version
 	updateOne := mapper.ApiUpdateNodeVersionToUpdateFields(request.VersionId, request.Body, s.Client)
@@ -537,6 +554,7 @@ func (s *DripStrictServerImplementation) UpdateNodeVersion(
 
 // PostNodeVersionReview implements drip.StrictServerInterface.
 func (s *DripStrictServerImplementation) PostNodeReview(ctx context.Context, request drip.PostNodeReviewRequestObject) (drip.PostNodeReviewResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.PostNodeReview")()
 
 	if request.Params.Star < 1 || request.Params.Star > 5 {
 		log.Ctx(ctx).Error().Msgf("Invalid star received: %d", request.Params.Star)
@@ -563,6 +581,7 @@ func (s *DripStrictServerImplementation) PostNodeReview(ctx context.Context, req
 
 func (s *DripStrictServerImplementation) DeleteNodeVersion(
 	ctx context.Context, request drip.DeleteNodeVersionRequestObject) (drip.DeleteNodeVersionResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.DeleteNodeVersion")()
 
 	nodeVersion, err := s.RegistryService.GetNodeVersion(ctx, s.Client, request.VersionId)
 	if err != nil {
@@ -582,6 +601,7 @@ func (s *DripStrictServerImplementation) DeleteNodeVersion(
 
 func (s *DripStrictServerImplementation) GetNodeVersion(
 	ctx context.Context, request drip.GetNodeVersionRequestObject) (drip.GetNodeVersionResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.GetNodeVersion")()
 
 	nodeVersion, err := s.RegistryService.GetNodeVersionByVersion(ctx, s.Client, request.NodeId, request.VersionId)
 	if ent.IsNotFound(err) {
@@ -604,6 +624,7 @@ func (s *DripStrictServerImplementation) GetNodeVersion(
 
 func (s *DripStrictServerImplementation) ListPersonalAccessTokens(
 	ctx context.Context, request drip.ListPersonalAccessTokensRequestObject) (drip.ListPersonalAccessTokensResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.ListPersonalAccessTokens")()
 
 	// List personal access tokens
 	personalAccessTokens, err := s.RegistryService.ListPersonalAccessTokens(ctx, s.Client, request.PublisherId)
@@ -625,6 +646,7 @@ func (s *DripStrictServerImplementation) ListPersonalAccessTokens(
 
 func (s *DripStrictServerImplementation) CreatePersonalAccessToken(
 	ctx context.Context, request drip.CreatePersonalAccessTokenRequestObject) (drip.CreatePersonalAccessTokenResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.CreatePersonalAccessToken")()
 
 	// Create personal access token
 	description := ""
@@ -649,6 +671,7 @@ func (s *DripStrictServerImplementation) CreatePersonalAccessToken(
 
 func (s *DripStrictServerImplementation) DeletePersonalAccessToken(
 	ctx context.Context, request drip.DeletePersonalAccessTokenRequestObject) (drip.DeletePersonalAccessTokenResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.DeletePersonalAccessToken")()
 
 	// Retrieve user ID from context
 	userId, err := mapper.GetUserIDFromContext(ctx)
@@ -688,6 +711,8 @@ func (s *DripStrictServerImplementation) DeletePersonalAccessToken(
 
 func (s *DripStrictServerImplementation) InstallNode(
 	ctx context.Context, request drip.InstallNodeRequestObject) (drip.InstallNodeResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.InstallNode")()
+
 	// TODO(robinhuang): Refactor to separate class
 	// Get node
 	node, err := s.RegistryService.GetNode(ctx, s.Client, request.NodeId)
@@ -761,6 +786,7 @@ func (s *DripStrictServerImplementation) InstallNode(
 
 func (s *DripStrictServerImplementation) GetPermissionOnPublisherNodes(
 	ctx context.Context, request drip.GetPermissionOnPublisherNodesRequestObject) (drip.GetPermissionOnPublisherNodesResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.GetPermissionOnPublisherNodes")()
 
 	err := s.RegistryService.AssertNodeBelongsToPublisher(ctx, s.Client, request.PublisherId, request.NodeId)
 	if err != nil {
@@ -778,6 +804,8 @@ func (s *DripStrictServerImplementation) GetPermissionOnPublisher(
 
 // BanPublisher implements drip.StrictServerInterface.
 func (s *DripStrictServerImplementation) BanPublisher(ctx context.Context, request drip.BanPublisherRequestObject) (drip.BanPublisherResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.BanPublisher")()
+
 	userId, err := mapper.GetUserIDFromContext(ctx)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
@@ -814,6 +842,8 @@ func (s *DripStrictServerImplementation) BanPublisher(ctx context.Context, reque
 
 // BanPublisherNode implements drip.StrictServerInterface.
 func (s *DripStrictServerImplementation) BanPublisherNode(ctx context.Context, request drip.BanPublisherNodeRequestObject) (drip.BanPublisherNodeResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.BanPublisherNode")()
+
 	userId, err := mapper.GetUserIDFromContext(ctx)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
@@ -851,6 +881,8 @@ func (s *DripStrictServerImplementation) BanPublisherNode(ctx context.Context, r
 
 func (s *DripStrictServerImplementation) AdminUpdateNodeVersion(
 	ctx context.Context, request drip.AdminUpdateNodeVersionRequestObject) (drip.AdminUpdateNodeVersionResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.AdminUpdateNodeVersion")()
+
 	userId, err := mapper.GetUserIDFromContext(ctx)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
@@ -896,6 +928,8 @@ func (s *DripStrictServerImplementation) AdminUpdateNodeVersion(
 
 func (s *DripStrictServerImplementation) SecurityScan(
 	ctx context.Context, request drip.SecurityScanRequestObject) (drip.SecurityScanResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.SecurityScan")()
+
 	minAge := 30 * time.Minute
 	if request.Params.MinAge != nil {
 		minAge = *request.Params.MinAge
@@ -929,6 +963,7 @@ func (s *DripStrictServerImplementation) SecurityScan(
 
 func (s *DripStrictServerImplementation) ListAllNodeVersions(
 	ctx context.Context, request drip.ListAllNodeVersionsRequestObject) (drip.ListAllNodeVersionsResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.ListAllNodeVersions")()
 
 	// Default values for pagination
 	page := 1
@@ -1005,6 +1040,8 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 }
 
 func (s *DripStrictServerImplementation) ReindexNodes(ctx context.Context, request drip.ReindexNodesRequestObject) (res drip.ReindexNodesResponseObject, err error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.ReindexNodes")()
+
 	reindexCtx := drip_logging.ReuseContextLogger(ctx, context.Background())
 	err = s.RegistryService.ReindexAllNodesBackground(reindexCtx, s.Client)
 	if err != nil {
@@ -1019,6 +1056,7 @@ func (s *DripStrictServerImplementation) ReindexNodes(ctx context.Context, reque
 // CreateComfyNodes bulk-stores comfy-nodes extraction result for a node version
 func (impl *DripStrictServerImplementation) CreateComfyNodes(
 	ctx context.Context, request drip.CreateComfyNodesRequestObject) (res drip.CreateComfyNodesResponseObject, err error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.CreateComfyNodes")()
 
 	cb := mapper.ApiComfyNodeCloudBuildToDbComfyNodeCloudBuild(request.Body.CloudBuildInfo)
 	// Check if extraction was marked as unsuccessful
@@ -1065,6 +1103,7 @@ func (impl *DripStrictServerImplementation) CreateComfyNodes(
 // GetComfyNode returns a specific comfy-node of a certain node version
 func (impl *DripStrictServerImplementation) GetComfyNode(
 	ctx context.Context, request drip.GetComfyNodeRequestObject) (res drip.GetComfyNodeResponseObject, err error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.GetComfyNode")()
 
 	// Retrieve the comfy-node from the registry
 	n, err := impl.RegistryService.GetComfyNode(ctx, impl.Client, request.NodeId, request.Version, request.ComfyNodeId)
@@ -1091,6 +1130,7 @@ func (impl *DripStrictServerImplementation) GetComfyNode(
 // ComfyNodesBackfill triggers a backfill process for comfy-nodes
 func (impl *DripStrictServerImplementation) ComfyNodesBackfill(
 	ctx context.Context, request drip.ComfyNodesBackfillRequestObject) (drip.ComfyNodesBackfillResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.ComfyNodesBackfill")()
 
 	// Trigger the backfill process with a specified maximum node
 	err := impl.RegistryService.TriggerComfyNodesBackfill(ctx, impl.Client, request.Params.MaxNode)

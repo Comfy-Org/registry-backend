@@ -3,10 +3,10 @@ package middleware
 import (
 	"context"
 	drip_logging "registry-backend/logging"
+	"registry-backend/tracing"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/rs/zerolog"
 )
 
@@ -20,10 +20,7 @@ func generateFallbackCorrelationID() string {
 // TracingMiddleware is a middleware that adds a trace ID to the context
 func TracingMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if txn := newrelic.FromContext(c.Request().Context()); txn != nil {
-			segment := txn.StartSegment("TracingMiddleware")
-			defer segment.End()
-		}
+		defer tracing.TraceDefaultSegment(c.Request().Context(), "TracingMiddleware")()
 
 		traceID := c.Request().Header.Get("X-Cloud-Trace-Context")
 

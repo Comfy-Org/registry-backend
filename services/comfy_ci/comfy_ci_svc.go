@@ -10,6 +10,7 @@ import (
 	"registry-backend/ent/gitcommit"
 	"registry-backend/mapper"
 	drip_metric "registry-backend/server/middleware/metric"
+	"registry-backend/tracing"
 	"strings"
 	"time"
 
@@ -34,6 +35,8 @@ func NewComfyCIService(config *config.Config) *ComfyCIService {
 
 // ProcessCIRequest handles the incoming request and creates/updates the necessary entities.
 func (s *ComfyCIService) ProcessCIRequest(ctx context.Context, client *ent.Client, req *drip.PostUploadArtifactRequestObject) error {
+	defer tracing.TraceDefaultSegment(ctx, "ComfyCIService.ProcessCIRequest")()
+
 	return db.WithTx(ctx, client, func(tx *ent.Tx) error {
 		existingCommit, err := tx.GitCommit.Query().Where(gitcommit.CommitHashEQ(req.Body.CommitHash)).Where(gitcommit.RepoNameEQ(req.Body.Repo)).Only(ctx)
 		if ent.IsNotSingular(err) {
@@ -119,6 +122,8 @@ func (s *ComfyCIService) ProcessCIRequest(ctx context.Context, client *ent.Clien
 
 // UpsertCommit creates or updates a GitCommit entity.
 func (s *ComfyCIService) UpsertCommit(ctx context.Context, client *ent.Client, hash, branchName, repoName, commitIsoTime, commitMessage, prNumber, author string) (uuid.UUID, error) {
+	defer tracing.TraceDefaultSegment(ctx, "ComfyCIService.UpsertCommit")()
+
 	log.Ctx(ctx).Info().Msgf("Upserting commit %s", hash)
 	commitTime, err := time.Parse(time.RFC3339, commitIsoTime)
 	if err != nil {
@@ -149,6 +154,8 @@ func (s *ComfyCIService) UpsertCommit(ctx context.Context, client *ent.Client, h
 
 // UpsertRunResult creates or updates a ActionRunResult entity.
 func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client, gitcommit *ent.GitCommit, os, cudaVersion, workflowName, runId, jobId string, startTime, endTime int64, avgVram, peakVram int, pythonVersion, pytorchVersion, jobTriggerUser, comfyRunFlags string, status drip.WorkflowRunStatus, machineStats *drip.MachineStats) (uuid.UUID, error) {
+	defer tracing.TraceDefaultSegment(ctx, "ComfyCIService.UpsertRunResult")()
+
 	log.Ctx(ctx).Info().Msgf("Upserting workflow result for commit %s", gitcommit.CommitHash)
 	dbWorkflowRunStatus, err := mapper.ApiWorkflowRunStatusToDb(status)
 	if err != nil {
@@ -180,6 +187,8 @@ func (s *ComfyCIService) UpsertRunResult(ctx context.Context, client *ent.Client
 }
 
 func (s *ComfyCIService) UpdateWorkflowResult(ctx context.Context, client *ent.Client, id uuid.UUID, status drip.WorkflowRunStatus, files []*drip.StorageFile) error {
+	defer tracing.TraceDefaultSegment(ctx, "ComfyCIService.UpdateWorkflowResult")()
+
 	dbWorkflowRunStatus, err := mapper.ApiWorkflowRunStatusToDb(status)
 	if err != nil {
 		return err
@@ -199,6 +208,8 @@ func (s *ComfyCIService) UpdateWorkflowResult(ctx context.Context, client *ent.C
 
 // UpsertStorageFile creates or updates a RunFile entity.
 func (s *ComfyCIService) UpsertStorageFile(ctx context.Context, client *ent.Client, publicUrl, bucketName, filePath, fileType string) (*ent.StorageFile, error) {
+	defer tracing.TraceDefaultSegment(ctx, "ComfyCIService.UpsertStorageFile")()
+
 	log.Ctx(ctx).Info().Msgf("Upserting storage file for URL %s", publicUrl)
 	return client.StorageFile.
 		Create().
@@ -217,6 +228,8 @@ type ObjectInfo struct {
 
 // GetPublicUrlForOutputFiles downloads the artifact, extracts it, and uploads each file to GCS
 func GetPublicUrlForOutputFiles(ctx context.Context, bucketName, objects string) ([]ObjectInfo, error) {
+	defer tracing.TraceDefaultSegment(ctx, "GetPublicUrlForOutputFiles")()
+
 	objectArr := strings.Split(objects, ",")
 	var result []ObjectInfo
 	for _, object := range objectArr {
