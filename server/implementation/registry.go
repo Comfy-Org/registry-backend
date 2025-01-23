@@ -1042,8 +1042,11 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 func (s *DripStrictServerImplementation) ReindexNodes(ctx context.Context, request drip.ReindexNodesRequestObject) (res drip.ReindexNodesResponseObject, err error) {
 	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.ReindexNodes")()
 
+	// create new context with logger from original Context
 	reindexCtx := drip_logging.ReuseContextLogger(ctx, context.Background())
-	err = s.RegistryService.ReindexAllNodesBackground(reindexCtx, s.Client)
+
+	err = s.RegistryService.ReindexAllNodesBackground(
+		reindexCtx, s.Client, request.Params.MaxBatch, request.Params.MinAge)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to trigger reindex all nodes w/ err: %v", err)
 		return drip.ReindexNodes500JSONResponse{Message: "Failed to trigger reindex nodes", Error: err.Error()}, nil

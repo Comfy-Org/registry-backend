@@ -325,7 +325,7 @@ func (s *RegistryService) CreateNode(ctx context.Context, client *ent.Client, pu
 			return fmt.Errorf("failed to create node: %w", err)
 		}
 
-		err = s.algolia.IndexNodes(ctx, createdNode)
+		err = s.indexNodes(ctx, tx.Client(), createdNode)
 		if err != nil {
 			return fmt.Errorf("failed to index node: %w", err)
 		}
@@ -669,6 +669,7 @@ func (s *RegistryService) CreateComfyNodes(
 		nv, err := tx.NodeVersion.Query().
 			Where(nodeversion.VersionEQ(nodeVersion)).
 			Where(nodeversion.NodeIDEQ(nodeID)).
+			WithComfyNodes().
 			ForUpdate().
 			Only(ctx)
 		if err != nil {
@@ -1049,7 +1050,7 @@ func (s *RegistryService) BanPublisher(ctx context.Context, client *ent.Client, 
 			return fmt.Errorf("fail to update nodes: %w", err)
 		}
 
-		err = s.algolia.IndexNodes(ctx, nodes...)
+		err = s.indexNodes(ctx, tx.Client(), nodes...)
 		if err != nil {
 			return fmt.Errorf("failed to index node: %w", err)
 		}
@@ -1087,7 +1088,7 @@ func (s *RegistryService) BanNode(ctx context.Context, client *ent.Client, publi
 			return fmt.Errorf("fail to ban node: %w", err)
 		}
 
-		err = s.algolia.IndexNodes(ctx, n)
+		err = s.indexNodes(ctx, tx.Client(), n)
 		if err != nil {
 			return fmt.Errorf("failed to index node: %w", err)
 		}
@@ -1129,53 +1130,100 @@ func (s *RegistryService) AssertPublisherBanned(ctx context.Context, client *ent
 	return nil
 }
 
-func (s *RegistryService) ReindexAllNodes(ctx context.Context, client *ent.Client) error {
-	defer tracing.TraceDefaultSegment(ctx, "RegistryService.ReindexAllNodes")()
-
-	log.Ctx(ctx).Info().Msgf("reindexing nodes")
-	nodes, err := s.decorateNodeQueryWithLatestVersion(client.Node.Query()).All(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to fetch all nodes: %w", err)
-	}
-
-	log.Ctx(ctx).Info().Msgf("reindexing %d number of nodes", len(nodes))
-	err = s.algolia.IndexNodes(ctx, nodes...)
-	if err != nil {
-		return fmt.Errorf("failed to reindex all nodes: %w", err)
-	}
-
-	var nvs []*ent.NodeVersion
-	for _, n := range nodes {
-		nvs = append(nvs, n.Edges.Versions...)
-	}
-
-	log.Ctx(ctx).Info().Msgf("reindexing %d number of node versions", len(nvs))
-	err = s.algolia.IndexNodeVersions(ctx, nvs...)
-	if err != nil {
-		return fmt.Errorf("failed to reindex all node versions: %w", err)
-	}
-
-	return nil
-}
-
+// reindexLock is used to prevent multiple reindexing at the same time
 var reindexLock = sync.Mutex{}
 
-func (s *RegistryService) ReindexAllNodesBackground(ctx context.Context, client *ent.Client) (err error) {
+// ReindexAllNodesBackground initiates reindexing of all nodes in a background goroutine
+func (s *RegistryService) ReindexAllNodesBackground(
+	ctx context.Context, client *ent.Client, maxBatch *int, minAge *time.Duration) error {
 	defer tracing.TraceDefaultSegment(ctx, "RegistryService.ReindexAllNodesBackground")()
 
+	// Lock to prevent multiple reindexing operations running simultaneously
 	if !reindexLock.TryLock() {
 		return fmt.Errorf("another reindex is in progress")
 	}
 	defer reindexLock.Unlock()
 
+	// Start the reindexing process in a background goroutine
 	go func() {
-		err = s.ReindexAllNodes(ctx, client)
+		err := s.ReindexAllNodes(ctx, client, maxBatch, minAge)
 		if err != nil {
 			log.Ctx(ctx).Err(err).Msg("failed to reindex all nodes in background")
+		} else {
+			log.Ctx(ctx).Info().Msg("reindexing nodes in background successful")
 		}
-		log.Ctx(ctx).Info().Msg("reindexing nodes in background succesful")
 	}()
 
+	return nil
+}
+
+// ReindexAllNodes processes reindexing of all nodes to Algolia
+func (s *RegistryService) ReindexAllNodes(
+	ctx context.Context, client *ent.Client, maxBatch *int, minAge *time.Duration) error {
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.ReindexAllNodes")()
+
+	log.Ctx(ctx).Info().Msg("starting node reindexing")
+
+	// Lock to prevent multiple reindexing operations running simultaneously
+	if !reindexLock.TryLock() {
+		return fmt.Errorf("another reindex is in progress")
+	}
+	defer reindexLock.Unlock()
+
+	nodeQuery := client.Node.Query().Order(node.ByID())
+
+	// Apply a batch limit if specified
+	if maxBatch != nil {
+		nodeQuery = nodeQuery.Limit(*maxBatch)
+	}
+
+	// Filter nodes by minimum age if provided
+	if minAge != nil {
+		maxTime := time.Now().Add(-*minAge)
+		nodeQuery = nodeQuery.Where(node.Or(
+			node.LastAlgoliaIndexTimeLTE(maxTime),
+			node.LastAlgoliaIndexTimeIsNil(),
+		))
+	}
+
+	count, lastNodeID := 0, ""
+
+	// Process nodes in batches
+	for {
+		// Fetch nodes with IDs greater than the last processed node ID
+		nodeQuery = nodeQuery.Where(node.IDGT(lastNodeID))
+		nodes, err := s.decorateNodeQueryWithLatestVersion(nodeQuery).All(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to fetch nodes: %w", err)
+		}
+
+		// Break if no more nodes to process
+		if len(nodes) == 0 {
+			break
+		}
+
+		// Update the last processed node ID and increment the count
+		count += len(nodes)
+		lastNodeID = nodes[len(nodes)-1].ID
+
+		// Index the fetched nodes
+		if err = s.indexNodes(ctx, client, nodes...); err != nil {
+			return fmt.Errorf("failed to reindex nodes: %w", err)
+		}
+
+		// Collect and reindex associated node versions
+		var nvs []*ent.NodeVersion
+		for _, n := range nodes {
+			nvs = append(nvs, n.Edges.Versions...)
+		}
+		log.Ctx(ctx).Info().Msgf("reindexing %d node versions", len(nvs))
+		if err = s.algolia.IndexNodeVersions(ctx, nvs...); err != nil {
+			return fmt.Errorf("failed to reindex node versions: %w", err)
+		}
+	}
+
+	// Log the completion of the reindexing process
+	log.Ctx(ctx).Info().Msgf("finished reindexing %d nodes", count)
 	return nil
 }
 
@@ -1191,10 +1239,34 @@ func (s *RegistryService) indexNodeWithLatestVersion(
 	if err != nil {
 		return nil, fmt.Errorf("failed to query node: %w", err)
 	}
-	if err := s.algolia.IndexNodes(ctx, n); err != nil {
+	if err := s.indexNodes(ctx, client, n); err != nil {
 		return nil, fmt.Errorf("failed to update node: %w", err)
 	}
 	return n, nil
+}
+
+func (s *RegistryService) indexNodes(ctx context.Context, client *ent.Client, nodes ...*ent.Node) (err error) {
+	log.Ctx(ctx).Info().Msgf("indexing %d number of nodes", len(nodes))
+
+	err = s.algolia.IndexNodes(ctx, nodes...)
+	if err != nil {
+		return fmt.Errorf("failed to index %d number of nodes to algolia: %w", len(nodes), err)
+	}
+
+	ids := []string{}
+	for _, n := range nodes {
+		ids = append(ids, n.ID)
+	}
+
+	_, err = client.Node.Update().
+		Where(node.IDIn(ids...)).
+		SetLastAlgoliaIndexTime(time.Now()).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update last algolia index time for %d number of nodes: %w", len(nodes), err)
+	}
+
+	return
 }
 
 func (s *RegistryService) decorateNodeQueryWithLatestVersion(q *ent.NodeQuery) *ent.NodeQuery {

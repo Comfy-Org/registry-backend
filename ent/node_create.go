@@ -212,6 +212,20 @@ func (nc *NodeCreate) SetNillableStatusDetail(s *string) *NodeCreate {
 	return nc
 }
 
+// SetLastAlgoliaIndexTime sets the "last_algolia_index_time" field.
+func (nc *NodeCreate) SetLastAlgoliaIndexTime(t time.Time) *NodeCreate {
+	nc.mutation.SetLastAlgoliaIndexTime(t)
+	return nc
+}
+
+// SetNillableLastAlgoliaIndexTime sets the "last_algolia_index_time" field if the given value is not nil.
+func (nc *NodeCreate) SetNillableLastAlgoliaIndexTime(t *time.Time) *NodeCreate {
+	if t != nil {
+		nc.SetLastAlgoliaIndexTime(*t)
+	}
+	return nc
+}
+
 // SetID sets the "id" field.
 func (nc *NodeCreate) SetID(s string) *NodeCreate {
 	nc.mutation.SetID(s)
@@ -456,6 +470,10 @@ func (nc *NodeCreate) createSpec() (*Node, *sqlgraph.CreateSpec) {
 	if value, ok := nc.mutation.StatusDetail(); ok {
 		_spec.SetField(node.FieldStatusDetail, field.TypeString, value)
 		_node.StatusDetail = value
+	}
+	if value, ok := nc.mutation.LastAlgoliaIndexTime(); ok {
+		_spec.SetField(node.FieldLastAlgoliaIndexTime, field.TypeTime, value)
+		_node.LastAlgoliaIndexTime = value
 	}
 	if nodes := nc.mutation.PublisherIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -786,6 +804,24 @@ func (u *NodeUpsert) ClearStatusDetail() *NodeUpsert {
 	return u
 }
 
+// SetLastAlgoliaIndexTime sets the "last_algolia_index_time" field.
+func (u *NodeUpsert) SetLastAlgoliaIndexTime(v time.Time) *NodeUpsert {
+	u.Set(node.FieldLastAlgoliaIndexTime, v)
+	return u
+}
+
+// UpdateLastAlgoliaIndexTime sets the "last_algolia_index_time" field to the value that was provided on create.
+func (u *NodeUpsert) UpdateLastAlgoliaIndexTime() *NodeUpsert {
+	u.SetExcluded(node.FieldLastAlgoliaIndexTime)
+	return u
+}
+
+// ClearLastAlgoliaIndexTime clears the value of the "last_algolia_index_time" field.
+func (u *NodeUpsert) ClearLastAlgoliaIndexTime() *NodeUpsert {
+	u.SetNull(node.FieldLastAlgoliaIndexTime)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -1100,6 +1136,27 @@ func (u *NodeUpsertOne) UpdateStatusDetail() *NodeUpsertOne {
 func (u *NodeUpsertOne) ClearStatusDetail() *NodeUpsertOne {
 	return u.Update(func(s *NodeUpsert) {
 		s.ClearStatusDetail()
+	})
+}
+
+// SetLastAlgoliaIndexTime sets the "last_algolia_index_time" field.
+func (u *NodeUpsertOne) SetLastAlgoliaIndexTime(v time.Time) *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetLastAlgoliaIndexTime(v)
+	})
+}
+
+// UpdateLastAlgoliaIndexTime sets the "last_algolia_index_time" field to the value that was provided on create.
+func (u *NodeUpsertOne) UpdateLastAlgoliaIndexTime() *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateLastAlgoliaIndexTime()
+	})
+}
+
+// ClearLastAlgoliaIndexTime clears the value of the "last_algolia_index_time" field.
+func (u *NodeUpsertOne) ClearLastAlgoliaIndexTime() *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.ClearLastAlgoliaIndexTime()
 	})
 }
 
@@ -1584,6 +1641,27 @@ func (u *NodeUpsertBulk) UpdateStatusDetail() *NodeUpsertBulk {
 func (u *NodeUpsertBulk) ClearStatusDetail() *NodeUpsertBulk {
 	return u.Update(func(s *NodeUpsert) {
 		s.ClearStatusDetail()
+	})
+}
+
+// SetLastAlgoliaIndexTime sets the "last_algolia_index_time" field.
+func (u *NodeUpsertBulk) SetLastAlgoliaIndexTime(v time.Time) *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetLastAlgoliaIndexTime(v)
+	})
+}
+
+// UpdateLastAlgoliaIndexTime sets the "last_algolia_index_time" field to the value that was provided on create.
+func (u *NodeUpsertBulk) UpdateLastAlgoliaIndexTime() *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateLastAlgoliaIndexTime()
+	})
+}
+
+// ClearLastAlgoliaIndexTime clears the value of the "last_algolia_index_time" field.
+func (u *NodeUpsertBulk) ClearLastAlgoliaIndexTime() *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.ClearLastAlgoliaIndexTime()
 	})
 }
 

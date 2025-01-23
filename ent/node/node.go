@@ -48,6 +48,8 @@ const (
 	FieldStatus = "status"
 	// FieldStatusDetail holds the string denoting the status_detail field in the database.
 	FieldStatusDetail = "status_detail"
+	// FieldLastAlgoliaIndexTime holds the string denoting the last_algolia_index_time field in the database.
+	FieldLastAlgoliaIndexTime = "last_algolia_index_time"
 	// EdgePublisher holds the string denoting the publisher edge name in mutations.
 	EdgePublisher = "publisher"
 	// EdgeVersions holds the string denoting the versions edge name in mutations.
@@ -98,6 +100,7 @@ var Columns = []string{
 	FieldTotalReview,
 	FieldStatus,
 	FieldStatusDetail,
+	FieldLastAlgoliaIndexTime,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -220,6 +223,11 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByStatusDetail orders the results by the status_detail field.
 func ByStatusDetail(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatusDetail, opts...).ToFunc()
+}
+
+// ByLastAlgoliaIndexTime orders the results by the last_algolia_index_time field.
+func ByLastAlgoliaIndexTime(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastAlgoliaIndexTime, opts...).ToFunc()
 }
 
 // ByPublisherField orders the results by publisher field.

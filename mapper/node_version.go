@@ -59,15 +59,6 @@ func DbNodeVersionToApiNodeVersion(dbNodeVersion *ent.NodeVersion) *drip.NodeVer
 		downloadUrl = dbNodeVersion.Edges.StorageFile.FileURL
 	}
 
-	var comfyNodes *map[string]drip.ComfyNode
-	if len(dbNodeVersion.Edges.ComfyNodes) > 0 {
-		cn := make(map[string]drip.ComfyNode, len(dbNodeVersion.Edges.ComfyNodes))
-		for _, v := range dbNodeVersion.Edges.ComfyNodes {
-			cn[v.Name] = *DBComfyNodeToApiComfyNode(v)
-		}
-		comfyNodes = &cn
-	}
-
 	apiVersion := &drip.NodeVersion{
 		Id:           &id,
 		Version:      &dbNodeVersion.Version,
@@ -78,7 +69,6 @@ func DbNodeVersionToApiNodeVersion(dbNodeVersion *ent.NodeVersion) *drip.NodeVer
 		Status:       status,
 		StatusReason: &dbNodeVersion.StatusReason,
 		DownloadUrl:  &downloadUrl,
-		ComfyNodes:   comfyNodes,
 		NodeId:       &dbNodeVersion.NodeID,
 	}
 	return apiVersion

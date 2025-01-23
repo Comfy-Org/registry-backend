@@ -136,6 +136,11 @@ func StatusDetail(v string) predicate.Node {
 	return predicate.Node(sql.FieldEQ(FieldStatusDetail, v))
 }
 
+// LastAlgoliaIndexTime applies equality check predicate on the "last_algolia_index_time" field. It's identical to LastAlgoliaIndexTimeEQ.
+func LastAlgoliaIndexTime(v time.Time) predicate.Node {
+	return predicate.Node(sql.FieldEQ(FieldLastAlgoliaIndexTime, v))
+}
+
 // CreateTimeEQ applies the EQ predicate on the "create_time" field.
 func CreateTimeEQ(v time.Time) predicate.Node {
 	return predicate.Node(sql.FieldEQ(FieldCreateTime, v))
@@ -999,6 +1004,56 @@ func StatusDetailEqualFold(v string) predicate.Node {
 // StatusDetailContainsFold applies the ContainsFold predicate on the "status_detail" field.
 func StatusDetailContainsFold(v string) predicate.Node {
 	return predicate.Node(sql.FieldContainsFold(FieldStatusDetail, v))
+}
+
+// LastAlgoliaIndexTimeEQ applies the EQ predicate on the "last_algolia_index_time" field.
+func LastAlgoliaIndexTimeEQ(v time.Time) predicate.Node {
+	return predicate.Node(sql.FieldEQ(FieldLastAlgoliaIndexTime, v))
+}
+
+// LastAlgoliaIndexTimeNEQ applies the NEQ predicate on the "last_algolia_index_time" field.
+func LastAlgoliaIndexTimeNEQ(v time.Time) predicate.Node {
+	return predicate.Node(sql.FieldNEQ(FieldLastAlgoliaIndexTime, v))
+}
+
+// LastAlgoliaIndexTimeIn applies the In predicate on the "last_algolia_index_time" field.
+func LastAlgoliaIndexTimeIn(vs ...time.Time) predicate.Node {
+	return predicate.Node(sql.FieldIn(FieldLastAlgoliaIndexTime, vs...))
+}
+
+// LastAlgoliaIndexTimeNotIn applies the NotIn predicate on the "last_algolia_index_time" field.
+func LastAlgoliaIndexTimeNotIn(vs ...time.Time) predicate.Node {
+	return predicate.Node(sql.FieldNotIn(FieldLastAlgoliaIndexTime, vs...))
+}
+
+// LastAlgoliaIndexTimeGT applies the GT predicate on the "last_algolia_index_time" field.
+func LastAlgoliaIndexTimeGT(v time.Time) predicate.Node {
+	return predicate.Node(sql.FieldGT(FieldLastAlgoliaIndexTime, v))
+}
+
+// LastAlgoliaIndexTimeGTE applies the GTE predicate on the "last_algolia_index_time" field.
+func LastAlgoliaIndexTimeGTE(v time.Time) predicate.Node {
+	return predicate.Node(sql.FieldGTE(FieldLastAlgoliaIndexTime, v))
+}
+
+// LastAlgoliaIndexTimeLT applies the LT predicate on the "last_algolia_index_time" field.
+func LastAlgoliaIndexTimeLT(v time.Time) predicate.Node {
+	return predicate.Node(sql.FieldLT(FieldLastAlgoliaIndexTime, v))
+}
+
+// LastAlgoliaIndexTimeLTE applies the LTE predicate on the "last_algolia_index_time" field.
+func LastAlgoliaIndexTimeLTE(v time.Time) predicate.Node {
+	return predicate.Node(sql.FieldLTE(FieldLastAlgoliaIndexTime, v))
+}
+
+// LastAlgoliaIndexTimeIsNil applies the IsNil predicate on the "last_algolia_index_time" field.
+func LastAlgoliaIndexTimeIsNil() predicate.Node {
+	return predicate.Node(sql.FieldIsNull(FieldLastAlgoliaIndexTime))
+}
+
+// LastAlgoliaIndexTimeNotNil applies the NotNil predicate on the "last_algolia_index_time" field.
+func LastAlgoliaIndexTimeNotNil() predicate.Node {
+	return predicate.Node(sql.FieldNotNull(FieldLastAlgoliaIndexTime))
 }
 
 // HasPublisher applies the HasEdge predicate on the "publisher" edge.

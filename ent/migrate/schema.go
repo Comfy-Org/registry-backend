@@ -120,6 +120,7 @@ var (
 		{Name: "total_review", Type: field.TypeInt64, Default: 0},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "banned", "deleted"}, Default: "active"},
 		{Name: "status_detail", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "last_algolia_index_time", Type: field.TypeTime, Nullable: true},
 		{Name: "publisher_id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 	}
 	// NodesTable holds the schema information for the "nodes" table.
@@ -130,7 +131,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "nodes_publishers_nodes",
-				Columns:    []*schema.Column{NodesColumns[16]},
+				Columns:    []*schema.Column{NodesColumns[17]},
 				RefColumns: []*schema.Column{PublishersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

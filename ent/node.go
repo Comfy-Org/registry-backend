@@ -52,6 +52,8 @@ type Node struct {
 	Status schema.NodeStatus `json:"status,omitempty"`
 	// StatusDetail holds the value of the "status_detail" field.
 	StatusDetail string `json:"status_detail,omitempty"`
+	// LastAlgoliaIndexTime holds the value of the "last_algolia_index_time" field.
+	LastAlgoliaIndexTime time.Time `json:"last_algolia_index_time,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the NodeQuery when eager-loading is set.
 	Edges        NodeEdges `json:"edges"`
@@ -111,7 +113,7 @@ func (*Node) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case node.FieldID, node.FieldPublisherID, node.FieldName, node.FieldDescription, node.FieldCategory, node.FieldAuthor, node.FieldLicense, node.FieldRepositoryURL, node.FieldIconURL, node.FieldStatus, node.FieldStatusDetail:
 			values[i] = new(sql.NullString)
-		case node.FieldCreateTime, node.FieldUpdateTime:
+		case node.FieldCreateTime, node.FieldUpdateTime, node.FieldLastAlgoliaIndexTime:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -232,6 +234,12 @@ func (n *Node) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				n.StatusDetail = value.String
 			}
+		case node.FieldLastAlgoliaIndexTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_algolia_index_time", values[i])
+			} else if value.Valid {
+				n.LastAlgoliaIndexTime = value.Time
+			}
 		default:
 			n.selectValues.Set(columns[i], values[i])
 		}
@@ -330,6 +338,9 @@ func (n *Node) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("status_detail=")
 	builder.WriteString(n.StatusDetail)
+	builder.WriteString(", ")
+	builder.WriteString("last_algolia_index_time=")
+	builder.WriteString(n.LastAlgoliaIndexTime.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

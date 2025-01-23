@@ -7,6 +7,9 @@ import (
 
 	"registry-backend/config"
 	"registry-backend/drip"
+	"registry-backend/ent"
+	"registry-backend/ent/node"
+	drip_logging "registry-backend/logging"
 	authorization "registry-backend/server/middleware/authorization"
 
 	"github.com/stretchr/testify/assert"
@@ -118,18 +121,6 @@ func TestRegistryNode(t *testing.T) {
 		assert.Equal(t, node.Repository, updatedResponse.Repository)
 	})
 
-	// Test reindexing nodes
-	t.Run("Reindex Nodes", func(t *testing.T) {
-		res, err := withMiddleware(authz, impl.ReindexNodes)(ctx, drip.ReindexNodesRequestObject{})
-		require.NoError(t, err, "Node reindexing failed")
-		assert.IsType(t, drip.ReindexNodes200Response{}, res)
-
-		time.Sleep(1 * time.Second)
-		nodes := impl.mockAlgolia.LastIndexedNodes
-		require.Equal(t, 1, len(nodes))
-		assert.Equal(t, *node.Id, nodes[0].ID)
-	})
-
 	// Test deleting the node
 	t.Run("Delete Node", func(t *testing.T) {
 		res, err := withMiddleware(authz, impl.DeleteNode)(ctx, drip.DeleteNodeRequestObject{
@@ -150,4 +141,114 @@ func TestRegistryNode(t *testing.T) {
 		assert.IsType(t, drip.DeleteNode204Response{}, res)
 	})
 
+}
+
+func TestRegistryNodeReindex(t *testing.T) {
+	client, cleanup := setupDB(t, context.Background())
+	defer cleanup()
+
+	// Initialize server implementation and authorization middleware
+	impl := NewStrictServerImplementationWithMocks(client, &config.Config{})
+	authz := authorization.NewAuthorizationManager(
+		client, impl.RegistryService, impl.NewRelicApp).AuthorizationMiddleware()
+
+	// Setup user context and publisher
+	ctx, _ := setupTestUser(client)
+	ctx = drip_logging.SetupLogger().WithContext(ctx)
+	publisherId, err := setupPublisher(ctx, authz, impl)
+	require.NoError(t, err, "Failed to set up publisher")
+
+	storeRandomNodes := func(t *testing.T, n int) []drip.Node {
+		nodes := make([]drip.Node, 0, n)
+		for i := 0; i < cap(nodes); i++ {
+			node := randomNode()
+			createResponse, err := withMiddleware(authz, impl.CreateNode)(ctx, drip.CreateNodeRequestObject{
+				PublisherId: publisherId,
+				Body:        node,
+			})
+			require.NoError(t, err, "Node creation failed")
+			require.NotNil(t, createResponse, "Node creation returned nil response")
+
+			createdNode := createResponse.(drip.CreateNode201JSONResponse)
+			nodes = append(nodes, drip.Node(createdNode))
+		}
+		return nodes
+	}
+
+	fetchIndexed := func(t *testing.T, ctx context.Context, indexedAfter time.Time, expectedLen int) []*ent.Node {
+		var indexed []*ent.Node
+		for {
+			require.NoError(t, ctx.Err())
+
+			indexed, err = client.Node.Query().
+				Where(node.LastAlgoliaIndexTimeGT(indexedAfter)).
+				Where(node.LastAlgoliaIndexTimeLT(time.Now())).
+				All(ctx)
+			require.NoError(t, err)
+
+			if len(indexed) < expectedLen {
+				time.Sleep(time.Second)
+				continue
+			}
+
+			return indexed
+		}
+	}
+
+	now := time.Now()
+	nodes := storeRandomNodes(t, 100)
+
+	t.Run("AfterCreate", func(t *testing.T) {
+		indexed := fetchIndexed(t, ctx, now, len(nodes))
+		assert.Equal(t, len(nodes), len(indexed))
+	})
+
+	t.Run("AfterReindex", func(t *testing.T) {
+		now, batch := time.Now(), 9
+		res, err := withMiddleware(authz, impl.ReindexNodes)(ctx, drip.ReindexNodesRequestObject{
+			Params: drip.ReindexNodesParams{
+				MaxBatch: &batch,
+			},
+		})
+		require.NoError(t, err, "Node reindexing failed")
+		assert.IsType(t, drip.ReindexNodes200Response{}, res)
+
+		// check last_algolia_index_time
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+		indexed := fetchIndexed(t, ctx, now, len(nodes))
+
+		assert.Equal(t, len(nodes), len(indexed), "should reindex all nodes")
+		assert.Len(t, impl.mockAlgolia.LastIndexedNodes, len(nodes)%batch, "should index to algolia partially")
+
+	})
+
+	t.Run("AfterReindexWithMinAge", func(t *testing.T) {
+		batch, age := 8, 3*time.Second
+		time.Sleep(age)
+
+		// add more nodes that will not be reindexed since it is too new
+		{
+			now := time.Now()
+			newNodes := storeRandomNodes(t, 20)
+			indexed := fetchIndexed(t, ctx, now, len(newNodes))
+			assert.Equal(t, len(newNodes), len(indexed))
+		}
+
+		now = time.Now()
+		res, err := withMiddleware(authz, impl.ReindexNodes)(ctx, drip.ReindexNodesRequestObject{
+			Params: drip.ReindexNodesParams{
+				MaxBatch: &batch,
+				MinAge:   &age,
+			},
+		})
+		require.NoError(t, err, "Node reindexing failed")
+		assert.IsType(t, drip.ReindexNodes200Response{}, res)
+
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+		indexed := fetchIndexed(t, ctx, now, len(nodes))
+		assert.Equal(t, len(nodes), len(indexed), "should reindex some nodes")
+		assert.Len(t, impl.mockAlgolia.LastIndexedNodes, len(nodes)%batch, "should index to algolia partially")
+	})
 }

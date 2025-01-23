@@ -47,6 +47,7 @@ func SetupLogger() zerolog.Logger {
 	return log
 }
 
+// ReuseContextLogger returns a new context with the same logger as the given context
 func ReuseContextLogger(ctx context.Context, newCtx context.Context) context.Context {
 	l := zerolog.Ctx(ctx)
 	if l == nil {
