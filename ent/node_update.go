@@ -286,6 +286,26 @@ func (nu *NodeUpdate) ClearStatusDetail() *NodeUpdate {
 	return nu
 }
 
+// SetLastAlgoliaIndexTime sets the "last_algolia_index_time" field.
+func (nu *NodeUpdate) SetLastAlgoliaIndexTime(t time.Time) *NodeUpdate {
+	nu.mutation.SetLastAlgoliaIndexTime(t)
+	return nu
+}
+
+// SetNillableLastAlgoliaIndexTime sets the "last_algolia_index_time" field if the given value is not nil.
+func (nu *NodeUpdate) SetNillableLastAlgoliaIndexTime(t *time.Time) *NodeUpdate {
+	if t != nil {
+		nu.SetLastAlgoliaIndexTime(*t)
+	}
+	return nu
+}
+
+// ClearLastAlgoliaIndexTime clears the value of the "last_algolia_index_time" field.
+func (nu *NodeUpdate) ClearLastAlgoliaIndexTime() *NodeUpdate {
+	nu.mutation.ClearLastAlgoliaIndexTime()
+	return nu
+}
+
 // SetPublisher sets the "publisher" edge to the Publisher entity.
 func (nu *NodeUpdate) SetPublisher(p *Publisher) *NodeUpdate {
 	return nu.SetPublisherID(p.ID)
@@ -511,6 +531,12 @@ func (nu *NodeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nu.mutation.StatusDetailCleared() {
 		_spec.ClearField(node.FieldStatusDetail, field.TypeString)
+	}
+	if value, ok := nu.mutation.LastAlgoliaIndexTime(); ok {
+		_spec.SetField(node.FieldLastAlgoliaIndexTime, field.TypeTime, value)
+	}
+	if nu.mutation.LastAlgoliaIndexTimeCleared() {
+		_spec.ClearField(node.FieldLastAlgoliaIndexTime, field.TypeTime)
 	}
 	if nu.mutation.PublisherCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -904,6 +930,26 @@ func (nuo *NodeUpdateOne) ClearStatusDetail() *NodeUpdateOne {
 	return nuo
 }
 
+// SetLastAlgoliaIndexTime sets the "last_algolia_index_time" field.
+func (nuo *NodeUpdateOne) SetLastAlgoliaIndexTime(t time.Time) *NodeUpdateOne {
+	nuo.mutation.SetLastAlgoliaIndexTime(t)
+	return nuo
+}
+
+// SetNillableLastAlgoliaIndexTime sets the "last_algolia_index_time" field if the given value is not nil.
+func (nuo *NodeUpdateOne) SetNillableLastAlgoliaIndexTime(t *time.Time) *NodeUpdateOne {
+	if t != nil {
+		nuo.SetLastAlgoliaIndexTime(*t)
+	}
+	return nuo
+}
+
+// ClearLastAlgoliaIndexTime clears the value of the "last_algolia_index_time" field.
+func (nuo *NodeUpdateOne) ClearLastAlgoliaIndexTime() *NodeUpdateOne {
+	nuo.mutation.ClearLastAlgoliaIndexTime()
+	return nuo
+}
+
 // SetPublisher sets the "publisher" edge to the Publisher entity.
 func (nuo *NodeUpdateOne) SetPublisher(p *Publisher) *NodeUpdateOne {
 	return nuo.SetPublisherID(p.ID)
@@ -1159,6 +1205,12 @@ func (nuo *NodeUpdateOne) sqlSave(ctx context.Context) (_node *Node, err error) 
 	}
 	if nuo.mutation.StatusDetailCleared() {
 		_spec.ClearField(node.FieldStatusDetail, field.TypeString)
+	}
+	if value, ok := nuo.mutation.LastAlgoliaIndexTime(); ok {
+		_spec.SetField(node.FieldLastAlgoliaIndexTime, field.TypeTime, value)
+	}
+	if nuo.mutation.LastAlgoliaIndexTimeCleared() {
+		_spec.ClearField(node.FieldLastAlgoliaIndexTime, field.TypeTime)
 	}
 	if nuo.mutation.PublisherCleared() {
 		edge := &sqlgraph.EdgeSpec{
