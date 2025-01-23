@@ -5,11 +5,14 @@ import (
 	"registry-backend/drip"
 	"registry-backend/ent/user"
 	"registry-backend/mapper"
+	"registry-backend/tracing"
 
 	"github.com/rs/zerolog/log"
 )
 
 func (impl *DripStrictServerImplementation) GetUser(ctx context.Context, request drip.GetUserRequestObject) (drip.GetUserResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.GetUser")()
+
 	userId, err := mapper.GetUserIDFromContext(ctx)
 	if err != nil {
 		log.Ctx(ctx).Error().Stack().Err(err).Msg("")

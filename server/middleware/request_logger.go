@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"registry-backend/tracing"
 
 	"github.com/labstack/echo/v4"
 	echo_middleware "github.com/labstack/echo/v4/middleware"
@@ -75,10 +76,7 @@ func RequestLoggerMiddleware() echo.MiddlewareFunc {
 
 	mw := func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			if txn := newrelic.FromContext(c.Request().Context()); txn != nil {
-				segment := txn.StartSegment("RequestLoggerMiddleware")
-				defer segment.End()
-			}
+			defer tracing.TraceDefaultSegment(c.Request().Context(), "RequestLoggerMiddleware")()
 
 			req := c.Request()
 			reader := &teeReader{ReadCloser: req.Body}

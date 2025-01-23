@@ -7,6 +7,7 @@ import (
 	"registry-backend/ent"
 	"registry-backend/entity"
 	"registry-backend/mapper"
+	"registry-backend/tracing"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
 	"github.com/rs/zerolog/log"
@@ -49,6 +50,8 @@ func NewAlgoliaService(cfg *config.Config) (AlgoliaService, error) {
 
 // IndexNodes indexes the provided nodes in Algolia.
 func (a *algolia) IndexNodes(ctx context.Context, nodes ...*ent.Node) error {
+	defer tracing.TraceDefaultSegment(ctx, "AlgoliaService.IndexNodes")()
+
 	index := a.client.InitIndex("nodes_index")
 	objects := make([]entity.AlgoliaNode, len(nodes))
 
@@ -66,6 +69,8 @@ func (a *algolia) IndexNodes(ctx context.Context, nodes ...*ent.Node) error {
 
 // SearchNodes searches for nodes in Algolia matching the query.
 func (a *algolia) SearchNodes(ctx context.Context, query string, opts ...interface{}) (nodes []*ent.Node, err error) {
+	defer tracing.TraceDefaultSegment(ctx, "AlgoliaService.SearchNodes")()
+
 	index := a.client.InitIndex("nodes_index")
 	res, err := index.Search(query, opts...)
 	if err != nil {
@@ -84,6 +89,8 @@ func (a *algolia) SearchNodes(ctx context.Context, query string, opts ...interfa
 
 // DeleteNode deletes the specified node from Algolia.
 func (a *algolia) DeleteNode(ctx context.Context, node *ent.Node) error {
+	defer tracing.TraceDefaultSegment(ctx, "AlgoliaService.DeleteNode")()
+
 	index := a.client.InitIndex("nodes_index")
 	res, err := index.DeleteObject(node.ID)
 	if err != nil {
@@ -94,6 +101,8 @@ func (a *algolia) DeleteNode(ctx context.Context, node *ent.Node) error {
 
 // IndexNodeVersions implements AlgoliaService.
 func (a *algolia) IndexNodeVersions(ctx context.Context, nodes ...*ent.NodeVersion) error {
+	defer tracing.TraceDefaultSegment(ctx, "AlgoliaService.IndexNodeVersions")()
+
 	index := a.client.InitIndex("node_versions_index")
 	objects := make([]struct {
 		ObjectID string `json:"objectID"`
@@ -122,6 +131,8 @@ func (a *algolia) IndexNodeVersions(ctx context.Context, nodes ...*ent.NodeVersi
 
 // DeleteNodeVersions implements AlgoliaService.
 func (a *algolia) DeleteNodeVersions(ctx context.Context, nodes ...*ent.NodeVersion) error {
+	defer tracing.TraceDefaultSegment(ctx, "AlgoliaService.DeleteNodeVersions")()
+
 	index := a.client.InitIndex("node_versions_index")
 	ids := []string{}
 	for _, node := range nodes {
@@ -136,6 +147,8 @@ func (a *algolia) DeleteNodeVersions(ctx context.Context, nodes ...*ent.NodeVers
 
 // SearchNodeVersions implements AlgoliaService.
 func (a *algolia) SearchNodeVersions(ctx context.Context, query string, opts ...interface{}) ([]*ent.NodeVersion, error) {
+	defer tracing.TraceDefaultSegment(ctx, "AlgoliaService.SearchNodeVersions")()
+
 	index := a.client.InitIndex("node_versions_index")
 	res, err := index.Search(query, opts...)
 	if err != nil {

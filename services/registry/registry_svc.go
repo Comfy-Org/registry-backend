@@ -30,6 +30,7 @@ import (
 	"registry-backend/gateways/storage"
 	"registry-backend/mapper"
 	drip_metric "registry-backend/server/middleware/metric"
+	"registry-backend/tracing"
 	"strings"
 	"sync"
 	"time"
@@ -67,16 +68,13 @@ func NewRegistryService(storageSvc storage.StorageService, pubsubService pubsub.
 // ListNodes retrieves a paginated list of nodes with optional filtering.
 func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, page, limit int, filter *entity.NodeFilter) (*entity.ListNodesResult, error) {
 	// Start New Relic transaction segment
-	var txn *newrelic.Transaction
-	if txnCtx := newrelic.FromContext(ctx); txnCtx != nil {
-		txn = txnCtx
+	txn, deferer := tracing.TraceSegment(ctx, "RegistryService.ListNodes", func(txn *newrelic.Transaction) {
 		txn.Application().RecordCustomMetric(
 			"Custom/ListNodes/Limit",
 			float64(limit),
 		)
-		segment := txn.StartSegment("RegistryService.ListNodes")
-		defer segment.End()
-	}
+	})
+	defer deferer()
 
 	// Ensure valid pagination parameters
 	if page < 1 {
@@ -180,10 +178,8 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 
 // ListPublishers queries the Publisher table with an optional user ID filter via PublisherPermission
 func (s *RegistryService) ListPublishers(ctx context.Context, client *ent.Client, filter *entity.PublisherFilter) ([]*ent.Publisher, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.ListPublishers")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.ListPublishers")()
+
 	log.Ctx(ctx).Info().Msg("Listing publishers")
 
 	query := client.Publisher.Query()
@@ -206,10 +202,8 @@ func (s *RegistryService) ListPublishers(ctx context.Context, client *ent.Client
 }
 
 func (s *RegistryService) CreatePublisher(ctx context.Context, client *ent.Client, userId string, publisher *drip.Publisher) (*ent.Publisher, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.CreatePublisher")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.CreatePublisher")()
+
 	publisherValid := mapper.ValidatePublisher(publisher)
 	if publisherValid != nil {
 		return nil, fmt.Errorf("invalid publisher: %w", publisherValid)
@@ -237,10 +231,8 @@ func (s *RegistryService) CreatePublisher(ctx context.Context, client *ent.Clien
 }
 
 func (s *RegistryService) UpdatePublisher(ctx context.Context, client *ent.Client, update *ent.PublisherUpdateOne) (*ent.Publisher, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.UpdatePublisher")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.UpdatePublisher")()
+
 	log.Ctx(ctx).Info().Msgf("updating publisher fields: %v", update.Mutation().Fields())
 	publisher, err := update.Save(ctx)
 	log.Ctx(ctx).Info().Msgf("success: updated publisher: %v", publisher)
@@ -252,10 +244,8 @@ func (s *RegistryService) UpdatePublisher(ctx context.Context, client *ent.Clien
 }
 
 func (s *RegistryService) GetPublisher(ctx context.Context, client *ent.Client, publisherID string) (*ent.Publisher, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.GetPublisher")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.GetPublisher")()
+
 	log.Ctx(ctx).Info().Msgf("getting publisher: %v", publisherID)
 	publisher, err := client.Publisher.
 		Query().
@@ -271,10 +261,8 @@ func (s *RegistryService) GetPublisher(ctx context.Context, client *ent.Client, 
 }
 
 func (s *RegistryService) CreatePersonalAccessToken(ctx context.Context, client *ent.Client, publisherID, name, description string) (*ent.PersonalAccessToken, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.CreatePersonalAccessToken")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.CreatePersonalAccessToken")()
+
 	log.Ctx(ctx).Info().Msgf("creating personal access token for publisher: %v", publisherID)
 	token := uuid.New().String()
 	pat, err := client.PersonalAccessToken.
@@ -292,10 +280,8 @@ func (s *RegistryService) CreatePersonalAccessToken(ctx context.Context, client 
 }
 
 func (s *RegistryService) ListPersonalAccessTokens(ctx context.Context, client *ent.Client, publisherID string) ([]*ent.PersonalAccessToken, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.ListPersonalAccessTokens")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.ListPersonalAccessTokens")()
+
 	pats, err := client.PersonalAccessToken.Query().
 		Where(personalaccesstoken.PublisherIDEQ(publisherID)).
 		All(ctx)
@@ -306,10 +292,8 @@ func (s *RegistryService) ListPersonalAccessTokens(ctx context.Context, client *
 }
 
 func (s *RegistryService) DeletePersonalAccessToken(ctx context.Context, client *ent.Client, tokenID uuid.UUID) error {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.DeletePersonalAccessToken")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.DeletePersonalAccessToken")()
+
 	log.Ctx(ctx).Info().Msgf("deleting personal access token: %v", tokenID)
 	err := client.PersonalAccessToken.
 		DeleteOneID(tokenID).
@@ -321,10 +305,8 @@ func (s *RegistryService) DeletePersonalAccessToken(ctx context.Context, client 
 }
 
 func (s *RegistryService) CreateNode(ctx context.Context, client *ent.Client, publisherId string, node *drip.Node) (*ent.Node, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.CreateNode")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.CreateNode")()
+
 	validNode := mapper.ValidateNode(node)
 	if validNode != nil {
 		return nil, fmt.Errorf("invalid node: %w", validNode)
@@ -355,10 +337,8 @@ func (s *RegistryService) CreateNode(ctx context.Context, client *ent.Client, pu
 }
 
 func (s *RegistryService) UpdateNode(ctx context.Context, client *ent.Client, updateFunc func(client *ent.Client) *ent.NodeUpdateOne) (*ent.Node, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.UpdateNode")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.UpdateNode")()
+
 	var n *ent.Node
 	err := db.WithTx(ctx, client, func(tx *ent.Tx) (err error) {
 		update := updateFunc(tx.Client())
@@ -380,10 +360,7 @@ func (s *RegistryService) UpdateNode(ctx context.Context, client *ent.Client, up
 }
 
 func (s *RegistryService) GetNode(ctx context.Context, client *ent.Client, nodeID string) (*ent.Node, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.GetNode")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.GetNode")()
 
 	log.Ctx(ctx).Info().Msgf("getting node: %v", nodeID)
 	node, err := client.Node.Get(ctx, nodeID)
@@ -394,10 +371,8 @@ func (s *RegistryService) GetNode(ctx context.Context, client *ent.Client, nodeI
 }
 
 func (s *RegistryService) CreateNodeVersion(ctx context.Context, client *ent.Client, publisherID, nodeID string, nodeVersion *drip.NodeVersion) (*NodeVersionCreation, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.CreateNodeVersion")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.CreateNodeVersion")()
+
 	log.Ctx(ctx).Info().Msgf("creating node version: %v for nodeId %v", nodeVersion, nodeID)
 	bucketName := "comfy-registry"
 	return db.WithTxResult(ctx, client, func(tx *ent.Tx) (*NodeVersionCreation, error) {
@@ -464,10 +439,8 @@ type NodeVersionCreation struct {
 }
 
 func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Client, filter *entity.NodeVersionFilter) (*entity.ListNodeVersionsResult, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.ListNodeVersions")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.ListNodeVersions")()
+
 	query := client.NodeVersion.Query().
 		WithStorageFile().
 		Order(ent.Desc(nodeversion.FieldVersion))
@@ -535,10 +508,8 @@ func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Clie
 }
 
 func (s *RegistryService) AddNodeReview(ctx context.Context, client *ent.Client, nodeId, userID string, star int) (n *ent.Node, err error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.AddNodeReview")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.AddNodeReview")()
+
 	log.Ctx(ctx).Info().Msgf("add review to node: %v ", nodeId)
 
 	err = db.WithTx(ctx, client, func(tx *ent.Tx) error {
@@ -573,10 +544,8 @@ func (s *RegistryService) AddNodeReview(ctx context.Context, client *ent.Client,
 }
 
 func (s *RegistryService) GetNodeVersionByVersion(ctx context.Context, client *ent.Client, nodeId, nodeVersion string) (*ent.NodeVersion, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.GetNodeVersionByVersion")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.GetNodeVersionByVersion")()
+
 	log.Ctx(ctx).Info().Msgf("getting node version %v@%v", nodeId, nodeVersion)
 	return client.NodeVersion.
 		Query().
@@ -587,20 +556,16 @@ func (s *RegistryService) GetNodeVersionByVersion(ctx context.Context, client *e
 }
 
 func (s *RegistryService) GetNodeVersion(ctx context.Context, client *ent.Client, nodeVersionId string) (*ent.NodeVersion, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.GetNodeVersion")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.GetNodeVersion")()
+
 	log.Ctx(ctx).Info().Msgf("getting node version %v", nodeVersionId)
 	return client.NodeVersion.
 		Get(ctx, uuid.MustParse(nodeVersionId))
 }
 
 func (s *RegistryService) UpdateNodeVersion(ctx context.Context, client *ent.Client, update *ent.NodeVersionUpdateOne) (*ent.NodeVersion, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.UpdateNodeVersion")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.UpdateNodeVersion")()
+
 	log.Ctx(ctx).Info().Msgf("updating node version fields: %v", update.Mutation().Fields())
 	return db.WithTxResult(ctx, client, func(tx *ent.Tx) (*ent.NodeVersion, error) {
 		node, err := update.Save(ctx)
@@ -618,10 +583,8 @@ func (s *RegistryService) UpdateNodeVersion(ctx context.Context, client *ent.Cli
 }
 
 func (s *RegistryService) RecordNodeInstallation(ctx context.Context, client *ent.Client, node *ent.Node) (*ent.Node, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.RecordNodeInstallation")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.RecordNodeInstallation")()
+
 	var n *ent.Node
 	err := db.WithTx(ctx, client, func(tx *ent.Tx) (err error) {
 		n, err = tx.Node.UpdateOne(node).AddTotalInstall(1).Save(ctx)
@@ -639,10 +602,8 @@ func (s *RegistryService) RecordNodeInstallation(ctx context.Context, client *en
 }
 
 func (s *RegistryService) GetLatestNodeVersion(ctx context.Context, client *ent.Client, nodeId string) (*ent.NodeVersion, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.GetLatestNodeVersion")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.GetLatestNodeVersion")()
+
 	log.Ctx(ctx).Info().Msgf("Getting latest version of node: %v", nodeId)
 	nodeVersion, err := client.NodeVersion.
 		Query().
@@ -679,10 +640,8 @@ func (s *RegistryService) MarkComfyNodeExtractionFailed(
 	nodeVersion string,
 	info *schema.ComfyNodeCloudBuildInfo,
 ) error {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.MarkComfyNodeExtractionFailed")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.MarkComfyNodeExtractionFailed")()
+
 	u := client.NodeVersion.
 		Update().
 		Where(
@@ -703,10 +662,8 @@ func (s *RegistryService) CreateComfyNodes(
 	comfyNodes map[string]drip.ComfyNode,
 	info *schema.ComfyNodeCloudBuildInfo,
 ) error {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.CreateComfyNodes")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.CreateComfyNodes")()
+
 	return db.WithTx(ctx, client, func(tx *ent.Tx) error {
 		// Query the NodeVersion with the given nodeID and nodeVersion, lock it for updates
 		nv, err := tx.NodeVersion.Query().
@@ -793,10 +750,8 @@ func (s *RegistryService) GetComfyNode(
 	client *ent.Client,
 	nodeID, nodeVersion, comfyNodeName string,
 ) (*ent.ComfyNode, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.GetComfyNode")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.GetComfyNode")()
+
 	// Query the NodeVersion with the given nodeID and nodeVersion, ensuring extraction status is success
 	nv, err := client.NodeVersion.Query().
 		Where(nodeversion.VersionEQ(nodeVersion)).
@@ -822,10 +777,8 @@ func (s *RegistryService) GetComfyNode(
 
 func (s *RegistryService) TriggerComfyNodesBackfill(
 	ctx context.Context, client *ent.Client, max *int) error {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.TriggerComfyNodesBackfill")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.TriggerComfyNodesBackfill")()
+
 	// Query all NodeVersions with pending comfy node extraction status
 	q := client.NodeVersion.
 		Query().
@@ -868,10 +821,8 @@ func (s *RegistryService) AssertPublisherPermissions(ctx context.Context,
 	userID string,
 	permissions []schema.PublisherPermissionType,
 ) (err error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.AssertPublisherPermissions")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.AssertPublisherPermissions")()
+
 	w, err := client.Publisher.Get(ctx, publisherID)
 	if err != nil {
 		return fmt.Errorf("fail to query publisher by id: %s %w", publisherID, err)
@@ -896,10 +847,8 @@ func (s *RegistryService) IsPersonalAccessTokenValidForPublisher(ctx context.Con
 	publisherID string,
 	accessToken string,
 ) (bool, error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.IsPersonalAccessTokenValidForPublisher")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.IsPersonalAccessTokenValidForPublisher")()
+
 	w, err := client.Publisher.Get(ctx, publisherID)
 	if err != nil {
 		log.Ctx(ctx).Error().Err(err).Msgf("fail to find publisher by id: %s", publisherID)
@@ -920,10 +869,8 @@ func (s *RegistryService) IsPersonalAccessTokenValidForPublisher(ctx context.Con
 }
 
 func (s *RegistryService) AssertNodeBelongsToPublisher(ctx context.Context, client *ent.Client, publisherID string, nodeID string) error {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.AssertNodeBelongsToPublisher")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.AssertNodeBelongsToPublisher")()
+
 	node, err := client.Node.Get(ctx, nodeID)
 	if err != nil {
 		return fmt.Errorf("failed to get node: %w", err)
@@ -935,10 +882,8 @@ func (s *RegistryService) AssertNodeBelongsToPublisher(ctx context.Context, clie
 }
 
 func (s *RegistryService) AssertAccessTokenBelongsToPublisher(ctx context.Context, client *ent.Client, publisherID string, tokenId uuid.UUID) error {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.AssertAccessTokenBelongsToPublisher")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.AssertAccessTokenBelongsToPublisher")()
+
 	pat, err := client.PersonalAccessToken.Query().Where(
 		personalaccesstoken.IDEQ(tokenId),
 		personalaccesstoken.PublisherIDEQ(publisherID),
@@ -953,10 +898,8 @@ func (s *RegistryService) AssertAccessTokenBelongsToPublisher(ctx context.Contex
 }
 
 func (s *RegistryService) DeletePublisher(ctx context.Context, client *ent.Client, publisherID string) error {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.DeletePublisher")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.DeletePublisher")()
+
 	log.Ctx(ctx).Info().Msgf("deleting publisher: %v", publisherID)
 	return db.WithTx(ctx, client, func(tx *ent.Tx) error {
 		client = tx.Client()
@@ -990,10 +933,8 @@ func (s *RegistryService) DeletePublisher(ctx context.Context, client *ent.Clien
 }
 
 func (s *RegistryService) DeleteNode(ctx context.Context, client *ent.Client, nodeID string) error {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.DeleteNode")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.DeleteNode")()
+
 	log.Ctx(ctx).Info().Msgf("deleting node: %v", nodeID)
 	db.WithTx(ctx, client, func(tx *ent.Tx) error {
 		nv, err := tx.Client().NodeVersion.Query().Where(nodeversion.NodeID(nodeID)).All(ctx)
@@ -1020,10 +961,8 @@ func (s *RegistryService) DeleteNode(ctx context.Context, client *ent.Client, no
 }
 
 func (s *RegistryService) DeleteNodeVersion(ctx context.Context, client *ent.Client, nodeIDVersion string) error {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.DeleteNodeVersion")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.DeleteNodeVersion")()
+
 	log.Ctx(ctx).Info().Msgf("deleting node version: %v", nodeIDVersion)
 	db.WithTx(ctx, client, func(tx *ent.Tx) error {
 		nv, err := tx.Client().NodeVersion.Get(ctx, uuid.MustParse(nodeIDVersion))
@@ -1069,10 +1008,8 @@ func IsPermissionError(err error) bool {
 }
 
 func (s *RegistryService) BanPublisher(ctx context.Context, client *ent.Client, id string) error {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.BanPublisher")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.BanPublisher")()
+
 	log.Ctx(ctx).Info().Msgf("banning publisher: %v", id)
 	pub, err := client.Publisher.Get(ctx, id)
 	if err != nil {
@@ -1124,10 +1061,8 @@ func (s *RegistryService) BanPublisher(ctx context.Context, client *ent.Client, 
 }
 
 func (s *RegistryService) BanNode(ctx context.Context, client *ent.Client, publisherid, id string) error {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.BanNode")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.BanNode")()
+
 	log.Ctx(ctx).Info().Msgf("banning publisher node: %v %v", publisherid, id)
 
 	return db.WithTx(ctx, client, func(tx *ent.Tx) error {
@@ -1163,10 +1098,8 @@ func (s *RegistryService) BanNode(ctx context.Context, client *ent.Client, publi
 }
 
 func (s *RegistryService) AssertNodeBanned(ctx context.Context, client *ent.Client, nodeID string) error {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.AssertNodeBanned")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.AssertNodeBanned")()
+
 	node, err := client.Node.Get(ctx, nodeID)
 	if ent.IsNotFound(err) {
 		return nil
@@ -1181,10 +1114,8 @@ func (s *RegistryService) AssertNodeBanned(ctx context.Context, client *ent.Clie
 }
 
 func (s *RegistryService) AssertPublisherBanned(ctx context.Context, client *ent.Client, publisherID string) error {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.AssertPublisherBanned")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.AssertPublisherBanned")()
+
 	publisher, err := client.Publisher.Get(ctx, publisherID)
 	if ent.IsNotFound(err) {
 		return nil
@@ -1199,10 +1130,8 @@ func (s *RegistryService) AssertPublisherBanned(ctx context.Context, client *ent
 }
 
 func (s *RegistryService) ReindexAllNodes(ctx context.Context, client *ent.Client) error {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.ReindexAllNodes")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.ReindexAllNodes")()
+
 	log.Ctx(ctx).Info().Msgf("reindexing nodes")
 	nodes, err := s.decorateNodeQueryWithLatestVersion(client.Node.Query()).All(ctx)
 	if err != nil {
@@ -1232,10 +1161,8 @@ func (s *RegistryService) ReindexAllNodes(ctx context.Context, client *ent.Clien
 var reindexLock = sync.Mutex{}
 
 func (s *RegistryService) ReindexAllNodesBackground(ctx context.Context, client *ent.Client) (err error) {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.ReindexAllNodesBackground")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.ReindexAllNodesBackground")()
+
 	if !reindexLock.TryLock() {
 		return fmt.Errorf("another reindex is in progress")
 	}
@@ -1286,10 +1213,8 @@ func (s *RegistryService) decorateNodeQueryWithLatestVersion(q *ent.NodeQuery) *
 
 func (s *RegistryService) PerformSecurityCheck(
 	ctx context.Context, client *ent.Client, nodeVersion *ent.NodeVersion) error {
-	if txn := newrelic.FromContext(ctx); txn != nil {
-		segment := txn.StartSegment("RegistryService.PerformSecurityCheck")
-		defer segment.End()
-	}
+	defer tracing.TraceDefaultSegment(ctx, "RegistryService.PerformSecurityCheck")()
+
 	log.Ctx(ctx).Info().Msgf("Scanning node %s@%s w/ version ID: %s",
 		nodeVersion.NodeID, nodeVersion.Version, nodeVersion.ID)
 

@@ -8,9 +8,11 @@ import (
 	"os"
 	"time"
 
+	"registry-backend/config"
+	"registry-backend/tracing"
+
 	"cloud.google.com/go/storage"
 	"github.com/rs/zerolog/log"
-	"registry-backend/config"
 )
 
 // StorageService defines the interface for interacting with cloud storage.
@@ -52,6 +54,8 @@ func NewStorageService(cfg *config.Config) (StorageService, error) {
 
 // UploadFile uploads an object to GCP storage.
 func (s *storageService) UploadFile(ctx context.Context, bucket, object, filePath string) (string, error) {
+	defer tracing.TraceDefaultSegment(ctx, "StorageService.UploadFile")()
+
 	log.Ctx(ctx).Info().Msgf("Uploading %v to %v/%v.\n", filePath, bucket, object)
 
 	// Open local file
@@ -120,6 +124,8 @@ func (s *storageService) StreamFileUpload(w io.Writer, objectName, blob string) 
 
 // GetFileUrl gets the public URL of a file from GCP storage.
 func (s *storageService) GetFileUrl(ctx context.Context, bucketName, objectPath string) (string, error) {
+	defer tracing.TraceDefaultSegment(ctx, "StorageService.GetFileUrl")()
+
 	// Get the public URL of a file in a bucket
 	attrs, err := s.client.Bucket(bucketName).Object(objectPath).Attrs(ctx)
 	if err != nil {

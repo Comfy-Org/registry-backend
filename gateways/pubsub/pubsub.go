@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"registry-backend/config"
+	"registry-backend/tracing"
 	"strconv"
 	"strings"
 	"time"
@@ -47,6 +48,8 @@ func NewPubSubService(c *config.Config) (PubSubService, error) {
 
 // PublishNodePack implements PubSubService.
 func (p *pubsubimpl) PublishNodePack(ctx context.Context, storageURL string) (err error) {
+	defer tracing.TraceDefaultSegment(ctx, "PubSubService.PublishNodePack")()
+
 	u, err := url.Parse(storageURL)
 	if err != nil {
 		return fmt.Errorf("invalid storage URL: %w", err)

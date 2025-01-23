@@ -8,6 +8,7 @@ import (
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/schema"
 	"registry-backend/mapper"
+	"registry-backend/tracing"
 	"sort"
 	"strings"
 
@@ -17,6 +18,8 @@ import (
 )
 
 func (impl *DripStrictServerImplementation) GetGitcommit(ctx context.Context, request drip.GetGitcommitRequestObject) (drip.GetGitcommitResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.GetGitcommit")()
+
 	var commitId uuid.UUID = uuid.Nil
 	if request.Params.CommitId != nil {
 		log.Ctx(ctx).Info().Msgf("getting commit data for %s", *request.Params.CommitId)
@@ -124,6 +127,7 @@ func (impl *DripStrictServerImplementation) GetGitcommit(ctx context.Context, re
 }
 
 func (impl *DripStrictServerImplementation) GetGitcommitsummary(ctx context.Context, request drip.GetGitcommitsummaryRequestObject) (drip.GetGitcommitsummaryResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.GetGitcommitsummary")()
 	log.Ctx(ctx).Info().Msg("Getting git commit summary")
 
 	// Prep relevant vars
@@ -254,6 +258,8 @@ func (impl *DripStrictServerImplementation) GetGitcommitsummary(ctx context.Cont
 }
 
 func (impl *DripStrictServerImplementation) GetWorkflowResult(ctx context.Context, request drip.GetWorkflowResultRequestObject) (drip.GetWorkflowResultResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.GetWorkflowResult")()
+
 	log.Ctx(ctx).Info().Msgf("Getting workflow result with ID %s", request.WorkflowResultId)
 	workflowId := uuid.MustParse(request.WorkflowResultId)
 	workflow, err := impl.Client.CIWorkflowResult.Query().WithGitcommit().WithStorageFile().Where(ciworkflowresult.IDEQ(workflowId)).First(ctx)
@@ -278,6 +284,8 @@ func (impl *DripStrictServerImplementation) GetWorkflowResult(ctx context.Contex
 }
 
 func (impl *DripStrictServerImplementation) GetBranch(ctx context.Context, request drip.GetBranchRequestObject) (drip.GetBranchResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.GetBranch")()
+
 	repoNameFilter := strings.ToLower(request.Params.RepoName)
 
 	branches, err := impl.Client.GitCommit.
@@ -295,6 +303,8 @@ func (impl *DripStrictServerImplementation) GetBranch(ctx context.Context, reque
 }
 
 func (impl *DripStrictServerImplementation) PostUploadArtifact(ctx context.Context, request drip.PostUploadArtifactRequestObject) (drip.PostUploadArtifactResponseObject, error) {
+	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.PostUploadArtifact")()
+
 	err := impl.ComfyCIService.ProcessCIRequest(ctx, impl.Client, &request)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Error processing CI request w/ err: %v", err)
