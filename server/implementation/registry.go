@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"registry-backend/drip"
 	"registry-backend/ent"
 	"registry-backend/ent/publisher"
@@ -237,6 +238,11 @@ func (s *DripStrictServerImplementation) ListNodesForPublisher(
 
 func (s *DripStrictServerImplementation) ListAllNodes(
 	ctx context.Context, request drip.ListAllNodesRequestObject) (drip.ListAllNodesResponseObject, error) {
+	if txn := newrelic.FromContext(ctx); txn != nil {
+		segment := txn.StartSegment("DripStrictServerImplementation.ListAllNodes")
+		defer segment.End()
+	}
+
 	err := s.MixpanelService.Track(ctx, []*mixpanel.Event{
 		s.MixpanelService.NewEvent("List All Nodes", "", map[string]any{
 			"page":  request.Params.Page,

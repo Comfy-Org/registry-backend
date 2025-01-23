@@ -2248,10 +2248,6 @@ components:
         status_reason:
           type: string
           description: The reason for the status change.
-        comfy_nodes:
-          type: object
-          additionalProperties:
-            $ref: "#/components/schemas/ComfyNode"
         node_id:
           type: string
           description: The unique identifier of the node.

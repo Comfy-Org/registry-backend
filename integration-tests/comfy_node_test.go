@@ -99,13 +99,12 @@ func TestRegistryComfyNode(t *testing.T) {
 
 	// Test case: Ensure no comfy nodes exist initially
 	t.Run("NoComfyNode", func(t *testing.T) {
-		res, err := withMiddleware(authz, impl.GetNodeVersion)(ctx, drip.GetNodeVersionRequestObject{
-			NodeId:    *node.Id,
-			VersionId: *nodeVersionExtractionSucceeded1.Version,
+		res, err := withMiddleware(authz, impl.GetComfyNode)(ctx, drip.GetComfyNodeRequestObject{
+			NodeId:  *node.Id,
+			Version: *nodeVersionExtractionSucceeded1.Version,
 		})
 		require.NoError(t, err, "should not return error")
-		require.IsType(t, drip.GetNodeVersion200JSONResponse{}, res)
-		assert.Empty(t, res.(drip.GetNodeVersion200JSONResponse).ComfyNodes)
+		require.IsType(t, drip.GetComfyNode404JSONResponse{}, res)
 	})
 
 	t.Run("CreateComfyNodes", func(t *testing.T) {
@@ -168,46 +167,6 @@ func TestRegistryComfyNode(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.IsType(t, drip.CreateComfyNodes409JSONResponse{}, res)
-	})
-
-	// Test case: Retrieve node version
-	t.Run("GetNodeVersion contain comfy nodes", func(t *testing.T) {
-		res, err := withMiddleware(authz, impl.GetNodeVersion)(ctx, drip.GetNodeVersionRequestObject{
-			NodeId:    *node.Id,
-			VersionId: *nodeVersionExtractionSucceeded1.Version,
-		})
-		require.NoError(t, err, "should return created node version")
-		require.IsType(t, drip.GetNodeVersion200JSONResponse{}, res)
-		for k, v := range *res.(drip.GetNodeVersion200JSONResponse).ComfyNodes {
-			ev := (*comfyNodes.Nodes)[k]
-			ev.ComfyNodeId = proto.String(k)
-			assert.Equal(t, ev, v)
-		}
-	})
-
-	// Test case: List node versions
-	t.Run("ListNodeVersion contains comfy nodes", func(t *testing.T) {
-		res, err := withMiddleware(authz, impl.ListNodeVersions)(ctx, drip.ListNodeVersionsRequestObject{
-			NodeId: *node.Id,
-		})
-		require.NoError(t, err, "should return created node version")
-		require.IsType(t, drip.ListNodeVersions200JSONResponse{}, res)
-		found := false
-		for _, nv := range res.(drip.ListNodeVersions200JSONResponse) {
-			if *nv.Version == *nodeVersionExtractionSucceeded1.Version ||
-				*nv.Version == *nodeVersionExtractionSucceeded2.Version {
-				for k, v := range *nv.ComfyNodes {
-					found = true
-					ev := (*comfyNodes.Nodes)[k]
-					ev.ComfyNodeId = proto.String(k)
-					assert.Equal(t, ev, v)
-				}
-			} else {
-				assert.Empty(t, nv.ComfyNodes)
-			}
-		}
-
-		assert.True(t, found)
 	})
 
 	// Test case: Assert Algolia indexing
