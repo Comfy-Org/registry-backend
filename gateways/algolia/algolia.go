@@ -130,6 +130,7 @@ func (a *algolia) IndexNodeVersions(ctx context.Context, nodes ...*ent.NodeVersi
 			ObjectID:    n.ID.String(),
 			NodeVersion: n,
 		}
+		objects[i].Status = "" // Exclude the status field from indexing.
 	}
 
 	// Schedule the indexing task.

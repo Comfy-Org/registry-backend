@@ -51,7 +51,7 @@ func (e *executor) schedule(ctx context.Context, op string, f func() error) {
 
 		// Execute the job and handle errors if they occur.
 		if err := f(); err != nil {
-			log.Error().
+			log.Ctx(ctx).Error().
 				Err(err).
 				Str("operation", op).
 				Msg("Failed to execute Algolia operation")
@@ -68,6 +68,6 @@ func (e *executor) schedule(ctx context.Context, op string, f func() error) {
 		if txn != nil {
 			txn.AddAttribute("algolia.error", "Algolia queue full")
 		}
-		log.Warn().Msg("Algolia queue full")
+		log.Ctx(ctx).Warn().Msg("Algolia queue full")
 	}
 }
