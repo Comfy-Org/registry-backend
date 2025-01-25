@@ -102,7 +102,7 @@ func TestIndex(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		<-time.After(time.Second * 10)
+		<-time.After(time.Second * 30)
 		nodes, err := algolia.SearchNodes(ctx, node.Name)
 		require.NoError(t, err)
 		require.Len(t, nodes, 1)
@@ -142,7 +142,7 @@ func TestIndex(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		<-time.After(time.Second * 10)
+		<-time.After(time.Second * 30)
 		nodes, err := algolia.SearchNodeVersions(ctx, nv.Version)
 		require.NoError(t, err)
 		require.Len(t, nodes, 1)
