@@ -479,10 +479,11 @@ func (s *DripStrictServerImplementation) PublishNodeVersion(
 	// Check if node exists, create if not
 	node, err := s.RegistryService.GetNode(ctx, s.Client, request.NodeId)
 	if err != nil && !ent.IsNotFound(err) {
+		// Case #1: Internal server error when getting node
 		log.Ctx(ctx).Error().Msgf("Failed to get node w/ err: %v", err)
-		// TODO(James): create a new error code for this.
 		return drip.PublishNodeVersion500JSONResponse{}, err
 	} else if err != nil {
+		// Case #2: Node not found, create a new node
 		node, err = s.RegistryService.CreateNode(ctx, s.Client, request.PublisherId, &request.Body.Node)
 		if mapper.IsErrorBadRequest(err) || ent.IsConstraintError(err) {
 			log.Ctx(ctx).Error().Msgf("Node creation failed w/ err: %v", err)
@@ -495,8 +496,7 @@ func (s *DripStrictServerImplementation) PublishNodeVersion(
 
 		log.Ctx(ctx).Info().Msgf("Node %s created successfully", node.ID)
 	} else {
-		// TODO(james): distinguish between not found vs. nodes that belong to other publishers
-		// If node already exists, validate ownership
+		// Case #3: Node already exist, update the node
 		updateOneFunc := func(client *ent.Client) *ent.NodeUpdateOne {
 			return mapper.ApiUpdateNodeToUpdateFields(node.ID, &request.Body.Node, s.Client)
 		}
@@ -510,14 +510,17 @@ func (s *DripStrictServerImplementation) PublishNodeVersion(
 	}
 
 	// Create node version
-	nodeVersionCreation, err := s.RegistryService.CreateNodeVersion(ctx, s.Client, request.PublisherId, node.ID, &request.Body.NodeVersion)
+	rawNodeID := mapper.GetRawNodeID(node)
+	nodeVersionCreation, err := s.RegistryService.CreateNodeVersion(
+		ctx, s.Client, request.PublisherId, node.ID, rawNodeID, &request.Body.NodeVersion)
 	if err != nil {
 		if ent.IsConstraintError(err) {
 			return drip.PublishNodeVersion400JSONResponse{Message: "The node version already exists"}, nil
 		}
-		errMessage := "Failed to create node version: " + err.Error()
 		log.Ctx(ctx).Error().Msgf("Node version creation failed w/ err: %v", err)
-		return drip.PublishNodeVersion400JSONResponse{Message: errMessage}, err
+		return drip.PublishNodeVersion400JSONResponse{
+			Message: "Failed to create node version: " + err.Error(),
+		}, err
 	}
 
 	apiNodeVersion := mapper.DbNodeVersionToApiNodeVersion(nodeVersionCreation.NodeVersion)

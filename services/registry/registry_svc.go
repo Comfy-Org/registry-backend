@@ -304,16 +304,17 @@ func (s *RegistryService) DeletePersonalAccessToken(ctx context.Context, client 
 	return nil
 }
 
-func (s *RegistryService) CreateNode(ctx context.Context, client *ent.Client, publisherId string, node *drip.Node) (*ent.Node, error) {
+func (s *RegistryService) CreateNode(
+	ctx context.Context, client *ent.Client, publisherId string, node *drip.Node) (*ent.Node, error) {
 	defer tracing.TraceDefaultSegment(ctx, "RegistryService.CreateNode")()
 
-	validNode := mapper.ValidateNode(node)
-	if validNode != nil {
-		return nil, fmt.Errorf("invalid node: %w", validNode)
+	err := mapper.ValidateNode(node)
+	if err != nil {
+		return nil, err
 	}
 
 	var createdNode *ent.Node
-	err := db.WithTx(ctx, client, func(tx *ent.Tx) (err error) {
+	err = db.WithTx(ctx, client, func(tx *ent.Tx) (err error) {
 		createNode, err := mapper.ApiCreateNodeToDb(publisherId, node, tx.Client())
 		log.Ctx(ctx).Info().Msgf("creating node with fields: %v", createNode.Mutation().Fields())
 		if err != nil {
@@ -370,10 +371,15 @@ func (s *RegistryService) GetNode(ctx context.Context, client *ent.Client, nodeI
 	return node, nil
 }
 
-func (s *RegistryService) CreateNodeVersion(ctx context.Context, client *ent.Client, publisherID, nodeID string, nodeVersion *drip.NodeVersion) (*NodeVersionCreation, error) {
+func (s *RegistryService) CreateNodeVersion(
+	ctx context.Context,
+	client *ent.Client,
+	publisherID, nodeID, rawNodeID string,
+	nodeVersion *drip.NodeVersion) (*NodeVersionCreation, error) {
 	defer tracing.TraceDefaultSegment(ctx, "RegistryService.CreateNodeVersion")()
 
-	log.Ctx(ctx).Info().Msgf("creating node version: %v for nodeId %v", nodeVersion, nodeID)
+	log.Ctx(ctx).Info().Msgf(
+		"creating node version: %v for nodeId %v & rawNodeId %v", nodeVersion, nodeID, rawNodeID)
 	bucketName := "comfy-registry"
 	return db.WithTxResult(ctx, client, func(tx *ent.Tx) (*NodeVersionCreation, error) {
 		// If the node version is not provided, we will generate a new version
@@ -387,7 +393,7 @@ func (s *RegistryService) CreateNodeVersion(ctx context.Context, client *ent.Cli
 		}
 
 		// Create a new storage file for the node version
-		objectPath := fmt.Sprintf("%s/%s/%s/%s", publisherID, nodeID, *nodeVersion.Version, "node.zip")
+		objectPath := fmt.Sprintf("%s/%s/%s/%s", publisherID, rawNodeID, *nodeVersion.Version, "node.zip")
 		storageFile := tx.StorageFile.Create().
 			SetBucketName(bucketName).
 			SetFilePath(objectPath).
@@ -413,14 +419,28 @@ func (s *RegistryService) CreateNodeVersion(ctx context.Context, client *ent.Cli
 			return nil, fmt.Errorf("failed to index node version: %w", err)
 		}
 
-		message := fmt.Sprintf("Version %s of node %s was published successfully. Publisher: %s. https://registry.comfy.org/nodes/%s", createdNodeVersion.Version, createdNodeVersion.NodeID, publisherID, nodeID)
+		message := fmt.Sprintf(
+			"Version %s of node %s was published successfully. Publisher: %s. "+
+				"https://registry.comfy.org/nodes/%s", createdNodeVersion.Version,
+			createdNodeVersion.NodeID, publisherID, nodeID)
 		slackErr := s.slackService.SendRegistryMessageToSlack(message)
-		// Send the message to the private channel
-		s.discordService.SendSecurityCouncilMessage(message, true)
 		if slackErr != nil {
 			log.Ctx(ctx).Error().Msgf("Failed to send message to Slack w/ err: %v", slackErr)
+			// TODO: update the metric to be exported to newrelic instead of GCP.
 			drip_metric.IncrementCustomCounterMetric(ctx, drip_metric.CustomCounterIncrement{
 				Type:   "slack-send-error",
+				Val:    1,
+				Labels: map[string]string{},
+			})
+		}
+
+		// Send the message to the private channel
+		discordErr := s.discordService.SendSecurityCouncilMessage(message, true)
+		if discordErr != nil {
+			log.Ctx(ctx).Error().Msgf("Failed to send message to Discord w/ err: %v", discordErr)
+			// TODO: update the metric to be exported to newrelic instead of GCP.
+			drip_metric.IncrementCustomCounterMetric(ctx, drip_metric.CustomCounterIncrement{
+				Type:   "discord-send-error",
 				Val:    1,
 				Labels: map[string]string{},
 			})

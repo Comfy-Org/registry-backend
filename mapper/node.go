@@ -1,6 +1,7 @@
 package mapper
 
 import (
+	"errors"
 	"regexp"
 	"registry-backend/drip"
 	"registry-backend/ent"
@@ -15,8 +16,8 @@ func ApiCreateNodeToDb(publisherId string, node *drip.Node, client *ent.Client) 
 		newNode.SetDescription(*node.Description)
 	}
 	if node.Id != nil {
-		lowerCaseNodeID := strings.ToLower(*node.Id)
-		newNode.SetID(lowerCaseNodeID)
+		newNode.SetID(normalizeNodeID(*node.Id))
+		newNode.SetRawID(*node.Id)
 	}
 	if node.Author != nil {
 		newNode.SetAuthor(*node.Author)
@@ -74,41 +75,67 @@ func ApiUpdateNodeToUpdateFields(nodeID string, node *drip.Node, client *ent.Cli
 }
 
 func ValidateNode(node *drip.Node) error {
-	if node.Id != nil {
-		if len(*node.Id) > 100 {
-			return NewErrorBadRequest("node id is too long")
-		}
-		isValid, msg := IsValidNodeID(*node.Id)
-		if !isValid {
-			return NewErrorBadRequest(msg)
-		}
+	if node.Id == nil {
+		return errors.New("node id is required")
 	}
-	if node.Description != nil {
-		if len(*node.Description) > 1000 {
-			return NewErrorBadRequest("description is too long")
-		}
+
+	IsValid, errMsg := IsValidNodeID(*node.Id)
+	if !IsValid {
+		return errors.New(errMsg)
 	}
+
+	if node.Description != nil && len(*node.Description) > 1000 {
+		return errors.New("description is too long")
+	}
+
 	return nil
 }
 
 func IsValidNodeID(nodeID string) (bool, string) {
-	if len(nodeID) == 0 || len(nodeID) > 50 {
-		return false, "node id must be between 1 and 50 characters"
+	// Ensure the ID is not empty and doesn't exceed 100 characters
+	if len(nodeID) == 0 || len(nodeID) > 100 {
+		return false, "node id must be between 1 and 100 characters"
 	}
-	// Check if there are capital letters in the string
-	if strings.ToLower(nodeID) != nodeID {
-		return false, "Node ID can only contain lowercase letters"
+
+	// Ensure the name does not start or end with an underscore, hyphen, or period
+	if strings.HasPrefix(nodeID, "_") || strings.HasPrefix(nodeID, "-") ||
+		strings.HasPrefix(nodeID, ".") || strings.HasSuffix(nodeID, "_") ||
+		strings.HasSuffix(nodeID, "-") || strings.HasSuffix(nodeID, ".") {
+		return false, "node id must not start or end with an underscore, hyphen, or period"
 	}
-	// Regular expression pattern for Node ID validation (lowercase letters only)
-	pattern := `^[a-z][a-z0-9-_]+(\.[a-z0-9-_]+)*$`
-	// Compile the regular expression pattern
+
+	// Regular expression pattern to validate the project name
+	// ASCII letters, digits, underscores, hyphens, and periods are allowed
+	pattern := `^[a-zA-Z0-9](?:[a-zA-Z0-9._-]*[a-zA-Z0-9])?$`
 	regex := regexp.MustCompile(pattern)
-	// Check if the string matches the pattern
-	matches := regex.MatchString(nodeID)
-	if !matches {
-		return false, "Node ID can only contain lowercase letters, numbers, hyphens, underscores, and dots. Dots cannot be consecutive or be at the start or end of the id."
+
+	// Validate against the pattern
+	if !regex.MatchString(nodeID) {
+		return false, "node id can only contain ASCII letters, digits, " +
+			"underscores, hyphens, and periods, and must not have invalid sequences"
 	}
+
+	// Additional validation for normalized equivalency can be added here if needed
 	return true, ""
+}
+
+// GetRawNodeID returns the raw ID of a node if it exists, otherwise it returns the ID
+func GetRawNodeID(nodeID *ent.Node) string {
+	if nodeID.RawID != "" {
+		return nodeID.RawID
+	}
+
+	return nodeID.ID
+}
+
+// NormalizeNodeID normalizes the node ID to lowercase
+func normalizeNodeID(nodeID string) string {
+	// TODO: consider normalizing the node ID to a specific format adhering to
+	// 	https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#name, replacing
+	// 	underscores, hyphens, and periods with a single hyphen
+	// regex := regexp.MustCompile(`[_\-.]+`)
+	// return regex.ReplaceAllString(strings.ToLower(nodeID), "-")
+	return strings.ToLower(nodeID)
 }
 
 func DbNodeToApiNode(node *ent.Node) *drip.Node {

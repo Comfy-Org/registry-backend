@@ -76,6 +76,11 @@ func UpdateTime(v time.Time) predicate.Node {
 	return predicate.Node(sql.FieldEQ(FieldUpdateTime, v))
 }
 
+// RawID applies equality check predicate on the "raw_id" field. It's identical to RawIDEQ.
+func RawID(v string) predicate.Node {
+	return predicate.Node(sql.FieldEQ(FieldRawID, v))
+}
+
 // PublisherID applies equality check predicate on the "publisher_id" field. It's identical to PublisherIDEQ.
 func PublisherID(v string) predicate.Node {
 	return predicate.Node(sql.FieldEQ(FieldPublisherID, v))
@@ -219,6 +224,71 @@ func UpdateTimeLT(v time.Time) predicate.Node {
 // UpdateTimeLTE applies the LTE predicate on the "update_time" field.
 func UpdateTimeLTE(v time.Time) predicate.Node {
 	return predicate.Node(sql.FieldLTE(FieldUpdateTime, v))
+}
+
+// RawIDEQ applies the EQ predicate on the "raw_id" field.
+func RawIDEQ(v string) predicate.Node {
+	return predicate.Node(sql.FieldEQ(FieldRawID, v))
+}
+
+// RawIDNEQ applies the NEQ predicate on the "raw_id" field.
+func RawIDNEQ(v string) predicate.Node {
+	return predicate.Node(sql.FieldNEQ(FieldRawID, v))
+}
+
+// RawIDIn applies the In predicate on the "raw_id" field.
+func RawIDIn(vs ...string) predicate.Node {
+	return predicate.Node(sql.FieldIn(FieldRawID, vs...))
+}
+
+// RawIDNotIn applies the NotIn predicate on the "raw_id" field.
+func RawIDNotIn(vs ...string) predicate.Node {
+	return predicate.Node(sql.FieldNotIn(FieldRawID, vs...))
+}
+
+// RawIDGT applies the GT predicate on the "raw_id" field.
+func RawIDGT(v string) predicate.Node {
+	return predicate.Node(sql.FieldGT(FieldRawID, v))
+}
+
+// RawIDGTE applies the GTE predicate on the "raw_id" field.
+func RawIDGTE(v string) predicate.Node {
+	return predicate.Node(sql.FieldGTE(FieldRawID, v))
+}
+
+// RawIDLT applies the LT predicate on the "raw_id" field.
+func RawIDLT(v string) predicate.Node {
+	return predicate.Node(sql.FieldLT(FieldRawID, v))
+}
+
+// RawIDLTE applies the LTE predicate on the "raw_id" field.
+func RawIDLTE(v string) predicate.Node {
+	return predicate.Node(sql.FieldLTE(FieldRawID, v))
+}
+
+// RawIDContains applies the Contains predicate on the "raw_id" field.
+func RawIDContains(v string) predicate.Node {
+	return predicate.Node(sql.FieldContains(FieldRawID, v))
+}
+
+// RawIDHasPrefix applies the HasPrefix predicate on the "raw_id" field.
+func RawIDHasPrefix(v string) predicate.Node {
+	return predicate.Node(sql.FieldHasPrefix(FieldRawID, v))
+}
+
+// RawIDHasSuffix applies the HasSuffix predicate on the "raw_id" field.
+func RawIDHasSuffix(v string) predicate.Node {
+	return predicate.Node(sql.FieldHasSuffix(FieldRawID, v))
+}
+
+// RawIDEqualFold applies the EqualFold predicate on the "raw_id" field.
+func RawIDEqualFold(v string) predicate.Node {
+	return predicate.Node(sql.FieldEqualFold(FieldRawID, v))
+}
+
+// RawIDContainsFold applies the ContainsFold predicate on the "raw_id" field.
+func RawIDContainsFold(v string) predicate.Node {
+	return predicate.Node(sql.FieldContainsFold(FieldRawID, v))
 }
 
 // PublisherIDEQ applies the EQ predicate on the "publisher_id" field.
