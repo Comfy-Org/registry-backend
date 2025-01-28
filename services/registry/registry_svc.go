@@ -393,7 +393,7 @@ func (s *RegistryService) CreateNodeVersion(
 		}
 
 		// Create a new storage file for the node version
-		objectPath := fmt.Sprintf("%s/%s/%s/%s", publisherID, *nodeVersion.Version, "node.zip")
+		objectPath := fmt.Sprintf("%s/%s/%s/%s", publisherID, nodeID, *nodeVersion.Version, "node.zip")
 		storageFile := tx.StorageFile.Create().
 			SetBucketName(bucketName).
 			SetFilePath(objectPath).
