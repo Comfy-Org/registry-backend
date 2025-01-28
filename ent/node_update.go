@@ -41,16 +41,16 @@ func (nu *NodeUpdate) SetUpdateTime(t time.Time) *NodeUpdate {
 	return nu
 }
 
-// SetRawID sets the "raw_id" field.
-func (nu *NodeUpdate) SetRawID(s string) *NodeUpdate {
-	nu.mutation.SetRawID(s)
+// SetNormalizedID sets the "normalized_id" field.
+func (nu *NodeUpdate) SetNormalizedID(s string) *NodeUpdate {
+	nu.mutation.SetNormalizedID(s)
 	return nu
 }
 
-// SetNillableRawID sets the "raw_id" field if the given value is not nil.
-func (nu *NodeUpdate) SetNillableRawID(s *string) *NodeUpdate {
+// SetNillableNormalizedID sets the "normalized_id" field if the given value is not nil.
+func (nu *NodeUpdate) SetNillableNormalizedID(s *string) *NodeUpdate {
 	if s != nil {
-		nu.SetRawID(*s)
+		nu.SetNormalizedID(*s)
 	}
 	return nu
 }
@@ -478,8 +478,8 @@ func (nu *NodeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := nu.mutation.UpdateTime(); ok {
 		_spec.SetField(node.FieldUpdateTime, field.TypeTime, value)
 	}
-	if value, ok := nu.mutation.RawID(); ok {
-		_spec.SetField(node.FieldRawID, field.TypeString, value)
+	if value, ok := nu.mutation.NormalizedID(); ok {
+		_spec.SetField(node.FieldNormalizedID, field.TypeString, value)
 	}
 	if value, ok := nu.mutation.Name(); ok {
 		_spec.SetField(node.FieldName, field.TypeString, value)
@@ -702,16 +702,16 @@ func (nuo *NodeUpdateOne) SetUpdateTime(t time.Time) *NodeUpdateOne {
 	return nuo
 }
 
-// SetRawID sets the "raw_id" field.
-func (nuo *NodeUpdateOne) SetRawID(s string) *NodeUpdateOne {
-	nuo.mutation.SetRawID(s)
+// SetNormalizedID sets the "normalized_id" field.
+func (nuo *NodeUpdateOne) SetNormalizedID(s string) *NodeUpdateOne {
+	nuo.mutation.SetNormalizedID(s)
 	return nuo
 }
 
-// SetNillableRawID sets the "raw_id" field if the given value is not nil.
-func (nuo *NodeUpdateOne) SetNillableRawID(s *string) *NodeUpdateOne {
+// SetNillableNormalizedID sets the "normalized_id" field if the given value is not nil.
+func (nuo *NodeUpdateOne) SetNillableNormalizedID(s *string) *NodeUpdateOne {
 	if s != nil {
-		nuo.SetRawID(*s)
+		nuo.SetNormalizedID(*s)
 	}
 	return nuo
 }
@@ -1169,8 +1169,8 @@ func (nuo *NodeUpdateOne) sqlSave(ctx context.Context) (_node *Node, err error) 
 	if value, ok := nuo.mutation.UpdateTime(); ok {
 		_spec.SetField(node.FieldUpdateTime, field.TypeTime, value)
 	}
-	if value, ok := nuo.mutation.RawID(); ok {
-		_spec.SetField(node.FieldRawID, field.TypeString, value)
+	if value, ok := nuo.mutation.NormalizedID(); ok {
+		_spec.SetField(node.FieldNormalizedID, field.TypeString, value)
 	}
 	if value, ok := nuo.mutation.Name(); ok {
 		_spec.SetField(node.FieldName, field.TypeString, value)

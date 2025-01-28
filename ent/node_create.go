@@ -56,9 +56,9 @@ func (nc *NodeCreate) SetNillableUpdateTime(t *time.Time) *NodeCreate {
 	return nc
 }
 
-// SetRawID sets the "raw_id" field.
-func (nc *NodeCreate) SetRawID(s string) *NodeCreate {
-	nc.mutation.SetRawID(s)
+// SetNormalizedID sets the "normalized_id" field.
+func (nc *NodeCreate) SetNormalizedID(s string) *NodeCreate {
+	nc.mutation.SetNormalizedID(s)
 	return nc
 }
 
@@ -346,8 +346,8 @@ func (nc *NodeCreate) check() error {
 	if _, ok := nc.mutation.UpdateTime(); !ok {
 		return &ValidationError{Name: "update_time", err: errors.New(`ent: missing required field "Node.update_time"`)}
 	}
-	if _, ok := nc.mutation.RawID(); !ok {
-		return &ValidationError{Name: "raw_id", err: errors.New(`ent: missing required field "Node.raw_id"`)}
+	if _, ok := nc.mutation.NormalizedID(); !ok {
+		return &ValidationError{Name: "normalized_id", err: errors.New(`ent: missing required field "Node.normalized_id"`)}
 	}
 	if _, ok := nc.mutation.PublisherID(); !ok {
 		return &ValidationError{Name: "publisher_id", err: errors.New(`ent: missing required field "Node.publisher_id"`)}
@@ -428,9 +428,9 @@ func (nc *NodeCreate) createSpec() (*Node, *sqlgraph.CreateSpec) {
 		_spec.SetField(node.FieldUpdateTime, field.TypeTime, value)
 		_node.UpdateTime = value
 	}
-	if value, ok := nc.mutation.RawID(); ok {
-		_spec.SetField(node.FieldRawID, field.TypeString, value)
-		_node.RawID = value
+	if value, ok := nc.mutation.NormalizedID(); ok {
+		_spec.SetField(node.FieldNormalizedID, field.TypeString, value)
+		_node.NormalizedID = value
 	}
 	if value, ok := nc.mutation.Name(); ok {
 		_spec.SetField(node.FieldName, field.TypeString, value)
@@ -601,15 +601,15 @@ func (u *NodeUpsert) UpdateUpdateTime() *NodeUpsert {
 	return u
 }
 
-// SetRawID sets the "raw_id" field.
-func (u *NodeUpsert) SetRawID(v string) *NodeUpsert {
-	u.Set(node.FieldRawID, v)
+// SetNormalizedID sets the "normalized_id" field.
+func (u *NodeUpsert) SetNormalizedID(v string) *NodeUpsert {
+	u.Set(node.FieldNormalizedID, v)
 	return u
 }
 
-// UpdateRawID sets the "raw_id" field to the value that was provided on create.
-func (u *NodeUpsert) UpdateRawID() *NodeUpsert {
-	u.SetExcluded(node.FieldRawID)
+// UpdateNormalizedID sets the "normalized_id" field to the value that was provided on create.
+func (u *NodeUpsert) UpdateNormalizedID() *NodeUpsert {
+	u.SetExcluded(node.FieldNormalizedID)
 	return u
 }
 
@@ -912,17 +912,17 @@ func (u *NodeUpsertOne) UpdateUpdateTime() *NodeUpsertOne {
 	})
 }
 
-// SetRawID sets the "raw_id" field.
-func (u *NodeUpsertOne) SetRawID(v string) *NodeUpsertOne {
+// SetNormalizedID sets the "normalized_id" field.
+func (u *NodeUpsertOne) SetNormalizedID(v string) *NodeUpsertOne {
 	return u.Update(func(s *NodeUpsert) {
-		s.SetRawID(v)
+		s.SetNormalizedID(v)
 	})
 }
 
-// UpdateRawID sets the "raw_id" field to the value that was provided on create.
-func (u *NodeUpsertOne) UpdateRawID() *NodeUpsertOne {
+// UpdateNormalizedID sets the "normalized_id" field to the value that was provided on create.
+func (u *NodeUpsertOne) UpdateNormalizedID() *NodeUpsertOne {
 	return u.Update(func(s *NodeUpsert) {
-		s.UpdateRawID()
+		s.UpdateNormalizedID()
 	})
 }
 
@@ -1431,17 +1431,17 @@ func (u *NodeUpsertBulk) UpdateUpdateTime() *NodeUpsertBulk {
 	})
 }
 
-// SetRawID sets the "raw_id" field.
-func (u *NodeUpsertBulk) SetRawID(v string) *NodeUpsertBulk {
+// SetNormalizedID sets the "normalized_id" field.
+func (u *NodeUpsertBulk) SetNormalizedID(v string) *NodeUpsertBulk {
 	return u.Update(func(s *NodeUpsert) {
-		s.SetRawID(v)
+		s.SetNormalizedID(v)
 	})
 }
 
-// UpdateRawID sets the "raw_id" field to the value that was provided on create.
-func (u *NodeUpsertBulk) UpdateRawID() *NodeUpsertBulk {
+// UpdateNormalizedID sets the "normalized_id" field to the value that was provided on create.
+func (u *NodeUpsertBulk) UpdateNormalizedID() *NodeUpsertBulk {
 	return u.Update(func(s *NodeUpsert) {
-		s.UpdateRawID()
+		s.UpdateNormalizedID()
 	})
 }
 

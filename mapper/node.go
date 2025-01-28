@@ -16,8 +16,8 @@ func ApiCreateNodeToDb(publisherId string, node *drip.Node, client *ent.Client) 
 		newNode.SetDescription(*node.Description)
 	}
 	if node.Id != nil {
-		newNode.SetID(normalizeNodeID(*node.Id))
-		newNode.SetRawID(*node.Id)
+		newNode.SetID(*node.Id)
+		newNode.SetNormalizedID(normalizeNodeID(*node.Id))
 	}
 	if node.Author != nil {
 		newNode.SetAuthor(*node.Author)
@@ -117,15 +117,6 @@ func IsValidNodeID(nodeID string) (bool, string) {
 
 	// Additional validation for normalized equivalency can be added here if needed
 	return true, ""
-}
-
-// GetRawNodeID returns the raw ID of a node if it exists, otherwise it returns the ID
-func GetRawNodeID(nodeID *ent.Node) string {
-	if nodeID.RawID != "" {
-		return nodeID.RawID
-	}
-
-	return nodeID.ID
 }
 
 // NormalizeNodeID normalizes the node ID to lowercase

@@ -4003,7 +4003,7 @@ type NodeMutation struct {
 	id                      *string
 	create_time             *time.Time
 	update_time             *time.Time
-	raw_id                  *string
+	normalized_id           *string
 	name                    *string
 	description             *string
 	category                *string
@@ -4212,40 +4212,40 @@ func (m *NodeMutation) ResetUpdateTime() {
 	m.update_time = nil
 }
 
-// SetRawID sets the "raw_id" field.
-func (m *NodeMutation) SetRawID(s string) {
-	m.raw_id = &s
+// SetNormalizedID sets the "normalized_id" field.
+func (m *NodeMutation) SetNormalizedID(s string) {
+	m.normalized_id = &s
 }
 
-// RawID returns the value of the "raw_id" field in the mutation.
-func (m *NodeMutation) RawID() (r string, exists bool) {
-	v := m.raw_id
+// NormalizedID returns the value of the "normalized_id" field in the mutation.
+func (m *NodeMutation) NormalizedID() (r string, exists bool) {
+	v := m.normalized_id
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldRawID returns the old "raw_id" field's value of the Node entity.
+// OldNormalizedID returns the old "normalized_id" field's value of the Node entity.
 // If the Node object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *NodeMutation) OldRawID(ctx context.Context) (v string, err error) {
+func (m *NodeMutation) OldNormalizedID(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldRawID is only allowed on UpdateOne operations")
+		return v, errors.New("OldNormalizedID is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldRawID requires an ID field in the mutation")
+		return v, errors.New("OldNormalizedID requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldRawID: %w", err)
+		return v, fmt.Errorf("querying old value for OldNormalizedID: %w", err)
 	}
-	return oldValue.RawID, nil
+	return oldValue.NormalizedID, nil
 }
 
-// ResetRawID resets all changes to the "raw_id" field.
-func (m *NodeMutation) ResetRawID() {
-	m.raw_id = nil
+// ResetNormalizedID resets all changes to the "normalized_id" field.
+func (m *NodeMutation) ResetNormalizedID() {
+	m.normalized_id = nil
 }
 
 // SetPublisherID sets the "publisher_id" field.
@@ -5117,8 +5117,8 @@ func (m *NodeMutation) Fields() []string {
 	if m.update_time != nil {
 		fields = append(fields, node.FieldUpdateTime)
 	}
-	if m.raw_id != nil {
-		fields = append(fields, node.FieldRawID)
+	if m.normalized_id != nil {
+		fields = append(fields, node.FieldNormalizedID)
 	}
 	if m.publisher != nil {
 		fields = append(fields, node.FieldPublisherID)
@@ -5177,8 +5177,8 @@ func (m *NodeMutation) Field(name string) (ent.Value, bool) {
 		return m.CreateTime()
 	case node.FieldUpdateTime:
 		return m.UpdateTime()
-	case node.FieldRawID:
-		return m.RawID()
+	case node.FieldNormalizedID:
+		return m.NormalizedID()
 	case node.FieldPublisherID:
 		return m.PublisherID()
 	case node.FieldName:
@@ -5222,8 +5222,8 @@ func (m *NodeMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldCreateTime(ctx)
 	case node.FieldUpdateTime:
 		return m.OldUpdateTime(ctx)
-	case node.FieldRawID:
-		return m.OldRawID(ctx)
+	case node.FieldNormalizedID:
+		return m.OldNormalizedID(ctx)
 	case node.FieldPublisherID:
 		return m.OldPublisherID(ctx)
 	case node.FieldName:
@@ -5277,12 +5277,12 @@ func (m *NodeMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUpdateTime(v)
 		return nil
-	case node.FieldRawID:
+	case node.FieldNormalizedID:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetRawID(v)
+		m.SetNormalizedID(v)
 		return nil
 	case node.FieldPublisherID:
 		v, ok := value.(string)
@@ -5522,8 +5522,8 @@ func (m *NodeMutation) ResetField(name string) error {
 	case node.FieldUpdateTime:
 		m.ResetUpdateTime()
 		return nil
-	case node.FieldRawID:
-		m.ResetRawID()
+	case node.FieldNormalizedID:
+		m.ResetNormalizedID()
 		return nil
 	case node.FieldPublisherID:
 		m.ResetPublisherID()

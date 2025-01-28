@@ -510,9 +510,8 @@ func (s *DripStrictServerImplementation) PublishNodeVersion(
 	}
 
 	// Create node version
-	rawNodeID := mapper.GetRawNodeID(node)
 	nodeVersionCreation, err := s.RegistryService.CreateNodeVersion(
-		ctx, s.Client, request.PublisherId, node.ID, rawNodeID, &request.Body.NodeVersion)
+		ctx, s.Client, request.PublisherId, node.ID, &request.Body.NodeVersion)
 	if err != nil {
 		if ent.IsConstraintError(err) {
 			return drip.PublishNodeVersion400JSONResponse{Message: "The node version already exists"}, nil

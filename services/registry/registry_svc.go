@@ -374,12 +374,12 @@ func (s *RegistryService) GetNode(ctx context.Context, client *ent.Client, nodeI
 func (s *RegistryService) CreateNodeVersion(
 	ctx context.Context,
 	client *ent.Client,
-	publisherID, nodeID, rawNodeID string,
+	publisherID, nodeID string,
 	nodeVersion *drip.NodeVersion) (*NodeVersionCreation, error) {
 	defer tracing.TraceDefaultSegment(ctx, "RegistryService.CreateNodeVersion")()
 
 	log.Ctx(ctx).Info().Msgf(
-		"creating node version: %v for nodeId %v & rawNodeId %v", nodeVersion, nodeID, rawNodeID)
+		"creating node version: %v for nodeId %v", nodeVersion, nodeID)
 	bucketName := "comfy-registry"
 	return db.WithTxResult(ctx, client, func(tx *ent.Tx) (*NodeVersionCreation, error) {
 		// If the node version is not provided, we will generate a new version
@@ -393,7 +393,7 @@ func (s *RegistryService) CreateNodeVersion(
 		}
 
 		// Create a new storage file for the node version
-		objectPath := fmt.Sprintf("%s/%s/%s/%s", publisherID, rawNodeID, *nodeVersion.Version, "node.zip")
+		objectPath := fmt.Sprintf("%s/%s/%s/%s", publisherID, *nodeVersion.Version, "node.zip")
 		storageFile := tx.StorageFile.Create().
 			SetBucketName(bucketName).
 			SetFilePath(objectPath).

@@ -20,8 +20,8 @@ const (
 	FieldCreateTime = "create_time"
 	// FieldUpdateTime holds the string denoting the update_time field in the database.
 	FieldUpdateTime = "update_time"
-	// FieldRawID holds the string denoting the raw_id field in the database.
-	FieldRawID = "raw_id"
+	// FieldNormalizedID holds the string denoting the normalized_id field in the database.
+	FieldNormalizedID = "normalized_id"
 	// FieldPublisherID holds the string denoting the publisher_id field in the database.
 	FieldPublisherID = "publisher_id"
 	// FieldName holds the string denoting the name field in the database.
@@ -88,7 +88,7 @@ var Columns = []string{
 	FieldID,
 	FieldCreateTime,
 	FieldUpdateTime,
-	FieldRawID,
+	FieldNormalizedID,
 	FieldPublisherID,
 	FieldName,
 	FieldDescription,
@@ -163,9 +163,9 @@ func ByUpdateTime(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdateTime, opts...).ToFunc()
 }
 
-// ByRawID orders the results by the raw_id field.
-func ByRawID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldRawID, opts...).ToFunc()
+// ByNormalizedID orders the results by the normalized_id field.
+func ByNormalizedID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNormalizedID, opts...).ToFunc()
 }
 
 // ByPublisherID orders the results by the publisher_id field.
