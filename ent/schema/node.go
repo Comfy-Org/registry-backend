@@ -19,6 +19,9 @@ func (Node) Fields() []ent.Field {
 		field.String("id").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}).Unique(),
+		field.String("normalized_id").SchemaType(map[string]string{
+			dialect.Postgres: "text",
+		}).Unique(),
 		field.String("publisher_id").SchemaType(map[string]string{
 			dialect.Postgres: "text",
 		}),

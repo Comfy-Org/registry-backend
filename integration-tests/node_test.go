@@ -2,6 +2,8 @@ package integration
 
 import (
 	"context"
+	"google.golang.org/protobuf/proto"
+	"strings"
 	"testing"
 	"time"
 
@@ -121,6 +123,23 @@ func TestRegistryNode(t *testing.T) {
 		assert.Equal(t, node.Repository, updatedResponse.Repository)
 	})
 
+	// Test for duplicate node_id with case-insensitive comparison
+	t.Run("Create Duplicate Node ID (Case-Insensitive)", func(t *testing.T) {
+		// Create a node with an ID that differs only by case
+		duplicateNode := randomNode()
+		duplicateNode.Id = proto.String(strings.ToUpper(*node.Id)) // Use uppercase version of the original node ID
+
+		// Attempt to create the node
+		_, err := withMiddleware(authz, impl.CreateNode)(ctx, drip.CreateNodeRequestObject{
+			PublisherId: publisherId,
+			Body:        duplicateNode,
+		})
+
+		// Expect an error indicating duplicate ID
+		require.Error(t, err, "Creating a node with a duplicate ID (case-insensitive) should fail")
+		assert.Contains(t, err.Error(), "duplicate", "Error should indicate duplicate node_id")
+	})
+
 	// Test deleting the node
 	t.Run("Delete Node", func(t *testing.T) {
 		res, err := withMiddleware(authz, impl.DeleteNode)(ctx, drip.DeleteNodeRequestObject{
@@ -140,7 +159,6 @@ func TestRegistryNode(t *testing.T) {
 		require.NoError(t, err, "Deleting nonexistent node should not return an error")
 		assert.IsType(t, drip.DeleteNode204Response{}, res)
 	})
-
 }
 
 func TestRegistryNodeReindex(t *testing.T) {

@@ -41,6 +41,20 @@ func (nu *NodeUpdate) SetUpdateTime(t time.Time) *NodeUpdate {
 	return nu
 }
 
+// SetNormalizedID sets the "normalized_id" field.
+func (nu *NodeUpdate) SetNormalizedID(s string) *NodeUpdate {
+	nu.mutation.SetNormalizedID(s)
+	return nu
+}
+
+// SetNillableNormalizedID sets the "normalized_id" field if the given value is not nil.
+func (nu *NodeUpdate) SetNillableNormalizedID(s *string) *NodeUpdate {
+	if s != nil {
+		nu.SetNormalizedID(*s)
+	}
+	return nu
+}
+
 // SetPublisherID sets the "publisher_id" field.
 func (nu *NodeUpdate) SetPublisherID(s string) *NodeUpdate {
 	nu.mutation.SetPublisherID(s)
@@ -464,6 +478,9 @@ func (nu *NodeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := nu.mutation.UpdateTime(); ok {
 		_spec.SetField(node.FieldUpdateTime, field.TypeTime, value)
 	}
+	if value, ok := nu.mutation.NormalizedID(); ok {
+		_spec.SetField(node.FieldNormalizedID, field.TypeString, value)
+	}
 	if value, ok := nu.mutation.Name(); ok {
 		_spec.SetField(node.FieldName, field.TypeString, value)
 	}
@@ -682,6 +699,20 @@ type NodeUpdateOne struct {
 // SetUpdateTime sets the "update_time" field.
 func (nuo *NodeUpdateOne) SetUpdateTime(t time.Time) *NodeUpdateOne {
 	nuo.mutation.SetUpdateTime(t)
+	return nuo
+}
+
+// SetNormalizedID sets the "normalized_id" field.
+func (nuo *NodeUpdateOne) SetNormalizedID(s string) *NodeUpdateOne {
+	nuo.mutation.SetNormalizedID(s)
+	return nuo
+}
+
+// SetNillableNormalizedID sets the "normalized_id" field if the given value is not nil.
+func (nuo *NodeUpdateOne) SetNillableNormalizedID(s *string) *NodeUpdateOne {
+	if s != nil {
+		nuo.SetNormalizedID(*s)
+	}
 	return nuo
 }
 
@@ -1137,6 +1168,9 @@ func (nuo *NodeUpdateOne) sqlSave(ctx context.Context) (_node *Node, err error) 
 	}
 	if value, ok := nuo.mutation.UpdateTime(); ok {
 		_spec.SetField(node.FieldUpdateTime, field.TypeTime, value)
+	}
+	if value, ok := nuo.mutation.NormalizedID(); ok {
+		_spec.SetField(node.FieldNormalizedID, field.TypeString, value)
 	}
 	if value, ok := nuo.mutation.Name(); ok {
 		_spec.SetField(node.FieldName, field.TypeString, value)

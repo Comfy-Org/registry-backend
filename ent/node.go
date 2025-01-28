@@ -24,6 +24,8 @@ type Node struct {
 	CreateTime time.Time `json:"create_time,omitempty"`
 	// UpdateTime holds the value of the "update_time" field.
 	UpdateTime time.Time `json:"update_time,omitempty"`
+	// NormalizedID holds the value of the "normalized_id" field.
+	NormalizedID string `json:"normalized_id,omitempty"`
 	// PublisherID holds the value of the "publisher_id" field.
 	PublisherID string `json:"publisher_id,omitempty"`
 	// Name holds the value of the "name" field.
@@ -111,7 +113,7 @@ func (*Node) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case node.FieldTotalInstall, node.FieldTotalStar, node.FieldTotalReview:
 			values[i] = new(sql.NullInt64)
-		case node.FieldID, node.FieldPublisherID, node.FieldName, node.FieldDescription, node.FieldCategory, node.FieldAuthor, node.FieldLicense, node.FieldRepositoryURL, node.FieldIconURL, node.FieldStatus, node.FieldStatusDetail:
+		case node.FieldID, node.FieldNormalizedID, node.FieldPublisherID, node.FieldName, node.FieldDescription, node.FieldCategory, node.FieldAuthor, node.FieldLicense, node.FieldRepositoryURL, node.FieldIconURL, node.FieldStatus, node.FieldStatusDetail:
 			values[i] = new(sql.NullString)
 		case node.FieldCreateTime, node.FieldUpdateTime, node.FieldLastAlgoliaIndexTime:
 			values[i] = new(sql.NullTime)
@@ -147,6 +149,12 @@ func (n *Node) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field update_time", values[i])
 			} else if value.Valid {
 				n.UpdateTime = value.Time
+			}
+		case node.FieldNormalizedID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field normalized_id", values[i])
+			} else if value.Valid {
+				n.NormalizedID = value.String
 			}
 		case node.FieldPublisherID:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -296,6 +304,9 @@ func (n *Node) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("update_time=")
 	builder.WriteString(n.UpdateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("normalized_id=")
+	builder.WriteString(n.NormalizedID)
 	builder.WriteString(", ")
 	builder.WriteString("publisher_id=")
 	builder.WriteString(n.PublisherID)

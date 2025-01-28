@@ -107,6 +107,7 @@ var (
 		{Name: "id", Type: field.TypeString, Unique: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "create_time", Type: field.TypeTime},
 		{Name: "update_time", Type: field.TypeTime},
+		{Name: "normalized_id", Type: field.TypeString, Unique: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "name", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "description", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "category", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
@@ -131,7 +132,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "nodes_publishers_nodes",
-				Columns:    []*schema.Column{NodesColumns[17]},
+				Columns:    []*schema.Column{NodesColumns[18]},
 				RefColumns: []*schema.Column{PublishersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

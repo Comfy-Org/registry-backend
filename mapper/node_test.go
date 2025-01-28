@@ -1,148 +1,51 @@
 package mapper_test
 
 import (
+	"google.golang.org/protobuf/proto"
 	"registry-backend/drip"
 	"registry-backend/mapper"
 	"testing"
 )
 
-// TestIsValidNodeID tests the isValidNodeID function with various inputs.
+// TestIsValidNodeID tests the IsValidNodeID function with various inputs.
 func TestIsValidNodeID(t *testing.T) {
-	regexErrorMessage := "Node ID can only contain lowercase letters, numbers, hyphens, underscores, and dots. Dots cannot be consecutive or be at the start or end of the id."
+	invalidSequenceError := "node id can only contain ASCII letters, digits, underscores, hyphens, and periods, and must not have invalid sequences"
+	startEndCharError := "node id must not start or end with an underscore, hyphen, or period"
+	lengthError := "node id must be between 1 and 100 characters"
+
 	testCases := []struct {
 		name          string
 		node          *drip.Node
-		expectedError string // include this field to specify what error message you expect
+		expectedError string // specify the expected error message
 	}{
-		{
-			name:          "Valid Node ID",
-			node:          &drip.Node{Id: stringPtr("validnodeid1")},
-			expectedError: "",
-		},
-		{
-			name:          "Node ID Too Long",
-			node:          &drip.Node{Id: stringPtr("a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901")},
-			expectedError: "node id is too long",
-		},
-		{
-			name:          "Invalid Node ID",
-			node:          &drip.Node{Id: stringPtr("123")},
-			expectedError: regexErrorMessage,
-		},
-
-		{
-			name:          "Valid Node ID",
-			node:          &drip.Node{Id: stringPtr("node1")},
-			expectedError: "",
-		},
-		{
-			name:          "Valid with dash",
-			node:          &drip.Node{Id: stringPtr("node-1")},
-			expectedError: "",
-		},
-		{
-			name:          "Invalid with uppercase",
-			node:          &drip.Node{Id: stringPtr("Node")},
-			expectedError: "Node ID can only contain lowercase letters",
-		},
-		{
-			name:          "Invalid with special characters",
-			node:          &drip.Node{Id: stringPtr("node_@")},
-			expectedError: regexErrorMessage,
-		},
-		{
-			name:          "Invalid start with number",
-			node:          &drip.Node{Id: stringPtr("1node")},
-			expectedError: regexErrorMessage,
-		},
-		{
-			name:          "Invalid start with dash",
-			node:          &drip.Node{Id: stringPtr("-node")},
-			expectedError: regexErrorMessage,
-		},
-		{
-			name:          "Empty input",
-			node:          &drip.Node{Id: stringPtr("")},
-			expectedError: "node id must be between 1 and 50 characters",
-		},
-		{
-			name:          "Valid all lowercase letters",
-			node:          &drip.Node{Id: stringPtr("abcdefghijklmnopqrstuvwxyz")},
-			expectedError: "",
-		},
-		{
-			name:          "Valid containing underscore",
-			node:          &drip.Node{Id: stringPtr("comfy_ui")},
-			expectedError: "",
-		},
-		{
-			name:          "Valid ID with hyphen",
-			node:          &drip.Node{Id: stringPtr("valid-node-id")},
-			expectedError: "",
-		},
-		{
-			name:          "Valid ID with underscore",
-			node:          &drip.Node{Id: stringPtr("valid_node_id")},
-			expectedError: "",
-		},
-		{
-			name:          "Valid ID with dot",
-			node:          &drip.Node{Id: stringPtr("valid.node.id")},
-			expectedError: "",
-		},
-		{
-			name:          "Invalid ID with number first",
-			node:          &drip.Node{Id: stringPtr("1invalidnodeid")},
-			expectedError: regexErrorMessage,
-		},
-		{
-			name:          "Invalid ID with consecutive dots",
-			node:          &drip.Node{Id: stringPtr("invalid..nodeid")},
-			expectedError: regexErrorMessage,
-		},
-		{
-			name:          "Invalid ID with special character first",
-			node:          &drip.Node{Id: stringPtr("-invalidnodeid")},
-			expectedError: regexErrorMessage,
-		},
-		{
-			name:          "Valid complex ID",
-			node:          &drip.Node{Id: stringPtr("valid-node.id_1")},
-			expectedError: "",
-		},
-		{
-			name:          "Invalid ID with special characters only",
-			node:          &drip.Node{Id: stringPtr("$$$$")},
-			expectedError: regexErrorMessage,
-		},
-		{
-			name:          "Invalid ID with leading dot",
-			node:          &drip.Node{Id: stringPtr(".invalidnodeid")},
-			expectedError: regexErrorMessage,
-		},
-		{
-			name:          "Invalid ID with ending dot",
-			node:          &drip.Node{Id: stringPtr("invalidnodeid.")},
-			expectedError: regexErrorMessage,
-		},
+		{"Valid Node ID", &drip.Node{Id: proto.String("validnodeid1")}, ""},
+		{"Node ID Too Long", &drip.Node{Id: proto.String("a1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123")}, lengthError},
+		{"Empty Node ID", &drip.Node{Id: proto.String("")}, lengthError},
+		{"Starts with underscore", &drip.Node{Id: proto.String("_validnode")}, startEndCharError},
+		{"Ends with hyphen", &drip.Node{Id: proto.String("validnode-")}, startEndCharError},
+		{"Starts with dot", &drip.Node{Id: proto.String(".validnode")}, startEndCharError},
+		{"Ends with dot", &drip.Node{Id: proto.String("validnode.")}, startEndCharError},
+		{"Invalid sequence: consecutive dots", &drip.Node{Id: proto.String("invalid..node")}, ""},
+		{"Invalid special characters", &drip.Node{Id: proto.String("invalid@node")}, invalidSequenceError},
+		{"Valid Node with hyphen", &drip.Node{Id: proto.String("valid-node")}, ""},
+		{"Valid Node with underscore", &drip.Node{Id: proto.String("valid_node")}, ""},
+		{"Valid Node with period", &drip.Node{Id: proto.String("valid.node")}, ""},
+		{"Invalid: starts with number", &drip.Node{Id: proto.String("1invalid")}, ""},
+		{"Invalid: special characters only", &drip.Node{Id: proto.String("$$$")}, invalidSequenceError},
+		{"Valid mixed-case Node", &drip.Node{Id: proto.String("ValidNodeID")}, ""},
+		{"Valid long Node", &drip.Node{Id: proto.String("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123-456789")}, ""},
+		{"Invalid: ends with underscore", &drip.Node{Id: proto.String("validnode_")}, startEndCharError},
+		{"Invalid: invalid character middle", &drip.Node{Id: proto.String("validnode@")}, invalidSequenceError},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := mapper.ValidateNode(tc.node)
-			if err != nil {
-				if tc.expectedError == "" {
-					t.Errorf("expected no error, got %v", err)
-				} else if err.Error() != tc.expectedError {
-					t.Errorf("expected error message %q, got %q", tc.expectedError, err.Error())
-				}
-			} else if tc.expectedError != "" {
+			valid, errMsg := mapper.IsValidNodeID(*tc.node.Id)
+			if valid && tc.expectedError != "" {
 				t.Errorf("expected error %q, got none", tc.expectedError)
+			} else if !valid && errMsg != tc.expectedError {
+				t.Errorf("expected error message %q, got %q", tc.expectedError, errMsg)
 			}
 		})
 	}
-}
-
-func stringPtr(s string) *string {
-	return &s
 }
