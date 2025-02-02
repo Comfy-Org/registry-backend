@@ -21,7 +21,9 @@ func TestRegistryComfyNode(t *testing.T) {
 	defer cleanup()
 
 	// Initialize server implementation and authorization middleware
-	impl := NewStrictServerImplementationWithMocks(client, &config.Config{})
+	impl := NewStrictServerImplementationWithMocks(client, &config.Config{
+		CloudStorageBucketName: "test-bucket",
+	})
 	authz := authorization.NewAuthorizationManager(client, impl.RegistryService, impl.NewRelicApp).AuthorizationMiddleware()
 
 	// Setup test user context and publisher
