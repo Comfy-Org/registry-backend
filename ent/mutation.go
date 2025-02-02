@@ -4243,9 +4243,22 @@ func (m *NodeMutation) OldNormalizedID(ctx context.Context) (v string, err error
 	return oldValue.NormalizedID, nil
 }
 
+// ClearNormalizedID clears the value of the "normalized_id" field.
+func (m *NodeMutation) ClearNormalizedID() {
+	m.normalized_id = nil
+	m.clearedFields[node.FieldNormalizedID] = struct{}{}
+}
+
+// NormalizedIDCleared returns if the "normalized_id" field was cleared in this mutation.
+func (m *NodeMutation) NormalizedIDCleared() bool {
+	_, ok := m.clearedFields[node.FieldNormalizedID]
+	return ok
+}
+
 // ResetNormalizedID resets all changes to the "normalized_id" field.
 func (m *NodeMutation) ResetNormalizedID() {
 	m.normalized_id = nil
+	delete(m.clearedFields, node.FieldNormalizedID)
 }
 
 // SetPublisherID sets the "publisher_id" field.
@@ -5458,6 +5471,9 @@ func (m *NodeMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *NodeMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(node.FieldNormalizedID) {
+		fields = append(fields, node.FieldNormalizedID)
+	}
 	if m.FieldCleared(node.FieldDescription) {
 		fields = append(fields, node.FieldDescription)
 	}
@@ -5490,6 +5506,9 @@ func (m *NodeMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *NodeMutation) ClearField(name string) error {
 	switch name {
+	case node.FieldNormalizedID:
+		m.ClearNormalizedID()
+		return nil
 	case node.FieldDescription:
 		m.ClearDescription()
 		return nil

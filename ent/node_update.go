@@ -55,6 +55,12 @@ func (nu *NodeUpdate) SetNillableNormalizedID(s *string) *NodeUpdate {
 	return nu
 }
 
+// ClearNormalizedID clears the value of the "normalized_id" field.
+func (nu *NodeUpdate) ClearNormalizedID() *NodeUpdate {
+	nu.mutation.ClearNormalizedID()
+	return nu
+}
+
 // SetPublisherID sets the "publisher_id" field.
 func (nu *NodeUpdate) SetPublisherID(s string) *NodeUpdate {
 	nu.mutation.SetPublisherID(s)
@@ -481,6 +487,9 @@ func (nu *NodeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := nu.mutation.NormalizedID(); ok {
 		_spec.SetField(node.FieldNormalizedID, field.TypeString, value)
 	}
+	if nu.mutation.NormalizedIDCleared() {
+		_spec.ClearField(node.FieldNormalizedID, field.TypeString)
+	}
 	if value, ok := nu.mutation.Name(); ok {
 		_spec.SetField(node.FieldName, field.TypeString, value)
 	}
@@ -713,6 +722,12 @@ func (nuo *NodeUpdateOne) SetNillableNormalizedID(s *string) *NodeUpdateOne {
 	if s != nil {
 		nuo.SetNormalizedID(*s)
 	}
+	return nuo
+}
+
+// ClearNormalizedID clears the value of the "normalized_id" field.
+func (nuo *NodeUpdateOne) ClearNormalizedID() *NodeUpdateOne {
+	nuo.mutation.ClearNormalizedID()
 	return nuo
 }
 
@@ -1171,6 +1186,9 @@ func (nuo *NodeUpdateOne) sqlSave(ctx context.Context) (_node *Node, err error) 
 	}
 	if value, ok := nuo.mutation.NormalizedID(); ok {
 		_spec.SetField(node.FieldNormalizedID, field.TypeString, value)
+	}
+	if nuo.mutation.NormalizedIDCleared() {
+		_spec.ClearField(node.FieldNormalizedID, field.TypeString)
 	}
 	if value, ok := nuo.mutation.Name(); ok {
 		_spec.SetField(node.FieldName, field.TypeString, value)
