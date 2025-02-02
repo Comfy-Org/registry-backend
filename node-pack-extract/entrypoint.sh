@@ -5,7 +5,7 @@ set -e
 init.sh &
 
 # loop until we can extract the node information
-TIMEOUT=${TIMEOUT:-3600}
+TIMEOUT=${TIMEOUT:-600}
 OUTPUTFILE=${1:-"/tmp/output.json"}
 echo -n >"$OUTPUTFILE"
 until cat "$OUTPUTFILE" | grep ''; do
