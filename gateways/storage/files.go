@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -18,7 +17,6 @@ import (
 // StorageService defines the interface for interacting with cloud storage.
 type StorageService interface {
 	UploadFile(ctx context.Context, bucket, object, filePath string) (string, error)
-	StreamFileUpload(w io.Writer, objectName, blob string) (string, string, error)
 	GetFileUrl(ctx context.Context, bucketName, objectPath string) (string, error)
 	GenerateSignedURL(bucketName, objectName string) (string, error)
 }
@@ -93,33 +91,6 @@ func (s *storageService) UploadFile(ctx context.Context, bucket, object, filePat
 	publicURL := fmt.Sprintf("https://storage.googleapis.com/%s/%s", bucket, object)
 	log.Ctx(ctx).Info().Msgf("Blob is publicly accessible at %v.\n", publicURL)
 	return publicURL, nil
-}
-
-// StreamFileUpload uploads an object via a stream to GCP storage.
-func (s *storageService) StreamFileUpload(w io.Writer, objectName, blob string) (string, string, error) {
-	ctx := context.Background()
-
-	b := []byte(blob)
-	buf := bytes.NewBuffer(b)
-
-	ctx, cancel := context.WithTimeout(ctx, time.Second*50)
-	defer cancel()
-
-	// Upload the object as a stream
-	wc := s.client.Bucket(s.config.CloudStorageBucketName).Object(objectName).NewWriter(ctx)
-	wc.ChunkSize = 0 // Note: retries are not supported for chunk size 0
-
-	if _, err := io.Copy(wc, buf); err != nil {
-		return "", "", fmt.Errorf("io.Copy: %w", err)
-	}
-
-	if err := wc.Close(); err != nil {
-		return "", "", fmt.Errorf("Writer.Close: %w", err)
-	}
-
-	log.Ctx(ctx).Info().Msgf("%v uploaded to %v.\n", objectName, s.config.CloudStorageBucketName)
-
-	return s.config.CloudStorageBucketName, objectName, nil
 }
 
 // GetFileUrl gets the public URL of a file from GCP storage.

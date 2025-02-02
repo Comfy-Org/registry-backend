@@ -28,7 +28,9 @@ func TestRegistryNodeVersion(t *testing.T) {
 	defer cleanup()
 
 	// Initialize server implementation and authorization middleware
-	impl := NewStrictServerImplementationWithMocks(client, &config.Config{})
+	impl := NewStrictServerImplementationWithMocks(client, &config.Config{
+		CloudStorageBucketName: "test-bucket",
+	})
 	authz := authorization.NewAuthorizationManager(client, impl.RegistryService, impl.NewRelicApp).AuthorizationMiddleware()
 
 	// Setup user context and publisher
@@ -47,7 +49,7 @@ func TestRegistryNodeVersion(t *testing.T) {
 	nodeVersion := randomNodeVersion(0)
 	signedUrl := "test-url"
 	downloadUrl := fmt.Sprintf(
-		"https://storage.googleapis.com/comfy-registry/%s/%s/%s/node.zip", publisherId, *node.Id, *nodeVersion.Version)
+		"https://storage.googleapis.com/test-bucket/%s/%s/%s/node.zip", publisherId, *node.Id, *nodeVersion.Version)
 
 	// Mock external service responses for storage and Discord
 	impl.mockStorageService.
@@ -388,7 +390,7 @@ func TestRegistryNodeVersion(t *testing.T) {
 		// Creating a new random node and version for scanning
 		node := randomNode()
 		nodeVersion := randomNodeVersion(0)
-		downloadUrl := fmt.Sprintf("https://storage.googleapis.com/comfy-registry/%s/%s/%s/node.zip", publisherId, *node.Id, *nodeVersion.Version)
+		downloadUrl := fmt.Sprintf("https://storage.googleapis.com/test-bucket/%s/%s/%s/node.zip", publisherId, *node.Id, *nodeVersion.Version)
 
 		// Mocking the behavior of services for URL generation and message sending
 		impl.mockStorageService.On("GenerateSignedURL", mock.Anything, mock.Anything).Return("test-url", nil)
