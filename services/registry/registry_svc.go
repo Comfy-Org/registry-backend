@@ -389,7 +389,7 @@ func (s *RegistryService) CreateNodeVersion(
 
 	log.Ctx(ctx).Info().Msgf(
 		"creating node version: %v for nodeId %v", nodeVersion, nodeID)
-	bucketName := "comfy-registry"
+	bucketName := s.config.CloudStorageBucketName
 	return db.WithTxResult(ctx, client, func(tx *ent.Tx) (*NodeVersionCreation, error) {
 		// If the node version is not provided, we will generate a new version
 		if nodeVersion.Version != nil {
