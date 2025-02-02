@@ -281,16 +281,6 @@ func NormalizedIDHasSuffix(v string) predicate.Node {
 	return predicate.Node(sql.FieldHasSuffix(FieldNormalizedID, v))
 }
 
-// NormalizedIDIsNil applies the IsNil predicate on the "normalized_id" field.
-func NormalizedIDIsNil() predicate.Node {
-	return predicate.Node(sql.FieldIsNull(FieldNormalizedID))
-}
-
-// NormalizedIDNotNil applies the NotNil predicate on the "normalized_id" field.
-func NormalizedIDNotNil() predicate.Node {
-	return predicate.Node(sql.FieldNotNull(FieldNormalizedID))
-}
-
 // NormalizedIDEqualFold applies the EqualFold predicate on the "normalized_id" field.
 func NormalizedIDEqualFold(v string) predicate.Node {
 	return predicate.Node(sql.FieldEqualFold(FieldNormalizedID, v))
