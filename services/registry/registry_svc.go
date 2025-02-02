@@ -66,7 +66,11 @@ func NewRegistryService(storageSvc storage.StorageService, pubsubService pubsub.
 }
 
 // ListNodes retrieves a paginated list of nodes with optional filtering.
-func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, page, limit int, filter *entity.NodeFilter) (*entity.ListNodesResult, error) {
+func (s *RegistryService) ListNodes(
+	ctx context.Context,
+	client *ent.Client,
+	page, limit int,
+	filter *entity.NodeFilter) (*entity.ListNodesResult, error) {
 	// Start New Relic transaction segment
 	txn, deferer := tracing.TraceSegment(ctx, "RegistryService.ListNodes", func(txn *newrelic.Transaction) {
 		txn.Application().RecordCustomMetric(
@@ -107,8 +111,13 @@ func (s *RegistryService) ListNodes(ctx context.Context, client *ent.Client, pag
 		}
 
 		// Exclude banned nodes if not requested
-		if !filter.IncludeBanned {
+		if filter.IncludeBanned != nil && !*filter.IncludeBanned {
 			predicates = append(predicates, node.StatusNEQ(schema.NodeStatusBanned))
+		}
+
+		// Filter by CreateTime (timestamp)
+		if filter.Timestamp != nil {
+			predicates = append(predicates, node.CreateTimeGT(*filter.Timestamp))
 		}
 
 		// Apply predicates to the query

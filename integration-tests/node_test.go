@@ -73,6 +73,33 @@ func TestRegistryNode(t *testing.T) {
 		assert.Equal(t, node.Repository, fetchedNode.Repository)
 	})
 
+	// Test filtering nodes after a specific timestamp
+	t.Run("Filter Nodes After Timestamp", func(t *testing.T) {
+		futureTime := time.Now()
+		res, err := withMiddleware(authz, impl.ListAllNodes)(ctx, drip.ListAllNodesRequestObject{
+			Params: drip.ListAllNodesParams{
+				Timestamp: &futureTime,
+			},
+		})
+		require.NoError(t, err, "Failed to filter nodes by timestamp")
+		require.IsType(t, drip.ListAllNodes200JSONResponse{}, res)
+
+		nodesResponse := res.(drip.ListAllNodes200JSONResponse)
+		require.Len(t, *nodesResponse.Nodes, 0, "Expected no nodes to be returned")
+
+		pastTime := time.Now().Add(-time.Hour)
+		res, err = withMiddleware(authz, impl.ListAllNodes)(ctx, drip.ListAllNodesRequestObject{
+			Params: drip.ListAllNodesParams{
+				Timestamp: &pastTime,
+			},
+		})
+		require.NoError(t, err, "Failed to filter nodes by timestamp")
+		require.IsType(t, drip.ListAllNodes200JSONResponse{}, res)
+
+		nodesResponse = res.(drip.ListAllNodes200JSONResponse)
+		require.Len(t, *nodesResponse.Nodes, 1, "Expected one node to be returned")
+	})
+
 	// Test listing nodes for the publisher
 	t.Run("Get Publisher Nodes", func(t *testing.T) {
 		res, err := withMiddleware(authz, impl.ListNodesForPublisher)(ctx, drip.ListNodesForPublisherRequestObject{
