@@ -115,6 +115,11 @@ func (s *RegistryService) ListNodes(
 			predicates = append(predicates, node.StatusNEQ(schema.NodeStatusBanned))
 		}
 
+		// Filter by CreateTime (timestamp)
+		if filter.Timestamp != nil {
+			predicates = append(predicates, node.CreateTimeGT(*filter.Timestamp))
+		}
+
 		// Apply predicates to the query
 		if len(predicates) > 1 {
 			query.Where(node.And(predicates...))
