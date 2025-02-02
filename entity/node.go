@@ -1,12 +1,16 @@
 package entity
 
-import "registry-backend/ent"
+import (
+	"registry-backend/ent"
+	"time"
+)
 
 // NodeFilter holds optional parameters for filtering node results
 type NodeFilter struct {
 	PublisherID   string
 	Search        string
-	IncludeBanned bool
+	IncludeBanned *bool
+	Timestamp     *time.Time
 }
 
 // ListNodesResult is the structure that holds the paginated result of nodes

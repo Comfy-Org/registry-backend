@@ -1331,6 +1331,13 @@ paths:
           required: false
           schema:
             type: boolean
+        - in: query
+          name: timestamp
+          description: Retrieve nodes created or updated after this timestamp (ISO 8601 format)
+          required: false
+          schema:
+            type: string
+            format: date-time
       responses:
         '200':
           description: A paginated list of nodes

@@ -274,9 +274,9 @@ func (s *DripStrictServerImplementation) ListAllNodes(
 	}
 
 	// Initialize the node filter
-	filter := &entity.NodeFilter{}
-	if request.Params.IncludeBanned != nil {
-		filter.IncludeBanned = *request.Params.IncludeBanned
+	filter := &entity.NodeFilter{
+		Timestamp:     request.Params.Timestamp,
+		IncludeBanned: request.Params.IncludeBanned,
 	}
 
 	// List nodes from the registry service
@@ -338,12 +338,11 @@ func (s *DripStrictServerImplementation) SearchNodes(ctx context.Context, reques
 		limit = *request.Params.Limit
 	}
 
-	f := &entity.NodeFilter{}
+	f := &entity.NodeFilter{
+		IncludeBanned: request.Params.IncludeBanned,
+	}
 	if request.Params.Search != nil {
 		f.Search = *request.Params.Search
-	}
-	if request.Params.IncludeBanned != nil {
-		f.IncludeBanned = *request.Params.IncludeBanned
 	}
 	// List nodes from the registry service
 	nodeResults, err := s.RegistryService.ListNodes(ctx, s.Client, page, limit, f)
