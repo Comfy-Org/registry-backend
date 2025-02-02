@@ -117,7 +117,7 @@ func (s *RegistryService) ListNodes(
 
 		// Filter by CreateTime (timestamp)
 		if filter.Timestamp != nil {
-			predicates = append(predicates, node.CreateTimeGT(*filter.Timestamp))
+			predicates = append(predicates, node.UpdateTimeGT(*filter.Timestamp))
 		}
 
 		// Apply predicates to the query
