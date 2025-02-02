@@ -62,14 +62,6 @@ func (nc *NodeCreate) SetNormalizedID(s string) *NodeCreate {
 	return nc
 }
 
-// SetNillableNormalizedID sets the "normalized_id" field if the given value is not nil.
-func (nc *NodeCreate) SetNillableNormalizedID(s *string) *NodeCreate {
-	if s != nil {
-		nc.SetNormalizedID(*s)
-	}
-	return nc
-}
-
 // SetPublisherID sets the "publisher_id" field.
 func (nc *NodeCreate) SetPublisherID(s string) *NodeCreate {
 	nc.mutation.SetPublisherID(s)
@@ -354,6 +346,9 @@ func (nc *NodeCreate) check() error {
 	if _, ok := nc.mutation.UpdateTime(); !ok {
 		return &ValidationError{Name: "update_time", err: errors.New(`ent: missing required field "Node.update_time"`)}
 	}
+	if _, ok := nc.mutation.NormalizedID(); !ok {
+		return &ValidationError{Name: "normalized_id", err: errors.New(`ent: missing required field "Node.normalized_id"`)}
+	}
 	if _, ok := nc.mutation.PublisherID(); !ok {
 		return &ValidationError{Name: "publisher_id", err: errors.New(`ent: missing required field "Node.publisher_id"`)}
 	}
@@ -615,12 +610,6 @@ func (u *NodeUpsert) SetNormalizedID(v string) *NodeUpsert {
 // UpdateNormalizedID sets the "normalized_id" field to the value that was provided on create.
 func (u *NodeUpsert) UpdateNormalizedID() *NodeUpsert {
 	u.SetExcluded(node.FieldNormalizedID)
-	return u
-}
-
-// ClearNormalizedID clears the value of the "normalized_id" field.
-func (u *NodeUpsert) ClearNormalizedID() *NodeUpsert {
-	u.SetNull(node.FieldNormalizedID)
 	return u
 }
 
@@ -934,13 +923,6 @@ func (u *NodeUpsertOne) SetNormalizedID(v string) *NodeUpsertOne {
 func (u *NodeUpsertOne) UpdateNormalizedID() *NodeUpsertOne {
 	return u.Update(func(s *NodeUpsert) {
 		s.UpdateNormalizedID()
-	})
-}
-
-// ClearNormalizedID clears the value of the "normalized_id" field.
-func (u *NodeUpsertOne) ClearNormalizedID() *NodeUpsertOne {
-	return u.Update(func(s *NodeUpsert) {
-		s.ClearNormalizedID()
 	})
 }
 
@@ -1460,13 +1442,6 @@ func (u *NodeUpsertBulk) SetNormalizedID(v string) *NodeUpsertBulk {
 func (u *NodeUpsertBulk) UpdateNormalizedID() *NodeUpsertBulk {
 	return u.Update(func(s *NodeUpsert) {
 		s.UpdateNormalizedID()
-	})
-}
-
-// ClearNormalizedID clears the value of the "normalized_id" field.
-func (u *NodeUpsertBulk) ClearNormalizedID() *NodeUpsertBulk {
-	return u.Update(func(s *NodeUpsert) {
-		s.ClearNormalizedID()
 	})
 }
 
