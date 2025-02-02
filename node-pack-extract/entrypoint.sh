@@ -11,12 +11,10 @@ echo -n >"$OUTPUTFILE"
 until cat "$OUTPUTFILE" | grep ''; do
     sleep 1
 
-    echo "$SECONDS $TIMEOUT"
     if ((SECONDS >= TIMEOUT)); then
         jq -n '{success: false, reason: "timeout"}' | tee "$OUTPUTFILE"
         break
     fi
-    echo "here"
 
     curl -sf localhost:8188/object_info |
         jq -c '

@@ -32,7 +32,6 @@ steps:
     args:
       - -c
       - gcloud auth print-identity-token --audiences="$_REGISTRY_BACKEND_URL" | tee /workspace/token
-    waitFor: ["-"]
 
   - name: "badouralix/curl-jq"
     entrypoint: "sh"
