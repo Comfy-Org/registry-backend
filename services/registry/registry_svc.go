@@ -3,6 +3,8 @@ package dripservices
 import (
 	"bytes"
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -37,6 +39,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/Masterminds/semver/v3"
+	"github.com/dgraph-io/ristretto/v2"
 	"github.com/google/uuid"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/rs/zerolog/log"
@@ -51,9 +54,20 @@ type RegistryService struct {
 	discordService discord.DiscordService
 	config         *config.Config
 	newRelicApp    *newrelic.Application
+
+	listNodeCache *ristretto.Cache[string, *entity.ListNodesResult]
 }
 
 func NewRegistryService(storageSvc storage.StorageService, pubsubService pubsub.PubSubService, slackSvc gateway.SlackService, discordSvc discord.DiscordService, algoliaSvc algolia.AlgoliaService, config *config.Config, newRelicApp *newrelic.Application) *RegistryService {
+	cache, err := ristretto.NewCache(&ristretto.Config[string, *entity.ListNodesResult]{
+		NumCounters: 1000,  // Number of keys to track
+		MaxCost:     10000, // Number of nodes stored
+		BufferItems: 64,    // Number of keys per Get buffer (helps with performance)
+	})
+	if err != nil {
+		panic(err)
+	}
+
 	return &RegistryService{
 		storageService: storageSvc,
 		pubsubService:  pubsubService,
@@ -62,7 +76,70 @@ func NewRegistryService(storageSvc storage.StorageService, pubsubService pubsub.
 		algolia:        algoliaSvc,
 		config:         config,
 		newRelicApp:    newRelicApp,
+		listNodeCache:  cache,
 	}
+}
+
+// generateCacheKey creates a UUID-based cache key from the page, limit, and filter
+func (s *RegistryService) generateCacheKey(page, limit int, filter *entity.NodeFilter) string {
+	// Concatenate values into a string
+	var filterData string
+	if filter != nil {
+		filterData = fmt.Sprintf(
+			"%d-%d-%s-%s-%v-%s",
+			page,
+			limit,
+			filter.PublisherID,
+			filter.Search,
+			filter.IncludeBanned,
+			filter.Timestamp,
+		)
+	} else {
+		filterData = fmt.Sprintf("%d-%d", page, limit)
+	}
+
+	// Create a hash of the concatenated string to generate a unique cache key
+	hash := md5.New()
+	hash.Write([]byte(filterData))
+
+	// Return the hashed key as a hex string
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
+func (s *RegistryService) ListNodesWithCache(
+	ctx context.Context,
+	client *ent.Client,
+	page, limit int,
+	filter *entity.NodeFilter,
+	latest bool) (*entity.ListNodesResult, error) {
+	// Start New Relic transaction segment
+	tracing.TraceDefaultSegment(ctx, "RegistryService.ListNodesWithCache")()
+
+	// Generate a unique hash for the cache key based on filters, page, and limit
+	key := s.generateCacheKey(page, limit, filter)
+
+	// Skip cache lookup if 'latest' flag is set
+	if !latest {
+		// Try to retrieve from cache
+		r, ok := s.listNodeCache.Get(key)
+		if ok {
+			return r, nil
+		}
+	}
+
+	// Fetch the data from the source
+	r, err := s.ListNodes(ctx, client, page, limit, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set the cache with the result, using the hash key and an appropriate TTL
+	s.listNodeCache.SetWithTTL(key, r, int64(len(r.Nodes)), time.Minute)
+
+	// Ensure that cache operations are finished before returning
+	s.listNodeCache.Wait()
+
+	return r, nil
 }
 
 // ListNodes retrieves a paginated list of nodes with optional filtering.

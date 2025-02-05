@@ -1338,6 +1338,12 @@ paths:
           schema:
             type: string
             format: date-time
+        - in: query
+          name: latest
+          description: Whether to fetch fresh result from database or use cached one if false
+          required: false
+          schema:
+            type: boolean
       responses:
         '200':
           description: A paginated list of nodes

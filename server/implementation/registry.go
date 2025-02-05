@@ -280,7 +280,11 @@ func (s *DripStrictServerImplementation) ListAllNodes(
 	}
 
 	// List nodes from the registry service
-	nodeResults, err := s.RegistryService.ListNodes(ctx, s.Client, page, limit, filter)
+	latest := false
+	if request.Params.Latest != nil {
+		latest = *request.Params.Latest
+	}
+	nodeResults, err := s.RegistryService.ListNodesWithCache(ctx, s.Client, page, limit, filter, latest)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to list nodes w/ err: %v", err)
 		return drip.ListAllNodes500JSONResponse{Message: "Failed to list nodes", Error: err.Error()}, err
