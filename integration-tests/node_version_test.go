@@ -324,6 +324,77 @@ func TestRegistryNodeVersion(t *testing.T) {
 			nodeStatus := drip.NodeStatusActive
 			assert.Equal(t, *node.Status, nodeStatus)
 		}
+
+		t.Run("Cache", func(t *testing.T) {
+			// create new node version as latest node version
+			nodeVersion3 := randomNodeVersion(2)
+			res, err := withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
+				PublisherId: publisherId,
+				NodeId:      *node.Id,
+				Body: &drip.PublishNodeVersionJSONRequestBody{
+					PersonalAccessToken: *pat,
+					Node:                *node,
+					NodeVersion:         *nodeVersion3,
+				},
+			})
+			require.IsType(t, drip.PublishNodeVersion201JSONResponse{}, res)
+			require.NoError(t, err, "should return created node version")
+
+			// Retrieve and verify the list of nodes
+			resNodesCached, err := withMiddleware(authz, impl.ListAllNodes)(ctx, drip.ListAllNodesRequestObject{})
+			require.NoError(t, err)
+			assert.Equal(t, resNodes, resNodesCached)
+		})
+
+		t.Run("ForceNoCache", func(t *testing.T) {
+			// create new node version as latest node version
+			nodeVersion4 := randomNodeVersion(3)
+			res, err := withMiddleware(authz, impl.PublishNodeVersion)(ctx, drip.PublishNodeVersionRequestObject{
+				PublisherId: publisherId,
+				NodeId:      *node.Id,
+				Body: &drip.PublishNodeVersionJSONRequestBody{
+					PersonalAccessToken: *pat,
+					Node:                *node,
+					NodeVersion:         *nodeVersion4,
+				},
+			})
+			require.IsType(t, drip.PublishNodeVersion201JSONResponse{}, res)
+			nodeVersionResp := res.(drip.PublishNodeVersion201JSONResponse)
+			require.NoError(t, err, "should return created node version")
+
+			// Retrieve and verify the list of nodes
+			resNodes, err := withMiddleware(authz, impl.ListAllNodes)(ctx, drip.ListAllNodesRequestObject{
+				Params: drip.ListAllNodesParams{
+					Latest: proto.Bool(true),
+				},
+			})
+			require.NoError(t, err)
+			require.IsType(t, drip.ListAllNodes200JSONResponse{}, resNodes)
+			resNodes200 := resNodes.(drip.ListAllNodes200JSONResponse)
+
+			// Iterate over each node and assert individual fields
+			for _, node := range *resNodes200.Nodes {
+				// Assertions for basic node attributes
+				assert.Equal(t, *node.Id, *node.Id)
+				assert.Equal(t, *node.Name, *node.Name)
+				assert.Equal(t, *node.Repository, *node.Repository)
+				assert.Equal(t, *node.Description, *node.Description)
+				assert.Equal(t, *node.Author, *node.Author)
+				assert.Equal(t, *node.License, *node.License)
+				assert.Equal(t, *node.Tags, *node.Tags)
+
+				// Assert the latest version
+				assert.Equal(t, *node.LatestVersion.Version, *nodeVersionResp.NodeVersion.Version)
+				assert.Equal(t, *node.LatestVersion.Changelog, *nodeVersionResp.NodeVersion.Changelog)
+				assert.Equal(t, *node.LatestVersion.Dependencies, *nodeVersionResp.NodeVersion.Dependencies)
+				assert.Equal(t, *node.LatestVersion.DownloadUrl, *nodeVersionResp.NodeVersion.DownloadUrl)
+				assert.Equal(t, *node.LatestVersion.Status, *nodeVersionResp.NodeVersion.Status)
+
+				// Status checks
+				nodeStatus := drip.NodeStatusActive
+				assert.Equal(t, *node.Status, nodeStatus)
+			}
+		})
 	})
 
 	t.Run("Index Nodes", func(t *testing.T) {
