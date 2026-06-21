@@ -665,8 +665,12 @@ func (s *RegistryService) GetNodeVersion(ctx context.Context, client *ent.Client
 	defer tracing.TraceDefaultSegment(ctx, "RegistryService.GetNodeVersion")()
 
 	log.Ctx(ctx).Info().Msgf("getting node version %v", nodeVersionId)
+	id, err := uuid.Parse(nodeVersionId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid node version ID %q: %w", nodeVersionId, err)
+	}
 	return client.NodeVersion.
-		Get(ctx, uuid.MustParse(nodeVersionId))
+		Get(ctx, id)
 }
 
 func (s *RegistryService) UpdateNodeVersion(ctx context.Context, client *ent.Client, update *ent.NodeVersionUpdateOne) (*ent.NodeVersion, error) {
