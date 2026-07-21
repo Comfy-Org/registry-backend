@@ -10,8 +10,8 @@ import (
 	"github.com/google/uuid"
 )
 
-func ApiUpdateNodeVersionToUpdateFields(versionId string, updateRequest *drip.NodeVersionUpdateRequest, client *ent.Client) *ent.NodeVersionUpdateOne {
-	update := client.NodeVersion.UpdateOneID(uuid.MustParse(versionId))
+func ApiUpdateNodeVersionToUpdateFields(versionId uuid.UUID, updateRequest *drip.NodeVersionUpdateRequest, client *ent.Client) *ent.NodeVersionUpdateOne {
+	update := client.NodeVersion.UpdateOneID(versionId)
 	if updateRequest.Changelog != nil {
 		update.SetChangelog(*updateRequest.Changelog)
 	}
