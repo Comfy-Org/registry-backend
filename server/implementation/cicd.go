@@ -3,6 +3,7 @@ package implementation
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"registry-backend/drip"
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/gitcommit"
@@ -14,16 +15,20 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
 
 func (impl *DripStrictServerImplementation) GetGitcommit(ctx context.Context, request drip.GetGitcommitRequestObject) (drip.GetGitcommitResponseObject, error) {
 	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.GetGitcommit")()
 
-	var commitId uuid.UUID = uuid.Nil
+	commitId, err := mapper.ParseUUIDParam(request.Params.CommitId)
+	if err != nil {
+		log.Ctx(ctx).Warn().Msgf("invalid commitId parameter: %v", err)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "commitId must be a valid UUID")
+	}
 	if request.Params.CommitId != nil {
 		log.Ctx(ctx).Info().Msgf("getting commit data for %s", *request.Params.CommitId)
-		commitId = uuid.MustParse(*request.Params.CommitId)
 	}
 
 	if request.Params.OperatingSystem != nil {
@@ -261,7 +266,11 @@ func (impl *DripStrictServerImplementation) GetWorkflowResult(ctx context.Contex
 	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.GetWorkflowResult")()
 
 	log.Ctx(ctx).Info().Msgf("Getting workflow result with ID %s", request.WorkflowResultId)
-	workflowId := uuid.MustParse(request.WorkflowResultId)
+	workflowId, err := mapper.ParseUUIDParam(&request.WorkflowResultId)
+	if err != nil {
+		log.Ctx(ctx).Warn().Msgf("invalid WorkflowResultId parameter: %v", err)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "workflowResultId must be a valid UUID")
+	}
 	workflow, err := impl.Client.CIWorkflowResult.Query().WithGitcommit().WithStorageFile().Where(ciworkflowresult.IDEQ(workflowId)).First(ctx)
 
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"registry-backend/drip"
 	"registry-backend/ent"
 	"registry-backend/ent/publisher"
@@ -15,7 +16,7 @@ import (
 	"registry-backend/tracing"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
 	"github.com/mixpanel/mixpanel-go"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/protobuf/proto"
@@ -538,7 +539,12 @@ func (s *DripStrictServerImplementation) UpdateNodeVersion(
 	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.UpdateNodeVersion")()
 
 	// Update node version
-	updateOne := mapper.ApiUpdateNodeVersionToUpdateFields(request.VersionId, request.Body, s.Client)
+	versionId, err := mapper.ParseUUIDParam(&request.VersionId)
+	if err != nil {
+		log.Ctx(ctx).Warn().Msgf("invalid VersionId parameter: %v", err)
+		return drip.UpdateNodeVersion400JSONResponse{Message: "versionId must be a valid UUID"}, nil
+	}
+	updateOne := mapper.ApiUpdateNodeVersionToUpdateFields(versionId, request.Body, s.Client)
 	version, err := s.RegistryService.UpdateNodeVersion(ctx, s.Client, updateOne)
 	if ent.IsNotFound(err) {
 		log.Ctx(ctx).Error().Msgf("Node %s or it's version not found w/ err: %v", request.NodeId, err)
@@ -685,8 +691,14 @@ func (s *DripStrictServerImplementation) DeletePersonalAccessToken(
 		return drip.DeletePersonalAccessToken404JSONResponse{Message: "Invalid user ID"}, err
 	}
 
+	tokenId, err := mapper.ParseUUIDParam(&request.TokenId)
+	if err != nil {
+		log.Ctx(ctx).Warn().Msgf("invalid TokenId parameter: %v", err)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "tokenId must be a valid UUID")
+	}
+
 	// Assert access token belongs to publisher
-	err = s.RegistryService.AssertAccessTokenBelongsToPublisher(ctx, s.Client, request.PublisherId, uuid.MustParse(request.TokenId))
+	err = s.RegistryService.AssertAccessTokenBelongsToPublisher(ctx, s.Client, request.PublisherId, tokenId)
 	switch {
 	case ent.IsNotFound(err):
 		log.Ctx(ctx).Warn().Msgf("Publisher with ID %s not found", request.PublisherId)
@@ -703,7 +715,7 @@ func (s *DripStrictServerImplementation) DeletePersonalAccessToken(
 	}
 
 	// Delete personal access token
-	err = s.RegistryService.DeletePersonalAccessToken(ctx, s.Client, uuid.MustParse(request.TokenId))
+	err = s.RegistryService.DeletePersonalAccessToken(ctx, s.Client, tokenId)
 	if err != nil {
 		errMessage := "Failed to delete personal access token: " + err.Error()
 		log.Ctx(ctx).Error().Msgf("Token deletion failed w/ err: %v", err)
