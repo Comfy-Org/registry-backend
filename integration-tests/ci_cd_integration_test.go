@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"registry-backend/config"
 	"registry-backend/drip"
 	"registry-backend/ent/gitcommit"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -180,5 +182,28 @@ func TestCICD(t *testing.T) {
 		require.NoError(t, err, "should return error")
 		assert.IsType(t, drip.GetBranch200JSONResponse{}, res)
 		assert.Len(t, *res.(drip.GetBranch200JSONResponse).Branches, 0, "should return empty branch")
+	})
+
+	// UUID-hardening: malformed CommitId must return 400 before any Client query (parse guard returns early).
+	t.Run("GetGitcommit rejects malformed CommitId with 400", func(t *testing.T) {
+		_, err := impl.GetGitcommit(ctx, drip.GetGitcommitRequestObject{
+			Params: drip.GetGitcommitParams{CommitId: proto.String("not-a-uuid")},
+		})
+		require.Error(t, err)
+		he, ok := err.(*echo.HTTPError)
+		require.True(t, ok, "expected *echo.HTTPError, got %T", err)
+		assert.Equal(t, http.StatusBadRequest, he.Code)
+	})
+
+	// UUID-hardening: malformed WorkflowResultId must return 400 before any Client query (parse guard returns early).
+	// Route ^/workflowresult/[^/]+$ GET is unauthenticated (firebase_auth.go allowlist).
+	t.Run("GetWorkflowResult rejects malformed WorkflowResultId with 400", func(t *testing.T) {
+		_, err := impl.GetWorkflowResult(ctx, drip.GetWorkflowResultRequestObject{
+			WorkflowResultId: "not-a-uuid",
+		})
+		require.Error(t, err)
+		he, ok := err.(*echo.HTTPError)
+		require.True(t, ok, "expected *echo.HTTPError, got %T", err)
+		assert.Equal(t, http.StatusBadRequest, he.Code)
 	})
 }
