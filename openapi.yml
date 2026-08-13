@@ -8,6 +8,7 @@ paths:
   /users:
     get:
       summary: Get information about the calling user.
+      description: "Official API documentation for the Comfy Registry GET /users endpoint. Learn how to authenticate using Bearer tokens and retrieve user profile details (email, id, isAdmin, isApproved)."
       operationId: getUser
       security:
         - BearerAuth: [ ]
@@ -322,6 +323,7 @@ paths:
   /users/publishers/:
     get:
       summary: Retrieve all publishers for a given user
+      description: "Use the Comfy API to retrieve all publishers for a given user. Inspect HTTP GET endpoints, request parameters, and response JSON models. Read the docs today."
       operationId: listPublishersForUser
       tags:
         - Publishers
@@ -350,6 +352,7 @@ paths:
   /publishers/{publisherId}/permissions:
     get:
       summary: Retrieve permissions the user has for a given publisher
+      description: "Use the Comfy API to retrieve permissions the user has for a given publisher. Review required path parameters and JSON response data. Read the docs today."
       operationId: getPermissionOnPublisher
       tags:
         - Publishers
@@ -422,6 +425,7 @@ paths:
   /publishers:
     post:
       summary: Create a new publisher
+      description: "Step-by-step developer guide for registering a new publisher in the Comfy Registry using HTTP POST. Complete reference for body parameters, headers, and status codes."
       operationId: createPublisher
       security:
         - BearerAuth: [ ]
@@ -463,6 +467,7 @@ paths:
 
     get:
       summary: Retrieve all publishers
+      description: "API reference for the GET /publishers endpoint, returning a list of all node publishers with their ID, description, logo, and members."
       operationId: listPublishers
       tags:
         - Publishers
@@ -491,6 +496,7 @@ paths:
   /publishers/{publisherId}:
     get:
       summary: Retrieve a publisher by ID
+      description: "Documentation for the Comfy Registry API GET /publishers/{publisherId} endpoint. View required path parameters, HTTP request examples, and JSON response schema."
       operationId: getPublisher
       tags:
         - Publishers
@@ -522,6 +528,7 @@ paths:
 
     put:
       summary: Update a publisher
+      description: "Use the Comfy Update a publisher API endpoint to modify registry entries. View required path parameters, body schemas, and response data. Read the docs now."
       operationId: updatePublisher
       security:
         - BearerAuth: [ ]
@@ -569,6 +576,7 @@ paths:
 
     delete:
       summary: Delete a publisher
+      description: "API reference for the DELETE /publishers/{publisherId} endpoint, used to permanently remove a publisher from the Comfy Registry."
       operationId: deletePublisher
       security:
         - BearerAuth: [ ]
@@ -633,6 +641,7 @@ paths:
   /publishers/{publisherId}/nodes:
     post:
       summary: Create a new custom node
+      description: "Use the Comfy API to create a new custom node in the registry. Review required path parameters, request body schemas, and response data. Read the docs today."
       operationId: createNode
       tags:
         - Nodes
@@ -673,6 +682,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
     get:
       summary: Retrieve all nodes
+      description: "Access the Comfy retrieve all nodes API to query custom nodes by publisher ID. View parameters, auth headers, and response payload schemas. Read the docs now."
       operationId: listNodesForPublisher
       security:
         - BearerAuth: [ ]
@@ -715,6 +725,7 @@ paths:
   /publishers/{publisherId}/nodes/{nodeId}:
     put:
       summary: Update a specific node
+      description: "Learn how to query the Comfy Registry REST API to retrieve all node definitions in a given version. Full parameter guide and JSON schema example."
       operationId: updateNode
       tags:
         - Nodes
@@ -772,6 +783,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
     delete:
       summary: Delete a specific node
+      description: "Official API documentation for the Comfy Registry DELETE /publishers/{publisherId}/nodes/{nodeId} endpoint. Learn required headers, path parameters, and status responses."
       operationId: deleteNode
       tags:
         - Nodes
@@ -814,6 +826,7 @@ paths:
   /publishers/{publisherId}/nodes/{nodeId}/permissions:
     get:
       summary: Retrieve permissions the user has for a given publisher
+      description: "Use the Comfy API to retrieve permissions the user has for a given publisher. Review required path parameters and JSON response data. Read the docs today."
       operationId: getPermissionOnPublisherNodes
       tags:
         - Publishers
@@ -854,6 +867,7 @@ paths:
   /publishers/{publisherId}/nodes/{nodeId}/versions:
     post:
       summary: Publish a new version of a node
+      description: "Use the Comfy publish a new version of a node API endpoint to push updates. View required path parameters, request schemas, and response URLs. Read the docs."
       operationId: publishNodeVersion
       tags:
         - Versions
@@ -922,6 +936,7 @@ paths:
   /publishers/{publisherId}/nodes/{nodeId}/versions/{versionId}:
     delete:
       summary: Unpublish (delete) a specific version of a node
+      description: "API reference for the DELETE endpoint used to unpublish or delete a specific version of a custom node from the Comfy Registry."
       operationId: deleteNodeVersion
       tags:
         - Versions
@@ -1070,6 +1085,7 @@ paths:
   /publishers/{publisherId}/tokens:
     post:
       summary: Create a new personal access token
+      description: "Discover how to create a new personal access token using the Comfy Registry API. View the exact POST request documentation and secure your integration today."
       operationId: createPersonalAccessToken
       security:
         - BearerAuth: [ ]
@@ -1162,6 +1178,7 @@ paths:
   /publishers/{publisherId}/tokens/{tokenId}:
     delete:
       summary: Delete a specific personal access token
+      description: "Step-by-step developer documentation on revoking a personal access token in the Comfy Registry using HTTP DELETE. Full specification for headers and response codes."
       operationId: deletePersonalAccessToken
       security:
         - BearerAuth: [ ]
@@ -1203,7 +1220,7 @@ paths:
   /nodes/search:
     get:
       summary: Retrieves a list of nodes
-      description: Returns a paginated list of nodes across all publishers.
+      description: "Learn how to query the Comfy Registry API to retrieve node definitions. Filter results by node ID, version, or node name with full pagination support."
       operationId: searchNodes
       tags:
         - Nodes
@@ -1306,7 +1323,7 @@ paths:
   /nodes:
     get:
       summary: Retrieves a list of nodes
-      description: Returns a paginated list of nodes across all publishers.
+      description: "Learn how to query the Comfy Registry API to retrieve node definitions. Filter results by node ID, version, or node name with full pagination support."
       operationId: listAllNodes
       tags:
         - Nodes
@@ -1420,6 +1437,7 @@ paths:
   /nodes/{nodeId}/reviews:
     post:
       summary: Add review to a specific version of a node
+      description: "Explore the Comfy API reference to add a review to a specific version of a node. Read the documentation to integrate rating endpoints now."
       operationId: postNodeReview
       tags:
         - Nodes
@@ -1513,6 +1531,7 @@ paths:
   /nodes/{nodeId}/versions:
     get:
       summary: List all versions of a node
+      description: "Use the Comfy list all versions of a node API to query full release histories. View path parameters, query flags, and JSON response models. Read the docs now."
       operationId: listNodeVersions
       tags:
         - Versions
@@ -1566,6 +1585,7 @@ paths:
   /nodes/{nodeId}/versions/{versionId}:
     get:
       summary: Retrieve a specific version of a node
+      description: "Official API documentation for the Comfy Registry GET /nodes/{nodeId}/versions/{versionId} endpoint. View path parameters, response schemas, dependencies, and download URLs."
       operationId: getNodeVersion
       tags:
         - Versions
@@ -1603,6 +1623,7 @@ paths:
   /versions:
     get:
       summary: List all node versions given some filters.
+      description: "Learn how to list node versions using filters with the Comfy Registry API. Access endpoint details, parameters, and responses to build faster. Explore now."
       operationId: listAllNodeVersions
       tags:
         - Versions
@@ -1794,6 +1815,7 @@ paths:
   /nodes/{nodeId}/versions/{version}/comfy-nodes:
     post:
       summary: create comfy-nodes for certain node
+      description: "API reference for creating comfy-nodes for a specific node version, including cloud build parameters like project ID, location, and build ID."
       operationId: CreateComfyNodes
       tags:
         - ComfyNodes
@@ -1856,6 +1878,7 @@ paths:
   /nodes/{nodeId}/versions/{version}/comfy-nodes/{comfyNodeId}:
     get:
       summary: get specify comfy-node based on its id
+      description: "Learn how to get a Comfy node by ID using the official Registry API. Access endpoint specs and parameters to query node details. Explore the API docs now."
       operationId: GetComfyNode
       tags:
         - ComfyNodes
