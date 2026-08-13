@@ -352,7 +352,7 @@ paths:
   /publishers/{publisherId}/permissions:
     get:
       summary: Retrieve permissions the user has for a given publisher
-      description: "Returns the calling user\'s permission level for the specified publisher."
+      description: "Returns the calling user's permission level for the specified publisher."
       operationId: getPermissionOnPublisher
       tags:
         - Publishers
