@@ -725,7 +725,7 @@ paths:
   /publishers/{publisherId}/nodes/{nodeId}:
     put:
       summary: Update a specific node
-      description: "Updates a specific custom node's definition for the given publisher and node ID."
+      description: "Update a specific custom node in the Comfy Registry. Provide the publisher ID, node ID, and updated node definition in the request body."
       operationId: updateNode
       tags:
         - Nodes
@@ -826,7 +826,7 @@ paths:
   /publishers/{publisherId}/nodes/{nodeId}/permissions:
     get:
       summary: Retrieve permissions the user has for a given publisher
-      description: "Returns the calling user\'s permissions for a specific node belonging to the given publisher."
+      description: "Retrieve the permissions the user has for a specific node belonging to a publisher. Provide the publisher ID and node ID path parameters."
       operationId: getPermissionOnPublisherNodes
       tags:
         - Publishers
@@ -1323,7 +1323,7 @@ paths:
   /nodes:
     get:
       summary: Retrieves a list of nodes
-      description: "Lists nodes across all publishers with pagination. Use timestamp to filter by change time and latest to choose fresh vs. cached results."
+      description: "Retrieve paginated node definitions from the Comfy Registry. Use timestamp to retrieve nodes changed after a time and latest to choose fresh or cached results."
       operationId: listAllNodes
       tags:
         - Nodes
