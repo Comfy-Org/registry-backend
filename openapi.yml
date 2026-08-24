@@ -8,6 +8,7 @@ paths:
   /users:
     get:
       summary: Get information about the calling user.
+      description: "Returns the authenticated user's profile - email, ID, admin status, and approval status - via Bearer token."
       operationId: getUser
       security:
         - BearerAuth: [ ]
@@ -322,6 +323,7 @@ paths:
   /users/publishers/:
     get:
       summary: Retrieve all publishers for a given user
+      description: "Lists all publishers associated with the authenticated user's account."
       operationId: listPublishersForUser
       tags:
         - Publishers
@@ -350,6 +352,7 @@ paths:
   /publishers/{publisherId}/permissions:
     get:
       summary: Retrieve permissions the user has for a given publisher
+      description: "Returns the calling user's permission level for the specified publisher."
       operationId: getPermissionOnPublisher
       tags:
         - Publishers
@@ -422,6 +425,7 @@ paths:
   /publishers:
     post:
       summary: Create a new publisher
+      description: "Registers a new publisher in the Comfy Registry from the submitted details."
       operationId: createPublisher
       security:
         - BearerAuth: [ ]
@@ -463,6 +467,7 @@ paths:
 
     get:
       summary: Retrieve all publishers
+      description: "Lists all publishers in the Comfy Registry, including ID, description, logo, and members."
       operationId: listPublishers
       tags:
         - Publishers
@@ -491,6 +496,7 @@ paths:
   /publishers/{publisherId}:
     get:
       summary: Retrieve a publisher by ID
+      description: "Returns details for a single publisher by ID."
       operationId: getPublisher
       tags:
         - Publishers
@@ -522,6 +528,7 @@ paths:
 
     put:
       summary: Update a publisher
+      description: "Updates an existing publisher's details."
       operationId: updatePublisher
       security:
         - BearerAuth: [ ]
@@ -569,6 +576,7 @@ paths:
 
     delete:
       summary: Delete a publisher
+      description: "Permanently removes a publisher from the registry."
       operationId: deletePublisher
       security:
         - BearerAuth: [ ]
@@ -633,6 +641,7 @@ paths:
   /publishers/{publisherId}/nodes:
     post:
       summary: Create a new custom node
+      description: "Creates a new custom node under the specified publisher."
       operationId: createNode
       tags:
         - Nodes
@@ -673,6 +682,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
     get:
       summary: Retrieve all nodes
+      description: "Lists all custom nodes belonging to the specified publisher."
       operationId: listNodesForPublisher
       security:
         - BearerAuth: [ ]
@@ -715,6 +725,7 @@ paths:
   /publishers/{publisherId}/nodes/{nodeId}:
     put:
       summary: Update a specific node
+      description: "Update a specific custom node in the Comfy Registry. Provide the publisher ID, node ID, and updated node definition in the request body."
       operationId: updateNode
       tags:
         - Nodes
@@ -772,6 +783,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
     delete:
       summary: Delete a specific node
+      description: "Deletes a specific custom node from the given publisher."
       operationId: deleteNode
       tags:
         - Nodes
@@ -814,6 +826,7 @@ paths:
   /publishers/{publisherId}/nodes/{nodeId}/permissions:
     get:
       summary: Retrieve permissions the user has for a given publisher
+      description: "Retrieve the permissions the user has for a specific node belonging to a publisher. Provide the publisher ID and node ID path parameters."
       operationId: getPermissionOnPublisherNodes
       tags:
         - Publishers
@@ -854,6 +867,7 @@ paths:
   /publishers/{publisherId}/nodes/{nodeId}/versions:
     post:
       summary: Publish a new version of a node
+      description: "Publishes a new version of the specified node."
       operationId: publishNodeVersion
       tags:
         - Versions
@@ -922,6 +936,7 @@ paths:
   /publishers/{publisherId}/nodes/{nodeId}/versions/{versionId}:
     delete:
       summary: Unpublish (delete) a specific version of a node
+      description: "Unpublishes (deletes) a specific version of a custom node."
       operationId: deleteNodeVersion
       tags:
         - Versions
@@ -1070,6 +1085,7 @@ paths:
   /publishers/{publisherId}/tokens:
     post:
       summary: Create a new personal access token
+      description: "Creates a new personal access token for the specified publisher."
       operationId: createPersonalAccessToken
       security:
         - BearerAuth: [ ]
@@ -1162,6 +1178,7 @@ paths:
   /publishers/{publisherId}/tokens/{tokenId}:
     delete:
       summary: Delete a specific personal access token
+      description: "Revokes a specific personal access token."
       operationId: deletePersonalAccessToken
       security:
         - BearerAuth: [ ]
@@ -1203,7 +1220,7 @@ paths:
   /nodes/search:
     get:
       summary: Retrieves a list of nodes
-      description: Returns a paginated list of nodes across all publishers.
+      description: "Searches nodes across all publishers and returns paginated results. (Verify exact filter params before publishing.)"
       operationId: searchNodes
       tags:
         - Nodes
@@ -1306,7 +1323,7 @@ paths:
   /nodes:
     get:
       summary: Retrieves a list of nodes
-      description: Returns a paginated list of nodes across all publishers.
+      description: "Retrieve paginated node definitions from the Comfy Registry. Use timestamp to retrieve nodes changed after a time and latest to choose fresh or cached results."
       operationId: listAllNodes
       tags:
         - Nodes
@@ -1420,6 +1437,7 @@ paths:
   /nodes/{nodeId}/reviews:
     post:
       summary: Add review to a specific version of a node
+      description: "Submits a review for a specific node."
       operationId: postNodeReview
       tags:
         - Nodes
@@ -1513,6 +1531,7 @@ paths:
   /nodes/{nodeId}/versions:
     get:
       summary: List all versions of a node
+      description: "Lists all published versions of the specified node."
       operationId: listNodeVersions
       tags:
         - Versions
@@ -1566,6 +1585,7 @@ paths:
   /nodes/{nodeId}/versions/{versionId}:
     get:
       summary: Retrieve a specific version of a node
+      description: "Returns details for a specific node version, including dependencies and download URL."
       operationId: getNodeVersion
       tags:
         - Versions
@@ -1603,6 +1623,7 @@ paths:
   /versions:
     get:
       summary: List all node versions given some filters.
+      description: "Lists node versions across the registry, filterable by the endpoint's supported query parameters. (Verify exact filters before publishing.)"
       operationId: listAllNodeVersions
       tags:
         - Versions
@@ -1794,6 +1815,7 @@ paths:
   /nodes/{nodeId}/versions/{version}/comfy-nodes:
     post:
       summary: create comfy-nodes for certain node
+      description: "Registers comfy-nodes for a specific node version, including cloud build fields (project, location, build ID)."
       operationId: CreateComfyNodes
       tags:
         - ComfyNodes
@@ -1856,6 +1878,7 @@ paths:
   /nodes/{nodeId}/versions/{version}/comfy-nodes/{comfyNodeId}:
     get:
       summary: get specify comfy-node based on its id
+      description: "Returns details for a specific comfy-node by ID within a node version."
       operationId: GetComfyNode
       tags:
         - ComfyNodes
