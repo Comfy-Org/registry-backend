@@ -9,5 +9,5 @@ jobs:
     container:
       image: semgrep/semgrep
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - run: semgrep ci --config .semgrep.yml --exclude='main.go' --exclude='server/server.go' --exclude='logging/*' --
