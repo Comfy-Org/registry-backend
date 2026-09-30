@@ -8,6 +8,10 @@ import (
 	"fmt"
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/comfynode"
+	"registry-backend/ent/feedbackevent"
+	"registry-backend/ent/feedbackmessage"
+	"registry-backend/ent/feedbackread"
+	"registry-backend/ent/feedbackthread"
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/node"
 	"registry-backend/ent/nodereview"
@@ -38,6 +42,10 @@ const (
 	// Node types.
 	TypeCIWorkflowResult    = "CIWorkflowResult"
 	TypeComfyNode           = "ComfyNode"
+	TypeFeedbackEvent       = "FeedbackEvent"
+	TypeFeedbackMessage     = "FeedbackMessage"
+	TypeFeedbackRead        = "FeedbackRead"
+	TypeFeedbackThread      = "FeedbackThread"
 	TypeGitCommit           = "GitCommit"
 	TypeNode                = "Node"
 	TypeNodeReview          = "NodeReview"
@@ -3022,6 +3030,3401 @@ func (m *ComfyNodeMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown ComfyNode edge %s", name)
+}
+
+// FeedbackEventMutation represents an operation that mutates the FeedbackEvent nodes in the graph.
+type FeedbackEventMutation struct {
+	config
+	op                     Op
+	typ                    string
+	id                     *uuid.UUID
+	actor_user_id          *string
+	event_type             *feedbackevent.EventType
+	created_at             *time.Time
+	replacement_version_id *uuid.UUID
+	replacement_version    *string
+	clearedFields          map[string]struct{}
+	thread                 *uuid.UUID
+	clearedthread          bool
+	done                   bool
+	oldValue               func(context.Context) (*FeedbackEvent, error)
+	predicates             []predicate.FeedbackEvent
+}
+
+var _ ent.Mutation = (*FeedbackEventMutation)(nil)
+
+// feedbackeventOption allows management of the mutation configuration using functional options.
+type feedbackeventOption func(*FeedbackEventMutation)
+
+// newFeedbackEventMutation creates new mutation for the FeedbackEvent entity.
+func newFeedbackEventMutation(c config, op Op, opts ...feedbackeventOption) *FeedbackEventMutation {
+	m := &FeedbackEventMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeFeedbackEvent,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withFeedbackEventID sets the ID field of the mutation.
+func withFeedbackEventID(id uuid.UUID) feedbackeventOption {
+	return func(m *FeedbackEventMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *FeedbackEvent
+		)
+		m.oldValue = func(ctx context.Context) (*FeedbackEvent, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().FeedbackEvent.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withFeedbackEvent sets the old FeedbackEvent of the mutation.
+func withFeedbackEvent(node *FeedbackEvent) feedbackeventOption {
+	return func(m *FeedbackEventMutation) {
+		m.oldValue = func(context.Context) (*FeedbackEvent, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m FeedbackEventMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m FeedbackEventMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of FeedbackEvent entities.
+func (m *FeedbackEventMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *FeedbackEventMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *FeedbackEventMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().FeedbackEvent.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetThreadID sets the "thread_id" field.
+func (m *FeedbackEventMutation) SetThreadID(u uuid.UUID) {
+	m.thread = &u
+}
+
+// ThreadID returns the value of the "thread_id" field in the mutation.
+func (m *FeedbackEventMutation) ThreadID() (r uuid.UUID, exists bool) {
+	v := m.thread
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldThreadID returns the old "thread_id" field's value of the FeedbackEvent entity.
+// If the FeedbackEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackEventMutation) OldThreadID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldThreadID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldThreadID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldThreadID: %w", err)
+	}
+	return oldValue.ThreadID, nil
+}
+
+// ResetThreadID resets all changes to the "thread_id" field.
+func (m *FeedbackEventMutation) ResetThreadID() {
+	m.thread = nil
+}
+
+// SetActorUserID sets the "actor_user_id" field.
+func (m *FeedbackEventMutation) SetActorUserID(s string) {
+	m.actor_user_id = &s
+}
+
+// ActorUserID returns the value of the "actor_user_id" field in the mutation.
+func (m *FeedbackEventMutation) ActorUserID() (r string, exists bool) {
+	v := m.actor_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActorUserID returns the old "actor_user_id" field's value of the FeedbackEvent entity.
+// If the FeedbackEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackEventMutation) OldActorUserID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActorUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActorUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActorUserID: %w", err)
+	}
+	return oldValue.ActorUserID, nil
+}
+
+// ResetActorUserID resets all changes to the "actor_user_id" field.
+func (m *FeedbackEventMutation) ResetActorUserID() {
+	m.actor_user_id = nil
+}
+
+// SetEventType sets the "event_type" field.
+func (m *FeedbackEventMutation) SetEventType(ft feedbackevent.EventType) {
+	m.event_type = &ft
+}
+
+// EventType returns the value of the "event_type" field in the mutation.
+func (m *FeedbackEventMutation) EventType() (r feedbackevent.EventType, exists bool) {
+	v := m.event_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEventType returns the old "event_type" field's value of the FeedbackEvent entity.
+// If the FeedbackEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackEventMutation) OldEventType(ctx context.Context) (v feedbackevent.EventType, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEventType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEventType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEventType: %w", err)
+	}
+	return oldValue.EventType, nil
+}
+
+// ResetEventType resets all changes to the "event_type" field.
+func (m *FeedbackEventMutation) ResetEventType() {
+	m.event_type = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *FeedbackEventMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *FeedbackEventMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the FeedbackEvent entity.
+// If the FeedbackEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackEventMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *FeedbackEventMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetReplacementVersionID sets the "replacement_version_id" field.
+func (m *FeedbackEventMutation) SetReplacementVersionID(u uuid.UUID) {
+	m.replacement_version_id = &u
+}
+
+// ReplacementVersionID returns the value of the "replacement_version_id" field in the mutation.
+func (m *FeedbackEventMutation) ReplacementVersionID() (r uuid.UUID, exists bool) {
+	v := m.replacement_version_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReplacementVersionID returns the old "replacement_version_id" field's value of the FeedbackEvent entity.
+// If the FeedbackEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackEventMutation) OldReplacementVersionID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReplacementVersionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReplacementVersionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReplacementVersionID: %w", err)
+	}
+	return oldValue.ReplacementVersionID, nil
+}
+
+// ClearReplacementVersionID clears the value of the "replacement_version_id" field.
+func (m *FeedbackEventMutation) ClearReplacementVersionID() {
+	m.replacement_version_id = nil
+	m.clearedFields[feedbackevent.FieldReplacementVersionID] = struct{}{}
+}
+
+// ReplacementVersionIDCleared returns if the "replacement_version_id" field was cleared in this mutation.
+func (m *FeedbackEventMutation) ReplacementVersionIDCleared() bool {
+	_, ok := m.clearedFields[feedbackevent.FieldReplacementVersionID]
+	return ok
+}
+
+// ResetReplacementVersionID resets all changes to the "replacement_version_id" field.
+func (m *FeedbackEventMutation) ResetReplacementVersionID() {
+	m.replacement_version_id = nil
+	delete(m.clearedFields, feedbackevent.FieldReplacementVersionID)
+}
+
+// SetReplacementVersion sets the "replacement_version" field.
+func (m *FeedbackEventMutation) SetReplacementVersion(s string) {
+	m.replacement_version = &s
+}
+
+// ReplacementVersion returns the value of the "replacement_version" field in the mutation.
+func (m *FeedbackEventMutation) ReplacementVersion() (r string, exists bool) {
+	v := m.replacement_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReplacementVersion returns the old "replacement_version" field's value of the FeedbackEvent entity.
+// If the FeedbackEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackEventMutation) OldReplacementVersion(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReplacementVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReplacementVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReplacementVersion: %w", err)
+	}
+	return oldValue.ReplacementVersion, nil
+}
+
+// ClearReplacementVersion clears the value of the "replacement_version" field.
+func (m *FeedbackEventMutation) ClearReplacementVersion() {
+	m.replacement_version = nil
+	m.clearedFields[feedbackevent.FieldReplacementVersion] = struct{}{}
+}
+
+// ReplacementVersionCleared returns if the "replacement_version" field was cleared in this mutation.
+func (m *FeedbackEventMutation) ReplacementVersionCleared() bool {
+	_, ok := m.clearedFields[feedbackevent.FieldReplacementVersion]
+	return ok
+}
+
+// ResetReplacementVersion resets all changes to the "replacement_version" field.
+func (m *FeedbackEventMutation) ResetReplacementVersion() {
+	m.replacement_version = nil
+	delete(m.clearedFields, feedbackevent.FieldReplacementVersion)
+}
+
+// ClearThread clears the "thread" edge to the FeedbackThread entity.
+func (m *FeedbackEventMutation) ClearThread() {
+	m.clearedthread = true
+	m.clearedFields[feedbackevent.FieldThreadID] = struct{}{}
+}
+
+// ThreadCleared reports if the "thread" edge to the FeedbackThread entity was cleared.
+func (m *FeedbackEventMutation) ThreadCleared() bool {
+	return m.clearedthread
+}
+
+// ThreadIDs returns the "thread" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ThreadID instead. It exists only for internal usage by the builders.
+func (m *FeedbackEventMutation) ThreadIDs() (ids []uuid.UUID) {
+	if id := m.thread; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetThread resets all changes to the "thread" edge.
+func (m *FeedbackEventMutation) ResetThread() {
+	m.thread = nil
+	m.clearedthread = false
+}
+
+// Where appends a list predicates to the FeedbackEventMutation builder.
+func (m *FeedbackEventMutation) Where(ps ...predicate.FeedbackEvent) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the FeedbackEventMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *FeedbackEventMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.FeedbackEvent, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *FeedbackEventMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *FeedbackEventMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (FeedbackEvent).
+func (m *FeedbackEventMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *FeedbackEventMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.thread != nil {
+		fields = append(fields, feedbackevent.FieldThreadID)
+	}
+	if m.actor_user_id != nil {
+		fields = append(fields, feedbackevent.FieldActorUserID)
+	}
+	if m.event_type != nil {
+		fields = append(fields, feedbackevent.FieldEventType)
+	}
+	if m.created_at != nil {
+		fields = append(fields, feedbackevent.FieldCreatedAt)
+	}
+	if m.replacement_version_id != nil {
+		fields = append(fields, feedbackevent.FieldReplacementVersionID)
+	}
+	if m.replacement_version != nil {
+		fields = append(fields, feedbackevent.FieldReplacementVersion)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *FeedbackEventMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case feedbackevent.FieldThreadID:
+		return m.ThreadID()
+	case feedbackevent.FieldActorUserID:
+		return m.ActorUserID()
+	case feedbackevent.FieldEventType:
+		return m.EventType()
+	case feedbackevent.FieldCreatedAt:
+		return m.CreatedAt()
+	case feedbackevent.FieldReplacementVersionID:
+		return m.ReplacementVersionID()
+	case feedbackevent.FieldReplacementVersion:
+		return m.ReplacementVersion()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *FeedbackEventMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case feedbackevent.FieldThreadID:
+		return m.OldThreadID(ctx)
+	case feedbackevent.FieldActorUserID:
+		return m.OldActorUserID(ctx)
+	case feedbackevent.FieldEventType:
+		return m.OldEventType(ctx)
+	case feedbackevent.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case feedbackevent.FieldReplacementVersionID:
+		return m.OldReplacementVersionID(ctx)
+	case feedbackevent.FieldReplacementVersion:
+		return m.OldReplacementVersion(ctx)
+	}
+	return nil, fmt.Errorf("unknown FeedbackEvent field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FeedbackEventMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case feedbackevent.FieldThreadID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetThreadID(v)
+		return nil
+	case feedbackevent.FieldActorUserID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActorUserID(v)
+		return nil
+	case feedbackevent.FieldEventType:
+		v, ok := value.(feedbackevent.EventType)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEventType(v)
+		return nil
+	case feedbackevent.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case feedbackevent.FieldReplacementVersionID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReplacementVersionID(v)
+		return nil
+	case feedbackevent.FieldReplacementVersion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReplacementVersion(v)
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackEvent field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *FeedbackEventMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *FeedbackEventMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FeedbackEventMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown FeedbackEvent numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *FeedbackEventMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(feedbackevent.FieldReplacementVersionID) {
+		fields = append(fields, feedbackevent.FieldReplacementVersionID)
+	}
+	if m.FieldCleared(feedbackevent.FieldReplacementVersion) {
+		fields = append(fields, feedbackevent.FieldReplacementVersion)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *FeedbackEventMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *FeedbackEventMutation) ClearField(name string) error {
+	switch name {
+	case feedbackevent.FieldReplacementVersionID:
+		m.ClearReplacementVersionID()
+		return nil
+	case feedbackevent.FieldReplacementVersion:
+		m.ClearReplacementVersion()
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackEvent nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *FeedbackEventMutation) ResetField(name string) error {
+	switch name {
+	case feedbackevent.FieldThreadID:
+		m.ResetThreadID()
+		return nil
+	case feedbackevent.FieldActorUserID:
+		m.ResetActorUserID()
+		return nil
+	case feedbackevent.FieldEventType:
+		m.ResetEventType()
+		return nil
+	case feedbackevent.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case feedbackevent.FieldReplacementVersionID:
+		m.ResetReplacementVersionID()
+		return nil
+	case feedbackevent.FieldReplacementVersion:
+		m.ResetReplacementVersion()
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackEvent field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *FeedbackEventMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.thread != nil {
+		edges = append(edges, feedbackevent.EdgeThread)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *FeedbackEventMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case feedbackevent.EdgeThread:
+		if id := m.thread; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *FeedbackEventMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *FeedbackEventMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *FeedbackEventMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedthread {
+		edges = append(edges, feedbackevent.EdgeThread)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *FeedbackEventMutation) EdgeCleared(name string) bool {
+	switch name {
+	case feedbackevent.EdgeThread:
+		return m.clearedthread
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *FeedbackEventMutation) ClearEdge(name string) error {
+	switch name {
+	case feedbackevent.EdgeThread:
+		m.ClearThread()
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackEvent unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *FeedbackEventMutation) ResetEdge(name string) error {
+	switch name {
+	case feedbackevent.EdgeThread:
+		m.ResetThread()
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackEvent edge %s", name)
+}
+
+// FeedbackMessageMutation represents an operation that mutates the FeedbackMessage nodes in the graph.
+type FeedbackMessageMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	seq               *int
+	addseq            *int
+	sender_user_id    *string
+	sender_name       *string
+	sender_role       *feedbackmessage.SenderRole
+	body              *string
+	client_message_id *uuid.UUID
+	created_at        *time.Time
+	clearedFields     map[string]struct{}
+	thread            *uuid.UUID
+	clearedthread     bool
+	done              bool
+	oldValue          func(context.Context) (*FeedbackMessage, error)
+	predicates        []predicate.FeedbackMessage
+}
+
+var _ ent.Mutation = (*FeedbackMessageMutation)(nil)
+
+// feedbackmessageOption allows management of the mutation configuration using functional options.
+type feedbackmessageOption func(*FeedbackMessageMutation)
+
+// newFeedbackMessageMutation creates new mutation for the FeedbackMessage entity.
+func newFeedbackMessageMutation(c config, op Op, opts ...feedbackmessageOption) *FeedbackMessageMutation {
+	m := &FeedbackMessageMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeFeedbackMessage,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withFeedbackMessageID sets the ID field of the mutation.
+func withFeedbackMessageID(id uuid.UUID) feedbackmessageOption {
+	return func(m *FeedbackMessageMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *FeedbackMessage
+		)
+		m.oldValue = func(ctx context.Context) (*FeedbackMessage, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().FeedbackMessage.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withFeedbackMessage sets the old FeedbackMessage of the mutation.
+func withFeedbackMessage(node *FeedbackMessage) feedbackmessageOption {
+	return func(m *FeedbackMessageMutation) {
+		m.oldValue = func(context.Context) (*FeedbackMessage, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m FeedbackMessageMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m FeedbackMessageMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of FeedbackMessage entities.
+func (m *FeedbackMessageMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *FeedbackMessageMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *FeedbackMessageMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().FeedbackMessage.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetThreadID sets the "thread_id" field.
+func (m *FeedbackMessageMutation) SetThreadID(u uuid.UUID) {
+	m.thread = &u
+}
+
+// ThreadID returns the value of the "thread_id" field in the mutation.
+func (m *FeedbackMessageMutation) ThreadID() (r uuid.UUID, exists bool) {
+	v := m.thread
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldThreadID returns the old "thread_id" field's value of the FeedbackMessage entity.
+// If the FeedbackMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackMessageMutation) OldThreadID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldThreadID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldThreadID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldThreadID: %w", err)
+	}
+	return oldValue.ThreadID, nil
+}
+
+// ResetThreadID resets all changes to the "thread_id" field.
+func (m *FeedbackMessageMutation) ResetThreadID() {
+	m.thread = nil
+}
+
+// SetSeq sets the "seq" field.
+func (m *FeedbackMessageMutation) SetSeq(i int) {
+	m.seq = &i
+	m.addseq = nil
+}
+
+// Seq returns the value of the "seq" field in the mutation.
+func (m *FeedbackMessageMutation) Seq() (r int, exists bool) {
+	v := m.seq
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSeq returns the old "seq" field's value of the FeedbackMessage entity.
+// If the FeedbackMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackMessageMutation) OldSeq(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSeq is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSeq requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSeq: %w", err)
+	}
+	return oldValue.Seq, nil
+}
+
+// AddSeq adds i to the "seq" field.
+func (m *FeedbackMessageMutation) AddSeq(i int) {
+	if m.addseq != nil {
+		*m.addseq += i
+	} else {
+		m.addseq = &i
+	}
+}
+
+// AddedSeq returns the value that was added to the "seq" field in this mutation.
+func (m *FeedbackMessageMutation) AddedSeq() (r int, exists bool) {
+	v := m.addseq
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSeq resets all changes to the "seq" field.
+func (m *FeedbackMessageMutation) ResetSeq() {
+	m.seq = nil
+	m.addseq = nil
+}
+
+// SetSenderUserID sets the "sender_user_id" field.
+func (m *FeedbackMessageMutation) SetSenderUserID(s string) {
+	m.sender_user_id = &s
+}
+
+// SenderUserID returns the value of the "sender_user_id" field in the mutation.
+func (m *FeedbackMessageMutation) SenderUserID() (r string, exists bool) {
+	v := m.sender_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSenderUserID returns the old "sender_user_id" field's value of the FeedbackMessage entity.
+// If the FeedbackMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackMessageMutation) OldSenderUserID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSenderUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSenderUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSenderUserID: %w", err)
+	}
+	return oldValue.SenderUserID, nil
+}
+
+// ResetSenderUserID resets all changes to the "sender_user_id" field.
+func (m *FeedbackMessageMutation) ResetSenderUserID() {
+	m.sender_user_id = nil
+}
+
+// SetSenderName sets the "sender_name" field.
+func (m *FeedbackMessageMutation) SetSenderName(s string) {
+	m.sender_name = &s
+}
+
+// SenderName returns the value of the "sender_name" field in the mutation.
+func (m *FeedbackMessageMutation) SenderName() (r string, exists bool) {
+	v := m.sender_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSenderName returns the old "sender_name" field's value of the FeedbackMessage entity.
+// If the FeedbackMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackMessageMutation) OldSenderName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSenderName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSenderName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSenderName: %w", err)
+	}
+	return oldValue.SenderName, nil
+}
+
+// ResetSenderName resets all changes to the "sender_name" field.
+func (m *FeedbackMessageMutation) ResetSenderName() {
+	m.sender_name = nil
+}
+
+// SetSenderRole sets the "sender_role" field.
+func (m *FeedbackMessageMutation) SetSenderRole(fr feedbackmessage.SenderRole) {
+	m.sender_role = &fr
+}
+
+// SenderRole returns the value of the "sender_role" field in the mutation.
+func (m *FeedbackMessageMutation) SenderRole() (r feedbackmessage.SenderRole, exists bool) {
+	v := m.sender_role
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSenderRole returns the old "sender_role" field's value of the FeedbackMessage entity.
+// If the FeedbackMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackMessageMutation) OldSenderRole(ctx context.Context) (v feedbackmessage.SenderRole, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSenderRole is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSenderRole requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSenderRole: %w", err)
+	}
+	return oldValue.SenderRole, nil
+}
+
+// ResetSenderRole resets all changes to the "sender_role" field.
+func (m *FeedbackMessageMutation) ResetSenderRole() {
+	m.sender_role = nil
+}
+
+// SetBody sets the "body" field.
+func (m *FeedbackMessageMutation) SetBody(s string) {
+	m.body = &s
+}
+
+// Body returns the value of the "body" field in the mutation.
+func (m *FeedbackMessageMutation) Body() (r string, exists bool) {
+	v := m.body
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBody returns the old "body" field's value of the FeedbackMessage entity.
+// If the FeedbackMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackMessageMutation) OldBody(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBody is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBody requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBody: %w", err)
+	}
+	return oldValue.Body, nil
+}
+
+// ResetBody resets all changes to the "body" field.
+func (m *FeedbackMessageMutation) ResetBody() {
+	m.body = nil
+}
+
+// SetClientMessageID sets the "client_message_id" field.
+func (m *FeedbackMessageMutation) SetClientMessageID(u uuid.UUID) {
+	m.client_message_id = &u
+}
+
+// ClientMessageID returns the value of the "client_message_id" field in the mutation.
+func (m *FeedbackMessageMutation) ClientMessageID() (r uuid.UUID, exists bool) {
+	v := m.client_message_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldClientMessageID returns the old "client_message_id" field's value of the FeedbackMessage entity.
+// If the FeedbackMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackMessageMutation) OldClientMessageID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldClientMessageID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldClientMessageID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldClientMessageID: %w", err)
+	}
+	return oldValue.ClientMessageID, nil
+}
+
+// ResetClientMessageID resets all changes to the "client_message_id" field.
+func (m *FeedbackMessageMutation) ResetClientMessageID() {
+	m.client_message_id = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *FeedbackMessageMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *FeedbackMessageMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the FeedbackMessage entity.
+// If the FeedbackMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackMessageMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *FeedbackMessageMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// ClearThread clears the "thread" edge to the FeedbackThread entity.
+func (m *FeedbackMessageMutation) ClearThread() {
+	m.clearedthread = true
+	m.clearedFields[feedbackmessage.FieldThreadID] = struct{}{}
+}
+
+// ThreadCleared reports if the "thread" edge to the FeedbackThread entity was cleared.
+func (m *FeedbackMessageMutation) ThreadCleared() bool {
+	return m.clearedthread
+}
+
+// ThreadIDs returns the "thread" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ThreadID instead. It exists only for internal usage by the builders.
+func (m *FeedbackMessageMutation) ThreadIDs() (ids []uuid.UUID) {
+	if id := m.thread; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetThread resets all changes to the "thread" edge.
+func (m *FeedbackMessageMutation) ResetThread() {
+	m.thread = nil
+	m.clearedthread = false
+}
+
+// Where appends a list predicates to the FeedbackMessageMutation builder.
+func (m *FeedbackMessageMutation) Where(ps ...predicate.FeedbackMessage) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the FeedbackMessageMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *FeedbackMessageMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.FeedbackMessage, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *FeedbackMessageMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *FeedbackMessageMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (FeedbackMessage).
+func (m *FeedbackMessageMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *FeedbackMessageMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.thread != nil {
+		fields = append(fields, feedbackmessage.FieldThreadID)
+	}
+	if m.seq != nil {
+		fields = append(fields, feedbackmessage.FieldSeq)
+	}
+	if m.sender_user_id != nil {
+		fields = append(fields, feedbackmessage.FieldSenderUserID)
+	}
+	if m.sender_name != nil {
+		fields = append(fields, feedbackmessage.FieldSenderName)
+	}
+	if m.sender_role != nil {
+		fields = append(fields, feedbackmessage.FieldSenderRole)
+	}
+	if m.body != nil {
+		fields = append(fields, feedbackmessage.FieldBody)
+	}
+	if m.client_message_id != nil {
+		fields = append(fields, feedbackmessage.FieldClientMessageID)
+	}
+	if m.created_at != nil {
+		fields = append(fields, feedbackmessage.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *FeedbackMessageMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case feedbackmessage.FieldThreadID:
+		return m.ThreadID()
+	case feedbackmessage.FieldSeq:
+		return m.Seq()
+	case feedbackmessage.FieldSenderUserID:
+		return m.SenderUserID()
+	case feedbackmessage.FieldSenderName:
+		return m.SenderName()
+	case feedbackmessage.FieldSenderRole:
+		return m.SenderRole()
+	case feedbackmessage.FieldBody:
+		return m.Body()
+	case feedbackmessage.FieldClientMessageID:
+		return m.ClientMessageID()
+	case feedbackmessage.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *FeedbackMessageMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case feedbackmessage.FieldThreadID:
+		return m.OldThreadID(ctx)
+	case feedbackmessage.FieldSeq:
+		return m.OldSeq(ctx)
+	case feedbackmessage.FieldSenderUserID:
+		return m.OldSenderUserID(ctx)
+	case feedbackmessage.FieldSenderName:
+		return m.OldSenderName(ctx)
+	case feedbackmessage.FieldSenderRole:
+		return m.OldSenderRole(ctx)
+	case feedbackmessage.FieldBody:
+		return m.OldBody(ctx)
+	case feedbackmessage.FieldClientMessageID:
+		return m.OldClientMessageID(ctx)
+	case feedbackmessage.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown FeedbackMessage field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FeedbackMessageMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case feedbackmessage.FieldThreadID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetThreadID(v)
+		return nil
+	case feedbackmessage.FieldSeq:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSeq(v)
+		return nil
+	case feedbackmessage.FieldSenderUserID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSenderUserID(v)
+		return nil
+	case feedbackmessage.FieldSenderName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSenderName(v)
+		return nil
+	case feedbackmessage.FieldSenderRole:
+		v, ok := value.(feedbackmessage.SenderRole)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSenderRole(v)
+		return nil
+	case feedbackmessage.FieldBody:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBody(v)
+		return nil
+	case feedbackmessage.FieldClientMessageID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetClientMessageID(v)
+		return nil
+	case feedbackmessage.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackMessage field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *FeedbackMessageMutation) AddedFields() []string {
+	var fields []string
+	if m.addseq != nil {
+		fields = append(fields, feedbackmessage.FieldSeq)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *FeedbackMessageMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case feedbackmessage.FieldSeq:
+		return m.AddedSeq()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FeedbackMessageMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case feedbackmessage.FieldSeq:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSeq(v)
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackMessage numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *FeedbackMessageMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *FeedbackMessageMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *FeedbackMessageMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown FeedbackMessage nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *FeedbackMessageMutation) ResetField(name string) error {
+	switch name {
+	case feedbackmessage.FieldThreadID:
+		m.ResetThreadID()
+		return nil
+	case feedbackmessage.FieldSeq:
+		m.ResetSeq()
+		return nil
+	case feedbackmessage.FieldSenderUserID:
+		m.ResetSenderUserID()
+		return nil
+	case feedbackmessage.FieldSenderName:
+		m.ResetSenderName()
+		return nil
+	case feedbackmessage.FieldSenderRole:
+		m.ResetSenderRole()
+		return nil
+	case feedbackmessage.FieldBody:
+		m.ResetBody()
+		return nil
+	case feedbackmessage.FieldClientMessageID:
+		m.ResetClientMessageID()
+		return nil
+	case feedbackmessage.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackMessage field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *FeedbackMessageMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.thread != nil {
+		edges = append(edges, feedbackmessage.EdgeThread)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *FeedbackMessageMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case feedbackmessage.EdgeThread:
+		if id := m.thread; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *FeedbackMessageMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *FeedbackMessageMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *FeedbackMessageMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedthread {
+		edges = append(edges, feedbackmessage.EdgeThread)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *FeedbackMessageMutation) EdgeCleared(name string) bool {
+	switch name {
+	case feedbackmessage.EdgeThread:
+		return m.clearedthread
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *FeedbackMessageMutation) ClearEdge(name string) error {
+	switch name {
+	case feedbackmessage.EdgeThread:
+		m.ClearThread()
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackMessage unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *FeedbackMessageMutation) ResetEdge(name string) error {
+	switch name {
+	case feedbackmessage.EdgeThread:
+		m.ResetThread()
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackMessage edge %s", name)
+}
+
+// FeedbackReadMutation represents an operation that mutates the FeedbackRead nodes in the graph.
+type FeedbackReadMutation struct {
+	config
+	op                       Op
+	typ                      string
+	id                       *uuid.UUID
+	user_id                  *string
+	last_read_message_seq    *int
+	addlast_read_message_seq *int
+	read_at                  *time.Time
+	clearedFields            map[string]struct{}
+	thread                   *uuid.UUID
+	clearedthread            bool
+	done                     bool
+	oldValue                 func(context.Context) (*FeedbackRead, error)
+	predicates               []predicate.FeedbackRead
+}
+
+var _ ent.Mutation = (*FeedbackReadMutation)(nil)
+
+// feedbackreadOption allows management of the mutation configuration using functional options.
+type feedbackreadOption func(*FeedbackReadMutation)
+
+// newFeedbackReadMutation creates new mutation for the FeedbackRead entity.
+func newFeedbackReadMutation(c config, op Op, opts ...feedbackreadOption) *FeedbackReadMutation {
+	m := &FeedbackReadMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeFeedbackRead,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withFeedbackReadID sets the ID field of the mutation.
+func withFeedbackReadID(id uuid.UUID) feedbackreadOption {
+	return func(m *FeedbackReadMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *FeedbackRead
+		)
+		m.oldValue = func(ctx context.Context) (*FeedbackRead, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().FeedbackRead.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withFeedbackRead sets the old FeedbackRead of the mutation.
+func withFeedbackRead(node *FeedbackRead) feedbackreadOption {
+	return func(m *FeedbackReadMutation) {
+		m.oldValue = func(context.Context) (*FeedbackRead, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m FeedbackReadMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m FeedbackReadMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of FeedbackRead entities.
+func (m *FeedbackReadMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *FeedbackReadMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *FeedbackReadMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().FeedbackRead.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetThreadID sets the "thread_id" field.
+func (m *FeedbackReadMutation) SetThreadID(u uuid.UUID) {
+	m.thread = &u
+}
+
+// ThreadID returns the value of the "thread_id" field in the mutation.
+func (m *FeedbackReadMutation) ThreadID() (r uuid.UUID, exists bool) {
+	v := m.thread
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldThreadID returns the old "thread_id" field's value of the FeedbackRead entity.
+// If the FeedbackRead object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackReadMutation) OldThreadID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldThreadID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldThreadID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldThreadID: %w", err)
+	}
+	return oldValue.ThreadID, nil
+}
+
+// ResetThreadID resets all changes to the "thread_id" field.
+func (m *FeedbackReadMutation) ResetThreadID() {
+	m.thread = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *FeedbackReadMutation) SetUserID(s string) {
+	m.user_id = &s
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *FeedbackReadMutation) UserID() (r string, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the FeedbackRead entity.
+// If the FeedbackRead object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackReadMutation) OldUserID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *FeedbackReadMutation) ResetUserID() {
+	m.user_id = nil
+}
+
+// SetLastReadMessageSeq sets the "last_read_message_seq" field.
+func (m *FeedbackReadMutation) SetLastReadMessageSeq(i int) {
+	m.last_read_message_seq = &i
+	m.addlast_read_message_seq = nil
+}
+
+// LastReadMessageSeq returns the value of the "last_read_message_seq" field in the mutation.
+func (m *FeedbackReadMutation) LastReadMessageSeq() (r int, exists bool) {
+	v := m.last_read_message_seq
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastReadMessageSeq returns the old "last_read_message_seq" field's value of the FeedbackRead entity.
+// If the FeedbackRead object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackReadMutation) OldLastReadMessageSeq(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastReadMessageSeq is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastReadMessageSeq requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastReadMessageSeq: %w", err)
+	}
+	return oldValue.LastReadMessageSeq, nil
+}
+
+// AddLastReadMessageSeq adds i to the "last_read_message_seq" field.
+func (m *FeedbackReadMutation) AddLastReadMessageSeq(i int) {
+	if m.addlast_read_message_seq != nil {
+		*m.addlast_read_message_seq += i
+	} else {
+		m.addlast_read_message_seq = &i
+	}
+}
+
+// AddedLastReadMessageSeq returns the value that was added to the "last_read_message_seq" field in this mutation.
+func (m *FeedbackReadMutation) AddedLastReadMessageSeq() (r int, exists bool) {
+	v := m.addlast_read_message_seq
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLastReadMessageSeq resets all changes to the "last_read_message_seq" field.
+func (m *FeedbackReadMutation) ResetLastReadMessageSeq() {
+	m.last_read_message_seq = nil
+	m.addlast_read_message_seq = nil
+}
+
+// SetReadAt sets the "read_at" field.
+func (m *FeedbackReadMutation) SetReadAt(t time.Time) {
+	m.read_at = &t
+}
+
+// ReadAt returns the value of the "read_at" field in the mutation.
+func (m *FeedbackReadMutation) ReadAt() (r time.Time, exists bool) {
+	v := m.read_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReadAt returns the old "read_at" field's value of the FeedbackRead entity.
+// If the FeedbackRead object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackReadMutation) OldReadAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReadAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReadAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReadAt: %w", err)
+	}
+	return oldValue.ReadAt, nil
+}
+
+// ResetReadAt resets all changes to the "read_at" field.
+func (m *FeedbackReadMutation) ResetReadAt() {
+	m.read_at = nil
+}
+
+// ClearThread clears the "thread" edge to the FeedbackThread entity.
+func (m *FeedbackReadMutation) ClearThread() {
+	m.clearedthread = true
+	m.clearedFields[feedbackread.FieldThreadID] = struct{}{}
+}
+
+// ThreadCleared reports if the "thread" edge to the FeedbackThread entity was cleared.
+func (m *FeedbackReadMutation) ThreadCleared() bool {
+	return m.clearedthread
+}
+
+// ThreadIDs returns the "thread" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ThreadID instead. It exists only for internal usage by the builders.
+func (m *FeedbackReadMutation) ThreadIDs() (ids []uuid.UUID) {
+	if id := m.thread; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetThread resets all changes to the "thread" edge.
+func (m *FeedbackReadMutation) ResetThread() {
+	m.thread = nil
+	m.clearedthread = false
+}
+
+// Where appends a list predicates to the FeedbackReadMutation builder.
+func (m *FeedbackReadMutation) Where(ps ...predicate.FeedbackRead) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the FeedbackReadMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *FeedbackReadMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.FeedbackRead, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *FeedbackReadMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *FeedbackReadMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (FeedbackRead).
+func (m *FeedbackReadMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *FeedbackReadMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.thread != nil {
+		fields = append(fields, feedbackread.FieldThreadID)
+	}
+	if m.user_id != nil {
+		fields = append(fields, feedbackread.FieldUserID)
+	}
+	if m.last_read_message_seq != nil {
+		fields = append(fields, feedbackread.FieldLastReadMessageSeq)
+	}
+	if m.read_at != nil {
+		fields = append(fields, feedbackread.FieldReadAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *FeedbackReadMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case feedbackread.FieldThreadID:
+		return m.ThreadID()
+	case feedbackread.FieldUserID:
+		return m.UserID()
+	case feedbackread.FieldLastReadMessageSeq:
+		return m.LastReadMessageSeq()
+	case feedbackread.FieldReadAt:
+		return m.ReadAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *FeedbackReadMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case feedbackread.FieldThreadID:
+		return m.OldThreadID(ctx)
+	case feedbackread.FieldUserID:
+		return m.OldUserID(ctx)
+	case feedbackread.FieldLastReadMessageSeq:
+		return m.OldLastReadMessageSeq(ctx)
+	case feedbackread.FieldReadAt:
+		return m.OldReadAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown FeedbackRead field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FeedbackReadMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case feedbackread.FieldThreadID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetThreadID(v)
+		return nil
+	case feedbackread.FieldUserID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case feedbackread.FieldLastReadMessageSeq:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastReadMessageSeq(v)
+		return nil
+	case feedbackread.FieldReadAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReadAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackRead field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *FeedbackReadMutation) AddedFields() []string {
+	var fields []string
+	if m.addlast_read_message_seq != nil {
+		fields = append(fields, feedbackread.FieldLastReadMessageSeq)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *FeedbackReadMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case feedbackread.FieldLastReadMessageSeq:
+		return m.AddedLastReadMessageSeq()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FeedbackReadMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case feedbackread.FieldLastReadMessageSeq:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLastReadMessageSeq(v)
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackRead numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *FeedbackReadMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *FeedbackReadMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *FeedbackReadMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown FeedbackRead nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *FeedbackReadMutation) ResetField(name string) error {
+	switch name {
+	case feedbackread.FieldThreadID:
+		m.ResetThreadID()
+		return nil
+	case feedbackread.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case feedbackread.FieldLastReadMessageSeq:
+		m.ResetLastReadMessageSeq()
+		return nil
+	case feedbackread.FieldReadAt:
+		m.ResetReadAt()
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackRead field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *FeedbackReadMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.thread != nil {
+		edges = append(edges, feedbackread.EdgeThread)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *FeedbackReadMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case feedbackread.EdgeThread:
+		if id := m.thread; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *FeedbackReadMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *FeedbackReadMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *FeedbackReadMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedthread {
+		edges = append(edges, feedbackread.EdgeThread)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *FeedbackReadMutation) EdgeCleared(name string) bool {
+	switch name {
+	case feedbackread.EdgeThread:
+		return m.clearedthread
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *FeedbackReadMutation) ClearEdge(name string) error {
+	switch name {
+	case feedbackread.EdgeThread:
+		m.ClearThread()
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackRead unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *FeedbackReadMutation) ResetEdge(name string) error {
+	switch name {
+	case feedbackread.EdgeThread:
+		m.ResetThread()
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackRead edge %s", name)
+}
+
+// FeedbackThreadMutation represents an operation that mutates the FeedbackThread nodes in the graph.
+type FeedbackThreadMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	create_time         *time.Time
+	update_time         *time.Time
+	version_id          *uuid.UUID
+	publisher_id        *string
+	state               *feedbackthread.State
+	created_by_user_id  *string
+	last_message_seq    *int
+	addlast_message_seq *int
+	last_message_at     *time.Time
+	revision            *int
+	addrevision         *int
+	resolved_by_user_id *string
+	resolved_at         *time.Time
+	archived_at         *time.Time
+	clearedFields       map[string]struct{}
+	messages            map[uuid.UUID]struct{}
+	removedmessages     map[uuid.UUID]struct{}
+	clearedmessages     bool
+	reads               map[uuid.UUID]struct{}
+	removedreads        map[uuid.UUID]struct{}
+	clearedreads        bool
+	events              map[uuid.UUID]struct{}
+	removedevents       map[uuid.UUID]struct{}
+	clearedevents       bool
+	done                bool
+	oldValue            func(context.Context) (*FeedbackThread, error)
+	predicates          []predicate.FeedbackThread
+}
+
+var _ ent.Mutation = (*FeedbackThreadMutation)(nil)
+
+// feedbackthreadOption allows management of the mutation configuration using functional options.
+type feedbackthreadOption func(*FeedbackThreadMutation)
+
+// newFeedbackThreadMutation creates new mutation for the FeedbackThread entity.
+func newFeedbackThreadMutation(c config, op Op, opts ...feedbackthreadOption) *FeedbackThreadMutation {
+	m := &FeedbackThreadMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeFeedbackThread,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withFeedbackThreadID sets the ID field of the mutation.
+func withFeedbackThreadID(id uuid.UUID) feedbackthreadOption {
+	return func(m *FeedbackThreadMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *FeedbackThread
+		)
+		m.oldValue = func(ctx context.Context) (*FeedbackThread, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().FeedbackThread.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withFeedbackThread sets the old FeedbackThread of the mutation.
+func withFeedbackThread(node *FeedbackThread) feedbackthreadOption {
+	return func(m *FeedbackThreadMutation) {
+		m.oldValue = func(context.Context) (*FeedbackThread, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m FeedbackThreadMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m FeedbackThreadMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of FeedbackThread entities.
+func (m *FeedbackThreadMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *FeedbackThreadMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *FeedbackThreadMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().FeedbackThread.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreateTime sets the "create_time" field.
+func (m *FeedbackThreadMutation) SetCreateTime(t time.Time) {
+	m.create_time = &t
+}
+
+// CreateTime returns the value of the "create_time" field in the mutation.
+func (m *FeedbackThreadMutation) CreateTime() (r time.Time, exists bool) {
+	v := m.create_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreateTime returns the old "create_time" field's value of the FeedbackThread entity.
+// If the FeedbackThread object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackThreadMutation) OldCreateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreateTime: %w", err)
+	}
+	return oldValue.CreateTime, nil
+}
+
+// ResetCreateTime resets all changes to the "create_time" field.
+func (m *FeedbackThreadMutation) ResetCreateTime() {
+	m.create_time = nil
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (m *FeedbackThreadMutation) SetUpdateTime(t time.Time) {
+	m.update_time = &t
+}
+
+// UpdateTime returns the value of the "update_time" field in the mutation.
+func (m *FeedbackThreadMutation) UpdateTime() (r time.Time, exists bool) {
+	v := m.update_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdateTime returns the old "update_time" field's value of the FeedbackThread entity.
+// If the FeedbackThread object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackThreadMutation) OldUpdateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdateTime: %w", err)
+	}
+	return oldValue.UpdateTime, nil
+}
+
+// ResetUpdateTime resets all changes to the "update_time" field.
+func (m *FeedbackThreadMutation) ResetUpdateTime() {
+	m.update_time = nil
+}
+
+// SetVersionID sets the "version_id" field.
+func (m *FeedbackThreadMutation) SetVersionID(u uuid.UUID) {
+	m.version_id = &u
+}
+
+// VersionID returns the value of the "version_id" field in the mutation.
+func (m *FeedbackThreadMutation) VersionID() (r uuid.UUID, exists bool) {
+	v := m.version_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersionID returns the old "version_id" field's value of the FeedbackThread entity.
+// If the FeedbackThread object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackThreadMutation) OldVersionID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersionID: %w", err)
+	}
+	return oldValue.VersionID, nil
+}
+
+// ResetVersionID resets all changes to the "version_id" field.
+func (m *FeedbackThreadMutation) ResetVersionID() {
+	m.version_id = nil
+}
+
+// SetPublisherID sets the "publisher_id" field.
+func (m *FeedbackThreadMutation) SetPublisherID(s string) {
+	m.publisher_id = &s
+}
+
+// PublisherID returns the value of the "publisher_id" field in the mutation.
+func (m *FeedbackThreadMutation) PublisherID() (r string, exists bool) {
+	v := m.publisher_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPublisherID returns the old "publisher_id" field's value of the FeedbackThread entity.
+// If the FeedbackThread object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackThreadMutation) OldPublisherID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPublisherID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPublisherID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPublisherID: %w", err)
+	}
+	return oldValue.PublisherID, nil
+}
+
+// ResetPublisherID resets all changes to the "publisher_id" field.
+func (m *FeedbackThreadMutation) ResetPublisherID() {
+	m.publisher_id = nil
+}
+
+// SetState sets the "state" field.
+func (m *FeedbackThreadMutation) SetState(f feedbackthread.State) {
+	m.state = &f
+}
+
+// State returns the value of the "state" field in the mutation.
+func (m *FeedbackThreadMutation) State() (r feedbackthread.State, exists bool) {
+	v := m.state
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldState returns the old "state" field's value of the FeedbackThread entity.
+// If the FeedbackThread object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackThreadMutation) OldState(ctx context.Context) (v feedbackthread.State, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldState is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldState requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldState: %w", err)
+	}
+	return oldValue.State, nil
+}
+
+// ResetState resets all changes to the "state" field.
+func (m *FeedbackThreadMutation) ResetState() {
+	m.state = nil
+}
+
+// SetCreatedByUserID sets the "created_by_user_id" field.
+func (m *FeedbackThreadMutation) SetCreatedByUserID(s string) {
+	m.created_by_user_id = &s
+}
+
+// CreatedByUserID returns the value of the "created_by_user_id" field in the mutation.
+func (m *FeedbackThreadMutation) CreatedByUserID() (r string, exists bool) {
+	v := m.created_by_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedByUserID returns the old "created_by_user_id" field's value of the FeedbackThread entity.
+// If the FeedbackThread object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackThreadMutation) OldCreatedByUserID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedByUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedByUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedByUserID: %w", err)
+	}
+	return oldValue.CreatedByUserID, nil
+}
+
+// ResetCreatedByUserID resets all changes to the "created_by_user_id" field.
+func (m *FeedbackThreadMutation) ResetCreatedByUserID() {
+	m.created_by_user_id = nil
+}
+
+// SetLastMessageSeq sets the "last_message_seq" field.
+func (m *FeedbackThreadMutation) SetLastMessageSeq(i int) {
+	m.last_message_seq = &i
+	m.addlast_message_seq = nil
+}
+
+// LastMessageSeq returns the value of the "last_message_seq" field in the mutation.
+func (m *FeedbackThreadMutation) LastMessageSeq() (r int, exists bool) {
+	v := m.last_message_seq
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastMessageSeq returns the old "last_message_seq" field's value of the FeedbackThread entity.
+// If the FeedbackThread object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackThreadMutation) OldLastMessageSeq(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastMessageSeq is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastMessageSeq requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastMessageSeq: %w", err)
+	}
+	return oldValue.LastMessageSeq, nil
+}
+
+// AddLastMessageSeq adds i to the "last_message_seq" field.
+func (m *FeedbackThreadMutation) AddLastMessageSeq(i int) {
+	if m.addlast_message_seq != nil {
+		*m.addlast_message_seq += i
+	} else {
+		m.addlast_message_seq = &i
+	}
+}
+
+// AddedLastMessageSeq returns the value that was added to the "last_message_seq" field in this mutation.
+func (m *FeedbackThreadMutation) AddedLastMessageSeq() (r int, exists bool) {
+	v := m.addlast_message_seq
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLastMessageSeq resets all changes to the "last_message_seq" field.
+func (m *FeedbackThreadMutation) ResetLastMessageSeq() {
+	m.last_message_seq = nil
+	m.addlast_message_seq = nil
+}
+
+// SetLastMessageAt sets the "last_message_at" field.
+func (m *FeedbackThreadMutation) SetLastMessageAt(t time.Time) {
+	m.last_message_at = &t
+}
+
+// LastMessageAt returns the value of the "last_message_at" field in the mutation.
+func (m *FeedbackThreadMutation) LastMessageAt() (r time.Time, exists bool) {
+	v := m.last_message_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastMessageAt returns the old "last_message_at" field's value of the FeedbackThread entity.
+// If the FeedbackThread object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackThreadMutation) OldLastMessageAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastMessageAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastMessageAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastMessageAt: %w", err)
+	}
+	return oldValue.LastMessageAt, nil
+}
+
+// ResetLastMessageAt resets all changes to the "last_message_at" field.
+func (m *FeedbackThreadMutation) ResetLastMessageAt() {
+	m.last_message_at = nil
+}
+
+// SetRevision sets the "revision" field.
+func (m *FeedbackThreadMutation) SetRevision(i int) {
+	m.revision = &i
+	m.addrevision = nil
+}
+
+// Revision returns the value of the "revision" field in the mutation.
+func (m *FeedbackThreadMutation) Revision() (r int, exists bool) {
+	v := m.revision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRevision returns the old "revision" field's value of the FeedbackThread entity.
+// If the FeedbackThread object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackThreadMutation) OldRevision(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRevision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRevision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRevision: %w", err)
+	}
+	return oldValue.Revision, nil
+}
+
+// AddRevision adds i to the "revision" field.
+func (m *FeedbackThreadMutation) AddRevision(i int) {
+	if m.addrevision != nil {
+		*m.addrevision += i
+	} else {
+		m.addrevision = &i
+	}
+}
+
+// AddedRevision returns the value that was added to the "revision" field in this mutation.
+func (m *FeedbackThreadMutation) AddedRevision() (r int, exists bool) {
+	v := m.addrevision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRevision resets all changes to the "revision" field.
+func (m *FeedbackThreadMutation) ResetRevision() {
+	m.revision = nil
+	m.addrevision = nil
+}
+
+// SetResolvedByUserID sets the "resolved_by_user_id" field.
+func (m *FeedbackThreadMutation) SetResolvedByUserID(s string) {
+	m.resolved_by_user_id = &s
+}
+
+// ResolvedByUserID returns the value of the "resolved_by_user_id" field in the mutation.
+func (m *FeedbackThreadMutation) ResolvedByUserID() (r string, exists bool) {
+	v := m.resolved_by_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldResolvedByUserID returns the old "resolved_by_user_id" field's value of the FeedbackThread entity.
+// If the FeedbackThread object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackThreadMutation) OldResolvedByUserID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldResolvedByUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldResolvedByUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldResolvedByUserID: %w", err)
+	}
+	return oldValue.ResolvedByUserID, nil
+}
+
+// ClearResolvedByUserID clears the value of the "resolved_by_user_id" field.
+func (m *FeedbackThreadMutation) ClearResolvedByUserID() {
+	m.resolved_by_user_id = nil
+	m.clearedFields[feedbackthread.FieldResolvedByUserID] = struct{}{}
+}
+
+// ResolvedByUserIDCleared returns if the "resolved_by_user_id" field was cleared in this mutation.
+func (m *FeedbackThreadMutation) ResolvedByUserIDCleared() bool {
+	_, ok := m.clearedFields[feedbackthread.FieldResolvedByUserID]
+	return ok
+}
+
+// ResetResolvedByUserID resets all changes to the "resolved_by_user_id" field.
+func (m *FeedbackThreadMutation) ResetResolvedByUserID() {
+	m.resolved_by_user_id = nil
+	delete(m.clearedFields, feedbackthread.FieldResolvedByUserID)
+}
+
+// SetResolvedAt sets the "resolved_at" field.
+func (m *FeedbackThreadMutation) SetResolvedAt(t time.Time) {
+	m.resolved_at = &t
+}
+
+// ResolvedAt returns the value of the "resolved_at" field in the mutation.
+func (m *FeedbackThreadMutation) ResolvedAt() (r time.Time, exists bool) {
+	v := m.resolved_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldResolvedAt returns the old "resolved_at" field's value of the FeedbackThread entity.
+// If the FeedbackThread object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackThreadMutation) OldResolvedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldResolvedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldResolvedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldResolvedAt: %w", err)
+	}
+	return oldValue.ResolvedAt, nil
+}
+
+// ClearResolvedAt clears the value of the "resolved_at" field.
+func (m *FeedbackThreadMutation) ClearResolvedAt() {
+	m.resolved_at = nil
+	m.clearedFields[feedbackthread.FieldResolvedAt] = struct{}{}
+}
+
+// ResolvedAtCleared returns if the "resolved_at" field was cleared in this mutation.
+func (m *FeedbackThreadMutation) ResolvedAtCleared() bool {
+	_, ok := m.clearedFields[feedbackthread.FieldResolvedAt]
+	return ok
+}
+
+// ResetResolvedAt resets all changes to the "resolved_at" field.
+func (m *FeedbackThreadMutation) ResetResolvedAt() {
+	m.resolved_at = nil
+	delete(m.clearedFields, feedbackthread.FieldResolvedAt)
+}
+
+// SetArchivedAt sets the "archived_at" field.
+func (m *FeedbackThreadMutation) SetArchivedAt(t time.Time) {
+	m.archived_at = &t
+}
+
+// ArchivedAt returns the value of the "archived_at" field in the mutation.
+func (m *FeedbackThreadMutation) ArchivedAt() (r time.Time, exists bool) {
+	v := m.archived_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldArchivedAt returns the old "archived_at" field's value of the FeedbackThread entity.
+// If the FeedbackThread object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeedbackThreadMutation) OldArchivedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldArchivedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldArchivedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldArchivedAt: %w", err)
+	}
+	return oldValue.ArchivedAt, nil
+}
+
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (m *FeedbackThreadMutation) ClearArchivedAt() {
+	m.archived_at = nil
+	m.clearedFields[feedbackthread.FieldArchivedAt] = struct{}{}
+}
+
+// ArchivedAtCleared returns if the "archived_at" field was cleared in this mutation.
+func (m *FeedbackThreadMutation) ArchivedAtCleared() bool {
+	_, ok := m.clearedFields[feedbackthread.FieldArchivedAt]
+	return ok
+}
+
+// ResetArchivedAt resets all changes to the "archived_at" field.
+func (m *FeedbackThreadMutation) ResetArchivedAt() {
+	m.archived_at = nil
+	delete(m.clearedFields, feedbackthread.FieldArchivedAt)
+}
+
+// AddMessageIDs adds the "messages" edge to the FeedbackMessage entity by ids.
+func (m *FeedbackThreadMutation) AddMessageIDs(ids ...uuid.UUID) {
+	if m.messages == nil {
+		m.messages = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.messages[ids[i]] = struct{}{}
+	}
+}
+
+// ClearMessages clears the "messages" edge to the FeedbackMessage entity.
+func (m *FeedbackThreadMutation) ClearMessages() {
+	m.clearedmessages = true
+}
+
+// MessagesCleared reports if the "messages" edge to the FeedbackMessage entity was cleared.
+func (m *FeedbackThreadMutation) MessagesCleared() bool {
+	return m.clearedmessages
+}
+
+// RemoveMessageIDs removes the "messages" edge to the FeedbackMessage entity by IDs.
+func (m *FeedbackThreadMutation) RemoveMessageIDs(ids ...uuid.UUID) {
+	if m.removedmessages == nil {
+		m.removedmessages = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.messages, ids[i])
+		m.removedmessages[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedMessages returns the removed IDs of the "messages" edge to the FeedbackMessage entity.
+func (m *FeedbackThreadMutation) RemovedMessagesIDs() (ids []uuid.UUID) {
+	for id := range m.removedmessages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// MessagesIDs returns the "messages" edge IDs in the mutation.
+func (m *FeedbackThreadMutation) MessagesIDs() (ids []uuid.UUID) {
+	for id := range m.messages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetMessages resets all changes to the "messages" edge.
+func (m *FeedbackThreadMutation) ResetMessages() {
+	m.messages = nil
+	m.clearedmessages = false
+	m.removedmessages = nil
+}
+
+// AddReadIDs adds the "reads" edge to the FeedbackRead entity by ids.
+func (m *FeedbackThreadMutation) AddReadIDs(ids ...uuid.UUID) {
+	if m.reads == nil {
+		m.reads = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.reads[ids[i]] = struct{}{}
+	}
+}
+
+// ClearReads clears the "reads" edge to the FeedbackRead entity.
+func (m *FeedbackThreadMutation) ClearReads() {
+	m.clearedreads = true
+}
+
+// ReadsCleared reports if the "reads" edge to the FeedbackRead entity was cleared.
+func (m *FeedbackThreadMutation) ReadsCleared() bool {
+	return m.clearedreads
+}
+
+// RemoveReadIDs removes the "reads" edge to the FeedbackRead entity by IDs.
+func (m *FeedbackThreadMutation) RemoveReadIDs(ids ...uuid.UUID) {
+	if m.removedreads == nil {
+		m.removedreads = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.reads, ids[i])
+		m.removedreads[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedReads returns the removed IDs of the "reads" edge to the FeedbackRead entity.
+func (m *FeedbackThreadMutation) RemovedReadsIDs() (ids []uuid.UUID) {
+	for id := range m.removedreads {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ReadsIDs returns the "reads" edge IDs in the mutation.
+func (m *FeedbackThreadMutation) ReadsIDs() (ids []uuid.UUID) {
+	for id := range m.reads {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetReads resets all changes to the "reads" edge.
+func (m *FeedbackThreadMutation) ResetReads() {
+	m.reads = nil
+	m.clearedreads = false
+	m.removedreads = nil
+}
+
+// AddEventIDs adds the "events" edge to the FeedbackEvent entity by ids.
+func (m *FeedbackThreadMutation) AddEventIDs(ids ...uuid.UUID) {
+	if m.events == nil {
+		m.events = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.events[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEvents clears the "events" edge to the FeedbackEvent entity.
+func (m *FeedbackThreadMutation) ClearEvents() {
+	m.clearedevents = true
+}
+
+// EventsCleared reports if the "events" edge to the FeedbackEvent entity was cleared.
+func (m *FeedbackThreadMutation) EventsCleared() bool {
+	return m.clearedevents
+}
+
+// RemoveEventIDs removes the "events" edge to the FeedbackEvent entity by IDs.
+func (m *FeedbackThreadMutation) RemoveEventIDs(ids ...uuid.UUID) {
+	if m.removedevents == nil {
+		m.removedevents = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.events, ids[i])
+		m.removedevents[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEvents returns the removed IDs of the "events" edge to the FeedbackEvent entity.
+func (m *FeedbackThreadMutation) RemovedEventsIDs() (ids []uuid.UUID) {
+	for id := range m.removedevents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EventsIDs returns the "events" edge IDs in the mutation.
+func (m *FeedbackThreadMutation) EventsIDs() (ids []uuid.UUID) {
+	for id := range m.events {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEvents resets all changes to the "events" edge.
+func (m *FeedbackThreadMutation) ResetEvents() {
+	m.events = nil
+	m.clearedevents = false
+	m.removedevents = nil
+}
+
+// Where appends a list predicates to the FeedbackThreadMutation builder.
+func (m *FeedbackThreadMutation) Where(ps ...predicate.FeedbackThread) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the FeedbackThreadMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *FeedbackThreadMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.FeedbackThread, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *FeedbackThreadMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *FeedbackThreadMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (FeedbackThread).
+func (m *FeedbackThreadMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *FeedbackThreadMutation) Fields() []string {
+	fields := make([]string, 0, 12)
+	if m.create_time != nil {
+		fields = append(fields, feedbackthread.FieldCreateTime)
+	}
+	if m.update_time != nil {
+		fields = append(fields, feedbackthread.FieldUpdateTime)
+	}
+	if m.version_id != nil {
+		fields = append(fields, feedbackthread.FieldVersionID)
+	}
+	if m.publisher_id != nil {
+		fields = append(fields, feedbackthread.FieldPublisherID)
+	}
+	if m.state != nil {
+		fields = append(fields, feedbackthread.FieldState)
+	}
+	if m.created_by_user_id != nil {
+		fields = append(fields, feedbackthread.FieldCreatedByUserID)
+	}
+	if m.last_message_seq != nil {
+		fields = append(fields, feedbackthread.FieldLastMessageSeq)
+	}
+	if m.last_message_at != nil {
+		fields = append(fields, feedbackthread.FieldLastMessageAt)
+	}
+	if m.revision != nil {
+		fields = append(fields, feedbackthread.FieldRevision)
+	}
+	if m.resolved_by_user_id != nil {
+		fields = append(fields, feedbackthread.FieldResolvedByUserID)
+	}
+	if m.resolved_at != nil {
+		fields = append(fields, feedbackthread.FieldResolvedAt)
+	}
+	if m.archived_at != nil {
+		fields = append(fields, feedbackthread.FieldArchivedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *FeedbackThreadMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case feedbackthread.FieldCreateTime:
+		return m.CreateTime()
+	case feedbackthread.FieldUpdateTime:
+		return m.UpdateTime()
+	case feedbackthread.FieldVersionID:
+		return m.VersionID()
+	case feedbackthread.FieldPublisherID:
+		return m.PublisherID()
+	case feedbackthread.FieldState:
+		return m.State()
+	case feedbackthread.FieldCreatedByUserID:
+		return m.CreatedByUserID()
+	case feedbackthread.FieldLastMessageSeq:
+		return m.LastMessageSeq()
+	case feedbackthread.FieldLastMessageAt:
+		return m.LastMessageAt()
+	case feedbackthread.FieldRevision:
+		return m.Revision()
+	case feedbackthread.FieldResolvedByUserID:
+		return m.ResolvedByUserID()
+	case feedbackthread.FieldResolvedAt:
+		return m.ResolvedAt()
+	case feedbackthread.FieldArchivedAt:
+		return m.ArchivedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *FeedbackThreadMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case feedbackthread.FieldCreateTime:
+		return m.OldCreateTime(ctx)
+	case feedbackthread.FieldUpdateTime:
+		return m.OldUpdateTime(ctx)
+	case feedbackthread.FieldVersionID:
+		return m.OldVersionID(ctx)
+	case feedbackthread.FieldPublisherID:
+		return m.OldPublisherID(ctx)
+	case feedbackthread.FieldState:
+		return m.OldState(ctx)
+	case feedbackthread.FieldCreatedByUserID:
+		return m.OldCreatedByUserID(ctx)
+	case feedbackthread.FieldLastMessageSeq:
+		return m.OldLastMessageSeq(ctx)
+	case feedbackthread.FieldLastMessageAt:
+		return m.OldLastMessageAt(ctx)
+	case feedbackthread.FieldRevision:
+		return m.OldRevision(ctx)
+	case feedbackthread.FieldResolvedByUserID:
+		return m.OldResolvedByUserID(ctx)
+	case feedbackthread.FieldResolvedAt:
+		return m.OldResolvedAt(ctx)
+	case feedbackthread.FieldArchivedAt:
+		return m.OldArchivedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown FeedbackThread field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FeedbackThreadMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case feedbackthread.FieldCreateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreateTime(v)
+		return nil
+	case feedbackthread.FieldUpdateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdateTime(v)
+		return nil
+	case feedbackthread.FieldVersionID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersionID(v)
+		return nil
+	case feedbackthread.FieldPublisherID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPublisherID(v)
+		return nil
+	case feedbackthread.FieldState:
+		v, ok := value.(feedbackthread.State)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetState(v)
+		return nil
+	case feedbackthread.FieldCreatedByUserID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedByUserID(v)
+		return nil
+	case feedbackthread.FieldLastMessageSeq:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastMessageSeq(v)
+		return nil
+	case feedbackthread.FieldLastMessageAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastMessageAt(v)
+		return nil
+	case feedbackthread.FieldRevision:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRevision(v)
+		return nil
+	case feedbackthread.FieldResolvedByUserID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetResolvedByUserID(v)
+		return nil
+	case feedbackthread.FieldResolvedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetResolvedAt(v)
+		return nil
+	case feedbackthread.FieldArchivedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetArchivedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackThread field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *FeedbackThreadMutation) AddedFields() []string {
+	var fields []string
+	if m.addlast_message_seq != nil {
+		fields = append(fields, feedbackthread.FieldLastMessageSeq)
+	}
+	if m.addrevision != nil {
+		fields = append(fields, feedbackthread.FieldRevision)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *FeedbackThreadMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case feedbackthread.FieldLastMessageSeq:
+		return m.AddedLastMessageSeq()
+	case feedbackthread.FieldRevision:
+		return m.AddedRevision()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FeedbackThreadMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case feedbackthread.FieldLastMessageSeq:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLastMessageSeq(v)
+		return nil
+	case feedbackthread.FieldRevision:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRevision(v)
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackThread numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *FeedbackThreadMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(feedbackthread.FieldResolvedByUserID) {
+		fields = append(fields, feedbackthread.FieldResolvedByUserID)
+	}
+	if m.FieldCleared(feedbackthread.FieldResolvedAt) {
+		fields = append(fields, feedbackthread.FieldResolvedAt)
+	}
+	if m.FieldCleared(feedbackthread.FieldArchivedAt) {
+		fields = append(fields, feedbackthread.FieldArchivedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *FeedbackThreadMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *FeedbackThreadMutation) ClearField(name string) error {
+	switch name {
+	case feedbackthread.FieldResolvedByUserID:
+		m.ClearResolvedByUserID()
+		return nil
+	case feedbackthread.FieldResolvedAt:
+		m.ClearResolvedAt()
+		return nil
+	case feedbackthread.FieldArchivedAt:
+		m.ClearArchivedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackThread nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *FeedbackThreadMutation) ResetField(name string) error {
+	switch name {
+	case feedbackthread.FieldCreateTime:
+		m.ResetCreateTime()
+		return nil
+	case feedbackthread.FieldUpdateTime:
+		m.ResetUpdateTime()
+		return nil
+	case feedbackthread.FieldVersionID:
+		m.ResetVersionID()
+		return nil
+	case feedbackthread.FieldPublisherID:
+		m.ResetPublisherID()
+		return nil
+	case feedbackthread.FieldState:
+		m.ResetState()
+		return nil
+	case feedbackthread.FieldCreatedByUserID:
+		m.ResetCreatedByUserID()
+		return nil
+	case feedbackthread.FieldLastMessageSeq:
+		m.ResetLastMessageSeq()
+		return nil
+	case feedbackthread.FieldLastMessageAt:
+		m.ResetLastMessageAt()
+		return nil
+	case feedbackthread.FieldRevision:
+		m.ResetRevision()
+		return nil
+	case feedbackthread.FieldResolvedByUserID:
+		m.ResetResolvedByUserID()
+		return nil
+	case feedbackthread.FieldResolvedAt:
+		m.ResetResolvedAt()
+		return nil
+	case feedbackthread.FieldArchivedAt:
+		m.ResetArchivedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackThread field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *FeedbackThreadMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.messages != nil {
+		edges = append(edges, feedbackthread.EdgeMessages)
+	}
+	if m.reads != nil {
+		edges = append(edges, feedbackthread.EdgeReads)
+	}
+	if m.events != nil {
+		edges = append(edges, feedbackthread.EdgeEvents)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *FeedbackThreadMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case feedbackthread.EdgeMessages:
+		ids := make([]ent.Value, 0, len(m.messages))
+		for id := range m.messages {
+			ids = append(ids, id)
+		}
+		return ids
+	case feedbackthread.EdgeReads:
+		ids := make([]ent.Value, 0, len(m.reads))
+		for id := range m.reads {
+			ids = append(ids, id)
+		}
+		return ids
+	case feedbackthread.EdgeEvents:
+		ids := make([]ent.Value, 0, len(m.events))
+		for id := range m.events {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *FeedbackThreadMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.removedmessages != nil {
+		edges = append(edges, feedbackthread.EdgeMessages)
+	}
+	if m.removedreads != nil {
+		edges = append(edges, feedbackthread.EdgeReads)
+	}
+	if m.removedevents != nil {
+		edges = append(edges, feedbackthread.EdgeEvents)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *FeedbackThreadMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case feedbackthread.EdgeMessages:
+		ids := make([]ent.Value, 0, len(m.removedmessages))
+		for id := range m.removedmessages {
+			ids = append(ids, id)
+		}
+		return ids
+	case feedbackthread.EdgeReads:
+		ids := make([]ent.Value, 0, len(m.removedreads))
+		for id := range m.removedreads {
+			ids = append(ids, id)
+		}
+		return ids
+	case feedbackthread.EdgeEvents:
+		ids := make([]ent.Value, 0, len(m.removedevents))
+		for id := range m.removedevents {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *FeedbackThreadMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedmessages {
+		edges = append(edges, feedbackthread.EdgeMessages)
+	}
+	if m.clearedreads {
+		edges = append(edges, feedbackthread.EdgeReads)
+	}
+	if m.clearedevents {
+		edges = append(edges, feedbackthread.EdgeEvents)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *FeedbackThreadMutation) EdgeCleared(name string) bool {
+	switch name {
+	case feedbackthread.EdgeMessages:
+		return m.clearedmessages
+	case feedbackthread.EdgeReads:
+		return m.clearedreads
+	case feedbackthread.EdgeEvents:
+		return m.clearedevents
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *FeedbackThreadMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown FeedbackThread unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *FeedbackThreadMutation) ResetEdge(name string) error {
+	switch name {
+	case feedbackthread.EdgeMessages:
+		m.ResetMessages()
+		return nil
+	case feedbackthread.EdgeReads:
+		m.ResetReads()
+		return nil
+	case feedbackthread.EdgeEvents:
+		m.ResetEvents()
+		return nil
+	}
+	return fmt.Errorf("unknown FeedbackThread edge %s", name)
 }
 
 // GitCommitMutation represents an operation that mutates the GitCommit nodes in the graph.
@@ -6291,6 +9694,8 @@ type NodeVersionMutation struct {
 	pip_dependencies            *[]string
 	appendpip_dependencies      []string
 	deprecated                  *bool
+	tags_admin                  *[]string
+	appendtags_admin            []string
 	status                      *schema.NodeVersionStatus
 	status_reason               *string
 	comfy_node_extract_status   *schema.ComfyNodeExtractStatus
@@ -6692,6 +10097,57 @@ func (m *NodeVersionMutation) ResetDeprecated() {
 	m.deprecated = nil
 }
 
+// SetTagsAdmin sets the "tags_admin" field.
+func (m *NodeVersionMutation) SetTagsAdmin(s []string) {
+	m.tags_admin = &s
+	m.appendtags_admin = nil
+}
+
+// TagsAdmin returns the value of the "tags_admin" field in the mutation.
+func (m *NodeVersionMutation) TagsAdmin() (r []string, exists bool) {
+	v := m.tags_admin
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTagsAdmin returns the old "tags_admin" field's value of the NodeVersion entity.
+// If the NodeVersion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NodeVersionMutation) OldTagsAdmin(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTagsAdmin is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTagsAdmin requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTagsAdmin: %w", err)
+	}
+	return oldValue.TagsAdmin, nil
+}
+
+// AppendTagsAdmin adds s to the "tags_admin" field.
+func (m *NodeVersionMutation) AppendTagsAdmin(s []string) {
+	m.appendtags_admin = append(m.appendtags_admin, s...)
+}
+
+// AppendedTagsAdmin returns the list of values that were appended to the "tags_admin" field in this mutation.
+func (m *NodeVersionMutation) AppendedTagsAdmin() ([]string, bool) {
+	if len(m.appendtags_admin) == 0 {
+		return nil, false
+	}
+	return m.appendtags_admin, true
+}
+
+// ResetTagsAdmin resets all changes to the "tags_admin" field.
+func (m *NodeVersionMutation) ResetTagsAdmin() {
+	m.tags_admin = nil
+	m.appendtags_admin = nil
+}
+
 // SetStatus sets the "status" field.
 func (m *NodeVersionMutation) SetStatus(svs schema.NodeVersionStatus) {
 	m.status = &svs
@@ -7003,7 +10459,7 @@ func (m *NodeVersionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NodeVersionMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.create_time != nil {
 		fields = append(fields, nodeversion.FieldCreateTime)
 	}
@@ -7024,6 +10480,9 @@ func (m *NodeVersionMutation) Fields() []string {
 	}
 	if m.deprecated != nil {
 		fields = append(fields, nodeversion.FieldDeprecated)
+	}
+	if m.tags_admin != nil {
+		fields = append(fields, nodeversion.FieldTagsAdmin)
 	}
 	if m.status != nil {
 		fields = append(fields, nodeversion.FieldStatus)
@@ -7059,6 +10518,8 @@ func (m *NodeVersionMutation) Field(name string) (ent.Value, bool) {
 		return m.PipDependencies()
 	case nodeversion.FieldDeprecated:
 		return m.Deprecated()
+	case nodeversion.FieldTagsAdmin:
+		return m.TagsAdmin()
 	case nodeversion.FieldStatus:
 		return m.Status()
 	case nodeversion.FieldStatusReason:
@@ -7090,6 +10551,8 @@ func (m *NodeVersionMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldPipDependencies(ctx)
 	case nodeversion.FieldDeprecated:
 		return m.OldDeprecated(ctx)
+	case nodeversion.FieldTagsAdmin:
+		return m.OldTagsAdmin(ctx)
 	case nodeversion.FieldStatus:
 		return m.OldStatus(ctx)
 	case nodeversion.FieldStatusReason:
@@ -7155,6 +10618,13 @@ func (m *NodeVersionMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDeprecated(v)
+		return nil
+	case nodeversion.FieldTagsAdmin:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTagsAdmin(v)
 		return nil
 	case nodeversion.FieldStatus:
 		v, ok := value.(schema.NodeVersionStatus)
@@ -7268,6 +10738,9 @@ func (m *NodeVersionMutation) ResetField(name string) error {
 		return nil
 	case nodeversion.FieldDeprecated:
 		m.ResetDeprecated()
+		return nil
+	case nodeversion.FieldTagsAdmin:
+		m.ResetTagsAdmin()
 		return nil
 	case nodeversion.FieldStatus:
 		m.ResetStatus()

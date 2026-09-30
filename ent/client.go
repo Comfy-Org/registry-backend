@@ -13,6 +13,10 @@ import (
 
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/comfynode"
+	"registry-backend/ent/feedbackevent"
+	"registry-backend/ent/feedbackmessage"
+	"registry-backend/ent/feedbackread"
+	"registry-backend/ent/feedbackthread"
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/node"
 	"registry-backend/ent/nodereview"
@@ -39,6 +43,14 @@ type Client struct {
 	CIWorkflowResult *CIWorkflowResultClient
 	// ComfyNode is the client for interacting with the ComfyNode builders.
 	ComfyNode *ComfyNodeClient
+	// FeedbackEvent is the client for interacting with the FeedbackEvent builders.
+	FeedbackEvent *FeedbackEventClient
+	// FeedbackMessage is the client for interacting with the FeedbackMessage builders.
+	FeedbackMessage *FeedbackMessageClient
+	// FeedbackRead is the client for interacting with the FeedbackRead builders.
+	FeedbackRead *FeedbackReadClient
+	// FeedbackThread is the client for interacting with the FeedbackThread builders.
+	FeedbackThread *FeedbackThreadClient
 	// GitCommit is the client for interacting with the GitCommit builders.
 	GitCommit *GitCommitClient
 	// Node is the client for interacting with the Node builders.
@@ -70,6 +82,10 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.CIWorkflowResult = NewCIWorkflowResultClient(c.config)
 	c.ComfyNode = NewComfyNodeClient(c.config)
+	c.FeedbackEvent = NewFeedbackEventClient(c.config)
+	c.FeedbackMessage = NewFeedbackMessageClient(c.config)
+	c.FeedbackRead = NewFeedbackReadClient(c.config)
+	c.FeedbackThread = NewFeedbackThreadClient(c.config)
 	c.GitCommit = NewGitCommitClient(c.config)
 	c.Node = NewNodeClient(c.config)
 	c.NodeReview = NewNodeReviewClient(c.config)
@@ -173,6 +189,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		config:              cfg,
 		CIWorkflowResult:    NewCIWorkflowResultClient(cfg),
 		ComfyNode:           NewComfyNodeClient(cfg),
+		FeedbackEvent:       NewFeedbackEventClient(cfg),
+		FeedbackMessage:     NewFeedbackMessageClient(cfg),
+		FeedbackRead:        NewFeedbackReadClient(cfg),
+		FeedbackThread:      NewFeedbackThreadClient(cfg),
 		GitCommit:           NewGitCommitClient(cfg),
 		Node:                NewNodeClient(cfg),
 		NodeReview:          NewNodeReviewClient(cfg),
@@ -203,6 +223,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		config:              cfg,
 		CIWorkflowResult:    NewCIWorkflowResultClient(cfg),
 		ComfyNode:           NewComfyNodeClient(cfg),
+		FeedbackEvent:       NewFeedbackEventClient(cfg),
+		FeedbackMessage:     NewFeedbackMessageClient(cfg),
+		FeedbackRead:        NewFeedbackReadClient(cfg),
+		FeedbackThread:      NewFeedbackThreadClient(cfg),
 		GitCommit:           NewGitCommitClient(cfg),
 		Node:                NewNodeClient(cfg),
 		NodeReview:          NewNodeReviewClient(cfg),
@@ -241,7 +265,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.CIWorkflowResult, c.ComfyNode, c.GitCommit, c.Node, c.NodeReview,
+		c.CIWorkflowResult, c.ComfyNode, c.FeedbackEvent, c.FeedbackMessage,
+		c.FeedbackRead, c.FeedbackThread, c.GitCommit, c.Node, c.NodeReview,
 		c.NodeVersion, c.PersonalAccessToken, c.Publisher, c.PublisherPermission,
 		c.StorageFile, c.User,
 	} {
@@ -253,7 +278,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.CIWorkflowResult, c.ComfyNode, c.GitCommit, c.Node, c.NodeReview,
+		c.CIWorkflowResult, c.ComfyNode, c.FeedbackEvent, c.FeedbackMessage,
+		c.FeedbackRead, c.FeedbackThread, c.GitCommit, c.Node, c.NodeReview,
 		c.NodeVersion, c.PersonalAccessToken, c.Publisher, c.PublisherPermission,
 		c.StorageFile, c.User,
 	} {
@@ -268,6 +294,14 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.CIWorkflowResult.mutate(ctx, m)
 	case *ComfyNodeMutation:
 		return c.ComfyNode.mutate(ctx, m)
+	case *FeedbackEventMutation:
+		return c.FeedbackEvent.mutate(ctx, m)
+	case *FeedbackMessageMutation:
+		return c.FeedbackMessage.mutate(ctx, m)
+	case *FeedbackReadMutation:
+		return c.FeedbackRead.mutate(ctx, m)
+	case *FeedbackThreadMutation:
+		return c.FeedbackThread.mutate(ctx, m)
 	case *GitCommitMutation:
 		return c.GitCommit.mutate(ctx, m)
 	case *NodeMutation:
@@ -602,6 +636,634 @@ func (c *ComfyNodeClient) mutate(ctx context.Context, m *ComfyNodeMutation) (Val
 		return (&ComfyNodeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ComfyNode mutation op: %q", m.Op())
+	}
+}
+
+// FeedbackEventClient is a client for the FeedbackEvent schema.
+type FeedbackEventClient struct {
+	config
+}
+
+// NewFeedbackEventClient returns a client for the FeedbackEvent from the given config.
+func NewFeedbackEventClient(c config) *FeedbackEventClient {
+	return &FeedbackEventClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `feedbackevent.Hooks(f(g(h())))`.
+func (c *FeedbackEventClient) Use(hooks ...Hook) {
+	c.hooks.FeedbackEvent = append(c.hooks.FeedbackEvent, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `feedbackevent.Intercept(f(g(h())))`.
+func (c *FeedbackEventClient) Intercept(interceptors ...Interceptor) {
+	c.inters.FeedbackEvent = append(c.inters.FeedbackEvent, interceptors...)
+}
+
+// Create returns a builder for creating a FeedbackEvent entity.
+func (c *FeedbackEventClient) Create() *FeedbackEventCreate {
+	mutation := newFeedbackEventMutation(c.config, OpCreate)
+	return &FeedbackEventCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of FeedbackEvent entities.
+func (c *FeedbackEventClient) CreateBulk(builders ...*FeedbackEventCreate) *FeedbackEventCreateBulk {
+	return &FeedbackEventCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *FeedbackEventClient) MapCreateBulk(slice any, setFunc func(*FeedbackEventCreate, int)) *FeedbackEventCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &FeedbackEventCreateBulk{err: fmt.Errorf("calling to FeedbackEventClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*FeedbackEventCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &FeedbackEventCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for FeedbackEvent.
+func (c *FeedbackEventClient) Update() *FeedbackEventUpdate {
+	mutation := newFeedbackEventMutation(c.config, OpUpdate)
+	return &FeedbackEventUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *FeedbackEventClient) UpdateOne(fe *FeedbackEvent) *FeedbackEventUpdateOne {
+	mutation := newFeedbackEventMutation(c.config, OpUpdateOne, withFeedbackEvent(fe))
+	return &FeedbackEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *FeedbackEventClient) UpdateOneID(id uuid.UUID) *FeedbackEventUpdateOne {
+	mutation := newFeedbackEventMutation(c.config, OpUpdateOne, withFeedbackEventID(id))
+	return &FeedbackEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for FeedbackEvent.
+func (c *FeedbackEventClient) Delete() *FeedbackEventDelete {
+	mutation := newFeedbackEventMutation(c.config, OpDelete)
+	return &FeedbackEventDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *FeedbackEventClient) DeleteOne(fe *FeedbackEvent) *FeedbackEventDeleteOne {
+	return c.DeleteOneID(fe.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *FeedbackEventClient) DeleteOneID(id uuid.UUID) *FeedbackEventDeleteOne {
+	builder := c.Delete().Where(feedbackevent.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &FeedbackEventDeleteOne{builder}
+}
+
+// Query returns a query builder for FeedbackEvent.
+func (c *FeedbackEventClient) Query() *FeedbackEventQuery {
+	return &FeedbackEventQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeFeedbackEvent},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a FeedbackEvent entity by its id.
+func (c *FeedbackEventClient) Get(ctx context.Context, id uuid.UUID) (*FeedbackEvent, error) {
+	return c.Query().Where(feedbackevent.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *FeedbackEventClient) GetX(ctx context.Context, id uuid.UUID) *FeedbackEvent {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryThread queries the thread edge of a FeedbackEvent.
+func (c *FeedbackEventClient) QueryThread(fe *FeedbackEvent) *FeedbackThreadQuery {
+	query := (&FeedbackThreadClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := fe.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(feedbackevent.Table, feedbackevent.FieldID, id),
+			sqlgraph.To(feedbackthread.Table, feedbackthread.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, feedbackevent.ThreadTable, feedbackevent.ThreadColumn),
+		)
+		fromV = sqlgraph.Neighbors(fe.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *FeedbackEventClient) Hooks() []Hook {
+	return c.hooks.FeedbackEvent
+}
+
+// Interceptors returns the client interceptors.
+func (c *FeedbackEventClient) Interceptors() []Interceptor {
+	return c.inters.FeedbackEvent
+}
+
+func (c *FeedbackEventClient) mutate(ctx context.Context, m *FeedbackEventMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&FeedbackEventCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&FeedbackEventUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&FeedbackEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&FeedbackEventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown FeedbackEvent mutation op: %q", m.Op())
+	}
+}
+
+// FeedbackMessageClient is a client for the FeedbackMessage schema.
+type FeedbackMessageClient struct {
+	config
+}
+
+// NewFeedbackMessageClient returns a client for the FeedbackMessage from the given config.
+func NewFeedbackMessageClient(c config) *FeedbackMessageClient {
+	return &FeedbackMessageClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `feedbackmessage.Hooks(f(g(h())))`.
+func (c *FeedbackMessageClient) Use(hooks ...Hook) {
+	c.hooks.FeedbackMessage = append(c.hooks.FeedbackMessage, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `feedbackmessage.Intercept(f(g(h())))`.
+func (c *FeedbackMessageClient) Intercept(interceptors ...Interceptor) {
+	c.inters.FeedbackMessage = append(c.inters.FeedbackMessage, interceptors...)
+}
+
+// Create returns a builder for creating a FeedbackMessage entity.
+func (c *FeedbackMessageClient) Create() *FeedbackMessageCreate {
+	mutation := newFeedbackMessageMutation(c.config, OpCreate)
+	return &FeedbackMessageCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of FeedbackMessage entities.
+func (c *FeedbackMessageClient) CreateBulk(builders ...*FeedbackMessageCreate) *FeedbackMessageCreateBulk {
+	return &FeedbackMessageCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *FeedbackMessageClient) MapCreateBulk(slice any, setFunc func(*FeedbackMessageCreate, int)) *FeedbackMessageCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &FeedbackMessageCreateBulk{err: fmt.Errorf("calling to FeedbackMessageClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*FeedbackMessageCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &FeedbackMessageCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for FeedbackMessage.
+func (c *FeedbackMessageClient) Update() *FeedbackMessageUpdate {
+	mutation := newFeedbackMessageMutation(c.config, OpUpdate)
+	return &FeedbackMessageUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *FeedbackMessageClient) UpdateOne(fm *FeedbackMessage) *FeedbackMessageUpdateOne {
+	mutation := newFeedbackMessageMutation(c.config, OpUpdateOne, withFeedbackMessage(fm))
+	return &FeedbackMessageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *FeedbackMessageClient) UpdateOneID(id uuid.UUID) *FeedbackMessageUpdateOne {
+	mutation := newFeedbackMessageMutation(c.config, OpUpdateOne, withFeedbackMessageID(id))
+	return &FeedbackMessageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for FeedbackMessage.
+func (c *FeedbackMessageClient) Delete() *FeedbackMessageDelete {
+	mutation := newFeedbackMessageMutation(c.config, OpDelete)
+	return &FeedbackMessageDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *FeedbackMessageClient) DeleteOne(fm *FeedbackMessage) *FeedbackMessageDeleteOne {
+	return c.DeleteOneID(fm.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *FeedbackMessageClient) DeleteOneID(id uuid.UUID) *FeedbackMessageDeleteOne {
+	builder := c.Delete().Where(feedbackmessage.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &FeedbackMessageDeleteOne{builder}
+}
+
+// Query returns a query builder for FeedbackMessage.
+func (c *FeedbackMessageClient) Query() *FeedbackMessageQuery {
+	return &FeedbackMessageQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeFeedbackMessage},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a FeedbackMessage entity by its id.
+func (c *FeedbackMessageClient) Get(ctx context.Context, id uuid.UUID) (*FeedbackMessage, error) {
+	return c.Query().Where(feedbackmessage.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *FeedbackMessageClient) GetX(ctx context.Context, id uuid.UUID) *FeedbackMessage {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryThread queries the thread edge of a FeedbackMessage.
+func (c *FeedbackMessageClient) QueryThread(fm *FeedbackMessage) *FeedbackThreadQuery {
+	query := (&FeedbackThreadClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := fm.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(feedbackmessage.Table, feedbackmessage.FieldID, id),
+			sqlgraph.To(feedbackthread.Table, feedbackthread.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, feedbackmessage.ThreadTable, feedbackmessage.ThreadColumn),
+		)
+		fromV = sqlgraph.Neighbors(fm.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *FeedbackMessageClient) Hooks() []Hook {
+	return c.hooks.FeedbackMessage
+}
+
+// Interceptors returns the client interceptors.
+func (c *FeedbackMessageClient) Interceptors() []Interceptor {
+	return c.inters.FeedbackMessage
+}
+
+func (c *FeedbackMessageClient) mutate(ctx context.Context, m *FeedbackMessageMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&FeedbackMessageCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&FeedbackMessageUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&FeedbackMessageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&FeedbackMessageDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown FeedbackMessage mutation op: %q", m.Op())
+	}
+}
+
+// FeedbackReadClient is a client for the FeedbackRead schema.
+type FeedbackReadClient struct {
+	config
+}
+
+// NewFeedbackReadClient returns a client for the FeedbackRead from the given config.
+func NewFeedbackReadClient(c config) *FeedbackReadClient {
+	return &FeedbackReadClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `feedbackread.Hooks(f(g(h())))`.
+func (c *FeedbackReadClient) Use(hooks ...Hook) {
+	c.hooks.FeedbackRead = append(c.hooks.FeedbackRead, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `feedbackread.Intercept(f(g(h())))`.
+func (c *FeedbackReadClient) Intercept(interceptors ...Interceptor) {
+	c.inters.FeedbackRead = append(c.inters.FeedbackRead, interceptors...)
+}
+
+// Create returns a builder for creating a FeedbackRead entity.
+func (c *FeedbackReadClient) Create() *FeedbackReadCreate {
+	mutation := newFeedbackReadMutation(c.config, OpCreate)
+	return &FeedbackReadCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of FeedbackRead entities.
+func (c *FeedbackReadClient) CreateBulk(builders ...*FeedbackReadCreate) *FeedbackReadCreateBulk {
+	return &FeedbackReadCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *FeedbackReadClient) MapCreateBulk(slice any, setFunc func(*FeedbackReadCreate, int)) *FeedbackReadCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &FeedbackReadCreateBulk{err: fmt.Errorf("calling to FeedbackReadClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*FeedbackReadCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &FeedbackReadCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for FeedbackRead.
+func (c *FeedbackReadClient) Update() *FeedbackReadUpdate {
+	mutation := newFeedbackReadMutation(c.config, OpUpdate)
+	return &FeedbackReadUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *FeedbackReadClient) UpdateOne(fr *FeedbackRead) *FeedbackReadUpdateOne {
+	mutation := newFeedbackReadMutation(c.config, OpUpdateOne, withFeedbackRead(fr))
+	return &FeedbackReadUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *FeedbackReadClient) UpdateOneID(id uuid.UUID) *FeedbackReadUpdateOne {
+	mutation := newFeedbackReadMutation(c.config, OpUpdateOne, withFeedbackReadID(id))
+	return &FeedbackReadUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for FeedbackRead.
+func (c *FeedbackReadClient) Delete() *FeedbackReadDelete {
+	mutation := newFeedbackReadMutation(c.config, OpDelete)
+	return &FeedbackReadDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *FeedbackReadClient) DeleteOne(fr *FeedbackRead) *FeedbackReadDeleteOne {
+	return c.DeleteOneID(fr.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *FeedbackReadClient) DeleteOneID(id uuid.UUID) *FeedbackReadDeleteOne {
+	builder := c.Delete().Where(feedbackread.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &FeedbackReadDeleteOne{builder}
+}
+
+// Query returns a query builder for FeedbackRead.
+func (c *FeedbackReadClient) Query() *FeedbackReadQuery {
+	return &FeedbackReadQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeFeedbackRead},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a FeedbackRead entity by its id.
+func (c *FeedbackReadClient) Get(ctx context.Context, id uuid.UUID) (*FeedbackRead, error) {
+	return c.Query().Where(feedbackread.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *FeedbackReadClient) GetX(ctx context.Context, id uuid.UUID) *FeedbackRead {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryThread queries the thread edge of a FeedbackRead.
+func (c *FeedbackReadClient) QueryThread(fr *FeedbackRead) *FeedbackThreadQuery {
+	query := (&FeedbackThreadClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := fr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(feedbackread.Table, feedbackread.FieldID, id),
+			sqlgraph.To(feedbackthread.Table, feedbackthread.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, feedbackread.ThreadTable, feedbackread.ThreadColumn),
+		)
+		fromV = sqlgraph.Neighbors(fr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *FeedbackReadClient) Hooks() []Hook {
+	return c.hooks.FeedbackRead
+}
+
+// Interceptors returns the client interceptors.
+func (c *FeedbackReadClient) Interceptors() []Interceptor {
+	return c.inters.FeedbackRead
+}
+
+func (c *FeedbackReadClient) mutate(ctx context.Context, m *FeedbackReadMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&FeedbackReadCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&FeedbackReadUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&FeedbackReadUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&FeedbackReadDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown FeedbackRead mutation op: %q", m.Op())
+	}
+}
+
+// FeedbackThreadClient is a client for the FeedbackThread schema.
+type FeedbackThreadClient struct {
+	config
+}
+
+// NewFeedbackThreadClient returns a client for the FeedbackThread from the given config.
+func NewFeedbackThreadClient(c config) *FeedbackThreadClient {
+	return &FeedbackThreadClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `feedbackthread.Hooks(f(g(h())))`.
+func (c *FeedbackThreadClient) Use(hooks ...Hook) {
+	c.hooks.FeedbackThread = append(c.hooks.FeedbackThread, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `feedbackthread.Intercept(f(g(h())))`.
+func (c *FeedbackThreadClient) Intercept(interceptors ...Interceptor) {
+	c.inters.FeedbackThread = append(c.inters.FeedbackThread, interceptors...)
+}
+
+// Create returns a builder for creating a FeedbackThread entity.
+func (c *FeedbackThreadClient) Create() *FeedbackThreadCreate {
+	mutation := newFeedbackThreadMutation(c.config, OpCreate)
+	return &FeedbackThreadCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of FeedbackThread entities.
+func (c *FeedbackThreadClient) CreateBulk(builders ...*FeedbackThreadCreate) *FeedbackThreadCreateBulk {
+	return &FeedbackThreadCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *FeedbackThreadClient) MapCreateBulk(slice any, setFunc func(*FeedbackThreadCreate, int)) *FeedbackThreadCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &FeedbackThreadCreateBulk{err: fmt.Errorf("calling to FeedbackThreadClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*FeedbackThreadCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &FeedbackThreadCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for FeedbackThread.
+func (c *FeedbackThreadClient) Update() *FeedbackThreadUpdate {
+	mutation := newFeedbackThreadMutation(c.config, OpUpdate)
+	return &FeedbackThreadUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *FeedbackThreadClient) UpdateOne(ft *FeedbackThread) *FeedbackThreadUpdateOne {
+	mutation := newFeedbackThreadMutation(c.config, OpUpdateOne, withFeedbackThread(ft))
+	return &FeedbackThreadUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *FeedbackThreadClient) UpdateOneID(id uuid.UUID) *FeedbackThreadUpdateOne {
+	mutation := newFeedbackThreadMutation(c.config, OpUpdateOne, withFeedbackThreadID(id))
+	return &FeedbackThreadUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for FeedbackThread.
+func (c *FeedbackThreadClient) Delete() *FeedbackThreadDelete {
+	mutation := newFeedbackThreadMutation(c.config, OpDelete)
+	return &FeedbackThreadDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *FeedbackThreadClient) DeleteOne(ft *FeedbackThread) *FeedbackThreadDeleteOne {
+	return c.DeleteOneID(ft.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *FeedbackThreadClient) DeleteOneID(id uuid.UUID) *FeedbackThreadDeleteOne {
+	builder := c.Delete().Where(feedbackthread.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &FeedbackThreadDeleteOne{builder}
+}
+
+// Query returns a query builder for FeedbackThread.
+func (c *FeedbackThreadClient) Query() *FeedbackThreadQuery {
+	return &FeedbackThreadQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeFeedbackThread},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a FeedbackThread entity by its id.
+func (c *FeedbackThreadClient) Get(ctx context.Context, id uuid.UUID) (*FeedbackThread, error) {
+	return c.Query().Where(feedbackthread.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *FeedbackThreadClient) GetX(ctx context.Context, id uuid.UUID) *FeedbackThread {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMessages queries the messages edge of a FeedbackThread.
+func (c *FeedbackThreadClient) QueryMessages(ft *FeedbackThread) *FeedbackMessageQuery {
+	query := (&FeedbackMessageClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ft.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(feedbackthread.Table, feedbackthread.FieldID, id),
+			sqlgraph.To(feedbackmessage.Table, feedbackmessage.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, feedbackthread.MessagesTable, feedbackthread.MessagesColumn),
+		)
+		fromV = sqlgraph.Neighbors(ft.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryReads queries the reads edge of a FeedbackThread.
+func (c *FeedbackThreadClient) QueryReads(ft *FeedbackThread) *FeedbackReadQuery {
+	query := (&FeedbackReadClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ft.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(feedbackthread.Table, feedbackthread.FieldID, id),
+			sqlgraph.To(feedbackread.Table, feedbackread.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, feedbackthread.ReadsTable, feedbackthread.ReadsColumn),
+		)
+		fromV = sqlgraph.Neighbors(ft.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEvents queries the events edge of a FeedbackThread.
+func (c *FeedbackThreadClient) QueryEvents(ft *FeedbackThread) *FeedbackEventQuery {
+	query := (&FeedbackEventClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ft.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(feedbackthread.Table, feedbackthread.FieldID, id),
+			sqlgraph.To(feedbackevent.Table, feedbackevent.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, feedbackthread.EventsTable, feedbackthread.EventsColumn),
+		)
+		fromV = sqlgraph.Neighbors(ft.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *FeedbackThreadClient) Hooks() []Hook {
+	return c.hooks.FeedbackThread
+}
+
+// Interceptors returns the client interceptors.
+func (c *FeedbackThreadClient) Interceptors() []Interceptor {
+	return c.inters.FeedbackThread
+}
+
+func (c *FeedbackThreadClient) mutate(ctx context.Context, m *FeedbackThreadMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&FeedbackThreadCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&FeedbackThreadUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&FeedbackThreadUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&FeedbackThreadDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown FeedbackThread mutation op: %q", m.Op())
 	}
 }
 
@@ -2077,13 +2739,13 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		CIWorkflowResult, ComfyNode, GitCommit, Node, NodeReview, NodeVersion,
-		PersonalAccessToken, Publisher, PublisherPermission, StorageFile,
-		User []ent.Hook
+		CIWorkflowResult, ComfyNode, FeedbackEvent, FeedbackMessage, FeedbackRead,
+		FeedbackThread, GitCommit, Node, NodeReview, NodeVersion, PersonalAccessToken,
+		Publisher, PublisherPermission, StorageFile, User []ent.Hook
 	}
 	inters struct {
-		CIWorkflowResult, ComfyNode, GitCommit, Node, NodeReview, NodeVersion,
-		PersonalAccessToken, Publisher, PublisherPermission, StorageFile,
-		User []ent.Interceptor
+		CIWorkflowResult, ComfyNode, FeedbackEvent, FeedbackMessage, FeedbackRead,
+		FeedbackThread, GitCommit, Node, NodeReview, NodeVersion, PersonalAccessToken,
+		Publisher, PublisherPermission, StorageFile, User []ent.Interceptor
 	}
 )

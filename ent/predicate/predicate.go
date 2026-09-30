@@ -12,6 +12,18 @@ type CIWorkflowResult func(*sql.Selector)
 // ComfyNode is the predicate function for comfynode builders.
 type ComfyNode func(*sql.Selector)
 
+// FeedbackEvent is the predicate function for feedbackevent builders.
+type FeedbackEvent func(*sql.Selector)
+
+// FeedbackMessage is the predicate function for feedbackmessage builders.
+type FeedbackMessage func(*sql.Selector)
+
+// FeedbackRead is the predicate function for feedbackread builders.
+type FeedbackRead func(*sql.Selector)
+
+// FeedbackThread is the predicate function for feedbackthread builders.
+type FeedbackThread func(*sql.Selector)
+
 // GitCommit is the predicate function for gitcommit builders.
 type GitCommit func(*sql.Selector)
 

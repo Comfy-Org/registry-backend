@@ -115,6 +115,18 @@ func (nvu *NodeVersionUpdate) SetNillableDeprecated(b *bool) *NodeVersionUpdate 
 	return nvu
 }
 
+// SetTagsAdmin sets the "tags_admin" field.
+func (nvu *NodeVersionUpdate) SetTagsAdmin(s []string) *NodeVersionUpdate {
+	nvu.mutation.SetTagsAdmin(s)
+	return nvu
+}
+
+// AppendTagsAdmin appends s to the "tags_admin" field.
+func (nvu *NodeVersionUpdate) AppendTagsAdmin(s []string) *NodeVersionUpdate {
+	nvu.mutation.AppendTagsAdmin(s)
+	return nvu
+}
+
 // SetStatus sets the "status" field.
 func (nvu *NodeVersionUpdate) SetStatus(svs schema.NodeVersionStatus) *NodeVersionUpdate {
 	nvu.mutation.SetStatus(svs)
@@ -344,6 +356,14 @@ func (nvu *NodeVersionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := nvu.mutation.Deprecated(); ok {
 		_spec.SetField(nodeversion.FieldDeprecated, field.TypeBool, value)
 	}
+	if value, ok := nvu.mutation.TagsAdmin(); ok {
+		_spec.SetField(nodeversion.FieldTagsAdmin, field.TypeJSON, value)
+	}
+	if value, ok := nvu.mutation.AppendedTagsAdmin(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, nodeversion.FieldTagsAdmin, value)
+		})
+	}
 	if value, ok := nvu.mutation.Status(); ok {
 		_spec.SetField(nodeversion.FieldStatus, field.TypeEnum, value)
 	}
@@ -561,6 +581,18 @@ func (nvuo *NodeVersionUpdateOne) SetNillableDeprecated(b *bool) *NodeVersionUpd
 	if b != nil {
 		nvuo.SetDeprecated(*b)
 	}
+	return nvuo
+}
+
+// SetTagsAdmin sets the "tags_admin" field.
+func (nvuo *NodeVersionUpdateOne) SetTagsAdmin(s []string) *NodeVersionUpdateOne {
+	nvuo.mutation.SetTagsAdmin(s)
+	return nvuo
+}
+
+// AppendTagsAdmin appends s to the "tags_admin" field.
+func (nvuo *NodeVersionUpdateOne) AppendTagsAdmin(s []string) *NodeVersionUpdateOne {
+	nvuo.mutation.AppendTagsAdmin(s)
 	return nvuo
 }
 
@@ -822,6 +854,14 @@ func (nvuo *NodeVersionUpdateOne) sqlSave(ctx context.Context) (_node *NodeVersi
 	}
 	if value, ok := nvuo.mutation.Deprecated(); ok {
 		_spec.SetField(nodeversion.FieldDeprecated, field.TypeBool, value)
+	}
+	if value, ok := nvuo.mutation.TagsAdmin(); ok {
+		_spec.SetField(nodeversion.FieldTagsAdmin, field.TypeJSON, value)
+	}
+	if value, ok := nvuo.mutation.AppendedTagsAdmin(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, nodeversion.FieldTagsAdmin, value)
+		})
 	}
 	if value, ok := nvuo.mutation.Status(); ok {
 		_spec.SetField(nodeversion.FieldStatus, field.TypeEnum, value)

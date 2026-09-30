@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/labstack/echo/v4"
+	"net/http"
 	"registry-backend/drip"
 	"registry-backend/ent"
 	"registry-backend/ent/publisher"
@@ -310,7 +312,6 @@ func (s *DripStrictServerImplementation) ListAllNodes(
 		// attach information of latest version if available
 		if len(dbNode.Edges.Versions) > 0 {
 			apiNode.LatestVersion = mapper.DbNodeVersionToApiNodeVersion(dbNode.Edges.Versions[0])
-			apiNode.LatestVersion.StatusReason = nil
 		}
 
 		// Map publisher information
@@ -424,6 +425,9 @@ func (s *DripStrictServerImplementation) GetNode(
 
 	apiNode := mapper.DbNodeToApiNode(node)
 	apiNode.LatestVersion = mapper.DbNodeVersionToApiNodeVersion(nodeVersion)
+	if node.Edges.Publisher != nil {
+		apiNode.Publisher = mapper.DbPublisherToApiPublisher(node.Edges.Publisher, true)
+	}
 
 	log.Ctx(ctx).Info().Msgf("Node %s retrieved successfully", request.NodeId)
 	return drip.GetNode200JSONResponse(*apiNode), nil
@@ -457,9 +461,9 @@ func (s *DripStrictServerImplementation) ListNodeVersions(
 	apiStatus := mapper.ApiNodeVersionStatusesToDbNodeVersionStatuses(request.Params.Statuses)
 
 	nodeVersionsResult, err := s.RegistryService.ListNodeVersions(ctx, s.Client, &entity.NodeVersionFilter{
-		NodeId:              request.NodeId,
+		NodeId:              &request.NodeId,
 		Status:              apiStatus,
-		IncludeStatusReason: mapper.BoolPtrToBool(request.Params.IncludeStatusReason),
+		IncludeStatusReason: false,
 	})
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to list node versions for node %s w/ err: %v", request.NodeId, err)
@@ -811,21 +815,18 @@ func (s *DripStrictServerImplementation) GetPermissionOnPublisher(
 func (s *DripStrictServerImplementation) BanPublisher(ctx context.Context, request drip.BanPublisherRequestObject) (drip.BanPublisherResponseObject, error) {
 	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.BanPublisher")()
 
-	userId, err := mapper.GetUserIDFromContext(ctx)
+	_, err := drip_services.RequireAdmin(ctx, s.Client)
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
-		return drip.BanPublisher401Response{}, nil
-	}
-	user, err := s.Client.User.Get(ctx, userId)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
-		return drip.BanPublisher401Response{}, nil
-	}
-	if !user.IsAdmin {
-		log.Ctx(ctx).Error().Msgf("User is not admin w/ err")
-		return drip.BanPublisher403JSONResponse{
-			Message: "User is not admin",
-		}, nil
+		var httpErr *echo.HTTPError
+		if errors.As(err, &httpErr) {
+			switch httpErr.Code {
+			case http.StatusUnauthorized:
+				return drip.BanPublisher401Response{}, nil
+			case http.StatusForbidden:
+				return drip.BanPublisher403JSONResponse{Message: "Permission denied"}, nil
+			}
+		}
+		return nil, err
 	}
 
 	err = s.RegistryService.BanPublisher(ctx, s.Client, request.PublisherId)
@@ -849,21 +850,18 @@ func (s *DripStrictServerImplementation) BanPublisher(ctx context.Context, reque
 func (s *DripStrictServerImplementation) BanPublisherNode(ctx context.Context, request drip.BanPublisherNodeRequestObject) (drip.BanPublisherNodeResponseObject, error) {
 	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.BanPublisherNode")()
 
-	userId, err := mapper.GetUserIDFromContext(ctx)
+	_, err := drip_services.RequireAdmin(ctx, s.Client)
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
-		return drip.BanPublisherNode401Response{}, nil
-	}
-	user, err := s.Client.User.Get(ctx, userId)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
-		return drip.BanPublisherNode401Response{}, nil
-	}
-	if !user.IsAdmin {
-		log.Ctx(ctx).Error().Msgf("User is not admin w/ err")
-		return drip.BanPublisherNode403JSONResponse{
-			Message: "User is not admin",
-		}, nil
+		var httpErr *echo.HTTPError
+		if errors.As(err, &httpErr) {
+			switch httpErr.Code {
+			case http.StatusUnauthorized:
+				return drip.BanPublisherNode401Response{}, nil
+			case http.StatusForbidden:
+				return drip.BanPublisherNode403JSONResponse{Message: "Permission denied"}, nil
+			}
+		}
+		return nil, err
 	}
 
 	err = s.RegistryService.BanNode(ctx, s.Client, request.PublisherId, request.NodeId)
@@ -888,21 +886,18 @@ func (s *DripStrictServerImplementation) AdminUpdateNodeVersion(
 	ctx context.Context, request drip.AdminUpdateNodeVersionRequestObject) (drip.AdminUpdateNodeVersionResponseObject, error) {
 	defer tracing.TraceDefaultSegment(ctx, "DripStrictServerImplementation.AdminUpdateNodeVersion")()
 
-	userId, err := mapper.GetUserIDFromContext(ctx)
+	_, err := drip_services.RequireAdmin(ctx, s.Client)
 	if err != nil {
-		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
-		return drip.AdminUpdateNodeVersion401Response{}, nil
-	}
-	user, err := s.Client.User.Get(ctx, userId)
-	if err != nil {
-		log.Ctx(ctx).Error().Msgf("Failed to get user ID from context w/ err: %v", err)
-		return drip.AdminUpdateNodeVersion401Response{}, nil
-	}
-	if !user.IsAdmin {
-		log.Ctx(ctx).Error().Msgf("User is not admin w/ err")
-		return drip.AdminUpdateNodeVersion403JSONResponse{
-			Message: "User is not admin",
-		}, nil
+		var httpErr *echo.HTTPError
+		if errors.As(err, &httpErr) {
+			switch httpErr.Code {
+			case http.StatusUnauthorized:
+				return drip.AdminUpdateNodeVersion401Response{}, nil
+			case http.StatusForbidden:
+				return drip.AdminUpdateNodeVersion403JSONResponse{Message: "Permission denied"}, nil
+			}
+		}
+		return nil, err
 	}
 
 	nodeVersion, err := s.RegistryService.GetNodeVersionByVersion(ctx, s.Client, request.NodeId, request.VersionNumber)
@@ -914,21 +909,31 @@ func (s *DripStrictServerImplementation) AdminUpdateNodeVersion(
 		return drip.AdminUpdateNodeVersion500JSONResponse{}, err
 	}
 
-	dbNodeVersion := mapper.ApiNodeVersionStatusToDbNodeVersionStatus(*request.Body.Status)
-	statusReason := ""
-	if request.Body.StatusReason != nil {
-		statusReason = *request.Body.StatusReason
+	if request.Body == nil || (request.Body.Status == nil && request.Body.TagsAdmin == nil && request.Body.StatusReason == nil) {
+		return drip.AdminUpdateNodeVersion400JSONResponse{Message: "No version changes supplied"}, nil
 	}
-	err = nodeVersion.Update().SetStatus(dbNodeVersion).SetStatusReason(statusReason).Exec(ctx)
+	update := nodeVersion.Update()
+	if request.Body.Status != nil {
+		status := mapper.ApiNodeVersionStatusToDbNodeVersionStatus(*request.Body.Status)
+		if status == "" {
+			return drip.AdminUpdateNodeVersion400JSONResponse{Message: "Invalid version status"}, nil
+		}
+		update.SetStatus(status)
+	}
+	if request.Body.StatusReason != nil {
+		update.SetStatusReason(*request.Body.StatusReason)
+	}
+	if request.Body.TagsAdmin != nil {
+		update.SetTagsAdmin(*request.Body.TagsAdmin)
+	}
+	nodeVersion, err = update.Save(ctx)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to update node version w/ err: %v", err)
 		return drip.AdminUpdateNodeVersion500JSONResponse{}, err
 	}
 
 	log.Ctx(ctx).Info().Msgf("Node version %s updated successfully", request.VersionNumber)
-	return drip.AdminUpdateNodeVersion200JSONResponse{
-		Status: request.Body.Status,
-	}, nil
+	return drip.AdminUpdateNodeVersion200JSONResponse(*mapper.DbNodeVersionToApiNodeVersion(nodeVersion)), nil
 }
 
 func (s *DripStrictServerImplementation) SecurityScan(
@@ -994,7 +999,7 @@ func (s *DripStrictServerImplementation) ListAllNodeVersions(
 	f := &entity.NodeVersionFilter{
 		Page:                page,
 		PageSize:            pageSize,
-		IncludeStatusReason: mapper.BoolPtrToBool(request.Params.IncludeStatusReason),
+		IncludeStatusReason: false,
 	}
 
 	if request.Params.Statuses != nil {

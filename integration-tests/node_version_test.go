@@ -218,8 +218,8 @@ func TestRegistryNodeVersion(t *testing.T) {
 			Dependencies: nodeVersion.Dependencies,
 			DownloadUrl:  &downloadUrl,
 			Status:       &nodeVersionStatus,
-			StatusReason: proto.String(""),
 			NodeId:       node.Id,
+			TagsAdmin:    &[]string{},
 		}, resVersions200[0])
 
 		// Request node versions with status reason
@@ -235,7 +235,9 @@ func TestRegistryNodeVersion(t *testing.T) {
 		require.IsType(t, drip.ListNodeVersions200JSONResponse{}, resVersions)
 
 		resVersions200 = resVersions.(drip.ListNodeVersions200JSONResponse)
-		assert.Equal(t, "test reason", *resVersions200[0].StatusReason)
+		encoded, err := json.Marshal(resVersions200)
+		require.NoError(t, err)
+		assert.NotContains(t, string(encoded), "status_reason")
 	})
 
 	t.Run("Update Node Version", func(t *testing.T) {
@@ -273,8 +275,8 @@ func TestRegistryNodeVersion(t *testing.T) {
 			Changelog:    &updatedChangelog,
 			DownloadUrl:  &downloadUrl,
 			Status:       &status,
-			StatusReason: proto.String(""),
 			NodeId:       node.Id,
+			TagsAdmin:    &[]string{},
 		}
 
 		assert.Equal(t, updatedNodeVersion, res200[0])

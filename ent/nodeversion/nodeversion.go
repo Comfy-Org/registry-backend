@@ -31,6 +31,8 @@ const (
 	FieldPipDependencies = "pip_dependencies"
 	// FieldDeprecated holds the string denoting the deprecated field in the database.
 	FieldDeprecated = "deprecated"
+	// FieldTagsAdmin holds the string denoting the tags_admin field in the database.
+	FieldTagsAdmin = "tags_admin"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldStatusReason holds the string denoting the status_reason field in the database.
@@ -80,6 +82,7 @@ var Columns = []string{
 	FieldChangelog,
 	FieldPipDependencies,
 	FieldDeprecated,
+	FieldTagsAdmin,
 	FieldStatus,
 	FieldStatusReason,
 	FieldComfyNodeExtractStatus,
@@ -116,6 +119,8 @@ var (
 	UpdateDefaultUpdateTime func() time.Time
 	// DefaultDeprecated holds the default value on creation for the "deprecated" field.
 	DefaultDeprecated bool
+	// DefaultTagsAdmin holds the default value on creation for the "tags_admin" field.
+	DefaultTagsAdmin []string
 	// DefaultStatusReason holds the default value on creation for the "status_reason" field.
 	DefaultStatusReason string
 	// DefaultComfyNodeExtractStatus holds the default value on creation for the "comfy_node_extract_status" field.

@@ -1532,6 +1532,8 @@ paths:
         # parameter to include status_reason, default to false
         - in: query
           name: include_status_reason
+          deprecated: true
+          description: Ignored. Raw scan reports are available only from authenticated admin endpoints.
           required: false
           schema:
             type: boolean
@@ -1624,6 +1626,8 @@ paths:
         # parameter to include status_reason, default to false
         - in: query
           name: include_status_reason
+          deprecated: true
+          description: Ignored. Raw scan reports are available only from authenticated admin endpoints.
           required: false
           schema:
             type: boolean
@@ -1717,6 +1721,11 @@ paths:
                 status_reason:
                   type: string
                   description: The reason for the status change.
+                tags_admin:
+                  type: array
+                  description: Public installation policy tags. Only admins can write this field.
+                  items:
+                    type: string
 
       responses:
         '200':
@@ -1938,8 +1947,732 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /admin/nodes/{nodeId}/versions/{versionId}/feedback:
+    get:
+      operationId: adminGetVersionFeedback
+      summary: Read a private version conversation and its allowed actions
+      description: >-
+        Uses a Firebase ID token for an active Registry admin. The versionId is a UUID, not the version string. Returns the latest 30 messages in ascending sequence order; follow next_before_seq through before_seq to load older messages. GET never marks messages read. Preserve target for writes, inspect permissions, and use thread.revision for state changes. A null thread still supplies the target needed to start feedback.
+      tags:
+      - PrivateFeedback
+      security:
+      - BearerAuth: []
+      parameters:
+      - &id001
+        name: nodeId
+        in: path
+        required: true
+        schema:
+          type: string
+      - &id002
+        name: versionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: before_seq
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+      responses:
+        '200':
+          description: Authorized result. Private and never cached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackResponse'
+        default:
+          description: 401 unauthenticated; 404 inaccessible; 409 conflict; 422 invalid input; 429 rate limited.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackError'
+    patch:
+      operationId: adminSetVersionFeedbackState
+      summary: Resolve or reopen a private conversation
+      description: >-
+        Send state=resolved to close or state=open to reopen, with the observed target and thread.revision as expected_revision. Reopening derives the awaiting state from the latest sender. This does not approve or reject the node version. On 409, GET and reassess current permissions and state; do not blindly replace expected_revision or the recipient.
+      tags:
+      - PrivateFeedback
+      security:
+      - BearerAuth: []
+      parameters: &id003
+      - *id001
+      - *id002
+      responses:
+        '200':
+          description: Authorized result. Private and never cached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackResponse'
+        default:
+          description: 401 unauthenticated; 404 inaccessible; 409 conflict; 422 invalid input; 429 rate limited.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackStateInput'
+  /admin/nodes/{nodeId}/versions/{versionId}/feedback/messages:
+    post:
+      operationId: adminSendVersionFeedback
+      summary: Start or reply to a private version conversation
+      description: >-
+        Send Markdown source in body and echo target from a fresh conversation response. Generate one client_message_id UUID per logical message and reuse the identical payload when retrying an ambiguous failure. A successful retry does not duplicate the message. Do not retarget a pending message after ownership changes. Returns the updated conversation and permissions.
+      tags:
+      - PrivateFeedback
+      security:
+      - BearerAuth: []
+      parameters: *id003
+      responses:
+        '200':
+          description: Authorized result. Private and never cached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackResponse'
+        default:
+          description: 401 unauthenticated; 404 inaccessible; 409 conflict; 422 invalid input; 429 rate limited.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackMessageInput'
+  /admin/nodes/{nodeId}/versions/{versionId}/feedback/read:
+    post:
+      operationId: adminReadVersionFeedback
+      summary: Acknowledge processed messages without replying
+      description: >-
+        GET requests have no read side effect. Advance last_read_message_seq only through messages actually consumed by this admin identity, with the current target. Repeating an acknowledgement never moves the read position backward.
+      tags:
+      - PrivateFeedback
+      security:
+      - BearerAuth: []
+      parameters: *id003
+      responses:
+        '200':
+          description: Authorized result. Private and never cached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackReadResult'
+        default:
+          description: 401 unauthenticated; 404 inaccessible; 409 conflict; 422 invalid input; 429 rate limited.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackReadInput'
+  /admin/node-version-feedback:
+    get:
+      operationId: adminListVersionFeedback
+      summary: List private conversations by current state
+      description: >-
+        For active Registry admins using a Firebase ID token. Filter state by awaiting_admin, awaiting_author or resolved; combine nodeId and publisherId as needed. Omit state for all conversations. Returns up to 20 summaries, newest activity first with a stable ID tie-breaker. Follow the opaque next_cursor with the same filters until null. Versions without a conversation are available through adminListNodeVersions with feedback_status=unprocessed. Archived conversations can be present; read their permissions before writing.
+      tags:
+      - PrivateFeedback
+      security:
+      - BearerAuth: []
+      parameters:
+      - name: nodeId
+        in: query
+        required: false
+        description: Exact match. Omit to leave unrestricted; an explicitly empty value matches no conversations.
+        schema:
+          type: string
+      - name: publisherId
+        in: query
+        required: false
+        description: Exact match. Omit to leave unrestricted; an explicitly empty value matches no conversations.
+        schema:
+          type: string
+      - name: state
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/FeedbackState'
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Authorized result. Private and never cached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackInbox'
+        default:
+          description: 401 unauthenticated; 404 inaccessible; 409 conflict; 422 invalid input; 429 rate limited.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackError'
+  /publishers/{publisherId}/nodes/{nodeId}/versions/{versionId}/feedback:
+    get:
+      operationId: authorGetVersionFeedback
+      tags:
+      - PrivateFeedback
+      security:
+      - BearerAuth: []
+      parameters:
+      - &id004
+        name: publisherId
+        in: path
+        required: true
+        schema:
+          type: string
+      - *id001
+      - *id002
+      - name: before_seq
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+      responses:
+        '200':
+          description: Authorized result. Private and never cached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackResponse'
+        default:
+          description: 401 unauthenticated; 404 inaccessible; 409 conflict; 422 invalid input; 429 rate limited.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackError'
+  /publishers/{publisherId}/nodes/{nodeId}/versions/{versionId}/feedback/messages:
+    post:
+      operationId: authorSendVersionFeedback
+      tags:
+      - PrivateFeedback
+      security:
+      - BearerAuth: []
+      parameters: &id005
+      - *id004
+      - *id001
+      - *id002
+      responses:
+        '200':
+          description: Authorized result. Private and never cached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackResponse'
+        default:
+          description: 401 unauthenticated; 404 inaccessible; 409 conflict; 422 invalid input; 429 rate limited.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackMessageInput'
+  /publishers/{publisherId}/nodes/{nodeId}/versions/{versionId}/feedback/read:
+    post:
+      operationId: authorReadVersionFeedback
+      tags:
+      - PrivateFeedback
+      security:
+      - BearerAuth: []
+      parameters: *id005
+      responses:
+        '200':
+          description: Authorized result. Private and never cached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackReadResult'
+        default:
+          description: 401 unauthenticated; 404 inaccessible; 409 conflict; 422 invalid input; 429 rate limited.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackReadInput'
+  /publishers/{publisherId}/nodes/{nodeId}/versions/{versionId}/feedback/supersede:
+    post:
+      operationId: authorSupersedeVersionFeedback
+      summary: Deprecate earlier versions and close their feedback in favor of this replacement version
+      description: Publisher owners only. versionId identifies the replacement. All selected versions must belong to the same node, precede the replacement by upload time, and have current non-archived feedback. Validates every target and revision atomically. This records an owner handoff, not approval or verification of a fix. Retry the identical request after a lost response; changed conversations return 409.
+      tags:
+      - PrivateFeedback
+      security:
+      - BearerAuth: []
+      parameters: *id005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackSupersedeInput'
+      responses:
+        '204':
+          description: Earlier versions deprecated and conversations closed. No conversation is created on the replacement.
+        default:
+          description: 401 unauthenticated; 404 inaccessible or no feedback; 409 stale target/revision or invalid replacement; 422 invalid input; 429 rate limited.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackError'
+  /users/me/node-version-feedback:
+    get:
+      operationId: authorListVersionFeedback
+      tags:
+      - PrivateFeedback
+      security:
+      - BearerAuth: []
+      parameters:
+      - name: nodeId
+        in: query
+        required: false
+        description: Exact match. Omit to leave unrestricted; an explicitly empty value matches no conversations.
+        schema:
+          type: string
+      - name: publisherId
+        in: query
+        required: false
+        description: Exact match. Omit to leave unrestricted; an explicitly empty value matches no conversations.
+        schema:
+          type: string
+      - name: state
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/FeedbackState'
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Authorized result. Private and never cached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackInbox'
+        default:
+          description: 401 unauthenticated; 404 inaccessible; 409 conflict; 422 invalid input; 429 rate limited.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackError'
+  /admin/nodeversions:
+    get:
+      operationId: adminListNodeVersions
+      summary: List admin versions by moderation and feedback handling status
+      description: >-
+        For active Registry admins using a Firebase ID token. feedback_status classifies no messages, latest admin message or latest author message; it does not filter conversation resolution. Combine it with nodeId, statuses and status_reason. Filters apply before total counts and pagination. Results include private scan evidence and use creation time descending with an ID tie-breaker. Processing records can change queue membership: re-query page 1 or collect IDs before mutating, rather than advancing page numbers while removing items.
+      tags:
+      - AdminScans
+      security:
+      - BearerAuth: []
+      parameters:
+      - name: nodeId
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: statuses
+        in: query
+        required: false
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeVersionStatus'
+      - name: status_reason
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: version
+        in: query
+        required: false
+        description: Exact nodepack version number. Applied before pagination; combine with nodeId for a replacement-version link. An explicitly empty value matches no versions.
+        schema:
+          type: string
+      - name: feedback_status
+        in: query
+        required: false
+        description: Filter by the latest feedback message for the current Publisher. Applied before counting and pagination, independently of conversation resolution and version moderation status. Omit to include all versions.
+        schema:
+          $ref: '#/components/schemas/VersionFeedbackStatus'
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: pageSize
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+      responses:
+        '200':
+          description: Authorized result. Private and never cached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminVersionList'
+        default:
+          description: 401 unauthenticated; 404 inaccessible; 409 conflict; 422 invalid input; 429 rate limited.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackError'
+
 components:
   schemas:
+    FeedbackError:
+      type: object
+      description: Echo-compatible error response for private feedback and admin scan endpoints. Branch on HTTP status, not the human-readable message. Authentication middleware may add an error field.
+      required:
+      - message
+      properties:
+        message:
+          type: string
+        error:
+          type: string
+    AdminNodeVersion:
+      allOf:
+      - $ref: '#/components/schemas/NodeVersion'
+      - type: object
+        required:
+        - status_reason
+        properties:
+          status_reason:
+            type: string
+            description: Raw scan evidence and internal moderation history. Registry admins only.
+    VersionFeedbackStatus:
+      type: string
+      description: 'unprocessed: no feedback messages; processed: the latest message is from an admin; needs_response: the latest message is from an author. Only the current Publisher conversation is considered, including resolved or archived conversations.'
+      enum:
+      - unprocessed
+      - processed
+      - needs_response
+    FeedbackState:
+      type: string
+      enum:
+      - awaiting_author
+      - awaiting_admin
+      - resolved
+    FeedbackThread:
+      type: object
+      required:
+      - id
+      - node_id
+      - version_id
+      - version
+      - publisher_id
+      - state
+      - revision
+      - last_message_seq
+      - last_message_at
+      - archived
+      properties:
+        id:
+          type: string
+          format: uuid
+        node_id:
+          type: string
+        version_id:
+          type: string
+          format: uuid
+        version:
+          type: string
+        publisher_id:
+          type: string
+        state:
+          $ref: '#/components/schemas/FeedbackState'
+        revision:
+          type: integer
+        last_message_seq:
+          type: integer
+        last_message_at:
+          type: string
+          format: date-time
+        archived:
+          type: boolean
+    FeedbackMessage:
+      type: object
+      required:
+      - id
+      - seq
+      - sender_user_id
+      - sender_name
+      - sender_role
+      - body
+      - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        seq:
+          type: integer
+        sender_user_id:
+          type: string
+        sender_name:
+          type: string
+        sender_role:
+          type: string
+          enum:
+          - admin
+          - author
+        body:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    FeedbackEvent:
+      type: object
+      required:
+      - id
+      - event_type
+      - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+          enum:
+          - resolved
+          - reopened
+          - archived
+          - superseded
+        replacement_version_id:
+          type: string
+          format: uuid
+          description: Replacement nodepack version UUID, present on superseded events.
+        replacement_version:
+          type: string
+          description: Replacement nodepack version number at the time of the handoff.
+        created_at:
+          type: string
+          format: date-time
+    FeedbackPermissions:
+      type: object
+      required:
+      - can_start
+      - can_reply
+      - can_resolve
+      - can_reopen
+      properties:
+        can_start:
+          type: boolean
+        can_reply:
+          type: boolean
+        can_resolve:
+          type: boolean
+        can_reopen:
+          type: boolean
+    FeedbackWriteTarget:
+      type: object
+      description: Echo the target from the displayed feedback response on every write. A stale Publisher or thread returns 409. A null thread is valid only when starting a conversation or retrying that same first message.
+      required:
+      - publisher_id
+      - thread_id
+      properties:
+        publisher_id:
+          type: string
+          minLength: 1
+        thread_id:
+          type: string
+          format: uuid
+          nullable: true
+    FeedbackResponse:
+      type: object
+      required:
+      - target
+      - thread
+      - messages
+      - events
+      - permissions
+      - unread_count
+      - last_read_message_seq
+      - next_before_seq
+      properties:
+        target:
+          $ref: '#/components/schemas/FeedbackWriteTarget'
+        thread:
+          allOf:
+          - $ref: '#/components/schemas/FeedbackThread'
+          nullable: true
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeedbackMessage'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeedbackEvent'
+        permissions:
+          $ref: '#/components/schemas/FeedbackPermissions'
+        unread_count:
+          type: integer
+        last_read_message_seq:
+          type: integer
+        next_before_seq:
+          type: integer
+          nullable: true
+    FeedbackSummary:
+      type: object
+      required:
+      - thread
+      - unread_count
+      properties:
+        thread:
+          $ref: '#/components/schemas/FeedbackThread'
+        unread_count:
+          type: integer
+    FeedbackInbox:
+      type: object
+      required:
+      - threads
+      - next_cursor
+      properties:
+        threads:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeedbackSummary'
+        next_cursor:
+          type: string
+          nullable: true
+    FeedbackMessageInput:
+      type: object
+      description: UTF-8 Markdown source, limited to 5,000 Unicode code points after trimming. The server stores source text; clients must render it safely.
+      required:
+      - target
+      - body
+      - client_message_id
+      properties:
+        target:
+          $ref: '#/components/schemas/FeedbackWriteTarget'
+        body:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        client_message_id:
+          type: string
+          format: uuid
+    FeedbackStateInput:
+      type: object
+      description: A conditional state change. Echo target and thread.revision from the conversation you inspected; a stale recipient or revision returns 409.
+      required:
+      - target
+      - state
+      - expected_revision
+      properties:
+        target:
+          $ref: '#/components/schemas/FeedbackWriteTarget'
+        state:
+          type: string
+          enum:
+          - resolved
+          - open
+        expected_revision:
+          type: integer
+          minimum: 0
+    FeedbackSupersedeInput:
+      type: object
+      required:
+      - versions
+      properties:
+        versions:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/FeedbackSupersedeVersion'
+    FeedbackSupersedeVersion:
+      type: object
+      required:
+      - version_id
+      - target
+      - expected_revision
+      properties:
+        version_id:
+          type: string
+          format: uuid
+        target:
+          $ref: '#/components/schemas/FeedbackWriteTarget'
+        expected_revision:
+          type: integer
+          minimum: 0
+    FeedbackReadInput:
+      type: object
+      required:
+      - target
+      - last_read_message_seq
+      properties:
+        target:
+          $ref: '#/components/schemas/FeedbackWriteTarget'
+        last_read_message_seq:
+          type: integer
+          minimum: 0
+    FeedbackReadResult:
+      type: object
+      required:
+      - last_read_message_seq
+      properties:
+        last_read_message_seq:
+          type: integer
+    AdminVersionList:
+      type: object
+      required:
+      - versions
+      - total
+      - page
+      - pageSize
+      - totalPages
+      properties:
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminNodeVersion'
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalPages:
+          type: integer
     PersonalAccessToken:
       type: object
       properties:
@@ -2258,9 +2991,12 @@ components:
         status:
           $ref: "#/components/schemas/NodeVersionStatus"
           description: The status of the node version.
-        status_reason:
-          type: string
-          description: The reason for the status change.
+        tags_admin:
+          type: array
+          readOnly: true
+          description: Public installation information used by Manager policies. Only trusted administrators can write these tags.
+          items:
+            type: string
         node_id:
           type: string
           description: The unique identifier of the node.

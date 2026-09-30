@@ -67,7 +67,7 @@ func DbNodeVersionToApiNodeVersion(dbNodeVersion *ent.NodeVersion) *drip.NodeVer
 		Dependencies: &dbNodeVersion.PipDependencies,
 		CreatedAt:    &dbNodeVersion.CreateTime,
 		Status:       status,
-		StatusReason: &dbNodeVersion.StatusReason,
+		TagsAdmin:    &dbNodeVersion.TagsAdmin,
 		DownloadUrl:  &downloadUrl,
 		NodeId:       &dbNodeVersion.NodeID,
 	}
@@ -173,4 +173,13 @@ func ApiComfyNodeCloudBuildToDbComfyNodeCloudBuild(cloudBuild *drip.ComfyNodeClo
 		i.Location = *cloudBuild.Location
 	}
 	return i
+}
+
+// DbNodeVersionToAdminNodeVersion must only be used after an explicit admin check.
+func DbNodeVersionToAdminNodeVersion(v *ent.NodeVersion) *drip.AdminNodeVersion {
+	if v == nil {
+		return nil
+	}
+	public := DbNodeVersionToApiNodeVersion(v)
+	return &drip.AdminNodeVersion{Id: public.Id, Version: public.Version, Changelog: public.Changelog, Deprecated: public.Deprecated, Dependencies: public.Dependencies, CreatedAt: public.CreatedAt, Status: public.Status, DownloadUrl: public.DownloadUrl, NodeId: public.NodeId, TagsAdmin: public.TagsAdmin, StatusReason: v.StatusReason}
 }

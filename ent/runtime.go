@@ -5,6 +5,10 @@ package ent
 import (
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/comfynode"
+	"registry-backend/ent/feedbackevent"
+	"registry-backend/ent/feedbackmessage"
+	"registry-backend/ent/feedbackread"
+	"registry-backend/ent/feedbackthread"
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/node"
 	"registry-backend/ent/nodereview"
@@ -77,6 +81,81 @@ func init() {
 	comfynodeDescID := comfynodeFields[0].Descriptor()
 	// comfynode.DefaultID holds the default value on creation for the id field.
 	comfynode.DefaultID = comfynodeDescID.Default.(func() uuid.UUID)
+	feedbackeventFields := schema.FeedbackEvent{}.Fields()
+	_ = feedbackeventFields
+	// feedbackeventDescCreatedAt is the schema descriptor for created_at field.
+	feedbackeventDescCreatedAt := feedbackeventFields[4].Descriptor()
+	// feedbackevent.DefaultCreatedAt holds the default value on creation for the created_at field.
+	feedbackevent.DefaultCreatedAt = feedbackeventDescCreatedAt.Default.(func() time.Time)
+	// feedbackeventDescID is the schema descriptor for id field.
+	feedbackeventDescID := feedbackeventFields[0].Descriptor()
+	// feedbackevent.DefaultID holds the default value on creation for the id field.
+	feedbackevent.DefaultID = feedbackeventDescID.Default.(func() uuid.UUID)
+	feedbackmessageFields := schema.FeedbackMessage{}.Fields()
+	_ = feedbackmessageFields
+	// feedbackmessageDescSeq is the schema descriptor for seq field.
+	feedbackmessageDescSeq := feedbackmessageFields[2].Descriptor()
+	// feedbackmessage.SeqValidator is a validator for the "seq" field. It is called by the builders before save.
+	feedbackmessage.SeqValidator = feedbackmessageDescSeq.Validators[0].(func(int) error)
+	// feedbackmessageDescBody is the schema descriptor for body field.
+	feedbackmessageDescBody := feedbackmessageFields[6].Descriptor()
+	// feedbackmessage.BodyValidator is a validator for the "body" field. It is called by the builders before save.
+	feedbackmessage.BodyValidator = feedbackmessageDescBody.Validators[0].(func(string) error)
+	// feedbackmessageDescCreatedAt is the schema descriptor for created_at field.
+	feedbackmessageDescCreatedAt := feedbackmessageFields[8].Descriptor()
+	// feedbackmessage.DefaultCreatedAt holds the default value on creation for the created_at field.
+	feedbackmessage.DefaultCreatedAt = feedbackmessageDescCreatedAt.Default.(func() time.Time)
+	// feedbackmessageDescID is the schema descriptor for id field.
+	feedbackmessageDescID := feedbackmessageFields[0].Descriptor()
+	// feedbackmessage.DefaultID holds the default value on creation for the id field.
+	feedbackmessage.DefaultID = feedbackmessageDescID.Default.(func() uuid.UUID)
+	feedbackreadFields := schema.FeedbackRead{}.Fields()
+	_ = feedbackreadFields
+	// feedbackreadDescLastReadMessageSeq is the schema descriptor for last_read_message_seq field.
+	feedbackreadDescLastReadMessageSeq := feedbackreadFields[3].Descriptor()
+	// feedbackread.DefaultLastReadMessageSeq holds the default value on creation for the last_read_message_seq field.
+	feedbackread.DefaultLastReadMessageSeq = feedbackreadDescLastReadMessageSeq.Default.(int)
+	// feedbackread.LastReadMessageSeqValidator is a validator for the "last_read_message_seq" field. It is called by the builders before save.
+	feedbackread.LastReadMessageSeqValidator = feedbackreadDescLastReadMessageSeq.Validators[0].(func(int) error)
+	// feedbackreadDescReadAt is the schema descriptor for read_at field.
+	feedbackreadDescReadAt := feedbackreadFields[4].Descriptor()
+	// feedbackread.DefaultReadAt holds the default value on creation for the read_at field.
+	feedbackread.DefaultReadAt = feedbackreadDescReadAt.Default.(func() time.Time)
+	// feedbackreadDescID is the schema descriptor for id field.
+	feedbackreadDescID := feedbackreadFields[0].Descriptor()
+	// feedbackread.DefaultID holds the default value on creation for the id field.
+	feedbackread.DefaultID = feedbackreadDescID.Default.(func() uuid.UUID)
+	feedbackthreadMixin := schema.FeedbackThread{}.Mixin()
+	feedbackthreadMixinFields0 := feedbackthreadMixin[0].Fields()
+	_ = feedbackthreadMixinFields0
+	feedbackthreadFields := schema.FeedbackThread{}.Fields()
+	_ = feedbackthreadFields
+	// feedbackthreadDescCreateTime is the schema descriptor for create_time field.
+	feedbackthreadDescCreateTime := feedbackthreadMixinFields0[0].Descriptor()
+	// feedbackthread.DefaultCreateTime holds the default value on creation for the create_time field.
+	feedbackthread.DefaultCreateTime = feedbackthreadDescCreateTime.Default.(func() time.Time)
+	// feedbackthreadDescUpdateTime is the schema descriptor for update_time field.
+	feedbackthreadDescUpdateTime := feedbackthreadMixinFields0[1].Descriptor()
+	// feedbackthread.DefaultUpdateTime holds the default value on creation for the update_time field.
+	feedbackthread.DefaultUpdateTime = feedbackthreadDescUpdateTime.Default.(func() time.Time)
+	// feedbackthread.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	feedbackthread.UpdateDefaultUpdateTime = feedbackthreadDescUpdateTime.UpdateDefault.(func() time.Time)
+	// feedbackthreadDescLastMessageSeq is the schema descriptor for last_message_seq field.
+	feedbackthreadDescLastMessageSeq := feedbackthreadFields[5].Descriptor()
+	// feedbackthread.DefaultLastMessageSeq holds the default value on creation for the last_message_seq field.
+	feedbackthread.DefaultLastMessageSeq = feedbackthreadDescLastMessageSeq.Default.(int)
+	// feedbackthreadDescLastMessageAt is the schema descriptor for last_message_at field.
+	feedbackthreadDescLastMessageAt := feedbackthreadFields[6].Descriptor()
+	// feedbackthread.DefaultLastMessageAt holds the default value on creation for the last_message_at field.
+	feedbackthread.DefaultLastMessageAt = feedbackthreadDescLastMessageAt.Default.(func() time.Time)
+	// feedbackthreadDescRevision is the schema descriptor for revision field.
+	feedbackthreadDescRevision := feedbackthreadFields[7].Descriptor()
+	// feedbackthread.DefaultRevision holds the default value on creation for the revision field.
+	feedbackthread.DefaultRevision = feedbackthreadDescRevision.Default.(int)
+	// feedbackthreadDescID is the schema descriptor for id field.
+	feedbackthreadDescID := feedbackthreadFields[0].Descriptor()
+	// feedbackthread.DefaultID holds the default value on creation for the id field.
+	feedbackthread.DefaultID = feedbackthreadDescID.Default.(func() uuid.UUID)
 	gitcommitMixin := schema.GitCommit{}.Mixin()
 	gitcommitMixinFields0 := gitcommitMixin[0].Fields()
 	_ = gitcommitMixinFields0
@@ -156,12 +235,16 @@ func init() {
 	nodeversionDescDeprecated := nodeversionFields[5].Descriptor()
 	// nodeversion.DefaultDeprecated holds the default value on creation for the deprecated field.
 	nodeversion.DefaultDeprecated = nodeversionDescDeprecated.Default.(bool)
+	// nodeversionDescTagsAdmin is the schema descriptor for tags_admin field.
+	nodeversionDescTagsAdmin := nodeversionFields[6].Descriptor()
+	// nodeversion.DefaultTagsAdmin holds the default value on creation for the tags_admin field.
+	nodeversion.DefaultTagsAdmin = nodeversionDescTagsAdmin.Default.([]string)
 	// nodeversionDescStatusReason is the schema descriptor for status_reason field.
-	nodeversionDescStatusReason := nodeversionFields[7].Descriptor()
+	nodeversionDescStatusReason := nodeversionFields[8].Descriptor()
 	// nodeversion.DefaultStatusReason holds the default value on creation for the status_reason field.
 	nodeversion.DefaultStatusReason = nodeversionDescStatusReason.Default.(string)
 	// nodeversionDescComfyNodeExtractStatus is the schema descriptor for comfy_node_extract_status field.
-	nodeversionDescComfyNodeExtractStatus := nodeversionFields[8].Descriptor()
+	nodeversionDescComfyNodeExtractStatus := nodeversionFields[9].Descriptor()
 	// nodeversion.DefaultComfyNodeExtractStatus holds the default value on creation for the comfy_node_extract_status field.
 	nodeversion.DefaultComfyNodeExtractStatus = schema.ComfyNodeExtractStatus(nodeversionDescComfyNodeExtractStatus.Default.(string))
 	// nodeversionDescID is the schema descriptor for id field.

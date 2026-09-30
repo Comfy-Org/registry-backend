@@ -146,7 +146,11 @@ func TestIndex(t *testing.T) {
 		nodes, err := algolia.SearchNodeVersions(ctx, nv.Version)
 		require.NoError(t, err)
 		require.Len(t, nodes, 1)
-		assert.Equal(t, nv, nodes[0])
+		expected := *nv
+		expected.Status = ""
+		expected.StatusReason = ""
+		assert.Equal(t, &expected, nodes[0])
+		assert.Equal(t, "test", nv.StatusReason, "indexing must not mutate source entities")
 	})
 }
 

@@ -75,6 +75,148 @@ var (
 			},
 		},
 	}
+	// FeedbackEventsColumns holds the columns for the "feedback_events" table.
+	FeedbackEventsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "actor_user_id", Type: field.TypeString},
+		{Name: "event_type", Type: field.TypeEnum, Enums: []string{"resolved", "reopened", "archived", "superseded"}},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "replacement_version_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "replacement_version", Type: field.TypeString, Nullable: true},
+		{Name: "thread_id", Type: field.TypeUUID},
+	}
+	// FeedbackEventsTable holds the schema information for the "feedback_events" table.
+	FeedbackEventsTable = &schema.Table{
+		Name:       "feedback_events",
+		Columns:    FeedbackEventsColumns,
+		PrimaryKey: []*schema.Column{FeedbackEventsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "feedback_events_feedback_threads_events",
+				Columns:    []*schema.Column{FeedbackEventsColumns[6]},
+				RefColumns: []*schema.Column{FeedbackThreadsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "feedbackevent_thread_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{FeedbackEventsColumns[6], FeedbackEventsColumns[3]},
+			},
+		},
+	}
+	// FeedbackMessagesColumns holds the columns for the "feedback_messages" table.
+	FeedbackMessagesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "seq", Type: field.TypeInt},
+		{Name: "sender_user_id", Type: field.TypeString},
+		{Name: "sender_name", Type: field.TypeString},
+		{Name: "sender_role", Type: field.TypeEnum, Enums: []string{"admin", "author"}},
+		{Name: "body", Type: field.TypeString},
+		{Name: "client_message_id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "thread_id", Type: field.TypeUUID},
+	}
+	// FeedbackMessagesTable holds the schema information for the "feedback_messages" table.
+	FeedbackMessagesTable = &schema.Table{
+		Name:       "feedback_messages",
+		Columns:    FeedbackMessagesColumns,
+		PrimaryKey: []*schema.Column{FeedbackMessagesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "feedback_messages_feedback_threads_messages",
+				Columns:    []*schema.Column{FeedbackMessagesColumns[8]},
+				RefColumns: []*schema.Column{FeedbackThreadsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "feedbackmessage_thread_id_seq",
+				Unique:  true,
+				Columns: []*schema.Column{FeedbackMessagesColumns[8], FeedbackMessagesColumns[1]},
+			},
+			{
+				Name:    "feedbackmessage_thread_id_sender_user_id_client_message_id",
+				Unique:  true,
+				Columns: []*schema.Column{FeedbackMessagesColumns[8], FeedbackMessagesColumns[2], FeedbackMessagesColumns[6]},
+			},
+		},
+	}
+	// FeedbackReadsColumns holds the columns for the "feedback_reads" table.
+	FeedbackReadsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeString},
+		{Name: "last_read_message_seq", Type: field.TypeInt, Default: 0},
+		{Name: "read_at", Type: field.TypeTime},
+		{Name: "thread_id", Type: field.TypeUUID},
+	}
+	// FeedbackReadsTable holds the schema information for the "feedback_reads" table.
+	FeedbackReadsTable = &schema.Table{
+		Name:       "feedback_reads",
+		Columns:    FeedbackReadsColumns,
+		PrimaryKey: []*schema.Column{FeedbackReadsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "feedback_reads_feedback_threads_reads",
+				Columns:    []*schema.Column{FeedbackReadsColumns[4]},
+				RefColumns: []*schema.Column{FeedbackThreadsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "feedbackread_thread_id_user_id",
+				Unique:  true,
+				Columns: []*schema.Column{FeedbackReadsColumns[4], FeedbackReadsColumns[1]},
+			},
+			{
+				Name:    "feedbackread_user_id_thread_id",
+				Unique:  false,
+				Columns: []*schema.Column{FeedbackReadsColumns[1], FeedbackReadsColumns[4]},
+			},
+		},
+	}
+	// FeedbackThreadsColumns holds the columns for the "feedback_threads" table.
+	FeedbackThreadsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
+		{Name: "version_id", Type: field.TypeUUID},
+		{Name: "publisher_id", Type: field.TypeString},
+		{Name: "state", Type: field.TypeEnum, Enums: []string{"awaiting_author", "awaiting_admin", "resolved"}, Default: "awaiting_author"},
+		{Name: "created_by_user_id", Type: field.TypeString},
+		{Name: "last_message_seq", Type: field.TypeInt, Default: 0},
+		{Name: "last_message_at", Type: field.TypeTime},
+		{Name: "revision", Type: field.TypeInt, Default: 0},
+		{Name: "resolved_by_user_id", Type: field.TypeString, Nullable: true},
+		{Name: "resolved_at", Type: field.TypeTime, Nullable: true},
+		{Name: "archived_at", Type: field.TypeTime, Nullable: true},
+	}
+	// FeedbackThreadsTable holds the schema information for the "feedback_threads" table.
+	FeedbackThreadsTable = &schema.Table{
+		Name:       "feedback_threads",
+		Columns:    FeedbackThreadsColumns,
+		PrimaryKey: []*schema.Column{FeedbackThreadsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "feedbackthread_version_id_publisher_id",
+				Unique:  true,
+				Columns: []*schema.Column{FeedbackThreadsColumns[3], FeedbackThreadsColumns[4]},
+			},
+			{
+				Name:    "feedbackthread_publisher_id_state_last_message_at",
+				Unique:  false,
+				Columns: []*schema.Column{FeedbackThreadsColumns[4], FeedbackThreadsColumns[5], FeedbackThreadsColumns[8]},
+			},
+			{
+				Name:    "feedbackthread_state_last_message_at",
+				Unique:  false,
+				Columns: []*schema.Column{FeedbackThreadsColumns[5], FeedbackThreadsColumns[8]},
+			},
+		},
+	}
 	// GitCommitsColumns holds the columns for the "git_commits" table.
 	GitCommitsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -181,6 +323,7 @@ var (
 		{Name: "changelog", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "pip_dependencies", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "deprecated", Type: field.TypeBool, Default: false},
+		{Name: "tags_admin", Type: field.TypeJSON, Default: "[]", SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "banned", "deleted", "pending", "flagged"}, Default: "pending"},
 		{Name: "status_reason", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "comfy_node_extract_status", Type: field.TypeString, Default: "pending"},
@@ -196,13 +339,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "node_versions_nodes_versions",
-				Columns:    []*schema.Column{NodeVersionsColumns[11]},
+				Columns:    []*schema.Column{NodeVersionsColumns[12]},
 				RefColumns: []*schema.Column{NodesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "node_versions_storage_files_storage_file",
-				Columns:    []*schema.Column{NodeVersionsColumns[12]},
+				Columns:    []*schema.Column{NodeVersionsColumns[13]},
 				RefColumns: []*schema.Column{StorageFilesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -211,7 +354,7 @@ var (
 			{
 				Name:    "nodeversion_node_id_version",
 				Unique:  true,
-				Columns: []*schema.Column{NodeVersionsColumns[11], NodeVersionsColumns[3]},
+				Columns: []*schema.Column{NodeVersionsColumns[12], NodeVersionsColumns[3]},
 			},
 		},
 	}
@@ -339,6 +482,10 @@ var (
 	Tables = []*schema.Table{
 		CiWorkflowResultsTable,
 		ComfyNodesTable,
+		FeedbackEventsTable,
+		FeedbackMessagesTable,
+		FeedbackReadsTable,
+		FeedbackThreadsTable,
 		GitCommitsTable,
 		NodesTable,
 		NodeReviewsTable,
@@ -354,6 +501,9 @@ var (
 func init() {
 	CiWorkflowResultsTable.ForeignKeys[0].RefTable = GitCommitsTable
 	ComfyNodesTable.ForeignKeys[0].RefTable = NodeVersionsTable
+	FeedbackEventsTable.ForeignKeys[0].RefTable = FeedbackThreadsTable
+	FeedbackMessagesTable.ForeignKeys[0].RefTable = FeedbackThreadsTable
+	FeedbackReadsTable.ForeignKeys[0].RefTable = FeedbackThreadsTable
 	NodesTable.ForeignKeys[0].RefTable = PublishersTable
 	NodeReviewsTable.ForeignKeys[0].RefTable = NodesTable
 	NodeReviewsTable.ForeignKeys[1].RefTable = UsersTable

@@ -30,6 +30,9 @@ func (rw *responseWriter) Write(p []byte) (n int, err error) {
 func ResponseLoggerMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			if IsPrivateRegistryPath(c.Request().URL.Path) {
+				return next(c)
+			}
 			defer tracing.TraceDefaultSegment(c.Request().Context(), "DripStrictServerImplementation.ResponseLoggerMiddleware")()
 
 			// Create a custom response writer to capture the response body

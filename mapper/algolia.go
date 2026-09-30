@@ -51,3 +51,13 @@ func AlgoliaNodeFromEntNode(node *ent.Node) entity.AlgoliaNode {
 
 	return n
 }
+
+// PublicNodeVersionSearchDocument is an explicit allowlist. Never index an Ent
+// entity directly: it also contains internal scanner evidence and relationships.
+func PublicNodeVersionSearchDocument(v *ent.NodeVersion) map[string]any {
+	return map[string]any{
+		"objectID": v.ID.String(), "id": v.ID.String(), "node_id": v.NodeID, "version": v.Version,
+		"create_time": v.CreateTime, "update_time": v.UpdateTime, "changelog": v.Changelog,
+		"pip_dependencies": v.PipDependencies, "deprecated": v.Deprecated, "tags_admin": v.TagsAdmin,
+	}
+}

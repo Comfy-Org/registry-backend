@@ -102,6 +102,12 @@ func (nvc *NodeVersionCreate) SetNillableDeprecated(b *bool) *NodeVersionCreate 
 	return nvc
 }
 
+// SetTagsAdmin sets the "tags_admin" field.
+func (nvc *NodeVersionCreate) SetTagsAdmin(s []string) *NodeVersionCreate {
+	nvc.mutation.SetTagsAdmin(s)
+	return nvc
+}
+
 // SetStatus sets the "status" field.
 func (nvc *NodeVersionCreate) SetStatus(svs schema.NodeVersionStatus) *NodeVersionCreate {
 	nvc.mutation.SetStatus(svs)
@@ -258,6 +264,10 @@ func (nvc *NodeVersionCreate) defaults() {
 		v := nodeversion.DefaultDeprecated
 		nvc.mutation.SetDeprecated(v)
 	}
+	if _, ok := nvc.mutation.TagsAdmin(); !ok {
+		v := nodeversion.DefaultTagsAdmin
+		nvc.mutation.SetTagsAdmin(v)
+	}
 	if _, ok := nvc.mutation.Status(); !ok {
 		v := nodeversion.DefaultStatus
 		nvc.mutation.SetStatus(v)
@@ -295,6 +305,9 @@ func (nvc *NodeVersionCreate) check() error {
 	}
 	if _, ok := nvc.mutation.Deprecated(); !ok {
 		return &ValidationError{Name: "deprecated", err: errors.New(`ent: missing required field "NodeVersion.deprecated"`)}
+	}
+	if _, ok := nvc.mutation.TagsAdmin(); !ok {
+		return &ValidationError{Name: "tags_admin", err: errors.New(`ent: missing required field "NodeVersion.tags_admin"`)}
 	}
 	if _, ok := nvc.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "NodeVersion.status"`)}
@@ -372,6 +385,10 @@ func (nvc *NodeVersionCreate) createSpec() (*NodeVersion, *sqlgraph.CreateSpec) 
 	if value, ok := nvc.mutation.Deprecated(); ok {
 		_spec.SetField(nodeversion.FieldDeprecated, field.TypeBool, value)
 		_node.Deprecated = value
+	}
+	if value, ok := nvc.mutation.TagsAdmin(); ok {
+		_spec.SetField(nodeversion.FieldTagsAdmin, field.TypeJSON, value)
+		_node.TagsAdmin = value
 	}
 	if value, ok := nvc.mutation.Status(); ok {
 		_spec.SetField(nodeversion.FieldStatus, field.TypeEnum, value)
@@ -569,6 +586,18 @@ func (u *NodeVersionUpsert) UpdateDeprecated() *NodeVersionUpsert {
 	return u
 }
 
+// SetTagsAdmin sets the "tags_admin" field.
+func (u *NodeVersionUpsert) SetTagsAdmin(v []string) *NodeVersionUpsert {
+	u.Set(nodeversion.FieldTagsAdmin, v)
+	return u
+}
+
+// UpdateTagsAdmin sets the "tags_admin" field to the value that was provided on create.
+func (u *NodeVersionUpsert) UpdateTagsAdmin() *NodeVersionUpsert {
+	u.SetExcluded(nodeversion.FieldTagsAdmin)
+	return u
+}
+
 // SetStatus sets the "status" field.
 func (u *NodeVersionUpsert) SetStatus(v schema.NodeVersionStatus) *NodeVersionUpsert {
 	u.Set(nodeversion.FieldStatus, v)
@@ -762,6 +791,20 @@ func (u *NodeVersionUpsertOne) SetDeprecated(v bool) *NodeVersionUpsertOne {
 func (u *NodeVersionUpsertOne) UpdateDeprecated() *NodeVersionUpsertOne {
 	return u.Update(func(s *NodeVersionUpsert) {
 		s.UpdateDeprecated()
+	})
+}
+
+// SetTagsAdmin sets the "tags_admin" field.
+func (u *NodeVersionUpsertOne) SetTagsAdmin(v []string) *NodeVersionUpsertOne {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.SetTagsAdmin(v)
+	})
+}
+
+// UpdateTagsAdmin sets the "tags_admin" field to the value that was provided on create.
+func (u *NodeVersionUpsertOne) UpdateTagsAdmin() *NodeVersionUpsertOne {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.UpdateTagsAdmin()
 	})
 }
 
@@ -1134,6 +1177,20 @@ func (u *NodeVersionUpsertBulk) SetDeprecated(v bool) *NodeVersionUpsertBulk {
 func (u *NodeVersionUpsertBulk) UpdateDeprecated() *NodeVersionUpsertBulk {
 	return u.Update(func(s *NodeVersionUpsert) {
 		s.UpdateDeprecated()
+	})
+}
+
+// SetTagsAdmin sets the "tags_admin" field.
+func (u *NodeVersionUpsertBulk) SetTagsAdmin(v []string) *NodeVersionUpsertBulk {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.SetTagsAdmin(v)
+	})
+}
+
+// UpdateTagsAdmin sets the "tags_admin" field to the value that was provided on create.
+func (u *NodeVersionUpsertBulk) UpdateTagsAdmin() *NodeVersionUpsertBulk {
+	return u.Update(func(s *NodeVersionUpsert) {
+		s.UpdateTagsAdmin()
 	})
 }
 

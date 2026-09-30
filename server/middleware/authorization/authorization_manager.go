@@ -59,19 +59,8 @@ func (m *AuthorizationManager) assertUserBanned() drip.StrictMiddlewareFunc {
 				segment := txn.StartSegment("AuthorizationManager.assertUserBanned")
 				defer segment.End()
 			}
-			v := ctx.Value(drip_authentication.UserContextKey)
-			userDetails, ok := v.(*drip_authentication.UserDetails)
-			if !ok {
-				return nil, echo.NewHTTPError(http.StatusUnauthorized, "user not found")
-			}
-
-			u, err := m.EntClient.User.Get(ctx, userDetails.ID)
-			if err != nil {
-				return nil, echo.NewHTTPError(http.StatusUnauthorized, "user not found")
-			}
-
-			if u.Status == schema.UserStatusTypeBanned {
-				return nil, echo.NewHTTPError(http.StatusForbidden, "user/publisher is banned")
+			if _, err := drip_services.RequireActiveUser(ctx, m.EntClient); err != nil {
+				return nil, err
 			}
 
 			return f(c, request)

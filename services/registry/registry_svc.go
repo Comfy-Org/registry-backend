@@ -450,7 +450,7 @@ func (s *RegistryService) GetNode(ctx context.Context, client *ent.Client, nodeI
 	defer tracing.TraceDefaultSegment(ctx, "RegistryService.GetNode")()
 
 	log.Ctx(ctx).Info().Msgf("getting node: %v", nodeID)
-	node, err := client.Node.Get(ctx, nodeID)
+	node, err := client.Node.Query().Where(node.ID(nodeID)).WithPublisher().Only(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get node: %w", err)
 	}
@@ -548,12 +548,16 @@ func (s *RegistryService) ListNodeVersions(ctx context.Context, client *ent.Clie
 	defer tracing.TraceDefaultSegment(ctx, "RegistryService.ListNodeVersions")()
 
 	query := client.NodeVersion.Query().
-		WithStorageFile().
-		Order(ent.Desc(nodeversion.FieldVersion))
+		WithStorageFile().Where(filter.Predicates...)
+	if filter.NewestFirst {
+		query.Order(ent.Desc(nodeversion.FieldCreateTime), ent.Desc(nodeversion.FieldID))
+	} else {
+		query.Order(ent.Desc(nodeversion.FieldVersion))
+	}
 
-	if filter.NodeId != "" {
-		log.Ctx(ctx).Info().Msgf("listing node versions: %v", filter.NodeId)
-		query.Where(nodeversion.NodeIDEQ(filter.NodeId))
+	if filter.NodeId != nil {
+		log.Ctx(ctx).Info().Msgf("listing node versions: %v", *filter.NodeId)
+		query.Where(nodeversion.NodeIDEQ(*filter.NodeId))
 	}
 
 	if len(filter.Status) > 0 {
@@ -929,24 +933,7 @@ func (s *RegistryService) AssertPublisherPermissions(ctx context.Context,
 	permissions []schema.PublisherPermissionType,
 ) (err error) {
 	defer tracing.TraceDefaultSegment(ctx, "RegistryService.AssertPublisherPermissions")()
-
-	w, err := client.Publisher.Get(ctx, publisherID)
-	if err != nil {
-		return fmt.Errorf("fail to query publisher by id: %s %w", publisherID, err)
-	}
-	wp, err := w.QueryPublisherPermissions().
-		Where(
-			publisherpermission.PermissionIn(permissions...),
-			publisherpermission.UserIDEQ(userID),
-		).
-		Count(ctx)
-	if err != nil {
-		return fmt.Errorf("fail to query publisher permission :%w", err)
-	}
-	if wp < 1 {
-		return newErrorPermission("user '%s' doesn't have required permission on publisher '%s' ", userID, publisherID)
-	}
-	return
+	return assertPublisherPermissions(ctx, client, publisherID, userID, permissions)
 }
 
 func (s *RegistryService) IsPersonalAccessTokenValidForPublisher(ctx context.Context,

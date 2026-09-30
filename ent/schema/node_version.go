@@ -5,6 +5,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -34,6 +35,7 @@ func (NodeVersion) Fields() []ent.Field {
 			dialect.Postgres: "text",
 		}),
 		field.Bool("deprecated").Default(false),
+		field.Strings("tags_admin").SchemaType(map[string]string{dialect.Postgres: "text"}).Default([]string{}).Annotations(entsql.Default("[]")).Comment("Public installation policy tags; writable only by trusted administrators."),
 		field.Enum("status").
 			GoType(NodeVersionStatus("")).
 			Default(string(NodeVersionStatusPending)),

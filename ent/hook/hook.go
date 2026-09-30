@@ -32,6 +32,54 @@ func (f ComfyNodeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ComfyNodeMutation", m)
 }
 
+// The FeedbackEventFunc type is an adapter to allow the use of ordinary
+// function as FeedbackEvent mutator.
+type FeedbackEventFunc func(context.Context, *ent.FeedbackEventMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f FeedbackEventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.FeedbackEventMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FeedbackEventMutation", m)
+}
+
+// The FeedbackMessageFunc type is an adapter to allow the use of ordinary
+// function as FeedbackMessage mutator.
+type FeedbackMessageFunc func(context.Context, *ent.FeedbackMessageMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f FeedbackMessageFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.FeedbackMessageMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FeedbackMessageMutation", m)
+}
+
+// The FeedbackReadFunc type is an adapter to allow the use of ordinary
+// function as FeedbackRead mutator.
+type FeedbackReadFunc func(context.Context, *ent.FeedbackReadMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f FeedbackReadFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.FeedbackReadMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FeedbackReadMutation", m)
+}
+
+// The FeedbackThreadFunc type is an adapter to allow the use of ordinary
+// function as FeedbackThread mutator.
+type FeedbackThreadFunc func(context.Context, *ent.FeedbackThreadMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f FeedbackThreadFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.FeedbackThreadMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FeedbackThreadMutation", m)
+}
+
 // The GitCommitFunc type is an adapter to allow the use of ordinary
 // function as GitCommit mutator.
 type GitCommitFunc func(context.Context, *ent.GitCommitMutation) (ent.Value, error)

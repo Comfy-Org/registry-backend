@@ -2,17 +2,23 @@ package integration
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-	"net"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"os"
 	"reflect"
 	"regexp"
 	"registry-backend/config"
+	"registry-backend/db"
 	"registry-backend/drip"
 	"registry-backend/mock/gateways"
 	"registry-backend/server/implementation"
+	"registry-backend/server/middleware"
 	auth "registry-backend/server/middleware/authentication"
+	authorization "registry-backend/server/middleware/authorization"
 	"runtime"
 	"strings"
 
@@ -22,13 +28,12 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"registry-backend/ent"
-	"registry-backend/ent/migrate"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog/log"
+	"github.com/mixpanel/mixpanel-go"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -73,7 +78,7 @@ func NewStrictServerImplementationWithMocks(
 		Return(nil)
 
 	// Initialize the mocked implementation with mocked services.
-	return &MockedServerImplementation{
+	result := &MockedServerImplementation{
 		DripStrictServerImplementation: implementation.NewStrictServerImplementation(
 			client, config, mockStorageService, mockPubsubService, mockSlackService, mockDiscordService, mockAlgolia, newRelicApp),
 		mockStorageService: mockStorageService,
@@ -82,6 +87,34 @@ func NewStrictServerImplementationWithMocks(
 		mockAlgolia:        mockAlgolia,
 		mockPubsubService:  mockPubsubService,
 	}
+	// Integration tests must not submit installation or search telemetry.
+	result.MixpanelService = mixpanel.NewApiClient("test", mixpanel.HttpClient(&http.Client{Transport: testAnalyticsTransport{}}))
+	return result
+}
+
+type testAnalyticsTransport struct{}
+
+// newRegistryHTTPTestServer injects the principal where verified Firebase
+// authentication normally does. Routing, private policies and authorization are
+// real; this helper deliberately does not validate Firebase credentials.
+func newRegistryHTTPTestServer(impl *implementation.DripStrictServerImplementation) *echo.Echo {
+	e := echo.New()
+	e.Use(middleware.PrivateRegistryData())
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if id := c.Request().Header.Get("X-Test-User"); id != "" {
+				c.SetRequest(c.Request().WithContext(context.WithValue(c.Request().Context(), auth.UserContextKey, &auth.UserDetails{ID: id})))
+			}
+			return next(c)
+		}
+	})
+	authz := authorization.NewAuthorizationManager(impl.Client, impl.RegistryService, nil)
+	drip.RegisterHandlers(e, drip.NewStrictHandler(impl, []drip.StrictMiddlewareFunc{authz.AuthorizationMiddleware()}))
+	return e
+}
+
+func (testAnalyticsTransport) RoundTrip(request *http.Request) (*http.Response, error) {
+	return &http.Response{StatusCode: http.StatusOK, Header: make(http.Header), Body: io.NopCloser(strings.NewReader("1")), Request: request}, nil
 }
 
 func setupTestUser(client *ent.Client) (context.Context, *ent.User) {
@@ -302,81 +335,51 @@ func decorateUserInContext(ctx context.Context, user *ent.User) context.Context 
 	})
 }
 
-func setupDB(t *testing.T, ctx context.Context) (client *ent.Client, cleanup func()) {
-	// Define Postgres container request
-	postgresContainer, err := postgres.RunContainer(ctx,
-		testcontainers.WithImage("docker.io/postgres:15.2-alpine"),
-		postgres.WithDatabase("postgres"),
-		postgres.WithUsername("postgres"),
-		postgres.WithPassword("password"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(60*time.Second)),
-	)
-	if err != nil {
-		t.Fatalf("Failed to start container: %s", err)
+// setupDatabaseURL gives schema-based and migration-based tests the same isolated
+// PostgreSQL fixture. CI uses Testcontainers when no local override is supplied.
+func setupDatabaseURL(t *testing.T, ctx context.Context) (string, func()) {
+	t.Helper()
+	dsn := os.Getenv("REGISTRY_TEST_DATABASE_URL")
+	stop := func() {}
+	if dsn == "" {
+		container, err := postgres.RunContainer(ctx,
+			testcontainers.WithImage("docker.io/postgres:15.2-alpine"),
+			postgres.WithDatabase("postgres"), postgres.WithUsername("postgres"), postgres.WithPassword("password"),
+			testcontainers.WithWaitStrategy(wait.ForLog("database system is ready to accept connections").WithOccurrence(2).WithStartupTimeout(time.Minute)),
+		)
+		require.NoError(t, err)
+		dsn, err = container.ConnectionString(ctx, "sslmode=disable")
+		require.NoError(t, err)
+		stop = func() { require.NoError(t, container.Terminate(ctx)) }
 	}
-	println("Postgres container started")
-
-	host, err := postgresContainer.Host(ctx)
-	if err != nil {
-		t.Fatalf("Failed to get the host: %s", err)
+	database, err := sql.Open("postgres", dsn)
+	require.NoError(t, err)
+	schemaName := "registry_test_" + strings.ReplaceAll(uuid.NewString(), "-", "")
+	_, err = database.ExecContext(ctx, `CREATE SCHEMA "`+schemaName+`"`)
+	require.NoError(t, err)
+	u, err := url.Parse(dsn)
+	require.NoError(t, err)
+	q := u.Query()
+	q.Set("search_path", schemaName)
+	u.RawQuery = q.Encode()
+	return u.String(), func() {
+		_, err := database.ExecContext(context.Background(), `DROP SCHEMA "`+schemaName+`" CASCADE`)
+		require.NoError(t, err)
+		require.NoError(t, database.Close())
+		stop()
 	}
-	port, err := postgresContainer.MappedPort(ctx, "5432")
-	if err != nil {
-		t.Fatalf("Failed to get the mapped port: %s", err)
-	}
-	waitPortOpen(t, host, port.Port(), time.Minute)
-	databaseURL := fmt.Sprintf("postgres://postgres:password@%s:%s/postgres?sslmode=disable", host, port.Port())
-
-	if err != nil {
-		t.Fatalf("Failed to start container: %s", err)
-	}
-
-	client, err = ent.Open("postgres", databaseURL)
-	if err != nil {
-		log.Ctx(ctx).Fatal().Err(err).Msg("failed opening connection to postgres")
-	}
-
-	if err := client.Schema.Create(context.Background(), migrate.WithDropIndex(true),
-		migrate.WithDropColumn(true), migrate.WithDropIndex(true)); err != nil {
-		log.Ctx(ctx).Fatal().Err(err).Msg("failed creating schema resources.")
-		println("Failed to create schema")
-
-	}
-	println("Schema created")
-
-	cleanup = func() {
-		if err := postgresContainer.Terminate(ctx); err != nil {
-			log.Ctx(ctx).Error().Msgf("failed to terminate container: %s", err)
-		}
-	}
-	return
 }
 
-func waitPortOpen(t *testing.T, host string, port string, timeout time.Duration) {
-	tc := time.After(timeout)
-	w, m := 500*time.Microsecond, 32*time.Second
-	for {
-		select {
-		case <-tc:
-			t.Errorf("timeout waiting to connect to '%s:%s'", host, port)
-		default:
-		}
-
-		conn, err := net.Dial("tcp", net.JoinHostPort(host, port))
-		if err != nil {
-			t.Logf("error connecting to '%s:%s' : %s", host, port, err)
-			if w < m {
-				w *= 2
-			}
-			<-time.After(w)
-			continue
-		}
-
-		conn.Close()
-		return
+func setupDB(t *testing.T, ctx context.Context) (*ent.Client, func()) {
+	t.Helper()
+	dsn, cleanup := setupDatabaseURL(t, ctx)
+	client, err := ent.Open("postgres", dsn)
+	require.NoError(t, err)
+	require.NoError(t, client.Schema.Create(ctx))
+	db.RegisterFeedbackHooks(client)
+	return client, func() {
+		require.NoError(t, client.Close())
+		cleanup()
 	}
 }
 

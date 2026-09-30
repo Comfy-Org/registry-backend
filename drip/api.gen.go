@@ -27,6 +27,33 @@ const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
 
+// Defines values for FeedbackEventEventType.
+const (
+	FeedbackEventEventTypeArchived   FeedbackEventEventType = "archived"
+	FeedbackEventEventTypeReopened   FeedbackEventEventType = "reopened"
+	FeedbackEventEventTypeResolved   FeedbackEventEventType = "resolved"
+	FeedbackEventEventTypeSuperseded FeedbackEventEventType = "superseded"
+)
+
+// Defines values for FeedbackMessageSenderRole.
+const (
+	Admin  FeedbackMessageSenderRole = "admin"
+	Author FeedbackMessageSenderRole = "author"
+)
+
+// Defines values for FeedbackState.
+const (
+	FeedbackStateAwaitingAdmin  FeedbackState = "awaiting_admin"
+	FeedbackStateAwaitingAuthor FeedbackState = "awaiting_author"
+	FeedbackStateResolved       FeedbackState = "resolved"
+)
+
+// Defines values for FeedbackStateInputState.
+const (
+	Open     FeedbackStateInputState = "open"
+	Resolved FeedbackStateInputState = "resolved"
+)
+
 // Defines values for NodeStatus.
 const (
 	NodeStatusActive  NodeStatus = "NodeStatusActive"
@@ -47,6 +74,13 @@ const (
 const (
 	PublisherStatusActive PublisherStatus = "PublisherStatusActive"
 	PublisherStatusBanned PublisherStatus = "PublisherStatusBanned"
+)
+
+// Defines values for VersionFeedbackStatus.
+const (
+	NeedsResponse VersionFeedbackStatus = "needs_response"
+	Processed     VersionFeedbackStatus = "processed"
+	Unprocessed   VersionFeedbackStatus = "unprocessed"
 )
 
 // Defines values for WorkflowRunStatus.
@@ -128,6 +162,47 @@ type ActionJobResult struct {
 	WorkflowName *string `json:"workflow_name,omitempty"`
 }
 
+// AdminNodeVersion defines model for AdminNodeVersion.
+type AdminNodeVersion struct {
+	// Changelog Summary of changes made in this version
+	Changelog *string `json:"changelog,omitempty"`
+
+	// CreatedAt The date and time the version was created.
+	CreatedAt *time.Time `json:"createdAt,omitempty"`
+
+	// Dependencies A list of pip dependencies required by the node.
+	Dependencies *[]string `json:"dependencies,omitempty"`
+
+	// Deprecated Indicates if this version is deprecated.
+	Deprecated *bool `json:"deprecated,omitempty"`
+
+	// DownloadUrl [Output Only] URL to download this version of the node
+	DownloadUrl *string `json:"downloadUrl,omitempty"`
+	Id          *string `json:"id,omitempty"`
+
+	// NodeId The unique identifier of the node.
+	NodeId *string            `json:"node_id,omitempty"`
+	Status *NodeVersionStatus `json:"status,omitempty"`
+
+	// StatusReason Raw scan evidence and internal moderation history. Registry admins only.
+	StatusReason string `json:"status_reason"`
+
+	// TagsAdmin Public installation information used by Manager policies. Only trusted administrators can write these tags.
+	TagsAdmin *[]string `json:"tags_admin,omitempty"`
+
+	// Version The version identifier, following semantic versioning. Must be unique for the node.
+	Version *string `json:"version,omitempty"`
+}
+
+// AdminVersionList defines model for AdminVersionList.
+type AdminVersionList struct {
+	Page       int                `json:"page"`
+	PageSize   int                `json:"pageSize"`
+	Total      int                `json:"total"`
+	TotalPages int                `json:"totalPages"`
+	Versions   []AdminNodeVersion `json:"versions"`
+}
+
 // ComfyNode defines model for ComfyNode.
 type ComfyNode struct {
 	// Category UI category where the node is listed, used for grouping nodes.
@@ -182,6 +257,147 @@ type Error struct {
 type ErrorResponse struct {
 	Error   string `json:"error"`
 	Message string `json:"message"`
+}
+
+// FeedbackError Echo-compatible error response for private feedback and admin scan endpoints. Branch on HTTP status, not the human-readable message. Authentication middleware may add an error field.
+type FeedbackError struct {
+	Error   *string `json:"error,omitempty"`
+	Message string  `json:"message"`
+}
+
+// FeedbackEvent defines model for FeedbackEvent.
+type FeedbackEvent struct {
+	CreatedAt time.Time              `json:"created_at"`
+	EventType FeedbackEventEventType `json:"event_type"`
+	Id        openapi_types.UUID     `json:"id"`
+
+	// ReplacementVersion Replacement nodepack version number at the time of the handoff.
+	ReplacementVersion *string `json:"replacement_version,omitempty"`
+
+	// ReplacementVersionId Replacement nodepack version UUID, present on superseded events.
+	ReplacementVersionId *openapi_types.UUID `json:"replacement_version_id,omitempty"`
+}
+
+// FeedbackEventEventType defines model for FeedbackEvent.EventType.
+type FeedbackEventEventType string
+
+// FeedbackInbox defines model for FeedbackInbox.
+type FeedbackInbox struct {
+	NextCursor *string           `json:"next_cursor"`
+	Threads    []FeedbackSummary `json:"threads"`
+}
+
+// FeedbackMessage defines model for FeedbackMessage.
+type FeedbackMessage struct {
+	Body         string                    `json:"body"`
+	CreatedAt    time.Time                 `json:"created_at"`
+	Id           openapi_types.UUID        `json:"id"`
+	SenderName   string                    `json:"sender_name"`
+	SenderRole   FeedbackMessageSenderRole `json:"sender_role"`
+	SenderUserId string                    `json:"sender_user_id"`
+	Seq          int                       `json:"seq"`
+}
+
+// FeedbackMessageSenderRole defines model for FeedbackMessage.SenderRole.
+type FeedbackMessageSenderRole string
+
+// FeedbackMessageInput UTF-8 Markdown source, limited to 5,000 Unicode code points after trimming. The server stores source text; clients must render it safely.
+type FeedbackMessageInput struct {
+	Body            string             `json:"body"`
+	ClientMessageId openapi_types.UUID `json:"client_message_id"`
+
+	// Target Echo the target from the displayed feedback response on every write. A stale Publisher or thread returns 409. A null thread is valid only when starting a conversation or retrying that same first message.
+	Target FeedbackWriteTarget `json:"target"`
+}
+
+// FeedbackPermissions defines model for FeedbackPermissions.
+type FeedbackPermissions struct {
+	CanReopen  bool `json:"can_reopen"`
+	CanReply   bool `json:"can_reply"`
+	CanResolve bool `json:"can_resolve"`
+	CanStart   bool `json:"can_start"`
+}
+
+// FeedbackReadInput defines model for FeedbackReadInput.
+type FeedbackReadInput struct {
+	LastReadMessageSeq int `json:"last_read_message_seq"`
+
+	// Target Echo the target from the displayed feedback response on every write. A stale Publisher or thread returns 409. A null thread is valid only when starting a conversation or retrying that same first message.
+	Target FeedbackWriteTarget `json:"target"`
+}
+
+// FeedbackReadResult defines model for FeedbackReadResult.
+type FeedbackReadResult struct {
+	LastReadMessageSeq int `json:"last_read_message_seq"`
+}
+
+// FeedbackResponse defines model for FeedbackResponse.
+type FeedbackResponse struct {
+	Events             []FeedbackEvent     `json:"events"`
+	LastReadMessageSeq int                 `json:"last_read_message_seq"`
+	Messages           []FeedbackMessage   `json:"messages"`
+	NextBeforeSeq      *int                `json:"next_before_seq"`
+	Permissions        FeedbackPermissions `json:"permissions"`
+
+	// Target Echo the target from the displayed feedback response on every write. A stale Publisher or thread returns 409. A null thread is valid only when starting a conversation or retrying that same first message.
+	Target      FeedbackWriteTarget `json:"target"`
+	Thread      *FeedbackThread     `json:"thread"`
+	UnreadCount int                 `json:"unread_count"`
+}
+
+// FeedbackState defines model for FeedbackState.
+type FeedbackState string
+
+// FeedbackStateInput A conditional state change. Echo target and thread.revision from the conversation you inspected; a stale recipient or revision returns 409.
+type FeedbackStateInput struct {
+	ExpectedRevision int                     `json:"expected_revision"`
+	State            FeedbackStateInputState `json:"state"`
+
+	// Target Echo the target from the displayed feedback response on every write. A stale Publisher or thread returns 409. A null thread is valid only when starting a conversation or retrying that same first message.
+	Target FeedbackWriteTarget `json:"target"`
+}
+
+// FeedbackStateInputState defines model for FeedbackStateInput.State.
+type FeedbackStateInputState string
+
+// FeedbackSummary defines model for FeedbackSummary.
+type FeedbackSummary struct {
+	Thread      FeedbackThread `json:"thread"`
+	UnreadCount int            `json:"unread_count"`
+}
+
+// FeedbackSupersedeInput defines model for FeedbackSupersedeInput.
+type FeedbackSupersedeInput struct {
+	Versions []FeedbackSupersedeVersion `json:"versions"`
+}
+
+// FeedbackSupersedeVersion defines model for FeedbackSupersedeVersion.
+type FeedbackSupersedeVersion struct {
+	ExpectedRevision int `json:"expected_revision"`
+
+	// Target Echo the target from the displayed feedback response on every write. A stale Publisher or thread returns 409. A null thread is valid only when starting a conversation or retrying that same first message.
+	Target    FeedbackWriteTarget `json:"target"`
+	VersionId openapi_types.UUID  `json:"version_id"`
+}
+
+// FeedbackThread defines model for FeedbackThread.
+type FeedbackThread struct {
+	Archived       bool               `json:"archived"`
+	Id             openapi_types.UUID `json:"id"`
+	LastMessageAt  time.Time          `json:"last_message_at"`
+	LastMessageSeq int                `json:"last_message_seq"`
+	NodeId         string             `json:"node_id"`
+	PublisherId    string             `json:"publisher_id"`
+	Revision       int                `json:"revision"`
+	State          FeedbackState      `json:"state"`
+	Version        string             `json:"version"`
+	VersionId      openapi_types.UUID `json:"version_id"`
+}
+
+// FeedbackWriteTarget Echo the target from the displayed feedback response on every write. A stale Publisher or thread returns 409. A null thread is valid only when starting a conversation or retrying that same first message.
+type FeedbackWriteTarget struct {
+	PublisherId string              `json:"publisher_id"`
+	ThreadId    *openapi_types.UUID `json:"thread_id"`
 }
 
 // GitCommitSummary defines model for GitCommitSummary.
@@ -303,8 +519,8 @@ type NodeVersion struct {
 	NodeId *string            `json:"node_id,omitempty"`
 	Status *NodeVersionStatus `json:"status,omitempty"`
 
-	// StatusReason The reason for the status change.
-	StatusReason *string `json:"status_reason,omitempty"`
+	// TagsAdmin Public installation information used by Manager policies. Only trusted administrators can write these tags.
+	TagsAdmin *[]string `json:"tags_admin,omitempty"`
 
 	// Version The version identifier, following semantic versioning. Must be unique for the node.
 	Version *string `json:"version,omitempty"`
@@ -416,8 +632,27 @@ type User struct {
 	Name *string `json:"name,omitempty"`
 }
 
+// VersionFeedbackStatus unprocessed: no feedback messages; processed: the latest message is from an admin; needs_response: the latest message is from an author. Only the current Publisher conversation is considered, including resolved or archived conversations.
+type VersionFeedbackStatus string
+
 // WorkflowRunStatus defines model for WorkflowRunStatus.
 type WorkflowRunStatus string
+
+// AdminListVersionFeedbackParams defines parameters for AdminListVersionFeedback.
+type AdminListVersionFeedbackParams struct {
+	// NodeId Exact match. Omit to leave unrestricted; an explicitly empty value matches no conversations.
+	NodeId *string `form:"nodeId,omitempty" json:"nodeId,omitempty"`
+
+	// PublisherId Exact match. Omit to leave unrestricted; an explicitly empty value matches no conversations.
+	PublisherId *string        `form:"publisherId,omitempty" json:"publisherId,omitempty"`
+	State       *FeedbackState `form:"state,omitempty" json:"state,omitempty"`
+	Cursor      *string        `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// AdminGetVersionFeedbackParams defines parameters for AdminGetVersionFeedback.
+type AdminGetVersionFeedbackParams struct {
+	BeforeSeq *int `form:"before_seq,omitempty" json:"before_seq,omitempty"`
+}
 
 // AdminUpdateNodeVersionJSONBody defines parameters for AdminUpdateNodeVersion.
 type AdminUpdateNodeVersionJSONBody struct {
@@ -425,6 +660,24 @@ type AdminUpdateNodeVersionJSONBody struct {
 
 	// StatusReason The reason for the status change.
 	StatusReason *string `json:"status_reason,omitempty"`
+
+	// TagsAdmin Public installation policy tags. Only admins can write this field.
+	TagsAdmin *[]string `json:"tags_admin,omitempty"`
+}
+
+// AdminListNodeVersionsParams defines parameters for AdminListNodeVersions.
+type AdminListNodeVersionsParams struct {
+	NodeId       *string              `form:"nodeId,omitempty" json:"nodeId,omitempty"`
+	Statuses     *[]NodeVersionStatus `form:"statuses,omitempty" json:"statuses,omitempty"`
+	StatusReason *string              `form:"status_reason,omitempty" json:"status_reason,omitempty"`
+
+	// Version Exact nodepack version number. Applied before pagination; combine with nodeId for a replacement-version link. An explicitly empty value matches no versions.
+	Version *string `form:"version,omitempty" json:"version,omitempty"`
+
+	// FeedbackStatus Filter by the latest feedback message for the current Publisher. Applied before counting and pagination, independently of conversation resolution and version moderation status. Omit to include all versions.
+	FeedbackStatus *VersionFeedbackStatus `form:"feedback_status,omitempty" json:"feedback_status,omitempty"`
+	Page           *int                   `form:"page,omitempty" json:"page,omitempty"`
+	PageSize       *int                   `form:"pageSize,omitempty" json:"pageSize,omitempty"`
 }
 
 // GetBranchParams defines parameters for GetBranch.
@@ -533,8 +786,10 @@ type PostNodeReviewParams struct {
 
 // ListNodeVersionsParams defines parameters for ListNodeVersions.
 type ListNodeVersionsParams struct {
-	Statuses            *[]NodeVersionStatus `form:"statuses,omitempty" json:"statuses,omitempty"`
-	IncludeStatusReason *bool                `form:"include_status_reason,omitempty" json:"include_status_reason,omitempty"`
+	Statuses *[]NodeVersionStatus `form:"statuses,omitempty" json:"statuses,omitempty"`
+
+	// IncludeStatusReason Ignored. Raw scan reports are available only from authenticated admin endpoints.
+	IncludeStatusReason *bool `form:"include_status_reason,omitempty" json:"include_status_reason,omitempty"`
 }
 
 // CreateComfyNodesJSONBody defines parameters for CreateComfyNodes.
@@ -562,6 +817,11 @@ type PublishNodeVersionJSONBody struct {
 	Node                Node        `json:"node"`
 	NodeVersion         NodeVersion `json:"node_version"`
 	PersonalAccessToken string      `json:"personal_access_token"`
+}
+
+// AuthorGetVersionFeedbackParams defines parameters for AuthorGetVersionFeedback.
+type AuthorGetVersionFeedbackParams struct {
+	BeforeSeq *int `form:"before_seq,omitempty" json:"before_seq,omitempty"`
 }
 
 // SecurityScanParams defines parameters for SecurityScan.
@@ -640,11 +900,24 @@ type PostUploadArtifactJSONBody struct {
 	WorkflowName string `json:"workflow_name"`
 }
 
+// AuthorListVersionFeedbackParams defines parameters for AuthorListVersionFeedback.
+type AuthorListVersionFeedbackParams struct {
+	// NodeId Exact match. Omit to leave unrestricted; an explicitly empty value matches no conversations.
+	NodeId *string `form:"nodeId,omitempty" json:"nodeId,omitempty"`
+
+	// PublisherId Exact match. Omit to leave unrestricted; an explicitly empty value matches no conversations.
+	PublisherId *string        `form:"publisherId,omitempty" json:"publisherId,omitempty"`
+	State       *FeedbackState `form:"state,omitempty" json:"state,omitempty"`
+	Cursor      *string        `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
 // ListAllNodeVersionsParams defines parameters for ListAllNodeVersions.
 type ListAllNodeVersionsParams struct {
-	NodeId              *string              `form:"nodeId,omitempty" json:"nodeId,omitempty"`
-	Statuses            *[]NodeVersionStatus `form:"statuses,omitempty" json:"statuses,omitempty"`
-	IncludeStatusReason *bool                `form:"include_status_reason,omitempty" json:"include_status_reason,omitempty"`
+	NodeId   *string              `form:"nodeId,omitempty" json:"nodeId,omitempty"`
+	Statuses *[]NodeVersionStatus `form:"statuses,omitempty" json:"statuses,omitempty"`
+
+	// IncludeStatusReason Ignored. Raw scan reports are available only from authenticated admin endpoints.
+	IncludeStatusReason *bool `form:"include_status_reason,omitempty" json:"include_status_reason,omitempty"`
 
 	// Page The page number to retrieve.
 	Page *int `form:"page,omitempty" json:"page,omitempty"`
@@ -652,6 +925,15 @@ type ListAllNodeVersionsParams struct {
 	// PageSize The number of items to include per page.
 	PageSize *int `form:"pageSize,omitempty" json:"pageSize,omitempty"`
 }
+
+// AdminSetVersionFeedbackStateJSONRequestBody defines body for AdminSetVersionFeedbackState for application/json ContentType.
+type AdminSetVersionFeedbackStateJSONRequestBody = FeedbackStateInput
+
+// AdminSendVersionFeedbackJSONRequestBody defines body for AdminSendVersionFeedback for application/json ContentType.
+type AdminSendVersionFeedbackJSONRequestBody = FeedbackMessageInput
+
+// AdminReadVersionFeedbackJSONRequestBody defines body for AdminReadVersionFeedback for application/json ContentType.
+type AdminReadVersionFeedbackJSONRequestBody = FeedbackReadInput
 
 // AdminUpdateNodeVersionJSONRequestBody defines body for AdminUpdateNodeVersion for application/json ContentType.
 type AdminUpdateNodeVersionJSONRequestBody AdminUpdateNodeVersionJSONBody
@@ -677,6 +959,15 @@ type PublishNodeVersionJSONRequestBody PublishNodeVersionJSONBody
 // UpdateNodeVersionJSONRequestBody defines body for UpdateNodeVersion for application/json ContentType.
 type UpdateNodeVersionJSONRequestBody = NodeVersionUpdateRequest
 
+// AuthorSendVersionFeedbackJSONRequestBody defines body for AuthorSendVersionFeedback for application/json ContentType.
+type AuthorSendVersionFeedbackJSONRequestBody = FeedbackMessageInput
+
+// AuthorReadVersionFeedbackJSONRequestBody defines body for AuthorReadVersionFeedback for application/json ContentType.
+type AuthorReadVersionFeedbackJSONRequestBody = FeedbackReadInput
+
+// AuthorSupersedeVersionFeedbackJSONRequestBody defines body for AuthorSupersedeVersionFeedback for application/json ContentType.
+type AuthorSupersedeVersionFeedbackJSONRequestBody = FeedbackSupersedeInput
+
 // CreatePersonalAccessTokenJSONRequestBody defines body for CreatePersonalAccessToken for application/json ContentType.
 type CreatePersonalAccessTokenJSONRequestBody = PersonalAccessToken
 
@@ -685,9 +976,27 @@ type PostUploadArtifactJSONRequestBody PostUploadArtifactJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// List private conversations by current state
+	// (GET /admin/node-version-feedback)
+	AdminListVersionFeedback(ctx echo.Context, params AdminListVersionFeedbackParams) error
+	// Read a private version conversation and its allowed actions
+	// (GET /admin/nodes/{nodeId}/versions/{versionId}/feedback)
+	AdminGetVersionFeedback(ctx echo.Context, nodeId string, versionId openapi_types.UUID, params AdminGetVersionFeedbackParams) error
+	// Resolve or reopen a private conversation
+	// (PATCH /admin/nodes/{nodeId}/versions/{versionId}/feedback)
+	AdminSetVersionFeedbackState(ctx echo.Context, nodeId string, versionId openapi_types.UUID) error
+	// Start or reply to a private version conversation
+	// (POST /admin/nodes/{nodeId}/versions/{versionId}/feedback/messages)
+	AdminSendVersionFeedback(ctx echo.Context, nodeId string, versionId openapi_types.UUID) error
+	// Acknowledge processed messages without replying
+	// (POST /admin/nodes/{nodeId}/versions/{versionId}/feedback/read)
+	AdminReadVersionFeedback(ctx echo.Context, nodeId string, versionId openapi_types.UUID) error
 	// Admin Update Node Version Status
 	// (PUT /admin/nodes/{nodeId}/versions/{versionNumber})
 	AdminUpdateNodeVersion(ctx echo.Context, nodeId string, versionNumber string) error
+	// List admin versions by moderation and feedback handling status
+	// (GET /admin/nodeversions)
+	AdminListNodeVersions(ctx echo.Context, params AdminListNodeVersionsParams) error
 	// Retrieve all distinct branches for a given repo
 	// (GET /branch)
 	GetBranch(ctx echo.Context, params GetBranchParams) error
@@ -778,6 +1087,18 @@ type ServerInterface interface {
 	// Update changelog and deprecation status of a node version
 	// (PUT /publishers/{publisherId}/nodes/{nodeId}/versions/{versionId})
 	UpdateNodeVersion(ctx echo.Context, publisherId string, nodeId string, versionId string) error
+
+	// (GET /publishers/{publisherId}/nodes/{nodeId}/versions/{versionId}/feedback)
+	AuthorGetVersionFeedback(ctx echo.Context, publisherId string, nodeId string, versionId openapi_types.UUID, params AuthorGetVersionFeedbackParams) error
+
+	// (POST /publishers/{publisherId}/nodes/{nodeId}/versions/{versionId}/feedback/messages)
+	AuthorSendVersionFeedback(ctx echo.Context, publisherId string, nodeId string, versionId openapi_types.UUID) error
+
+	// (POST /publishers/{publisherId}/nodes/{nodeId}/versions/{versionId}/feedback/read)
+	AuthorReadVersionFeedback(ctx echo.Context, publisherId string, nodeId string, versionId openapi_types.UUID) error
+	// Deprecate earlier versions and close their feedback in favor of this replacement version
+	// (POST /publishers/{publisherId}/nodes/{nodeId}/versions/{versionId}/feedback/supersede)
+	AuthorSupersedeVersionFeedback(ctx echo.Context, publisherId string, nodeId string, versionId openapi_types.UUID) error
 	// Retrieve permissions the user has for a given publisher
 	// (GET /publishers/{publisherId}/permissions)
 	GetPermissionOnPublisher(ctx echo.Context, publisherId string) error
@@ -799,6 +1120,9 @@ type ServerInterface interface {
 	// Get information about the calling user.
 	// (GET /users)
 	GetUser(ctx echo.Context) error
+
+	// (GET /users/me/node-version-feedback)
+	AuthorListVersionFeedback(ctx echo.Context, params AuthorListVersionFeedbackParams) error
 	// Retrieve all publishers for a given user
 	// (GET /users/publishers/)
 	ListPublishersForUser(ctx echo.Context) error
@@ -813,6 +1137,160 @@ type ServerInterface interface {
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+}
+
+// AdminListVersionFeedback converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminListVersionFeedback(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminListVersionFeedbackParams
+	// ------------- Optional query parameter "nodeId" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "nodeId", ctx.QueryParams(), &params.NodeId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter nodeId: %s", err))
+	}
+
+	// ------------- Optional query parameter "publisherId" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "publisherId", ctx.QueryParams(), &params.PublisherId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter publisherId: %s", err))
+	}
+
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "state", ctx.QueryParams(), &params.State)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter state: %s", err))
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cursor", ctx.QueryParams(), &params.Cursor)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cursor: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminListVersionFeedback(ctx, params)
+	return err
+}
+
+// AdminGetVersionFeedback converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminGetVersionFeedback(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "nodeId" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "nodeId", ctx.Param("nodeId"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter nodeId: %s", err))
+	}
+
+	// ------------- Path parameter "versionId" -------------
+	var versionId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "versionId", ctx.Param("versionId"), &versionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter versionId: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminGetVersionFeedbackParams
+	// ------------- Optional query parameter "before_seq" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "before_seq", ctx.QueryParams(), &params.BeforeSeq)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter before_seq: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminGetVersionFeedback(ctx, nodeId, versionId, params)
+	return err
+}
+
+// AdminSetVersionFeedbackState converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminSetVersionFeedbackState(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "nodeId" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "nodeId", ctx.Param("nodeId"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter nodeId: %s", err))
+	}
+
+	// ------------- Path parameter "versionId" -------------
+	var versionId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "versionId", ctx.Param("versionId"), &versionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter versionId: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminSetVersionFeedbackState(ctx, nodeId, versionId)
+	return err
+}
+
+// AdminSendVersionFeedback converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminSendVersionFeedback(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "nodeId" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "nodeId", ctx.Param("nodeId"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter nodeId: %s", err))
+	}
+
+	// ------------- Path parameter "versionId" -------------
+	var versionId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "versionId", ctx.Param("versionId"), &versionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter versionId: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminSendVersionFeedback(ctx, nodeId, versionId)
+	return err
+}
+
+// AdminReadVersionFeedback converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminReadVersionFeedback(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "nodeId" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "nodeId", ctx.Param("nodeId"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter nodeId: %s", err))
+	}
+
+	// ------------- Path parameter "versionId" -------------
+	var versionId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "versionId", ctx.Param("versionId"), &versionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter versionId: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminReadVersionFeedback(ctx, nodeId, versionId)
+	return err
 }
 
 // AdminUpdateNodeVersion converts echo context to params.
@@ -838,6 +1316,68 @@ func (w *ServerInterfaceWrapper) AdminUpdateNodeVersion(ctx echo.Context) error 
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.AdminUpdateNodeVersion(ctx, nodeId, versionNumber)
+	return err
+}
+
+// AdminListNodeVersions converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminListNodeVersions(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminListNodeVersionsParams
+	// ------------- Optional query parameter "nodeId" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "nodeId", ctx.QueryParams(), &params.NodeId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter nodeId: %s", err))
+	}
+
+	// ------------- Optional query parameter "statuses" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "statuses", ctx.QueryParams(), &params.Statuses)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter statuses: %s", err))
+	}
+
+	// ------------- Optional query parameter "status_reason" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "status_reason", ctx.QueryParams(), &params.StatusReason)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter status_reason: %s", err))
+	}
+
+	// ------------- Optional query parameter "version" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "version", ctx.QueryParams(), &params.Version)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter version: %s", err))
+	}
+
+	// ------------- Optional query parameter "feedback_status" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "feedback_status", ctx.QueryParams(), &params.FeedbackStatus)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter feedback_status: %s", err))
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "page", ctx.QueryParams(), &params.Page)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter page: %s", err))
+	}
+
+	// ------------- Optional query parameter "pageSize" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "pageSize", ctx.QueryParams(), &params.PageSize)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter pageSize: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminListNodeVersions(ctx, params)
 	return err
 }
 
@@ -1609,6 +2149,151 @@ func (w *ServerInterfaceWrapper) UpdateNodeVersion(ctx echo.Context) error {
 	return err
 }
 
+// AuthorGetVersionFeedback converts echo context to params.
+func (w *ServerInterfaceWrapper) AuthorGetVersionFeedback(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "publisherId" -------------
+	var publisherId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "publisherId", ctx.Param("publisherId"), &publisherId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter publisherId: %s", err))
+	}
+
+	// ------------- Path parameter "nodeId" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "nodeId", ctx.Param("nodeId"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter nodeId: %s", err))
+	}
+
+	// ------------- Path parameter "versionId" -------------
+	var versionId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "versionId", ctx.Param("versionId"), &versionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter versionId: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AuthorGetVersionFeedbackParams
+	// ------------- Optional query parameter "before_seq" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "before_seq", ctx.QueryParams(), &params.BeforeSeq)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter before_seq: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AuthorGetVersionFeedback(ctx, publisherId, nodeId, versionId, params)
+	return err
+}
+
+// AuthorSendVersionFeedback converts echo context to params.
+func (w *ServerInterfaceWrapper) AuthorSendVersionFeedback(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "publisherId" -------------
+	var publisherId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "publisherId", ctx.Param("publisherId"), &publisherId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter publisherId: %s", err))
+	}
+
+	// ------------- Path parameter "nodeId" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "nodeId", ctx.Param("nodeId"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter nodeId: %s", err))
+	}
+
+	// ------------- Path parameter "versionId" -------------
+	var versionId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "versionId", ctx.Param("versionId"), &versionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter versionId: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AuthorSendVersionFeedback(ctx, publisherId, nodeId, versionId)
+	return err
+}
+
+// AuthorReadVersionFeedback converts echo context to params.
+func (w *ServerInterfaceWrapper) AuthorReadVersionFeedback(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "publisherId" -------------
+	var publisherId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "publisherId", ctx.Param("publisherId"), &publisherId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter publisherId: %s", err))
+	}
+
+	// ------------- Path parameter "nodeId" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "nodeId", ctx.Param("nodeId"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter nodeId: %s", err))
+	}
+
+	// ------------- Path parameter "versionId" -------------
+	var versionId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "versionId", ctx.Param("versionId"), &versionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter versionId: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AuthorReadVersionFeedback(ctx, publisherId, nodeId, versionId)
+	return err
+}
+
+// AuthorSupersedeVersionFeedback converts echo context to params.
+func (w *ServerInterfaceWrapper) AuthorSupersedeVersionFeedback(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "publisherId" -------------
+	var publisherId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "publisherId", ctx.Param("publisherId"), &publisherId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter publisherId: %s", err))
+	}
+
+	// ------------- Path parameter "nodeId" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "nodeId", ctx.Param("nodeId"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter nodeId: %s", err))
+	}
+
+	// ------------- Path parameter "versionId" -------------
+	var versionId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "versionId", ctx.Param("versionId"), &versionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter versionId: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AuthorSupersedeVersionFeedback(ctx, publisherId, nodeId, versionId)
+	return err
+}
+
 // GetPermissionOnPublisher converts echo context to params.
 func (w *ServerInterfaceWrapper) GetPermissionOnPublisher(ctx echo.Context) error {
 	var err error
@@ -1732,6 +2417,47 @@ func (w *ServerInterfaceWrapper) GetUser(ctx echo.Context) error {
 	return err
 }
 
+// AuthorListVersionFeedback converts echo context to params.
+func (w *ServerInterfaceWrapper) AuthorListVersionFeedback(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AuthorListVersionFeedbackParams
+	// ------------- Optional query parameter "nodeId" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "nodeId", ctx.QueryParams(), &params.NodeId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter nodeId: %s", err))
+	}
+
+	// ------------- Optional query parameter "publisherId" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "publisherId", ctx.QueryParams(), &params.PublisherId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter publisherId: %s", err))
+	}
+
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "state", ctx.QueryParams(), &params.State)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter state: %s", err))
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cursor", ctx.QueryParams(), &params.Cursor)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cursor: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AuthorListVersionFeedback(ctx, params)
+	return err
+}
+
 // ListPublishersForUser converts echo context to params.
 func (w *ServerInterfaceWrapper) ListPublishersForUser(ctx echo.Context) error {
 	var err error
@@ -1831,7 +2557,13 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
+	router.GET(baseURL+"/admin/node-version-feedback", wrapper.AdminListVersionFeedback)
+	router.GET(baseURL+"/admin/nodes/:nodeId/versions/:versionId/feedback", wrapper.AdminGetVersionFeedback)
+	router.PATCH(baseURL+"/admin/nodes/:nodeId/versions/:versionId/feedback", wrapper.AdminSetVersionFeedbackState)
+	router.POST(baseURL+"/admin/nodes/:nodeId/versions/:versionId/feedback/messages", wrapper.AdminSendVersionFeedback)
+	router.POST(baseURL+"/admin/nodes/:nodeId/versions/:versionId/feedback/read", wrapper.AdminReadVersionFeedback)
 	router.PUT(baseURL+"/admin/nodes/:nodeId/versions/:versionNumber", wrapper.AdminUpdateNodeVersion)
+	router.GET(baseURL+"/admin/nodeversions", wrapper.AdminListNodeVersions)
 	router.GET(baseURL+"/branch", wrapper.GetBranch)
 	router.POST(baseURL+"/comfy-nodes/backfill", wrapper.ComfyNodesBackfill)
 	router.GET(baseURL+"/gitcommit", wrapper.GetGitcommit)
@@ -1862,6 +2594,10 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/publishers/:publisherId/nodes/:nodeId/versions", wrapper.PublishNodeVersion)
 	router.DELETE(baseURL+"/publishers/:publisherId/nodes/:nodeId/versions/:versionId", wrapper.DeleteNodeVersion)
 	router.PUT(baseURL+"/publishers/:publisherId/nodes/:nodeId/versions/:versionId", wrapper.UpdateNodeVersion)
+	router.GET(baseURL+"/publishers/:publisherId/nodes/:nodeId/versions/:versionId/feedback", wrapper.AuthorGetVersionFeedback)
+	router.POST(baseURL+"/publishers/:publisherId/nodes/:nodeId/versions/:versionId/feedback/messages", wrapper.AuthorSendVersionFeedback)
+	router.POST(baseURL+"/publishers/:publisherId/nodes/:nodeId/versions/:versionId/feedback/read", wrapper.AuthorReadVersionFeedback)
+	router.POST(baseURL+"/publishers/:publisherId/nodes/:nodeId/versions/:versionId/feedback/supersede", wrapper.AuthorSupersedeVersionFeedback)
 	router.GET(baseURL+"/publishers/:publisherId/permissions", wrapper.GetPermissionOnPublisher)
 	router.GET(baseURL+"/publishers/:publisherId/tokens", wrapper.ListPersonalAccessTokens)
 	router.POST(baseURL+"/publishers/:publisherId/tokens", wrapper.CreatePersonalAccessToken)
@@ -1869,10 +2605,164 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/security-scan", wrapper.SecurityScan)
 	router.POST(baseURL+"/upload-artifact", wrapper.PostUploadArtifact)
 	router.GET(baseURL+"/users", wrapper.GetUser)
+	router.GET(baseURL+"/users/me/node-version-feedback", wrapper.AuthorListVersionFeedback)
 	router.GET(baseURL+"/users/publishers/", wrapper.ListPublishersForUser)
 	router.GET(baseURL+"/versions", wrapper.ListAllNodeVersions)
 	router.GET(baseURL+"/workflowresult/:workflowResultId", wrapper.GetWorkflowResult)
 
+}
+
+type AdminListVersionFeedbackRequestObject struct {
+	Params AdminListVersionFeedbackParams
+}
+
+type AdminListVersionFeedbackResponseObject interface {
+	VisitAdminListVersionFeedbackResponse(w http.ResponseWriter) error
+}
+
+type AdminListVersionFeedback200JSONResponse FeedbackInbox
+
+func (response AdminListVersionFeedback200JSONResponse) VisitAdminListVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListVersionFeedbackdefaultJSONResponse struct {
+	Body       FeedbackError
+	StatusCode int
+}
+
+func (response AdminListVersionFeedbackdefaultJSONResponse) VisitAdminListVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type AdminGetVersionFeedbackRequestObject struct {
+	NodeId    string             `json:"nodeId"`
+	VersionId openapi_types.UUID `json:"versionId"`
+	Params    AdminGetVersionFeedbackParams
+}
+
+type AdminGetVersionFeedbackResponseObject interface {
+	VisitAdminGetVersionFeedbackResponse(w http.ResponseWriter) error
+}
+
+type AdminGetVersionFeedback200JSONResponse FeedbackResponse
+
+func (response AdminGetVersionFeedback200JSONResponse) VisitAdminGetVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminGetVersionFeedbackdefaultJSONResponse struct {
+	Body       FeedbackError
+	StatusCode int
+}
+
+func (response AdminGetVersionFeedbackdefaultJSONResponse) VisitAdminGetVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type AdminSetVersionFeedbackStateRequestObject struct {
+	NodeId    string             `json:"nodeId"`
+	VersionId openapi_types.UUID `json:"versionId"`
+	Body      *AdminSetVersionFeedbackStateJSONRequestBody
+}
+
+type AdminSetVersionFeedbackStateResponseObject interface {
+	VisitAdminSetVersionFeedbackStateResponse(w http.ResponseWriter) error
+}
+
+type AdminSetVersionFeedbackState200JSONResponse FeedbackResponse
+
+func (response AdminSetVersionFeedbackState200JSONResponse) VisitAdminSetVersionFeedbackStateResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminSetVersionFeedbackStatedefaultJSONResponse struct {
+	Body       FeedbackError
+	StatusCode int
+}
+
+func (response AdminSetVersionFeedbackStatedefaultJSONResponse) VisitAdminSetVersionFeedbackStateResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type AdminSendVersionFeedbackRequestObject struct {
+	NodeId    string             `json:"nodeId"`
+	VersionId openapi_types.UUID `json:"versionId"`
+	Body      *AdminSendVersionFeedbackJSONRequestBody
+}
+
+type AdminSendVersionFeedbackResponseObject interface {
+	VisitAdminSendVersionFeedbackResponse(w http.ResponseWriter) error
+}
+
+type AdminSendVersionFeedback200JSONResponse FeedbackResponse
+
+func (response AdminSendVersionFeedback200JSONResponse) VisitAdminSendVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminSendVersionFeedbackdefaultJSONResponse struct {
+	Body       FeedbackError
+	StatusCode int
+}
+
+func (response AdminSendVersionFeedbackdefaultJSONResponse) VisitAdminSendVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type AdminReadVersionFeedbackRequestObject struct {
+	NodeId    string             `json:"nodeId"`
+	VersionId openapi_types.UUID `json:"versionId"`
+	Body      *AdminReadVersionFeedbackJSONRequestBody
+}
+
+type AdminReadVersionFeedbackResponseObject interface {
+	VisitAdminReadVersionFeedbackResponse(w http.ResponseWriter) error
+}
+
+type AdminReadVersionFeedback200JSONResponse FeedbackReadResult
+
+func (response AdminReadVersionFeedback200JSONResponse) VisitAdminReadVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminReadVersionFeedbackdefaultJSONResponse struct {
+	Body       FeedbackError
+	StatusCode int
+}
+
+func (response AdminReadVersionFeedbackdefaultJSONResponse) VisitAdminReadVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 type AdminUpdateNodeVersionRequestObject struct {
@@ -1936,6 +2826,35 @@ func (response AdminUpdateNodeVersion500JSONResponse) VisitAdminUpdateNodeVersio
 	w.WriteHeader(500)
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListNodeVersionsRequestObject struct {
+	Params AdminListNodeVersionsParams
+}
+
+type AdminListNodeVersionsResponseObject interface {
+	VisitAdminListNodeVersionsResponse(w http.ResponseWriter) error
+}
+
+type AdminListNodeVersions200JSONResponse AdminVersionList
+
+func (response AdminListNodeVersions200JSONResponse) VisitAdminListNodeVersionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListNodeVersionsdefaultJSONResponse struct {
+	Body       FeedbackError
+	StatusCode int
+}
+
+func (response AdminListNodeVersionsdefaultJSONResponse) VisitAdminListNodeVersionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 type GetBranchRequestObject struct {
@@ -3308,6 +4227,133 @@ func (response UpdateNodeVersion500JSONResponse) VisitUpdateNodeVersionResponse(
 	return json.NewEncoder(w).Encode(response)
 }
 
+type AuthorGetVersionFeedbackRequestObject struct {
+	PublisherId string             `json:"publisherId"`
+	NodeId      string             `json:"nodeId"`
+	VersionId   openapi_types.UUID `json:"versionId"`
+	Params      AuthorGetVersionFeedbackParams
+}
+
+type AuthorGetVersionFeedbackResponseObject interface {
+	VisitAuthorGetVersionFeedbackResponse(w http.ResponseWriter) error
+}
+
+type AuthorGetVersionFeedback200JSONResponse FeedbackResponse
+
+func (response AuthorGetVersionFeedback200JSONResponse) VisitAuthorGetVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AuthorGetVersionFeedbackdefaultJSONResponse struct {
+	Body       FeedbackError
+	StatusCode int
+}
+
+func (response AuthorGetVersionFeedbackdefaultJSONResponse) VisitAuthorGetVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type AuthorSendVersionFeedbackRequestObject struct {
+	PublisherId string             `json:"publisherId"`
+	NodeId      string             `json:"nodeId"`
+	VersionId   openapi_types.UUID `json:"versionId"`
+	Body        *AuthorSendVersionFeedbackJSONRequestBody
+}
+
+type AuthorSendVersionFeedbackResponseObject interface {
+	VisitAuthorSendVersionFeedbackResponse(w http.ResponseWriter) error
+}
+
+type AuthorSendVersionFeedback200JSONResponse FeedbackResponse
+
+func (response AuthorSendVersionFeedback200JSONResponse) VisitAuthorSendVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AuthorSendVersionFeedbackdefaultJSONResponse struct {
+	Body       FeedbackError
+	StatusCode int
+}
+
+func (response AuthorSendVersionFeedbackdefaultJSONResponse) VisitAuthorSendVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type AuthorReadVersionFeedbackRequestObject struct {
+	PublisherId string             `json:"publisherId"`
+	NodeId      string             `json:"nodeId"`
+	VersionId   openapi_types.UUID `json:"versionId"`
+	Body        *AuthorReadVersionFeedbackJSONRequestBody
+}
+
+type AuthorReadVersionFeedbackResponseObject interface {
+	VisitAuthorReadVersionFeedbackResponse(w http.ResponseWriter) error
+}
+
+type AuthorReadVersionFeedback200JSONResponse FeedbackReadResult
+
+func (response AuthorReadVersionFeedback200JSONResponse) VisitAuthorReadVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AuthorReadVersionFeedbackdefaultJSONResponse struct {
+	Body       FeedbackError
+	StatusCode int
+}
+
+func (response AuthorReadVersionFeedbackdefaultJSONResponse) VisitAuthorReadVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type AuthorSupersedeVersionFeedbackRequestObject struct {
+	PublisherId string             `json:"publisherId"`
+	NodeId      string             `json:"nodeId"`
+	VersionId   openapi_types.UUID `json:"versionId"`
+	Body        *AuthorSupersedeVersionFeedbackJSONRequestBody
+}
+
+type AuthorSupersedeVersionFeedbackResponseObject interface {
+	VisitAuthorSupersedeVersionFeedbackResponse(w http.ResponseWriter) error
+}
+
+type AuthorSupersedeVersionFeedback204Response struct {
+}
+
+func (response AuthorSupersedeVersionFeedback204Response) VisitAuthorSupersedeVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AuthorSupersedeVersionFeedbackdefaultJSONResponse struct {
+	Body       FeedbackError
+	StatusCode int
+}
+
+func (response AuthorSupersedeVersionFeedbackdefaultJSONResponse) VisitAuthorSupersedeVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 type GetPermissionOnPublisherRequestObject struct {
 	PublisherId string `json:"publisherId"`
 }
@@ -3599,6 +4645,35 @@ func (response GetUser404Response) VisitGetUserResponse(w http.ResponseWriter) e
 	return nil
 }
 
+type AuthorListVersionFeedbackRequestObject struct {
+	Params AuthorListVersionFeedbackParams
+}
+
+type AuthorListVersionFeedbackResponseObject interface {
+	VisitAuthorListVersionFeedbackResponse(w http.ResponseWriter) error
+}
+
+type AuthorListVersionFeedback200JSONResponse FeedbackInbox
+
+func (response AuthorListVersionFeedback200JSONResponse) VisitAuthorListVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AuthorListVersionFeedbackdefaultJSONResponse struct {
+	Body       FeedbackError
+	StatusCode int
+}
+
+func (response AuthorListVersionFeedbackdefaultJSONResponse) VisitAuthorListVersionFeedbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 type ListPublishersForUserRequestObject struct {
 }
 
@@ -3727,9 +4802,27 @@ func (response GetWorkflowResult500JSONResponse) VisitGetWorkflowResultResponse(
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// List private conversations by current state
+	// (GET /admin/node-version-feedback)
+	AdminListVersionFeedback(ctx context.Context, request AdminListVersionFeedbackRequestObject) (AdminListVersionFeedbackResponseObject, error)
+	// Read a private version conversation and its allowed actions
+	// (GET /admin/nodes/{nodeId}/versions/{versionId}/feedback)
+	AdminGetVersionFeedback(ctx context.Context, request AdminGetVersionFeedbackRequestObject) (AdminGetVersionFeedbackResponseObject, error)
+	// Resolve or reopen a private conversation
+	// (PATCH /admin/nodes/{nodeId}/versions/{versionId}/feedback)
+	AdminSetVersionFeedbackState(ctx context.Context, request AdminSetVersionFeedbackStateRequestObject) (AdminSetVersionFeedbackStateResponseObject, error)
+	// Start or reply to a private version conversation
+	// (POST /admin/nodes/{nodeId}/versions/{versionId}/feedback/messages)
+	AdminSendVersionFeedback(ctx context.Context, request AdminSendVersionFeedbackRequestObject) (AdminSendVersionFeedbackResponseObject, error)
+	// Acknowledge processed messages without replying
+	// (POST /admin/nodes/{nodeId}/versions/{versionId}/feedback/read)
+	AdminReadVersionFeedback(ctx context.Context, request AdminReadVersionFeedbackRequestObject) (AdminReadVersionFeedbackResponseObject, error)
 	// Admin Update Node Version Status
 	// (PUT /admin/nodes/{nodeId}/versions/{versionNumber})
 	AdminUpdateNodeVersion(ctx context.Context, request AdminUpdateNodeVersionRequestObject) (AdminUpdateNodeVersionResponseObject, error)
+	// List admin versions by moderation and feedback handling status
+	// (GET /admin/nodeversions)
+	AdminListNodeVersions(ctx context.Context, request AdminListNodeVersionsRequestObject) (AdminListNodeVersionsResponseObject, error)
 	// Retrieve all distinct branches for a given repo
 	// (GET /branch)
 	GetBranch(ctx context.Context, request GetBranchRequestObject) (GetBranchResponseObject, error)
@@ -3820,6 +4913,18 @@ type StrictServerInterface interface {
 	// Update changelog and deprecation status of a node version
 	// (PUT /publishers/{publisherId}/nodes/{nodeId}/versions/{versionId})
 	UpdateNodeVersion(ctx context.Context, request UpdateNodeVersionRequestObject) (UpdateNodeVersionResponseObject, error)
+
+	// (GET /publishers/{publisherId}/nodes/{nodeId}/versions/{versionId}/feedback)
+	AuthorGetVersionFeedback(ctx context.Context, request AuthorGetVersionFeedbackRequestObject) (AuthorGetVersionFeedbackResponseObject, error)
+
+	// (POST /publishers/{publisherId}/nodes/{nodeId}/versions/{versionId}/feedback/messages)
+	AuthorSendVersionFeedback(ctx context.Context, request AuthorSendVersionFeedbackRequestObject) (AuthorSendVersionFeedbackResponseObject, error)
+
+	// (POST /publishers/{publisherId}/nodes/{nodeId}/versions/{versionId}/feedback/read)
+	AuthorReadVersionFeedback(ctx context.Context, request AuthorReadVersionFeedbackRequestObject) (AuthorReadVersionFeedbackResponseObject, error)
+	// Deprecate earlier versions and close their feedback in favor of this replacement version
+	// (POST /publishers/{publisherId}/nodes/{nodeId}/versions/{versionId}/feedback/supersede)
+	AuthorSupersedeVersionFeedback(ctx context.Context, request AuthorSupersedeVersionFeedbackRequestObject) (AuthorSupersedeVersionFeedbackResponseObject, error)
 	// Retrieve permissions the user has for a given publisher
 	// (GET /publishers/{publisherId}/permissions)
 	GetPermissionOnPublisher(ctx context.Context, request GetPermissionOnPublisherRequestObject) (GetPermissionOnPublisherResponseObject, error)
@@ -3841,6 +4946,9 @@ type StrictServerInterface interface {
 	// Get information about the calling user.
 	// (GET /users)
 	GetUser(ctx context.Context, request GetUserRequestObject) (GetUserResponseObject, error)
+
+	// (GET /users/me/node-version-feedback)
+	AuthorListVersionFeedback(ctx context.Context, request AuthorListVersionFeedbackRequestObject) (AuthorListVersionFeedbackResponseObject, error)
 	// Retrieve all publishers for a given user
 	// (GET /users/publishers/)
 	ListPublishersForUser(ctx context.Context, request ListPublishersForUserRequestObject) (ListPublishersForUserResponseObject, error)
@@ -3862,6 +4970,154 @@ func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareF
 type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
+}
+
+// AdminListVersionFeedback operation middleware
+func (sh *strictHandler) AdminListVersionFeedback(ctx echo.Context, params AdminListVersionFeedbackParams) error {
+	var request AdminListVersionFeedbackRequestObject
+
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListVersionFeedback(ctx.Request().Context(), request.(AdminListVersionFeedbackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListVersionFeedback")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListVersionFeedbackResponseObject); ok {
+		return validResponse.VisitAdminListVersionFeedbackResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminGetVersionFeedback operation middleware
+func (sh *strictHandler) AdminGetVersionFeedback(ctx echo.Context, nodeId string, versionId openapi_types.UUID, params AdminGetVersionFeedbackParams) error {
+	var request AdminGetVersionFeedbackRequestObject
+
+	request.NodeId = nodeId
+	request.VersionId = versionId
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetVersionFeedback(ctx.Request().Context(), request.(AdminGetVersionFeedbackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetVersionFeedback")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminGetVersionFeedbackResponseObject); ok {
+		return validResponse.VisitAdminGetVersionFeedbackResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminSetVersionFeedbackState operation middleware
+func (sh *strictHandler) AdminSetVersionFeedbackState(ctx echo.Context, nodeId string, versionId openapi_types.UUID) error {
+	var request AdminSetVersionFeedbackStateRequestObject
+
+	request.NodeId = nodeId
+	request.VersionId = versionId
+
+	var body AdminSetVersionFeedbackStateJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminSetVersionFeedbackState(ctx.Request().Context(), request.(AdminSetVersionFeedbackStateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminSetVersionFeedbackState")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminSetVersionFeedbackStateResponseObject); ok {
+		return validResponse.VisitAdminSetVersionFeedbackStateResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminSendVersionFeedback operation middleware
+func (sh *strictHandler) AdminSendVersionFeedback(ctx echo.Context, nodeId string, versionId openapi_types.UUID) error {
+	var request AdminSendVersionFeedbackRequestObject
+
+	request.NodeId = nodeId
+	request.VersionId = versionId
+
+	var body AdminSendVersionFeedbackJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminSendVersionFeedback(ctx.Request().Context(), request.(AdminSendVersionFeedbackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminSendVersionFeedback")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminSendVersionFeedbackResponseObject); ok {
+		return validResponse.VisitAdminSendVersionFeedbackResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminReadVersionFeedback operation middleware
+func (sh *strictHandler) AdminReadVersionFeedback(ctx echo.Context, nodeId string, versionId openapi_types.UUID) error {
+	var request AdminReadVersionFeedbackRequestObject
+
+	request.NodeId = nodeId
+	request.VersionId = versionId
+
+	var body AdminReadVersionFeedbackJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminReadVersionFeedback(ctx.Request().Context(), request.(AdminReadVersionFeedbackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminReadVersionFeedback")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminReadVersionFeedbackResponseObject); ok {
+		return validResponse.VisitAdminReadVersionFeedbackResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
 }
 
 // AdminUpdateNodeVersion operation middleware
@@ -3890,6 +5146,31 @@ func (sh *strictHandler) AdminUpdateNodeVersion(ctx echo.Context, nodeId string,
 		return err
 	} else if validResponse, ok := response.(AdminUpdateNodeVersionResponseObject); ok {
 		return validResponse.VisitAdminUpdateNodeVersionResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminListNodeVersions operation middleware
+func (sh *strictHandler) AdminListNodeVersions(ctx echo.Context, params AdminListNodeVersionsParams) error {
+	var request AdminListNodeVersionsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListNodeVersions(ctx.Request().Context(), request.(AdminListNodeVersionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListNodeVersions")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminListNodeVersionsResponseObject); ok {
+		return validResponse.VisitAdminListNodeVersionsResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}
@@ -4701,6 +5982,133 @@ func (sh *strictHandler) UpdateNodeVersion(ctx echo.Context, publisherId string,
 	return nil
 }
 
+// AuthorGetVersionFeedback operation middleware
+func (sh *strictHandler) AuthorGetVersionFeedback(ctx echo.Context, publisherId string, nodeId string, versionId openapi_types.UUID, params AuthorGetVersionFeedbackParams) error {
+	var request AuthorGetVersionFeedbackRequestObject
+
+	request.PublisherId = publisherId
+	request.NodeId = nodeId
+	request.VersionId = versionId
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AuthorGetVersionFeedback(ctx.Request().Context(), request.(AuthorGetVersionFeedbackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AuthorGetVersionFeedback")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AuthorGetVersionFeedbackResponseObject); ok {
+		return validResponse.VisitAuthorGetVersionFeedbackResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AuthorSendVersionFeedback operation middleware
+func (sh *strictHandler) AuthorSendVersionFeedback(ctx echo.Context, publisherId string, nodeId string, versionId openapi_types.UUID) error {
+	var request AuthorSendVersionFeedbackRequestObject
+
+	request.PublisherId = publisherId
+	request.NodeId = nodeId
+	request.VersionId = versionId
+
+	var body AuthorSendVersionFeedbackJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AuthorSendVersionFeedback(ctx.Request().Context(), request.(AuthorSendVersionFeedbackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AuthorSendVersionFeedback")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AuthorSendVersionFeedbackResponseObject); ok {
+		return validResponse.VisitAuthorSendVersionFeedbackResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AuthorReadVersionFeedback operation middleware
+func (sh *strictHandler) AuthorReadVersionFeedback(ctx echo.Context, publisherId string, nodeId string, versionId openapi_types.UUID) error {
+	var request AuthorReadVersionFeedbackRequestObject
+
+	request.PublisherId = publisherId
+	request.NodeId = nodeId
+	request.VersionId = versionId
+
+	var body AuthorReadVersionFeedbackJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AuthorReadVersionFeedback(ctx.Request().Context(), request.(AuthorReadVersionFeedbackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AuthorReadVersionFeedback")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AuthorReadVersionFeedbackResponseObject); ok {
+		return validResponse.VisitAuthorReadVersionFeedbackResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AuthorSupersedeVersionFeedback operation middleware
+func (sh *strictHandler) AuthorSupersedeVersionFeedback(ctx echo.Context, publisherId string, nodeId string, versionId openapi_types.UUID) error {
+	var request AuthorSupersedeVersionFeedbackRequestObject
+
+	request.PublisherId = publisherId
+	request.NodeId = nodeId
+	request.VersionId = versionId
+
+	var body AuthorSupersedeVersionFeedbackJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AuthorSupersedeVersionFeedback(ctx.Request().Context(), request.(AuthorSupersedeVersionFeedbackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AuthorSupersedeVersionFeedback")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AuthorSupersedeVersionFeedbackResponseObject); ok {
+		return validResponse.VisitAuthorSupersedeVersionFeedbackResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // GetPermissionOnPublisher operation middleware
 func (sh *strictHandler) GetPermissionOnPublisher(ctx echo.Context, publisherId string) error {
 	var request GetPermissionOnPublisherRequestObject
@@ -4885,6 +6293,31 @@ func (sh *strictHandler) GetUser(ctx echo.Context) error {
 	return nil
 }
 
+// AuthorListVersionFeedback operation middleware
+func (sh *strictHandler) AuthorListVersionFeedback(ctx echo.Context, params AuthorListVersionFeedbackParams) error {
+	var request AuthorListVersionFeedbackRequestObject
+
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AuthorListVersionFeedback(ctx.Request().Context(), request.(AuthorListVersionFeedbackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AuthorListVersionFeedback")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AuthorListVersionFeedbackResponseObject); ok {
+		return validResponse.VisitAuthorListVersionFeedbackResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // ListPublishersForUser operation middleware
 func (sh *strictHandler) ListPublishersForUser(ctx echo.Context) error {
 	var request ListPublishersForUserRequestObject
@@ -4961,115 +6394,175 @@ func (sh *strictHandler) GetWorkflowResult(ctx echo.Context, workflowResultId st
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"yubRzeeb/wsAAP//LQIeYVfGAAA=",
+	"H4sIAAAAAAAC/+x9+3PbNrrov4LRPTPbzpVlp5vd2XXm/OAkTda7ceKx43b2tLk6EAlJaEiABUDZ2o7/",
+	"9zvAB4AgCVKU3241s7ONBRDP743v8dso4XnBGWFKjg5/G8lkSXJs/nmUKMrZP/nsjMgyU/qnQvCCCEWJ",
+	"6YBNh+kvfDalqf4hJTIRtNC/jg5Hxylhis4pEYjPkVoS9AufIbWkEgkzIpqRjLOFRIqPxiO1LsjocCSV",
+	"oGwxuh674UXJBg4vSrbN8KVactEe9/OSIGhz4yY8z6mKjrFaTFcC5x2jrIjAC4J+ODs6QaUkKZqt3TlU",
+	"o1GmyIIIPdxMYJYspwznpD3iR5wTv1OSkRVmCi2oQvBVbHkJz+drc4DzDC9kfJWmkzk702mCvp8sJuh/",
+	"9/YyfrmnN/e/HUPnVE2XWC7jw+qWzQdoh4ndrx7k+O3gIXIiJV6Q+Di2cfBgiuYdI10weoV0s1Q4L9Dl",
+	"krBgSHSJJcpxSkbj0ZyLHCu44L++jN53UqZ4uiJCmvGb0725eHuEbKsBn9iCCUt7VktYahYbIiCWCDe2",
+	"MRm23AVVU0EKHp9Lt0iquFgjA8CRxcau+YLRX0uCaIXNcy78YgGTw+WVJY0ehKZCStDFgohpKUkHYusW",
+	"dLnkyHYlqZtqEhs0x8mSMjKVCgN5/C9B5qPD0f/Zr6jmviWZ+yfQ+dz0vR6PNKnEirLFVK6lIhEi8cn1",
+	"QNCj85YLgr/2EBrdPJzKFGLKynzWdURFmWVIkF9LIhWyHWNLWqslZ93Qe7r+zEWy3AjAxVrpfrcfSCos",
+	"+jDXtN8hNmiYKDcCxY9cfJ1n/PKsZOfwgfmUa8YwndOMbBrgHPq+012vx6NLO94AJuG6tg/r2v/CZ7+Q",
+	"ROmBj9Kcso88JT9UF4Gz7NN8dPhT/wrDj67HTSEBjmkqCJax2z3Dl0gmmCGy0iQgIQizFOljFgxnKOep",
+	"QRHO0JLqY1tP0BlZUKnEGmG9ZIk4y9aT6CY1FFNB0tHhT411fGmdwBd3BnYrH6iMiDyFZTERrMILck7/",
+	"09GquMJZT9MpXsAE7XYL96aVKpJvBLnWTVbXjYXA69bR+BncOmE3o2BTtWV+iYDPGy1F6EnbZ5ZgRRZc",
+	"rCO0/xi5Rs1JBTFwy3hKEJUoo1KRdAw0TTOFheBloaml7iEn3RKPbp9ux2z0J7EBU1IIohcZk0BZSnWT",
+	"RHReW3n10QS99f+GZSMsCFrSNCUMUZAdLo6Dvcw4zwhmMHcwW3Py14KSOQp+c2ivZ/mTRPOSGfkZZ1St",
+	"EReoKEXBJYkeG7kqiKA5YRZKB+4z/GyMZGmgASmOkiVmCyL1tILkfIWz+A7dIvsJGWFKrPcKTpny29Kz",
+	"kCuSlKoCmujWKCtKNdU/R+Tft2ROmd6X7oQKLHBOFBEyNhAvlR6JymlmSUPjQmBbaIWz0gxpDk2DK50j",
+	"gpMlghH0wWED3Hq9HqPbh1PHWY2yqhTMEH4ZPzDpTgxmkga6kwwLDQKUeY4Qxx07fsdRnRck0SgjzQSm",
+	"k57NzVQInpZJJXx03Md1H+l4k/EyfV3SLD1mc94mJDPdZPG6tfqMJ9iBUlvIEFzP1vWta67EogHL/l4I",
+	"UB/ri0yJwjSTMWEP0BFBD6K5HIgZGpzxjJcKoF2PqzFnSZm9QkEkz1YGlKJAU+2kCTOdWtERSjKCheG2",
+	"CWcJlSRGTMxiBt6jOZAzIgvOZIQNEHdebSm7WmQ/D4chqg9ijOgdIekMJ1/99dT3/X2y5HuaaWJFZ5k7",
+	"bWFXbU67EHSFFUFzO5I5IyNrWEmFpYYWyQl6bVRvxBn6x+fPpwhkjDFiHK5yWeaY7QmCU6znssueoKNS",
+	"LTUHAohFOU3TjFxqxpBjLdakSE9jVjanJEv1Bdz5YQ46xBVhESkoEUQztCk2bV5WTrEie0YAj7EYPdQU",
+	"fv5tRFiZ60UAZBuBXhBeEGb+iUWypPCrLAsiJElJGiy0qVFuVA4FKTKcEM2puhWNs6qTIV+FvnundQBp",
+	"QBguNtQilpilfD6fDJw3Kpf0Tn1xcfx2jApBpG7mDFVngsypyslmBblx+aZLcCXj8E77IOKYzfhVGyIY",
+	"uVLTpBQSoJKVWaZBfnSoREkiB6OWGiuGy7Ru+vMyz7FYbxRp3fjj2sr6NnZS4U2D6/B0HcW0m2DBQHiV",
+	"hKVEeB2vq13wrIZNhkiNvGnzS/fIpSSiixtK8mtME4lBkO7aGrO+/Ppix3Ccg8HN3sqxls8i4vznd3t/",
+	"QydYfE35JUOSlyIhY5TRnGp5W3H0l/HBwYHW7xMtspr/A9qN8FwRgZSgeU7ZYoKMiYCIFRFI65lE2uGQ",
+	"IlfqFUoyqgES5aVUSJgdIaqQxHMC2mccaHJ89YGwhVqODv9ycHAwHuWUuR9exPQXM40zZk4HgovCYkHU",
+	"UBz6UVBFPsMnLbyBn6traq2n77ZOicip9NpqUw1kU6DxcXEX2ots3ddsuEV3B2PjiTU3tln1DeetTzIO",
+	"V9y36zOCUw+g9T1nWKqppkT+BC1y5ZTRXCPtQcy0dA/3GV/Jpm11vfx07msD0bjJKjrlyZV7s9qKg4BI",
+	"ExGVB+/Jy1jbT+6YTGR6w6dmZM6Fn7iDi4ZGpzrCDVlCiKO3AzXHxYdbCt0wn+G76y/jxh6vx6OSmTtI",
+	"eMnUAIjyAG7XElzO2IFI/ZwaU3RdfPtG+sD0XGFVZ8WXmBrbv+XF4+AXy6W97Bvj07WBO9jfkdbcUmrV",
+	"Sq18EGt5mSCt5yA4HKO/wPFMBFlRI1TOBc/twxXTgiZoImteIspkQRJF0lcI60EzggRJaEGN9Kl1JTsE",
+	"2Askennw94iCcgWDTF33zVRPNs8wUA4aRPheWR+sYxzZQi8EWMm0RacqJNkGNbZHBAf/te/6V2zViA7m",
+	"tbXhuTVwYIDO8dUxjPHCikHuz6HG6UFbCR4vbg2PtyKNdW1vO+Us+HZcgeV24PjZQ13DZ8Op1lEZaqC8",
+	"aSimI5bbqD+1DzvZa2C+b5vqyllG5bJbewnvt4fGDIJj07m6zOh8t7lo08Xtdly/dzdnY8sVefIbjRxr",
+	"+4oCo0of2IRQHLWdgfkD+IrnISmVRYbXJK1sZt6ixhkiKyLW6FIPPUFHlqecul0h8wKjobXGUdAR0rKB",
+	"a6ISrXBGU/PaB24XRoCnbIFwnYkZHqXEWjepJdZKWk7QnAqpvAmuxa+acLVBT4NVdVz6ButHAwga11uN",
+	"HLun91S9MZ4mnezmLtyaev2Q9EDQIXiza7u/3LPHUPfaWPBy1D2MfQ6W1THi1IlSp3X+3X4SrAthOS7M",
+	"S0jTmUNxaxBGBabhm1J1nd7nIL6V7fyMeihvzFxfc1dpa+tFOU1wgROqIg+3n7nCGXpzeqHRWy/LOspE",
+	"jaAplV83jqU7IddpyKiLovTW5PbJvT+9MG9UE0QWE/Txh+O3x0foM5EZRv/620H8nZAqirNpUpSxF1DT",
+	"aHaMV5ga9EagG3hXEkOP5KRvcL3L7tHNGdxm+KiDkBv97OjkRoM7H6jNDid915WTnIv1RjCAbkPun8tu",
+	"S76GgBY62t4AERezkqkSfaCsvELfHUwOXkZ9k2gxnQtC/tMBZQUtELTbd9DYICuBc+OWNJVE0NjT6mea",
+	"G9sjhSdV68hl2VQDb2OYHHe7qBhBm4Z2emQYh1DnkhE4FMQRu+6f0G7nlyzj1swfIdTwpMLnyHfsmDIQ",
+	"4GgSu/CLsw+a3AbuD7rfZKgPovEMbLmGbNp+hhWRtfek4V5So4wmxJq1InCF1dLt58Pxm+8/nn+P5jQj",
+	"zmHE7rHyuIyur5tFWnmtxio7t+nlk0079BKdEcMN7vX7RVv8jC/AvsXDI5rd5pCL33Aow7z29GWF7npG",
+	"VoB3+07nQs3oocvGI1XWGXvoO34X0p/7zTiTSfXrUaKosWJXP70lGVHGnFL99hoz1mGCajgDNuQDY2fK",
+	"eOSKrWiqT8H5AWlRBYBXy/Fes+l6UjtSHXCLFfgHmvdXfcTujVTLQ/bjyUCZyPh2EZYSlkSp8pHx0dG7",
+	"0GQ+7Iuc+N50dhnul7GFW1l1Yg3XsrjPmCWlFyICqT99Ag+kTyxbf0EWd9wX9akCEO6mom2S0+V4dzMK",
+	"OxxZLZxWOKtRzFpa2x7FmlAliDKtiWagNIa+OM6J+gQzvCACFTyj+t4n5uCQEqVUxLqEUKkEVlxIlGAG",
+	"Oq7ek9RK8kL2A4VW9PSIDT3RA0mvfONhwh/nGM15lvFLI/OQHDNFE9fNPHGelFKhmb+I0PVxoItP+6gb",
+	"tKfWWCNBtZY6Jao1WYIUaTklLNUrizS9y/BisZmMXRSaHpyBb/tWNM3IRa7ZOkrNwMBQXYWldpNt/Uh/",
+	"XBK1JKI21kZUj13PKRFSK7BHSUKk/My/EtbpvBOjsTX6ECe4Sg96U3Lb487qvOMm6AjlWjPxXnIRrzSz",
+	"CC3kMaWJcqoxdnL7gBNvXBkSbxKXrs4sZwB/glC+MmueoDeYaRTESNK8yGo+d3FRwV1iz03BZIW9fITN",
+	"7bsJDckCw5o+zFIPDHcXnzIKV6EIOBia4gDkxck7AaJbiPfu1v2CJuhY/Uki/JUa72JsgoX0FU7Q+ZKX",
+	"WaovLuOXRCS4A94yvuC9Qqqf7E8S6c5duvKMiF6RxHZxCkG1h5DhDBLWT4iTs1sv0p3eR8YxZppoZu/i",
+	"wW7Iu/0yAmm7LApe8+KoBr0kM0kVGeih29xjC3hvASz2BuJef9YtKxIjxzNPEEwoWuz+WuO5cLZBB3kh",
+	"7eNg93G0WXejyTPuxu89ykJ9/vbzW96pOpkmhNNUaKoFB02lOZ6bKfADxthgPd40QOx0wzit1va18j7V",
+	"Wn1EGA10fafj2/iw23M0O5AZeAhTM3CYTMuY8mCl5ouzD8MO5FkAApVHcR2hFfNi0HWJpfUELwRd0YzU",
+	"xb3wJVUeFYXgq0FxQ0AKJML2k/iQ9wC0Vi4OHzzLCN8pWSG4FipIeogYr175nK/NKxR00DsC25iPu6YS",
+	"Hgsxg+N7hRghqZy6V8KNHxlbptO/tCxeCkGYCl4Ra0+AVOq/JU2JIOkYUZZkpdYdkHMpQVwg9yBa+9Rc",
+	"pyOLwb7hwdD/u778KEVsR34GBLfVeK6wAI2o1fTOyMGxljdcy5AqSpKNI29SCqrW55pHAPq9JlgQcVQC",
+	"JZqZv945qvDPHz+PxpABwoCeaa0AaalUMbq+Nu8NEJ6jqNLUDiJ40NHpcfBufTh6MTmwYdAMF3R0OPrz",
+	"5GDynYkqVEuzmn0DDPtaAd2z3+052NLt0Vfod/rqDINqRYKWEp6D31FBZlia/AFWDH5HM2Vce7VAOluj",
+	"ujfWGDX8tZCPuiHpK5TwfEYZaMrHqZFnPcfWf0sDzlrq/5RTZSfR+IizrAFd6My+cZeFpvrfHSB4gqRE",
+	"jhEjlxoBzO6oWts360uqluCKNctgS5TszQTBX7XM+s7o/BD1VWBN+AKPd/jWcAJ4A9eHIFHJFM3M8/oE",
+	"WRIgTVdequZrOhYkeDZSS8HLxRIO/AOVKtCuYQhPHKYgAf53gEQTdBTFOWM7mREX4/AKmSd/tSRUoMB1",
+	"zz1aXQpzVZORj7Hn7DjV8rFbVYOuGZjzsX2HP7UcG65wolCOVbK0V6g4ygheaWYiiEYp6xDHELkqMppQ",
+	"la0RyQu1hng/+JhITR1b5ETzl9GvJRHrkaPiIwAlh244KtE+gWUGYL5prbHPna9K9eEWfjddg9pgjr7l",
+	"fDHelYY2G0Lz3cGBUVY5UzagCRf6fMzm93+xkenbrRIiYQw9bGhphoLQ/5DUpq+YoFMbUqYpByMrza5w",
+	"stSM3nw9x9bL+k4XCBFwkQW+PHiBSoarIDQNMy8PXiLKwHZAZxnRv/xdA8k8o4l6hV5+9x2iDHxwTLis",
+	"/unvSOht2YCLSY3rGDwL+c1PX/S9eI+LkUZUH2xXpweztefwDoTgzeSnkT1Kj9pf9JwBI5H7vwFuXe87",
+	"18H93+y/9I8b+cuFJDLGQ4CgszjvAROMnwZifCFwywUDOsseAGnFCALJ588HXqLSagCWCZg8kSS/liY5",
+	"AhcpEa+soRc1PJQ9dQ5/4sgY93mWGqUVRp+g999/tpCYY/FVVvMaN2F0qimxWFWuXpqXCKo0l7IOwiFl",
+	"HhvILiVp+xlzUfNMlk3HLqloliGt9Gc+uBjmBJ5q3WiE8oylg+6/J5vJviEnRg9rE+LKJwus8ZuJXX0g",
+	"f/m9Y210EIzTvMANPRzNO7C+aL+VPwgR9OEZOzp4Yzp4ptEAe0roXxNqUhhLEVVSC5T8kqQIcqPJXrpo",
+	"BO0kYnI4JywFpPxvrw8pjpKMS01hbJOW2/XPEAE1rkRJPjOkIe0LL8CQHKLmr6xJnh5KE7SUCLqy6O5E",
+	"byc3O69SSxQhfFATWCpRyo3wopyqDHI6pJ1wiSm8o88npu9ubGidXqQgWEoipectoWyJ3Zm8Qik3U8wy",
+	"ylJjPDfBue0NIWtl8eERHZTpvEWZzi1Te3bk6Qt8TKR6bSMc7xRVg2iX67qfrI0O2hG0Z0HQDFEB3DRk",
+	"BEflvHuQ6vbD0LyCx/K0GOrXiBnW0taMp2tzjyQInQIDFJoLIpd1iuwgcYLeE0bMaXFGUCtg1kiBmtKg",
+	"jC9oYnwcwb4FJAmEJme91e0FXhuRzfj8ek92LXnmM7ooeSnRHNOsFOBNX5qbnZcZ9K1IZFoCoMH4PvnE",
+	"W6BugjjyjQorZfqFmdBofsmIkEtaVJJbKLKW5i09bbOpgKh20kOW/g5EtXumhbXQ9x01fLbU0Fh2gRYW",
+	"2Rpelvtkvfugij4WLEoRtXxkIVmiJV5pOQpMcJKmBJH5nCRqgo7SFdY6aDReFuJynALqtUmcqBJn2dqY",
+	"48vcucxR94wCVE+tA/HSCWdAnjTRKQg4ihrl+yvjlxlJFzZZCqiw3MmSZtXGAVQfq977JRZpBx3SgveO",
+	"Dm2mAS69waMRIZ+IYEeGbkyGjirMqR7rKkR11n9DpMDL7i6o0EfjxX0NEXYR0mMe9OzrTaLx26p1uK7K",
+	"xfEX3PlCN+XHwN6PLkXu8PFugbGx5Ko3cpDdkJcVMjrrtsCZwPi42wwDXX7t2zjdGsfaNXjKoiYoOF9a",
+	"KqskaDd3mH9Y0lUL9miThB9cKmMrQ1cyfGY8r17e4VLqWfkii3ltAm8NNI7rNAelWOEJLOhFzO0Ee9oL",
+	"nf78cKt+x8XMJFGFmV8+3Mzu8rQSNeclM3v/y0Pe2LHLjmzzVRHLerbhBkb6AgKKNLS6d2BkKURF/n/w",
+	"CRgadD/MD3GHL/WN92OUZFhKyDzKuGdYY2ceBDnSJ/gX/nd4x7cNrxBVlWYM7+AtfZ5npXGKRW/sez+1",
+	"j+/AMsaWApLKWOgJqHMwMD482dqHV5qgRpOKAz4q8IIycL1FINNI651CvFLQToddSuJddsGTVh+01drB",
+	"PYC1HANOgcmD10vCRQpkFcg3+rUkJXFupEtaHCJB9syjg14jQS/0USY8y0ii0PFb//ael8oI42Mti4DT",
+	"unHq0aqBnsp8DLFbEl0uqckek3ObvJTksufVPvQl6GDlN3pF73qZ1ldZ+3aQ52w83KTBfvomdTz3Bm//",
+	"HWkpJ+jIPJ+l7pYqMKucVwJIhqdMFGSndO43KKPs6wQdDXEgcPjf5TtQxXltsU/rp2MDqywuN/3NvEjS",
+	"cgNrnYTBPVAeQ+zTnM6FdOkt8nkXNTAfutMJ0tHDXVZ+GA6LcZZtPJkGiRvsIBF31+sEN5vEvRrb6z4v",
+	"xv1Phz0D2nTwsUEPTJofO6rN8vM4z5OtRP47xfF2bhrAZR1ca/QMUEEfl0fRJWZp5l7zaoIE2H4T7EUJ",
+	"W7ioS3xw1maNUdCVSEu5FnRlbOMFb7OT90S9dhWRer2+XNEajb1zR3a6UFZ3dAlNuxU9DyNQiAAzztY5",
+	"L+W+8ZC8OO6y3twCDRp5R+053S66OIIsDJnemlD6OSrJu5XNmEfF48FibPCUpAQlKyCrKZWKskR1Q4P5",
+	"et+c/R6YJjRMzmmWhdbPOrz49PPytes7SPbI8dXUhsd2EMMBJC9yem4VVYminUq4vUr4VBQyD8n2Nm25",
+	"NSgFMqsAzhHJChotkVxQZbMYDaGTomRyjH7hM/h/y9msf1YYDSIRlpIn1NgfrIcx4BHMFqWr7/1aBpDW",
+	"Zu02Q2aJSpYGhjTqdtFa6L+td2w06UtF2vVC3hzD3N1k3g9wDiW7tl4BixRg2noV7sOPNoH2dkuwybns",
+	"Ijz8bL0KX1dwy/kDFRD8h4CEd7oY90mpMcm0L5OM4XmhOF4QYRbUN3u/SDtsCVsJEq17fXS54RdX5XOL",
+	"MlON8qCRCFJj/gD7+Kd5Z4mrgfIHNGpRV2FqnMiGE7tOUQXive9aWHG4FYonlnDWaXqQfq6ftNsoESN/",
+	"Laiyo8kwtMkVH6nq3MFBuBqQ/RTdrWSgzBwUemzQlWB1D4AFfQTwxouD729GfH/vxO9uyU4S5LKkW+RT",
+	"b6XBvFficx48z/gbTQNgqmK4biJ61o+kt37PxqVup1N1UBUgUkZEHUCZrFGNpD45ga1zlwguQSr1UUQR",
+	"6+8HKtVRloHIu4H6nAbIFeQOglKB94NhH/1sMBPgdCmYR66OeY2x5TZSxY1nttg/nblMOi0SFiSRidwr",
+	"AAdMavNzIC78Y6UtnLKkMshP+s3x+Sf0t78evEDgrfJtx9qqhKdRD5feFKadaXOcXgFemrb4t/Hc1FzY",
+	"PC/p9UtizXnGUZPO0RxnsvP6jOW5//DulhYCwLQQ7QQsqgHYw80EQBDPoC23etGIUdAiWjnujXOer5Ax",
+	"ugZf8jSW57O5Gx9h2j2UJ+H94xXgd9Yz3iB5s4usBbaYJuUNzCRjJ61a40mn/PnxKT4itziFK1hZnUJl",
+	"sAhtFWByE4SylFx1W9zOoMMgkt8F/oqbwBDjTpkteEYxwgphZIlHl8FuZiJiIljdQ4hP4BUDihKvcBZG",
+	"qEhVZTaChV0SQczj0hUJV9e1JsqmTQZVJ3zj0dXegu/ZH40g/7aEw+wmQU2abtaj2TukC6g5nEwe07w4",
+	"eaJwDwemZRe4VRPGSEzGCAg87wZ/6Hb/gtO5mWcnNzVn/hdZX3IBcaPmiKr9dkxpb2wrXe9BpLOdgLET",
+	"MHYCRovCOnfjjTTW1CaBesx6ZIwkFLFOfM7TlkHsI7zo3Ysb8Zd79jiN3YLx7XM1qf84Tppm2+xZwH4T",
+	"LNFsjY7fDkKAfetN3YcIFr98dLQ3TIee2GNEqE9Ba52ujO3ar6zTE/8YhonjzQ2SQN+Zx360fH0SS3Bd",
+	"M9Si4zniOVWKpOPwOILEvC6b6jaObwVWGiRGh6P/9/PP6f/9+edJ8J//uof3nVu4p3/0cOLzxj6uwtBg",
+	"fbJMlghrnjHDlW8eGJEmf1gi91RVKafuhAE9GuNmxJEgm/BwM7kTZEXJpey2LJxy8CI+Mx3vMRyofhCV",
+	"cCgVFvbBLyhLEZQ86HALHhQ/9DC+k12SxFuXkDtMlY9nkDKuxsE6RVit+Lvs6/eBLJ1IsnrKMRtBUEaK",
+	"AMQhSlhGeBb2JRk2o0skQKP99jLA6f7O4uce2gc/TLoPa2xcyoJxk6z9DF9C2IUgBRdKNrIemthmSAUR",
+	"euNar1jCUqgpP9mg8ne7/3sTh3mSGN+9JWDbU42cZwukP1iFzVnJvHvwg7Ngg+PWoPKgdOVp0xPw3A7i",
+	"EaIEpBHfNSCvQCc9sfrz/UfjdpdDCbUJ9M1Hrmwevm87dIthIfhPSDgfzoa91LFjtYOU7z4uuyWSXIc+",
+	"6D2u5+Z1PXD5fYz49ceJXE8yXqbTWUmzdOrSSffduj+kN/rD1/q7Y/1ZaIvuquA6aFxbl9dFw7frWYAG",
+	"HPeiuEm0edwbcW2icSvHi3Zo+C4SuzcS++XB3x9uBd9fmZCUBYIM6HB1RP8onyTZA6hCAXEypsCECIUp",
+	"axK9VizCVmRv/7fEfb9BZqhw8MnTv/hIwUafjBgRErYWrOwIze8n5YNH7gVRVphZBxiOZlgalzeTPxYS",
+	"SHXhd+Vu0GsyOK26PYRaWqsru0kpDap2Vqt8YvFzT1wirvmdhHmgqh9NcuEekba6svvJTRaAxBBR68V9",
+	"TRxJcQTFaDqJ6tOCwl0Q551m1QHg19ojuaxwqAuF6hR339wPhuJ20cfcN0uSfPU1o6pKdK5MoSk6kAmC",
+	"0zVS+CuJPNb+YOcI8XPjk21kJsWRW26X0dP1fVCBqFHeTx55L522W48oSVh/y5+g+2QM/uGIqyURl7RW",
+	"8XGD6tcqKAGj2yOz+UVszNxTeEg1+XrZIjgHKEtorvRpvis6SNZXiLuQIfTRGoCBvwXVbq4BYjICCFlH",
+	"Iyhf3INEER2hXknnNijxsiO5ntk/LDnGeR5QXq6W86yTpME1h+DVLQ116baPBSQHDy3yVHFxO9DbzgBd",
+	"Ea+m51dT4i4jMAY5/B4QzB5dmn9w0H4OaTq3kOZ32LgtI7B5MvHWMn1NotifYdb9FvQasycpUEDNZ3S+",
+	"Mw8+e57zGrMaDPdDazP+O+46JN9x8TBw+zxDcG4RH7PZ40Y+ycxgz4261yyfXdEn/fbOwY9XT0zyqt6H",
+	"Hs6E2hup8hwMp8PT3z1r+2VSSsXzPnfTftZRC9Pqt6TcO/qM7y+EKxpzZ2KuugwxuwCs52X9qfu2R1lD",
+	"t2L+zED7MVnMAwVD/s60+R01eV4mhE3UZAvGOtyg8HtksDvDxBaGCS7QMwhYaBgo/iSR98wdjBNB+dE+",
+	"n8NT3+1THU3kc8WTW+VhxOz7FJKD3OSFO3C6Ck5/53W1xTNQWIrcuSSgJa6nuL+d+bknOrAjmha+3jak",
+	"5zlLsnW0MCx6oO1O9506l+LtAu0KIiRnOJtCWY+pKYQVTwBaHcJPIytA1CbuGuzLjUIUXtzy7G54HpIu",
+	"GEkvRBYvSwjN6OLsA1IclYUplt0MtbbVxGJ5JDfTs4/k0o/joPlZ2KR2jnrDpHFL2ayla4vAr22JazNs",
+	"crMd7FlR2tuUNb6R5O8rZ7IKL7+xprZvH9fW5pbmqwzOSMbZwuWBKEIv9gcJx3z8qIXICrbSmd0luyv+",
+	"9gbhmuN44WGrj9uq5cSWRcw4FIqrEge4qrf19GGtuduutjcrTvz7w+j7sSjaM4VD9ilFdkV+d0V+d0V+",
+	"mzbHOGmralhWVCzIU3QP8s++qxHYaZeBkozviWoUuvz9k06fAb8sIURvWAYdKHI6leTXmhfLo9XddBfW",
+	"B9i7upt92OvNOnAkHgPuEP32XQ3tbssP3NE5YekOEx9GqHEHfAJ3c6xB6KEFmh32PgfsFQSnmzD3jOAd",
+	"5j4w5uozf2S0xamrxbdD3KeHuLIsiJAEnhQc9nY+2F4yIqSxT0yQH63KmwyvREEF/wk6yrSykJFEa5s+",
+	"5VteyqYpSuIcjOVjpHUBkpLmYGi29oZ1X0hwiVdVxX3G2Z4ph7EiVfHvCXJhmRJpeFojhcWCKPO5ICtq",
+	"dCqseE4TnOmdfV6afMoJF6lEmMG2TQ1xPp+PjfqFi0LwFc4QF3pXdG7hD9SWOb2aoDOiBJhx4HwSnDlt",
+	"15arwijjUiGHg6+sUpTWqv67zM4axtoGHSsTuUvckdeHJa/+4LegsRED8vdYZJSICj8CU5+G0jo8JBmX",
+	"JJ2gj7zWgGhQGY21MPHpkk+NQ4x7fAVqKhXOiMXUfY+lJkM8ENZgb3dHcUNHS3sDiDQvx9yIvgN9xlT4",
+	"hSPK0ByvuM0eb2hIRbzaVowtyfptfEiedJzvzuvjD+f1Yd7BN+Rzsi4DR4ZOfIYPnjIYD0sb1d7VtjFW",
+	"zpcCAQVF9iz/SH63ds/P1whez2sVvVCLbTE8M2CDTjDDC8NbNme+ikDdcwzJjyHPfbsMeb+nSJFrcpmt",
+	"vcwVvcYb+vrADT+juLOdj89NknHFIKYfzwdw1f3fzH+HZQt6YMIQV/Xseu/eMQcO8A8e9AaH8DuLersh",
+	"6rgZ92QCUSrRnHanZZZZzsxSyhb1QhJOI0/LRCE3oCnUEa2HCu3ner44ZrWL7x7dovZux5tsjn1l4+0r",
+	"+DSKliWYdVTt3XmQPF8O5pHNgSwyMGvQBqyue1goOseJ6i91dWE6H7m+d+X2DvcVF8SgzZXZSHgO1Xpb",
+	"6fLxajFdCZx3jLIiAi8IwjkvmVG3fjg7OtHqb+pyD4oylOiCWq0zgVmynAK2RRL1z8rkK1G+PSJL4py4",
+	"DUBndLkkAozgvFQapOc0I1AFSCouSBrbosmxPM34Qk4XiZwaRhudULcgxSFJ/MUx0p9MEFlM0EIe7u/D",
+	"Gvb0svZ1U/dcomTTeWbobmwe01Q7RPOZPsqOMXOqpkssl9GDtO3WWyA+JfRBrk/3LKYue3QIUz+9Bk9u",
+	"9WBx1m0/j/7973//e+/kZO/t28//+Mfhycnh+fn//DxC33x38OKvey8O9l4cfD44ODT/+59vo+soUxzG",
+	"IzRrDqc4rHHZ+pywtGcPphJ9sI9f+AwKFF4wemVapMJ5oUf2ZnTK1F9fRiH8Fz6b0jRGSZu1M7XiaueL",
+	"LVoPpARdLIiYlpJ0oLQxOl0uObJdSdo3Zo6TJWVQzGqjDeYEOp+bvtfjEY9A7icga2yB5FoqkjepQGwR",
+	"gKVTg6Ue+SJjHxmIwkgSLQ6AO68eA6klVlqyUJgyid6/OTdI+o38VuNpSAM68BS6jLsavostuiD4aw9N",
+	"1M03IoiFmNoq2fFxtYjlXsOa5bSD1a3VkrNuDDFDmT7e+3nARRVrxUWy3Dis7rTNuIIUPFbutuCSKi7W",
+	"yKYebn9Ysi1xq2MFUmHRR9ZM+x0SBfDV3IRwP3LxdZ7xy7MyKIx3aX8cyBNd96g9JQxAM5fgyZU/W4Pm",
+	"dfZSZwMt1lJn6s0F1846oMQh5LfgN0L8xk6w8Yd5s6i42zy5BMz0BraqMNYdCZIQ8/qu78zJi/VS3z1V",
+	"5EVVhvMv8X5DnjHMCvzkEn0Tks5voWSiXp6TfN5T9Y9yho4Sp0KN9vXV9L6yXUhbRuCe3GfM+JHD/vSv",
+	"bXNqtivvv9s+6OU9UZHSbkY4wlnmsnRPgsPbz4lxRNmzsL830M/6A5WbHa2b9Y40jOVYJcsJ+qRFNcVR",
+	"RvCKoJIJomE5MQ/PmCFypW+EqmyNSF6oNVrhrCTwsYmQqr+1d+WR914OW2QGfIRl1s10NyqFWrdEDPKJ",
+	"MF91DpqUQgK5e5TE0W6Vx2zGr3YuaXfrkgaYH9inB1bsecfFXRDUXeGep164p+ZCYOWfTu+BQZWij7Js",
+	"QLHoG5FvTYRNrgV4i3jwYtFaIlxn+gfNeEe/r9rR47hNakGsNmgT5xog6mRvuGEo97PGQoyiM1ZF8s2t",
+	"6Vnt5ny+3r7Zz+l/ulZwcA9RTnWxvYgawN5YX9jgLOMKult+a4QTfEXzMg/Opv7+4Q8GuZ5UohcHB3FD",
+	"gOIKx3Jm6J87p6gVSYkPeeqChfrH1QvdNF5IaO6gJvkAnWlDlfLHK74DS3Zc5rFrpj/d4uV1cAV+JnlO",
+	"tJKpWc+kO1rV2RFAutz/zf0NURIbqpL+WOs86K2+Of6TqeECCvc/+aw7PuQNmN5r9oMHfDq30z+/quH2",
+	"yQJKt1yDXK8HACApRTY6HC2VKuTh/j4u6MQ8yUy4WIyuv1z//wAAAP//OrNdxH4XAQA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

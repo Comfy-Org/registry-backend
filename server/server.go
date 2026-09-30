@@ -109,6 +109,9 @@ func (s *Server) Start() error {
 	e := echo.New()
 	e.HideBanner = true
 
+	// Apply private headers before authentication, including error responses.
+	e.Use(middleware.PrivateRegistryData())
+
 	// Apply middleware
 	e.Use(nrecho.Middleware(s.NewRelicApp))
 	e.Use(middleware.TracingMiddleware)

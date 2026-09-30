@@ -36,6 +36,8 @@ type NodeVersion struct {
 	PipDependencies []string `json:"pip_dependencies,omitempty"`
 	// Deprecated holds the value of the "deprecated" field.
 	Deprecated bool `json:"deprecated,omitempty"`
+	// Public installation policy tags; writable only by trusted administrators.
+	TagsAdmin []string `json:"tags_admin,omitempty"`
 	// Status holds the value of the "status" field.
 	Status schema.NodeVersionStatus `json:"status,omitempty"`
 	// Give a reason for the status change. Eg. 'Banned due to security vulnerability'
@@ -100,7 +102,7 @@ func (*NodeVersion) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case nodeversion.FieldPipDependencies, nodeversion.FieldComfyNodeCloudBuildInfo:
+		case nodeversion.FieldPipDependencies, nodeversion.FieldTagsAdmin, nodeversion.FieldComfyNodeCloudBuildInfo:
 			values[i] = new([]byte)
 		case nodeversion.FieldDeprecated:
 			values[i] = new(sql.NullBool)
@@ -176,6 +178,14 @@ func (nv *NodeVersion) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field deprecated", values[i])
 			} else if value.Valid {
 				nv.Deprecated = value.Bool
+			}
+		case nodeversion.FieldTagsAdmin:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field tags_admin", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &nv.TagsAdmin); err != nil {
+					return fmt.Errorf("unmarshal field tags_admin: %w", err)
+				}
 			}
 		case nodeversion.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -281,6 +291,9 @@ func (nv *NodeVersion) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("deprecated=")
 	builder.WriteString(fmt.Sprintf("%v", nv.Deprecated))
+	builder.WriteString(", ")
+	builder.WriteString("tags_admin=")
+	builder.WriteString(fmt.Sprintf("%v", nv.TagsAdmin))
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", nv.Status))

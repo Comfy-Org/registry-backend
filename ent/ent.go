@@ -9,6 +9,10 @@ import (
 	"reflect"
 	"registry-backend/ent/ciworkflowresult"
 	"registry-backend/ent/comfynode"
+	"registry-backend/ent/feedbackevent"
+	"registry-backend/ent/feedbackmessage"
+	"registry-backend/ent/feedbackread"
+	"registry-backend/ent/feedbackthread"
 	"registry-backend/ent/gitcommit"
 	"registry-backend/ent/node"
 	"registry-backend/ent/nodereview"
@@ -85,6 +89,10 @@ func checkColumn(table, column string) error {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			ciworkflowresult.Table:    ciworkflowresult.ValidColumn,
 			comfynode.Table:           comfynode.ValidColumn,
+			feedbackevent.Table:       feedbackevent.ValidColumn,
+			feedbackmessage.Table:     feedbackmessage.ValidColumn,
+			feedbackread.Table:        feedbackread.ValidColumn,
+			feedbackthread.Table:      feedbackthread.ValidColumn,
 			gitcommit.Table:           gitcommit.ValidColumn,
 			node.Table:                node.ValidColumn,
 			nodereview.Table:          nodereview.ValidColumn,

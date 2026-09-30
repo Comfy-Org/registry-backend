@@ -87,6 +87,8 @@ atlas migrate diff migration --dir "file://ent/migrate/migrations" --to "ent://e
 
 ## API Spec Change (openapi.yml)
 
+For direct admin-agent use of private feedback, see the [API workflow and retry guide](docs/private-feedback-admin-api.md).
+
 ### Regenerate code
 
 This should search all directories and run go generate. This will run all the commands in the `generate.go` files in the repository.

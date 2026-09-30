@@ -2,17 +2,20 @@ package entity
 
 import (
 	"registry-backend/ent"
+	"registry-backend/ent/predicate"
 	"registry-backend/ent/schema"
 	"time"
 )
 
 type NodeVersionFilter struct {
-	NodeId              string
+	NodeId              *string
 	Status              []schema.NodeVersionStatus
 	IncludeStatusReason bool
 	MinAge              time.Duration
 	PageSize            int
 	Page                int
+	NewestFirst         bool
+	Predicates          []predicate.NodeVersion
 }
 
 type ListNodeVersionsResult struct {

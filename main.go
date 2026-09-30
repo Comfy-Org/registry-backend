@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"registry-backend/config"
+	"registry-backend/db"
 	"registry-backend/ent"
 	"registry-backend/ent/migrate"
 	drip_logging "registry-backend/logging"
@@ -109,6 +110,7 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to establish a connection to the PostgreSQL database.")
 	}
 	defer client.Close() // Ensure the database client is closed when the application exits
+	db.RegisterFeedbackHooks(client)
 
 	// Run database migrations in local development to keep the schema up to date
 	if dripEnv == "localdev" {

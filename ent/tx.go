@@ -16,6 +16,14 @@ type Tx struct {
 	CIWorkflowResult *CIWorkflowResultClient
 	// ComfyNode is the client for interacting with the ComfyNode builders.
 	ComfyNode *ComfyNodeClient
+	// FeedbackEvent is the client for interacting with the FeedbackEvent builders.
+	FeedbackEvent *FeedbackEventClient
+	// FeedbackMessage is the client for interacting with the FeedbackMessage builders.
+	FeedbackMessage *FeedbackMessageClient
+	// FeedbackRead is the client for interacting with the FeedbackRead builders.
+	FeedbackRead *FeedbackReadClient
+	// FeedbackThread is the client for interacting with the FeedbackThread builders.
+	FeedbackThread *FeedbackThreadClient
 	// GitCommit is the client for interacting with the GitCommit builders.
 	GitCommit *GitCommitClient
 	// Node is the client for interacting with the Node builders.
@@ -167,6 +175,10 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.CIWorkflowResult = NewCIWorkflowResultClient(tx.config)
 	tx.ComfyNode = NewComfyNodeClient(tx.config)
+	tx.FeedbackEvent = NewFeedbackEventClient(tx.config)
+	tx.FeedbackMessage = NewFeedbackMessageClient(tx.config)
+	tx.FeedbackRead = NewFeedbackReadClient(tx.config)
+	tx.FeedbackThread = NewFeedbackThreadClient(tx.config)
 	tx.GitCommit = NewGitCommitClient(tx.config)
 	tx.Node = NewNodeClient(tx.config)
 	tx.NodeReview = NewNodeReviewClient(tx.config)

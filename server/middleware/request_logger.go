@@ -76,6 +76,9 @@ func RequestLoggerMiddleware() echo.MiddlewareFunc {
 
 	mw := func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			if IsPrivateRegistryPath(c.Request().URL.Path) {
+				return next(c)
+			}
 			defer tracing.TraceDefaultSegment(c.Request().Context(), "RequestLoggerMiddleware")()
 
 			req := c.Request()

@@ -117,20 +117,9 @@ func (a *algolia) IndexNodeVersions(ctx context.Context, nodes ...*ent.NodeVersi
 
 	// Initialize the index and prepare objects for indexing.
 	index := a.client.InitIndex("node_versions_index")
-	objects := make([]struct {
-		ObjectID string `json:"objectID"`
-		*ent.NodeVersion
-	}, len(nodes))
-
+	objects := make([]map[string]any, len(nodes))
 	for i, n := range nodes {
-		objects[i] = struct {
-			ObjectID string `json:"objectID"`
-			*ent.NodeVersion
-		}{
-			ObjectID:    n.ID.String(),
-			NodeVersion: n,
-		}
-		objects[i].Status = "" // Exclude the status field from indexing.
+		objects[i] = mapper.PublicNodeVersionSearchDocument(n)
 	}
 
 	// Schedule the indexing task.
