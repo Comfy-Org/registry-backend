@@ -63,7 +63,7 @@ After a schema change, also generate an Atlas migration into `ent/migrate/migrat
 - **Generated code is checked in.** `drip/api.gen.go` and the bulk of `ent/` are generated — change the source (`openapi.yml`, `ent/schema/`) and regenerate; never edit the generated output directly.
 - **Schema changes need a migration.** Changing `ent/schema` without adding a migration under `ent/migrate/migrations` fails CI.
 - **SQL files are eol=lf.** `.gitattributes` pins `*.sql` to LF — keep it that way.
-- **Structured logging is linted.** The semgrep logging check enforces the repo's logging conventions (it excludes `main.go`, `server/server.go`, and `logging/*`); use the zerolog helpers rather than ad-hoc logging.
+- **Structured logging.** Use the zerolog helpers in `logging/` rather than ad-hoc logging. The semgrep logging check meant to enforce this (excluding `main.go`, `server/server.go`, and `logging/*`) is currently unavailable (see above), so nothing in CI enforces it today.
 - **Race + coverage on unit tests.** CI runs `-race -cover`; keep tests race-clean.
 - **Commits & PRs.** Work lands via squash-merged PRs titled `<summary> (#PR)`. Conventional-commit prefixes (`fix:`, `ci:`) are used for some commits but not enforced. External contributors must sign the CLA (`.github/workflows/cla.yml`).
 - **Secrets & the private security scan.** The `security-scan` endpoint calls a private Cloud Function; its code is deliberately not in this repo. Never commit credentials — secret scanning runs in CI (`.github/workflows/secret-scanning.yml`).
