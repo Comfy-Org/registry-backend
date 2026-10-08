@@ -30,7 +30,7 @@ supabase start          # local Postgres + Studio
 docker compose up       # runs the server via Air (hot reload), connecting to local Supabase
 ```
 
-Local auth uses Firebase (project `dreamboothy-dev`) and GCP ADC credentials (`gcloud auth application-default login`). See `README.md` for the full credential setup and troubleshooting. Required env vars are validated at startup in `main.go` (`DB_CONNECTION_STRING`, `PROJECT_ID`, `DRIP_ENV`, `JWT_SECRET`, plus more for staging/prod).
+Local auth uses Firebase (project `dreamboothy-dev`) and GCP ADC credentials (`gcloud auth application-default login`). See `README.md` for the full credential setup and troubleshooting. Required env vars are validated at startup in `main.go` (`DB_CONNECTION_STRING`, `PROJECT_ID`, `DRIP_ENV`, `JWT_SECRET`); additional variables are validated only when `DRIP_ENV=prod` — staging-specific variables are not validated at startup.
 
 ## Codegen (do NOT hand-edit generated code)
 
@@ -67,7 +67,7 @@ After a schema change, also generate an Atlas migration into `ent/migrate/migrat
 - **Race + coverage on unit tests.** CI runs `-race -cover`; keep tests race-clean.
 - **Commits & PRs.** Work lands via squash-merged PRs titled `<summary> (#PR)`. Conventional-commit prefixes (`fix:`, `ci:`) are used for some commits but not enforced. External contributors must sign the CLA (`.github/workflows/cla.yml`).
 - **Secrets & the private security scan.** The `security-scan` endpoint calls a private Cloud Function; its code is deliberately not in this repo. Never commit credentials — secret scanning runs in CI (`.github/workflows/secret-scanning.yml`).
-- **Deploy is out of band.** `cloudbuild.yaml` builds the image, applies Atlas migrations to staging/prod, and releases via Cloud Deploy (`clouddeploy.yaml`, `skaffold.yaml`); `app.yaml` / `run-service-*.yaml` are the Cloud Run service configs.
+- **Deploy is out of band.** `cloudbuild.yaml` builds the image, applies Atlas migrations to staging/prod, and releases via Cloud Deploy (`clouddeploy.yaml`, `skaffold.yaml`); `run-service-*.yaml` are the Cloud Run service configs (`app.yaml` is a legacy App Engine config, not part of this deploy path).
 
 ## Deeper docs
 
