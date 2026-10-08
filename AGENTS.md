@@ -18,7 +18,7 @@ go test ./integration-tests                        # integration tests
 ```
 
 - **Unit vs integration:** the `integration-tests/` package is excluded from the unit run and executed separately. It spins up a Postgres testcontainer, so a working Docker daemon is required.
-- **No Makefile and no lint step in CI.** There is a semgrep-based logging lint (`.github/workflows/logging-presubmit.yml`, config `.semgrep.yml`) and an ent CI check (`.github/workflows/ent-ci.yaml`) that runs on changes under `ent/`.
+- **No Makefile and no general lint step in CI.** The semgrep logging check (`.github/workflows/logging-presubmit.yml`) is currently unavailable: it expects `.semgrep.yml`, which is not in the repo, and its recent runs are cancelled. The ent CI check (`.github/workflows/ent-ci.yaml`) runs on changes under `ent/`.
 - **DB migration gate:** `.github/workflows/db-migration-presubmit.yaml` fails a PR if it changes `ent/schema` without a matching change under `ent/migrate/migrations`.
 
 ### Run locally
